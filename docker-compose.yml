@@ -1,0 +1,102 @@
+services:
+  db:
+    image: mariadb:11
+    environment:
+      MARIADB_DATABASE: ${DB_NAME}
+      MARIADB_USER: ${DB_USER}
+      MARIADB_PASSWORD: ${DB_PASSWORD}
+      MARIADB_ROOT_PASSWORD: ${DB_ROOT_PASSWORD}
+    volumes:
+      - db_data:/var/lib/mysql
+    restart: unless-stopped
+
+  wordpress:
+    build:
+      context: .
+    ports:
+      - "${WP_PORT:-8080}:80"
+    environment:
+      WORDPRESS_DB_HOST: db:3306
+      WORDPRESS_DB_USER: ${DB_USER}
+      WORDPRESS_DB_PASSWORD: ${DB_PASSWORD}
+      WORDPRESS_DB_NAME: ${DB_NAME}
+    volumes:
+      - wp_core:/var/www/html
+      - wp_uploads:/var/www/html/wp-content/uploads
+      - ./wp-content/themes:/var/www/html/wp-content/themes
+    depends_on:
+      - db
+    restart: unless-stopped
+
+  wpcli:
+    image: wordpress:cli-php8.2
+    environment:
+      WORDPRESS_DB_HOST: db:3306
+      WORDPRESS_DB_USER: ${DB_USER}
+      WORDPRESS_DB_PASSWORD: ${DB_PASSWORD}
+      WORDPRESS_DB_NAME: ${DB_NAME}
+      WP_URL: ${WP_URL}
+      WP_TITLE: ${WP_TITLE}
+      WP_ADMIN_USER: ${WP_ADMIN_USER}
+      WP_ADMIN_PASSWORD: ${WP_ADMIN_PASSWORD}
+      WP_ADMIN_EMAIL: ${WP_ADMIN_EMAIL}
+      WP_THEME: ${WP_THEME}
+    volumes:
+      - wp_core:/var/www/html
+      - wp_uploads:/var/www/html/wp-content/uploads
+      - ./wp-content/themes:/var/www/html/wp-content/themes
+    working_dir: /var/www/html
+    entrypoint: ["/bin/sh", "-c"]
+    command: >
+      '
+      set -e
+
+      echo "Creating wp-config.php (if missing)...";
+      if [ ! -f wp-config.php ]; then
+        wp config create --allow-root \
+          --dbname="$${WORDPRESS_DB_NAME}" \
+          --dbuser="$${WORDPRESS_DB_USER}" \
+          --dbpass="$${WORDPRESS_DB_PASSWORD}" \
+          --dbhost="db:3306" \
+          --skip-check \
+          --force;
+      fi
+
+      echo "Waiting for database...";
+      for i in $(seq 1 90); do
+        wp db check --allow-root >/dev/null 2>&1 && break
+        sleep 2
+      done
+
+      if ! wp db check --allow-root >/dev/null 2>&1; then
+        echo "Database not ready after waiting."
+        exit 1
+      fi
+
+      if ! wp core is-installed --allow-root >/dev/null 2>&1; then
+        echo "Installing WordPress...";
+        wp core install --allow-root \
+          --url="$${WP_URL}" \
+          --title="$${WP_TITLE}" \
+          --admin_user="$${WP_ADMIN_USER}" \
+          --admin_password="$${WP_ADMIN_PASSWORD}" \
+          --admin_email="$${WP_ADMIN_EMAIL}";
+      else
+        echo "WordPress already installed.";
+      fi
+
+      echo "Activating theme...";
+      wp theme activate "$${WP_THEME}" --allow-root || true;
+
+      echo "Setting permalinks...";
+      wp rewrite structure "/%postname%/" --allow-root || true;
+      wp rewrite flush --allow-root || true;
+
+      echo "Done."
+      '
+    restart: "no"
+
+volumes:
+  db_data:
+  wp_core:
+  wp_uploads:
