@@ -1,6 +1,7 @@
 # gca-Intranet — WordPress (Docker) Dev Environment
-Local + EC2 WordPress stack with wp-cli auto-install and GCA Intranet themes.
 
+Local WordPress stack (Docker Compose) with wp-cli auto-install and GCA Intranet themes.
+Also includes an AWS-friendly WordPress container build (see `Dockerfile`).
 
 ## What’s in this repo
 
@@ -8,8 +9,10 @@ Local + EC2 WordPress stack with wp-cli auto-install and GCA Intranet themes.
 - Themes are committed under:
   - `wp-content/themes/gca-intranet-foundation` (parent)
   - `wp-content/themes/gca-intranet` (child)
-- Database: MariaDB
+- Database: **MySQL 8.0** (local docker-compose)
 - One-time setup/initialisation via `wp-cli` container (auto-installs WP + activates theme)
+- `Dockerfile` builds an image suitable for AWS container platforms (e.g. ECS/Fargate)
+  - In AWS you would typically use **RDS MySQL** and pass DB settings via environment variables / secrets
 
 ## Prerequisites
 
@@ -20,44 +23,50 @@ Local + EC2 WordPress stack with wp-cli auto-install and GCA Intranet themes.
 
 ### 1) Create env file
 
-    cp .env.example .env
-    # optional: edit WP_URL / credentials / WP_PORT
+```bash
+cp .env.example .env
+# optional: edit WP_URL / credentials / WP_PORT
+2) Start containers
+bash
+Copy code
+docker compose --env-file .env up -d --build
+3) One-time initialise WordPress (creates wp-config.php, installs WP, activates theme)
+bash
+Copy code
+docker compose --env-file .env run --rm wpcli
+Access
+Site: http://localhost:8080 (or whatever WP_PORT is set to)
 
-### 2) Start containers
+Admin: http://localhost:8080/wp-admin
 
-    docker compose --env-file .env up -d --build
+Admin credentials come from .env:
 
-### 3) One-time initialise WordPress (creates wp-config.php, installs WP, activates theme)
+WP_ADMIN_USER
 
-    docker compose --env-file .env run --rm wpcli
+WP_ADMIN_PASSWORD
 
-## Access
+Reset (wipe DB + WP volumes)
+bash
+Copy code
+docker compose down -v
+docker compose --env-file .env up -d --build
+docker compose --env-file .env run --rm wpcli
+EC2 notes
+Set WP_URL to the EC2 domain/IP (e.g. http://<public-ip> or your DNS name)
 
-- Site: `http://localhost:8080` (or whatever `WP_PORT` is set to)
-- Admin: `http://localhost:8080/wp-admin`
+Set WP_PORT=80 if running directly on port 80 (or keep 8080 behind a reverse proxy/ALB)
 
-Admin credentials come from `.env`:
-- `WP_ADMIN_USER`
-- `WP_ADMIN_PASSWORD`
+.env is local-only and must NOT be committed (use .env.example as the template)
 
-## Reset (wipe DB + WP volumes)
+Troubleshooting
+Docker not found / not running: install/start Docker Desktop, then retry.
 
-    docker compose down -v
-    docker compose --env-file .env up -d --build
-    docker compose --env-file .env run --rm wpcli
+Port 8080 already in use: change WP_PORT in .env (e.g. WP_PORT=8081) and restart.
 
-## EC2 notes
+Stuck on installer / DB errors: do a full reset:
 
-- Set `WP_URL` to the EC2 domain/IP (e.g. `http://<public-ip>` or your DNS name)
-- Set `WP_PORT=80` if running directly on port 80 (or keep 8080 behind a reverse proxy/ALB)
-- `.env` is local-only and must NOT be committed (use `.env.example` as the template)
-
-## Troubleshooting
-
-- **Docker not found / not running:** install/start Docker Desktop, then retry.
-- **Port 8080 already in use:** change `WP_PORT` in `.env` (e.g. `WP_PORT=8081`) and restart.
-- **Stuck on installer / DB errors:** do a full reset:
-
-    docker compose down -v
-    docker compose --env-file .env up -d --build
-    docker compose --env-file .env run --rm wpcli
+bash
+Copy code
+docker compose down -v
+docker compose --env-file .env up -d --build
+docker compose --env-file .env run --rm wpcli
