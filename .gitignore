@@ -1,12 +1,5 @@
-# Local env (never commit)
 .env
-.env.*
-!.env.example
-
-# OS / editor
 .DS_Store
-.vscode/
-.idea/
-
-# Logs
-*.log
+docker-compose.yml.save
+wp-content/uploads/
+wp-content/cache/

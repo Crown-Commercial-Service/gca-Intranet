@@ -1,6 +1,6 @@
 services:
   db:
-    image: mariadb:11
+    image: mysql:8.0
     environment:
       MARIADB_DATABASE: ${DB_NAME}
       MARIADB_USER: ${DB_USER}
@@ -11,92 +11,92 @@ services:
     restart: unless-stopped
 
   wordpress:
-    build:
-      context: .
+    build: .
+    depends_on:
+      - db
     ports:
       - "${WP_PORT:-8080}:80"
     environment:
-      WORDPRESS_DB_HOST: db:3306
+      WORDPRESS_DB_HOST: ${DB_HOST}
+      WORDPRESS_DB_NAME: ${DB_NAME}
       WORDPRESS_DB_USER: ${DB_USER}
       WORDPRESS_DB_PASSWORD: ${DB_PASSWORD}
-      WORDPRESS_DB_NAME: ${DB_NAME}
+      WORDPRESS_CONFIG_EXTRA: |
+        if ( getenv('WP_HOME') ) { define('WP_HOME', getenv('WP_HOME')); }
+        if ( getenv('WP_SITEURL') ) { define('WP_SITEURL', getenv('WP_SITEURL')); }
+        if ( isset($$_SERVER['HTTP_X_FORWARDED_PROTO']) && $$_SERVER['HTTP_X_FORWARDED_PROTO'] === 'https' ) { $$_SERVER['HTTPS']='on'; }
     volumes:
       - wp_core:/var/www/html
       - wp_uploads:/var/www/html/wp-content/uploads
       - ./wp-content/themes:/var/www/html/wp-content/themes
-    depends_on:
-      - db
     restart: unless-stopped
 
+  # Run this as a one-off initializer: `docker compose --env-file .env run --rm wpcli`
   wpcli:
     image: wordpress:cli-php8.2
+    depends_on:
+      - db
     environment:
-      WORDPRESS_DB_HOST: db:3306
+      WORDPRESS_DB_HOST: ${DB_HOST}
+      WORDPRESS_DB_NAME: ${DB_NAME}
       WORDPRESS_DB_USER: ${DB_USER}
       WORDPRESS_DB_PASSWORD: ${DB_PASSWORD}
-      WORDPRESS_DB_NAME: ${DB_NAME}
+
       WP_URL: ${WP_URL}
       WP_TITLE: ${WP_TITLE}
       WP_ADMIN_USER: ${WP_ADMIN_USER}
       WP_ADMIN_PASSWORD: ${WP_ADMIN_PASSWORD}
       WP_ADMIN_EMAIL: ${WP_ADMIN_EMAIL}
       WP_THEME: ${WP_THEME}
+      WP_HOME: ${WP_HOME}
+      WP_SITEURL: ${WP_SITEURL}
     volumes:
       - wp_core:/var/www/html
       - wp_uploads:/var/www/html/wp-content/uploads
       - ./wp-content/themes:/var/www/html/wp-content/themes
     working_dir: /var/www/html
-    entrypoint: ["/bin/sh", "-c"]
-    command: >
-      '
+    command: |
       set -e
 
-      echo "Creating wp-config.php (if missing)...";
+      echo "Creating wp-config.php (if missing)..."
       if [ ! -f wp-config.php ]; then
-        wp config create --allow-root \
-          --dbname="$${WORDPRESS_DB_NAME}" \
-          --dbuser="$${WORDPRESS_DB_USER}" \
-          --dbpass="$${WORDPRESS_DB_PASSWORD}" \
-          --dbhost="db:3306" \
-          --skip-check \
-          --force;
+        wp config create --allow-root --skip-check \
+          --dbname="$$WORDPRESS_DB_NAME" \
+          --dbuser="$$WORDPRESS_DB_USER" \
+          --dbpass="$$WORDPRESS_DB_PASSWORD" \
+          --dbhost="$$WORDPRESS_DB_HOST"
       fi
 
-      echo "Waiting for database...";
-      for i in $(seq 1 90); do
-        wp db check --allow-root >/dev/null 2>&1 && break
-        sleep 2
-      done
+      # Prefer WP_HOME if set; otherwise use WP_URL
+      SITE_URL="$$WP_URL"
+      if [ -n "$$WP_HOME" ]; then SITE_URL="$$WP_HOME"; fi
 
-      if ! wp db check --allow-root >/dev/null 2>&1; then
-        echo "Database not ready after waiting."
-        exit 1
-      fi
+      echo "Waiting for database..."
+      until wp db check --allow-root >/dev/null 2>&1; do sleep 2; done
 
       if ! wp core is-installed --allow-root >/dev/null 2>&1; then
-        echo "Installing WordPress...";
+        echo "Installing WordPress..."
         wp core install --allow-root \
-          --url="$${WP_URL}" \
-          --title="$${WP_TITLE}" \
-          --admin_user="$${WP_ADMIN_USER}" \
-          --admin_password="$${WP_ADMIN_PASSWORD}" \
-          --admin_email="$${WP_ADMIN_EMAIL}";
+          --url="$$SITE_URL" \
+          --title="$$WP_TITLE" \
+          --admin_user="$$WP_ADMIN_USER" \
+          --admin_password="$$WP_ADMIN_PASSWORD" \
+          --admin_email="$$WP_ADMIN_EMAIL"
       else
-        echo "WordPress already installed.";
+        echo "WordPress already installed."
       fi
 
-      echo "Activating theme...";
-      wp theme activate "$${WP_THEME}" --allow-root || true;
+      echo "Activating theme..."
+      wp theme activate "$$WP_THEME" --allow-root || true
 
-      echo "Setting permalinks...";
-      wp rewrite structure "/%postname%/" --allow-root || true;
-      wp rewrite flush --allow-root || true;
+      echo "Setting permalinks..."
+      wp rewrite structure "/%postname%/" --allow-root || true
+      wp rewrite flush --allow-root || true
 
       echo "Done."
-      '
     restart: "no"
 
 volumes:
   db_data:
-  wp_core:
   wp_uploads:
+  wp_core:
