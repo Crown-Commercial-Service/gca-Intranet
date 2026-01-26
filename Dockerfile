@@ -25,7 +25,7 @@ RUN set -eux; \
   fi
 
 ##########
-# 2) WordPress runtime (Apache) for ECS/Fargate
+# 2) WordPress runtime (Apache)
 ##########
 FROM wordpress:6.5.5-php8.2-apache
 
@@ -36,7 +36,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
   && a2enmod rewrite headers remoteip \
   && rm -rf /var/lib/apt/lists/*
 
-# Trust ALB / reverse-proxy IP headers (private ranges)
+# Trust reverse-proxy IP headers (private ranges)
 RUN printf "%s\n" \
   "RemoteIPHeader X-Forwarded-For" \
   "RemoteIPTrustedProxy 10.0.0.0/8" \
@@ -51,17 +51,28 @@ COPY wp-content/ /var/www/html/wp-content/
 # Overwrite with built assets (if any were produced)
 COPY --from=assets /app/wp-content/ /var/www/html/wp-content/
 
-# Permissions
-RUN chown -R www-data:www-data /var/www/html/wp-content
+# Add an init wrapper to ensure expected directories exist (important when wp-content is a volume)
+COPY docker/wordpress-init.sh /usr/local/bin/wordpress-init.sh
+RUN chmod +x /usr/local/bin/wordpress-init.sh
 
-# WP hardening defaults + https-forwarded proto support
+# Permissions (best effort; volume mounts may override at runtime)
+RUN chown -R www-data:www-data /var/www/html/wp-content || true
+
+# Local-friendly defaults:
+# - Allow plugin/theme installs (DO NOT set DISALLOW_FILE_MODS)
+# - Block theme/plugin editor (fine)
+# - Support X-Forwarded-Proto for HTTPS behind proxies
+# - Use direct filesystem method if possible
 ENV WORDPRESS_CONFIG_EXTRA="\
 define('DISALLOW_FILE_EDIT', true); \
-define('DISALLOW_FILE_MODS', true); \
+define('FS_METHOD', 'direct'); \
 if (isset(\$_SERVER['HTTP_X_FORWARDED_PROTO']) && \$_SERVER['HTTP_X_FORWARDED_PROTO'] === 'https') { \$_SERVER['HTTPS'] = 'on'; } \
 "
 
 HEALTHCHECK --interval=30s --timeout=5s --start-period=30s --retries=3 \
   CMD curl -fsS http://localhost/wp-login.php >/dev/null || exit 1
+
+ENTRYPOINT ["wordpress-init.sh"]
+CMD ["apache2-foreground"]
 
 EXPOSE 80
