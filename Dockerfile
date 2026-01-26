@@ -60,12 +60,10 @@ RUN chown -R www-data:www-data /var/www/html/wp-content || true
 
 # Local-friendly defaults:
 # - Allow plugin/theme installs (DO NOT set DISALLOW_FILE_MODS)
-# - Block theme/plugin editor (fine)
+# - Block theme/plugin editor
 # - Support X-Forwarded-Proto for HTTPS behind proxies
-# - Use direct filesystem method if possible
 ENV WORDPRESS_CONFIG_EXTRA="\
 define('DISALLOW_FILE_EDIT', true); \
-define('FS_METHOD', 'direct'); \
 if (isset(\$_SERVER['HTTP_X_FORWARDED_PROTO']) && \$_SERVER['HTTP_X_FORWARDED_PROTO'] === 'https') { \$_SERVER['HTTPS'] = 'on'; } \
 "
 
