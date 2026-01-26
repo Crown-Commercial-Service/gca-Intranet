@@ -2,10 +2,10 @@ services:
   db:
     image: mysql:8.0
     environment:
-      MARIADB_DATABASE: ${DB_NAME}
-      MARIADB_USER: ${DB_USER}
-      MARIADB_PASSWORD: ${DB_PASSWORD}
-      MARIADB_ROOT_PASSWORD: ${DB_ROOT_PASSWORD}
+      MYSQL_DATABASE: ${DB_NAME}
+      MYSQL_USER: ${DB_USER}
+      MYSQL_PASSWORD: ${DB_PASSWORD}
+      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD}
     volumes:
       - db_data:/var/lib/mysql
     restart: unless-stopped
@@ -26,12 +26,12 @@ services:
         if ( getenv('WP_SITEURL') ) { define('WP_SITEURL', getenv('WP_SITEURL')); }
         if ( isset($$_SERVER['HTTP_X_FORWARDED_PROTO']) && $$_SERVER['HTTP_X_FORWARDED_PROTO'] === 'https' ) { $$_SERVER['HTTPS']='on'; }
     volumes:
-      - wp_core:/var/www/html
-      - wp_uploads:/var/www/html/wp-content/uploads
-      - ./wp-content/themes:/var/www/html/wp-content/themes
+      # EFS-like: persist only wp-content (uploads, plugins, languages, etc.)
+      - wp_content:/var/www/html/wp-content
     restart: unless-stopped
 
-  # Run this as a one-off initializer: `docker compose --env-file .env run --rm wpcli`
+  # Run this as a one-off initializer:
+  #   docker compose --env-file .env run --rm wpcli
   wpcli:
     image: wordpress:cli-php8.2
     depends_on:
@@ -51,12 +51,13 @@ services:
       WP_HOME: ${WP_HOME}
       WP_SITEURL: ${WP_SITEURL}
     volumes:
-      - wp_core:/var/www/html
-      - wp_uploads:/var/www/html/wp-content/uploads
-      - ./wp-content/themes:/var/www/html/wp-content/themes
+      - wp_content:/var/www/html/wp-content
     working_dir: /var/www/html
     command: |
       set -e
+
+      # Ensure expected dirs exist (matches AWS/EFS reality)
+      mkdir -p wp-content/languages wp-content/upgrade
 
       echo "Creating wp-config.php (if missing)..."
       if [ ! -f wp-config.php ]; then
@@ -86,6 +87,14 @@ services:
         echo "WordPress already installed."
       fi
 
+      # Set URLs if provided
+      if [ -n "$$WP_HOME" ]; then
+        wp option update home "$$WP_HOME" --allow-root || true
+      fi
+      if [ -n "$$WP_SITEURL" ]; then
+        wp option update siteurl "$$WP_SITEURL" --allow-root || true
+      fi
+
       echo "Activating theme..."
       wp theme activate "$$WP_THEME" --allow-root || true
 
@@ -98,5 +107,4 @@ services:
 
 volumes:
   db_data:
-  wp_uploads:
-  wp_core:
+  wp_content:
