@@ -15,7 +15,7 @@ services:
     depends_on:
       - db
     ports:
-      - "${WP_PORT:-8080}:80"
+      - '${WP_PORT:-8080}:80'
     environment:
       WORDPRESS_DB_HOST: ${DB_HOST}
       WORDPRESS_DB_NAME: ${DB_NAME}
@@ -31,9 +31,14 @@ services:
     restart: unless-stopped
 
   # Run this as a one-off initializer:
-  #   docker compose --env-file .env run --rm wpcli
-  wpcli:
-    image: wordpress:cli-php8.2
+  #   docker compose --env-file .env run --rm init
+  #
+  # NOTE:
+  # - Uses the SAME image as the wordpress service so WordPress core exists at /var/www/html
+  # - Uses /usr/local/bin/wp-init.sh (committed in this repo) instead of an inline command
+  # - This matches how you’ll run a one-off ECS task on AWS as well
+  init:
+    build: .
     depends_on:
       - db
     environment:
@@ -53,57 +58,8 @@ services:
     volumes:
       - wp_content:/var/www/html/wp-content
     working_dir: /var/www/html
-    command: |
-      set -e
-
-      # Ensure expected dirs exist (matches AWS/EFS reality)
-      mkdir -p wp-content/languages wp-content/upgrade
-
-      echo "Creating wp-config.php (if missing)..."
-      if [ ! -f wp-config.php ]; then
-        wp config create --allow-root --skip-check \
-          --dbname="$$WORDPRESS_DB_NAME" \
-          --dbuser="$$WORDPRESS_DB_USER" \
-          --dbpass="$$WORDPRESS_DB_PASSWORD" \
-          --dbhost="$$WORDPRESS_DB_HOST"
-      fi
-
-      # Prefer WP_HOME if set; otherwise use WP_URL
-      SITE_URL="$$WP_URL"
-      if [ -n "$$WP_HOME" ]; then SITE_URL="$$WP_HOME"; fi
-
-      echo "Waiting for database..."
-      until wp db check --allow-root >/dev/null 2>&1; do sleep 2; done
-
-      if ! wp core is-installed --allow-root >/dev/null 2>&1; then
-        echo "Installing WordPress..."
-        wp core install --allow-root \
-          --url="$$SITE_URL" \
-          --title="$$WP_TITLE" \
-          --admin_user="$$WP_ADMIN_USER" \
-          --admin_password="$$WP_ADMIN_PASSWORD" \
-          --admin_email="$$WP_ADMIN_EMAIL"
-      else
-        echo "WordPress already installed."
-      fi
-
-      # Set URLs if provided
-      if [ -n "$$WP_HOME" ]; then
-        wp option update home "$$WP_HOME" --allow-root || true
-      fi
-      if [ -n "$$WP_SITEURL" ]; then
-        wp option update siteurl "$$WP_SITEURL" --allow-root || true
-      fi
-
-      echo "Activating theme..."
-      wp theme activate "$$WP_THEME" --allow-root || true
-
-      echo "Setting permalinks..."
-      wp rewrite structure "/%postname%/" --allow-root || true
-      wp rewrite flush --allow-root || true
-
-      echo "Done."
-    restart: "no"
+    command: ['/bin/sh', '-lc', '/usr/local/bin/wp-init.sh']
+    restart: 'no'
 
 volumes:
   db_data:

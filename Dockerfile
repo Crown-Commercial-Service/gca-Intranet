@@ -30,11 +30,18 @@ RUN set -eux; \
 FROM wordpress:6.5.5-php8.2-apache
 
 # Common deps + extensions (trim if you want leaner)
+# - default-mysql-client provides mysql/mysqlcheck (useful for wp-cli db commands)
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    libzip-dev unzip curl \
+    libzip-dev unzip curl default-mysql-client \
   && docker-php-ext-install zip mysqli \
   && a2enmod rewrite headers remoteip \
   && rm -rf /var/lib/apt/lists/*
+
+# Install WP-CLI into the image (AWS-friendly: avoids downloading at runtime)
+ARG WP_CLI_VERSION=2.12.0
+RUN curl -sSLo /usr/local/bin/wp "https://github.com/wp-cli/wp-cli/releases/download/v${WP_CLI_VERSION}/wp-cli-${WP_CLI_VERSION}.phar" \
+  && chmod +x /usr/local/bin/wp \
+  && wp --info
 
 # Trust reverse-proxy IP headers (private ranges)
 RUN printf "%s\n" \
@@ -51,9 +58,19 @@ COPY wp-content/ /var/www/html/wp-content/
 # Overwrite with built assets (if any were produced)
 COPY --from=assets /app/wp-content/ /var/www/html/wp-content/
 
-# Add an init wrapper to ensure expected directories exist (important when wp-content is a volume)
+# IMPORTANT for AWS/EFS: keep a seed copy OUTSIDE /var/www/html,
+# because an EFS mount on /var/www/html/wp-content will hide the image content.
+RUN mkdir -p /opt/wp-content-seed
+COPY wp-content/ /opt/wp-content-seed/
+COPY --from=assets /app/wp-content/ /opt/wp-content-seed/
+
+# Add init wrappers/scripts
 COPY docker/wordpress-init.sh /usr/local/bin/wordpress-init.sh
 RUN chmod +x /usr/local/bin/wordpress-init.sh
+
+# One-off init script (used by docker compose run init, and by ECS one-off init tasks)
+COPY docker/wp-init.sh /usr/local/bin/wp-init.sh
+RUN chmod +x /usr/local/bin/wp-init.sh
 
 # Permissions (best effort; volume mounts may override at runtime)
 RUN chown -R www-data:www-data /var/www/html/wp-content || true
@@ -62,9 +79,11 @@ RUN chown -R www-data:www-data /var/www/html/wp-content || true
 # - Allow plugin/theme installs (DO NOT set DISALLOW_FILE_MODS)
 # - Block theme/plugin editor
 # - Support X-Forwarded-Proto for HTTPS behind proxies
+#
+# NOTE: In Dockerfile ENV, "$" expands, so PHP $_SERVER must be written as $$_SERVER
 ENV WORDPRESS_CONFIG_EXTRA="\
 define('DISALLOW_FILE_EDIT', true); \
-if (isset(\$_SERVER['HTTP_X_FORWARDED_PROTO']) && \$_SERVER['HTTP_X_FORWARDED_PROTO'] === 'https') { \$_SERVER['HTTPS'] = 'on'; } \
+if (isset($$_SERVER['HTTP_X_FORWARDED_PROTO']) && $$_SERVER['HTTP_X_FORWARDED_PROTO'] === 'https') { $$_SERVER['HTTPS'] = 'on'; } \
 "
 
 HEALTHCHECK --interval=30s --timeout=5s --start-period=30s --retries=3 \
