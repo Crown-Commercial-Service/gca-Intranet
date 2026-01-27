@@ -1,0 +1,58 @@
+services:
+  db:
+    image: mysql:8.0
+    environment:
+      MYSQL_DATABASE: ${DB_NAME}
+      MYSQL_USER: ${DB_USER}
+      MYSQL_PASSWORD: ${DB_PASSWORD}
+      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD}
+    volumes:
+      - db_data:/var/lib/mysql
+    restart: unless-stopped
+
+  wordpress:
+    build: .
+    depends_on:
+      - db
+    ports:
+      - "${WP_PORT:-8080}:80"
+    environment:
+      WORDPRESS_DB_HOST: ${DB_HOST}
+      WORDPRESS_DB_NAME: ${DB_NAME}
+      WORDPRESS_DB_USER: ${DB_USER}
+      WORDPRESS_DB_PASSWORD: ${DB_PASSWORD}
+      WORDPRESS_CONFIG_EXTRA: |
+        if ( getenv('WP_HOME') ) { define('WP_HOME', getenv('WP_HOME')); }
+        if ( getenv('WP_SITEURL') ) { define('WP_SITEURL', getenv('WP_SITEURL')); }
+        if ( isset($$_SERVER['HTTP_X_FORWARDED_PROTO']) && $$_SERVER['HTTP_X_FORWARDED_PROTO'] === 'https' ) { $$_SERVER['HTTPS']='on'; }
+    volumes:
+      - wp_content:/var/www/html/wp-content
+    restart: unless-stopped
+
+  wpcli:
+    image: wordpress:cli-php8.2
+    user: "0:0"
+    depends_on:
+      - db
+    environment:
+      WORDPRESS_DB_HOST: ${DB_HOST}
+      WORDPRESS_DB_NAME: ${DB_NAME}
+      WORDPRESS_DB_USER: ${DB_USER}
+      WORDPRESS_DB_PASSWORD: ${DB_PASSWORD}
+      WP_URL: ${WP_URL}
+      WP_TITLE: ${WP_TITLE}
+      WP_ADMIN_USER: ${WP_ADMIN_USER}
+      WP_ADMIN_PASSWORD: ${WP_ADMIN_PASSWORD}
+      WP_ADMIN_EMAIL: ${WP_ADMIN_EMAIL}
+      WP_THEME: ${WP_THEME}
+      WP_HOME: ${WP_HOME}
+      WP_SITEURL: ${WP_SITEURL}
+    volumes:
+      - wp_content:/var/www/html/wp-content
+    working_dir: /var/www/html
+    command: ["/bin/sh","-lc","set -e; mkdir -p wp-content/languages wp-content/upgrade; echo 'Creating wp-config.php (if missing)...'; if [ ! -f wp-config.php ]; then wp config create --allow-root --skip-check --dbname=\"$$WORDPRESS_DB_NAME\" --dbuser=\"$$WORDPRESS_DB_USER\" --dbpass=\"$$WORDPRESS_DB_PASSWORD\" --dbhost=\"$$WORDPRESS_DB_HOST\"; fi; SITE_URL=\"$$WP_URL\"; if [ -n \"$$WP_HOME\" ]; then SITE_URL=\"$$WP_HOME\"; fi; echo 'Waiting for database...'; until wp db check --allow-root >/dev/null 2>&1; do sleep 2; done; if ! wp core is-installed --allow-root >/dev/null 2>&1; then echo 'Installing WordPress...'; wp core install --allow-root --url=\"$$SITE_URL\" --title=\"$$WP_TITLE\" --admin_user=\"$$WP_ADMIN_USER\" --admin_password=\"$$WP_ADMIN_PASSWORD\" --admin_email=\"$$WP_ADMIN_EMAIL\"; else echo 'WordPress already installed.'; fi; if [ -n \"$$WP_HOME\" ]; then wp option update home \"$$WP_HOME\" --allow-root || true; fi; if [ -n \"$$WP_SITEURL\" ]; then wp option update siteurl \"$$WP_SITEURL\" --allow-root || true; fi; echo 'Activating theme...'; wp theme activate \"$$WP_THEME\" --allow-root || true; echo 'Setting permalinks...'; wp rewrite structure '/%postname%/' --allow-root || true; wp rewrite flush --allow-root || true; echo 'Done.'"]
+    restart: "no"
+
+volumes:
+  db_data:
+  wp_content:
