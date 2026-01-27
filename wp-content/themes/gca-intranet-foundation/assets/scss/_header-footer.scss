@@ -1,0 +1,54 @@
+.utility-nav .nav-link,
+.site-footer .nav-link {
+  padding: 0;
+  color: $gca-text;
+  text-decoration: underline;
+  text-underline-offset: 0.1875rem;
+  text-decoration-thickness: 0.0625rem;
+
+  &:hover,
+  &:focus-visible {
+    text-decoration-thickness: 0.125rem;
+  }
+}
+
+.navbar .navbar-nav .nav-link {
+  padding-top: 0.75rem;
+  padding-bottom: 0.75rem;
+}
+
+.navbar .navbar-nav .gca-dd-toggle {
+  padding-left: 0.25rem;
+  padding-right: 0.25rem;
+  border: 0;
+  background: transparent;
+
+  &:focus-visible {
+    outline: 2px solid currentColor;
+    outline-offset: 2px;
+    border-radius: 0.25rem;
+  }
+}
+
+.site-footer {
+  background: $gca-footer-bg;
+  border-top: 0.625rem solid $gca-accent-lime;
+  padding-block: 2rem;
+}
+
+.custom-logo-link {
+  display: inline-flex;
+  align-items: center;
+}
+
+.gca-header-logo {
+  height: 3.75rem; /* tweak if needed */
+  width: auto;
+  display: block;
+}
+
+.gca-footer-crest {
+  height: 4.5rem; /* tweak if needed */
+  width: auto;
+  display: block;
+}

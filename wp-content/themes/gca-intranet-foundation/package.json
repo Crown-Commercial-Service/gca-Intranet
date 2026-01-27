@@ -1,0 +1,20 @@
+{
+  "name": "gca-intranet-foundation",
+  "version": "1.0.0",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "build": "sass assets/scss/theme.scss assets/dist/gca-theme.css --style=compressed",
+    "watch": "sass --watch assets/scss/theme.scss:assets/dist/gca-theme.css --style=expanded"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "description": "",
+  "devDependencies": {
+    "sass": "^1.97.3"
+  },
+  "dependencies": {
+    "bootstrap": "^5.3.3"
+  }
+}
