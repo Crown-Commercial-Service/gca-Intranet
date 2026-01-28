@@ -1,0 +1,19 @@
+# VCS / OS noise
+.git
+.gitignore
+.DS_Store
+
+# Local env / secrets
+.env
+.env.*
+
+# Logs
+*.log
+
+# Dependency dirs (if any appear)
+node_modules
+vendor
+
+# Editor/IDE
+.vscode
+.idea
