@@ -80,10 +80,11 @@ RUN chown -R www-data:www-data /var/www/html/wp-content || true
 # - Block theme/plugin editor
 # - Support X-Forwarded-Proto for HTTPS behind proxies
 #
-# NOTE: In Dockerfile ENV, "$" expands, so PHP $_SERVER must be written as $$_SERVER
+# IMPORTANT: In Dockerfile ENV, "$" does NOT need escaping for PHP variables.
+# Use $_SERVER (single $), NOT $$_SERVER.
 ENV WORDPRESS_CONFIG_EXTRA="\
 define('DISALLOW_FILE_EDIT', true); \
-if (isset($$_SERVER['HTTP_X_FORWARDED_PROTO']) && $$_SERVER['HTTP_X_FORWARDED_PROTO'] === 'https') { $$_SERVER['HTTPS'] = 'on'; } \
+if (isset($_SERVER['HTTP_X_FORWARDED_PROTO']) && $_SERVER['HTTP_X_FORWARDED_PROTO'] === 'https') { $_SERVER['HTTPS'] = 'on'; } \
 "
 
 HEALTHCHECK --interval=30s --timeout=5s --start-period=30s --retries=3 \
