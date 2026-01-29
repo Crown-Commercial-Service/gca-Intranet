@@ -32,14 +32,29 @@
   <a class="site-branding d-inline-flex align-items-center text-decoration-none"
      href="<?php echo esc_url(home_url('/')); ?>"
      aria-label="<?php echo esc_attr(get_bloginfo('name')); ?>">
+<?php if (function_exists('the_custom_logo') && has_custom_logo()) : ?>
+  <?php the_custom_logo(); ?>
+<?php else : ?>
+  <?php if (function_exists('the_custom_logo') && has_custom_logo()) : ?>
+  <?php the_custom_logo(); ?>
+<?php else : ?>
+  <a class="custom-logo-link" href="<?php echo esc_url(home_url('/')); ?>" rel="home">
+    <img
+      class="gca-header-logo"
+      src="<?php echo esc_url(get_template_directory_uri() . '/assets/img/CCS_BLACK_AW_logo.svg'); ?>"
+      alt="<?php echo esc_attr(get_bloginfo('name')); ?>"
+    />
+  </a>
+<?php endif; ?>
 
     <img
-      src="<?php echo esc_url(get_template_directory_uri() . '/assets/img/CCS_BLACK_AW_logo.svg'); ?>"
       class="gca-header-logo"
+      src="<?php echo esc_url(get_template_directory_uri() . '/assets/img/CCS_BLACK_AW_logo.svg'); ?>"
       alt="<?php echo esc_attr(get_bloginfo('name')); ?>"
-      loading="eager"
-      decoding="async">
-	</a>
+    />
+  </a>
+<?php endif; ?>
+
 	</div>
 
         <!-- Utility links -->
