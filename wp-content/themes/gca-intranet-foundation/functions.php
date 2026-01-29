@@ -162,3 +162,12 @@ function gca_get_breadcrumb_items(): array
 
     return $items;
 }
+
+add_action('after_setup_theme', function (): void {
+    add_theme_support('custom-logo', [
+        'height'      => 80,
+        'width'       => 260,
+        'flex-height' => true,
+        'flex-width'  => true,
+    ]);
+});
