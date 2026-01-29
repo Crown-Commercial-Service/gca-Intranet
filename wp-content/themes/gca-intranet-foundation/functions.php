@@ -18,10 +18,10 @@ add_action('after_setup_theme', function (): void {
     add_theme_support('title-tag');
     add_theme_support('post-thumbnails');
 
-    // Allow WP admin to set a site logo (GCA logo only)
+    // Allow WP admin to set a site logo (Customizer)
     add_theme_support('custom-logo', [
-        'height'      => 125,
-        'width'       => 140,
+        'height'      => 80,
+        'width'       => 260,
         'flex-height' => true,
         'flex-width'  => true,
     ]);
@@ -43,6 +43,13 @@ add_action('after_setup_theme', function (): void {
         'primary' => __('Primary Navigation', 'gca-intranet'),
         'footer'  => __('Footer Navigation', 'gca-intranet'),
     ]);
+});
+
+/**
+ * Ensure the Customizer logo uses our header logo class for consistent sizing.
+ */
+add_filter('get_custom_logo', function (string $html): string {
+    return preg_replace('/class="custom-logo"/', 'class="custom-logo gca-header-logo"', $html);
 });
 
 /**
@@ -162,12 +169,3 @@ function gca_get_breadcrumb_items(): array
 
     return $items;
 }
-
-add_action('after_setup_theme', function (): void {
-    add_theme_support('custom-logo', [
-        'height'      => 80,
-        'width'       => 260,
-        'flex-height' => true,
-        'flex-width'  => true,
-    ]);
-});
