@@ -81,10 +81,9 @@ RUN chown -R www-data:www-data /var/www/html/wp-content || true
 # - Support X-Forwarded-Proto for HTTPS behind proxies
 #
 # NOTE: In Dockerfile ENV, "$" expands, so PHP $_SERVER must be written as $$_SERVER
-ENV WORDPRESS_CONFIG_EXTRA="\
-define('DISALLOW_FILE_EDIT', true); \
-if (isset($$_SERVER['HTTP_X_FORWARDED_PROTO']) && $$_SERVER['HTTP_X_FORWARDED_PROTO'] === 'https') { $$_SERVER['HTTPS'] = 'on'; } \
-"
+COPY docker/wp-config-extra.php /opt/wp-config-extra.php
+ENV WORDPRESS_CONFIG_EXTRA="require '/opt/wp-config-extra.php';"
+
 
 HEALTHCHECK --interval=30s --timeout=5s --start-period=30s --retries=3 \
   CMD curl -fsS http://localhost/wp-login.php >/dev/null || exit 1
