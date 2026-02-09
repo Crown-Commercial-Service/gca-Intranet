@@ -40,8 +40,9 @@ add_action('after_setup_theme', function (): void {
     add_theme_support('editor-styles');
 
     register_nav_menus([
-        'primary' => __('Primary Navigation', 'gca-intranet'),
-        'footer'  => __('Footer Navigation', 'gca-intranet'),
+        'primary'      => __('Primary Navigation', 'gca-intranet'),
+        'footer_legal' => __('Footer legal links', 'gca-intranet'),
+        'footer'       => __('Footer Navigation (legacy)', 'gca-intranet'),
     ]);
 });
 
@@ -60,11 +61,16 @@ add_filter('get_custom_logo', function (string $html): string {
  */
 add_action('wp_enqueue_scripts', function (): void {
 
+    // Cache-bust CSS on every build by using file modified time.
+    $css_rel_path = '/assets/dist/gca-theme.css';
+    $css_abs_path = get_template_directory() . $css_rel_path;
+    $css_ver      = file_exists($css_abs_path) ? (string) filemtime($css_abs_path) : '1.0.0';
+
     wp_enqueue_style(
         'gca-theme',
-        get_template_directory_uri() . '/assets/dist/gca-theme.css',
+        get_template_directory_uri() . $css_rel_path,
         [],
-        '1.0.0'
+        $css_ver
     );
 
     wp_enqueue_script(

@@ -1,7 +1,432 @@
-.utility-nav .nav-link,
-.site-footer .nav-link {
+/* =========================
+   HEADER + FOOTER (responsive layout)
+   ========================= */
+
+/* Sticky footer */
+html {
+  height: 100%;
+}
+
+body {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.site-main {
+  flex: 1 0 auto;
+}
+.site-footer {
+  margin-top: auto;
+}
+
+/* -------------------------
+   Header
+   ------------------------- */
+
+.site-header {
+  background: #fff;
+  border-bottom: 4px solid var(--bs-primary);
+
+  /* Sizes */
+  --gca-logo-height-desktop: 6.25rem;
+  --gca-logo-height-mobile: 4.25rem;
+
+  /* Controls how far the logo sits into the left gutter on desktop */
+  --gca-logo-gap: clamp(0.75rem, 2vw, 1.5rem);
+}
+
+/* Make sure our gutter-positioned logo cannot be clipped */
+.site-header,
+.site-header .bg-white,
+.site-header .container-xxl,
+.site-header .gca-header-topbar {
+  overflow: visible;
+}
+
+.site-header .navbar {
+  border: 0 !important;
+  box-shadow: none !important;
+}
+
+.site-header a,
+.site-header a:visited {
+  color: $gca-text;
+}
+
+/* Logo sizing */
+.custom-logo-link {
+  display: inline-flex;
+  align-items: flex-start;
+}
+
+.gca-header-logo,
+.custom-logo {
+  height: var(--gca-logo-height-desktop);
+  width: auto;
+  max-width: 100%;
+  display: block;
+}
+
+/* Utility links */
+.utility-nav .nav {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: nowrap;
+  align-items: center;
+  gap: 2.5rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.utility-nav .nav-link {
   padding: 0;
   color: $gca-text;
+  text-decoration: underline;
+  text-underline-offset: 0.1875rem;
+  text-decoration-thickness: 0.0625rem;
+  white-space: nowrap;
+
+  &:hover,
+  &:focus-visible {
+    text-decoration-thickness: 0.125rem;
+  }
+}
+
+/* Search button icon */
+.site-search .btn svg {
+  color: #fff;
+  fill: currentColor;
+  display: block;
+}
+
+/* Primary nav spacing */
+.site-header .navbar {
+  padding-top: 0;
+  padding-bottom: 0;
+}
+
+.site-header .navbar .navbar-nav {
+  gap: 2.25rem;
+}
+
+.site-header .navbar .navbar-nav .nav-link {
+  padding-top: 0.5rem;
+  padding-bottom: 0.5rem;
+}
+
+/* Dropdown/menu styling */
+.site-header .dropdown-menu {
+  border: 1px solid $gca-border-grey;
+  border-radius: 0.625rem;
+  padding: 0.5rem;
+  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.12);
+  min-width: 14rem;
+}
+
+.site-header .dropdown-item {
+  border-radius: 0.5rem;
+  padding: 0.75rem 1rem;
+  color: $gca-text;
+
+  &:hover,
+  &:focus {
+    background: rgba($gca-action-blue, 0.12);
+    color: $gca-text;
+  }
+
+  &:focus-visible {
+    outline: 2px solid $gca-action-blue;
+    outline-offset: 2px;
+  }
+}
+
+/* =========================
+   Dropdown chevrons (outlined V) to the RIGHT of text
+   - Standard Bootstrap dropdown-toggle
+   - And split-toggle walker (.gca-split-dd / .gca-dd-toggle)
+   ========================= */
+
+/* Standard dropdown toggle link */
+.site-header .navbar-nav .dropdown-toggle {
+  display: inline-flex;
+  align-items: center;
+  white-space: nowrap;
+}
+
+.site-header .navbar-nav .dropdown-toggle::after {
+  content: '';
+  display: inline-block;
+  width: 0.45rem;
+  height: 0.45rem;
+  margin-left: 0.45rem;
+
+  border-right: 2px solid currentColor;
+  border-bottom: 2px solid currentColor;
+
+  transform: rotate(45deg) translateY(-1px);
+  transform-origin: center;
+
+  /* neutralise bootstrap triangle borders */
+  border-top: 0 !important;
+  border-left: 0 !important;
+}
+
+/* Split-toggle (if your navwalker uses a separate toggle element) */
+.site-header .gca-split-dd {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.site-header .gca-parent-link {
+  display: inline-flex;
+  align-items: center;
+  white-space: nowrap;
+}
+
+/* Minimal inline toggle, no box, no wrap underneath */
+.site-header .gca-dd-toggle {
+  display: inline-flex !important;
+  align-items: center;
+  justify-content: center;
+  width: auto !important;
+  background: transparent !important;
+  border: 0 !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  line-height: 1;
+}
+
+/* Hide any built-in icon and use our chevron */
+.site-header .gca-dd-toggle svg {
+  display: none !important;
+}
+
+.site-header .gca-dd-toggle::after {
+  content: '';
+  display: inline-block;
+  width: 0.45rem;
+  height: 0.45rem;
+
+  border-right: 2px solid currentColor;
+  border-bottom: 2px solid currentColor;
+
+  transform: rotate(45deg) translateY(-1px);
+  transform-origin: center;
+}
+
+/* =========================
+   HEADER LAYOUT
+   Desktop:
+     - Boxed content is 2 equal rows (utility+search) / (nav)
+     - Logo sits in the left gutter (outside boxed layout), robust across widths
+   Mobile:
+     - Row 1: logo left | utility right (stacked links)
+     - Row 2: search left | toggle right
+   ========================= */
+
+/* Base topbar */
+.gca-header-topbar {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 2.5rem;
+  position: relative; /* anchor gutter logo */
+}
+
+/* Hamburger styling */
+.gca-header-toggler {
+  flex: 0 0 auto;
+  border: 1px solid rgba(0, 0, 0, 0.25);
+  border-radius: 0.375rem;
+  padding: 0.375rem 0.5rem;
+}
+
+.gca-header-toggler .navbar-toggler-icon {
+  width: 1.5rem;
+  height: 1.5rem;
+  background-image: none;
+  position: relative;
+  display: inline-block;
+}
+
+.gca-header-toggler .navbar-toggler-icon::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 50%;
+  height: 2px;
+  background: currentColor;
+  transform: translateY(-50%);
+  box-shadow:
+    0 -0.4rem 0 currentColor,
+    0 0.4rem 0 currentColor;
+}
+
+/* Desktop */
+@media (min-width: 992px) {
+  /* 2 equal-height rows matching the logo height */
+  .gca-header-shell {
+    display: grid;
+    height: var(--gca-logo-height-desktop);
+    grid-template-rows: 1fr 1fr;
+  }
+
+  .gca-header-topbar {
+    height: 100%;
+    align-items: center;
+  }
+
+  .gca-header-nav {
+    height: 100%;
+    margin-top: 0;
+    display: flex;
+    align-items: center;
+  }
+
+  .site-search {
+    flex: 0 0 28rem;
+    max-width: 28rem;
+  }
+
+  .gca-header-toggler {
+    display: none;
+  }
+
+  /* Robust gutter logo positioning:
+     align to the container edge, then move left by its own width + gap */
+  .gca-header-logo-col {
+    position: absolute;
+    top: 0;
+    left: 0;
+    transform: translateX(calc(-100% - var(--gca-logo-gap)));
+
+    height: var(--gca-logo-height-desktop);
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    z-index: 10;
+  }
+
+  .gca-header-logo-col .site-branding {
+    display: flex;
+    justify-content: flex-end;
+  }
+
+  /* Tighten nav link padding so it fits nicely in lower half */
+  .site-header .navbar .navbar-nav .nav-link {
+    padding-top: 0.25rem;
+    padding-bottom: 0.25rem;
+  }
+}
+
+/* Mobile */
+@media (max-width: 991.98px) {
+  /* Smaller logo on mobile */
+  .gca-header-logo,
+  .custom-logo {
+    height: var(--gca-logo-height-mobile);
+  }
+
+  /* Wrap into two lines:
+     line 1: logo left + utility right
+     line 2: search left + toggle right */
+  .gca-header-topbar {
+    flex-wrap: wrap;
+    align-items: flex-start;
+    align-content: flex-start;
+    column-gap: 1rem;
+    row-gap: 0.5rem;
+    margin-bottom: 0.5rem;
+  }
+
+  /* Logo in flow on mobile, aligned left */
+  .gca-header-logo-col {
+    position: static;
+    order: 1;
+  }
+
+  /* Utility top-right */
+  .utility-nav {
+    order: 2;
+    margin-left: auto;
+    text-align: right;
+  }
+
+  /* Force new line after utility (so search/toggle are row 2) */
+  .gca-header-topbar::after {
+    content: '';
+    flex-basis: 100%;
+    order: 3;
+  }
+
+  /* Utility links stack on mobile */
+  .utility-nav .nav {
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 0.25rem;
+  }
+
+  /* Row 2: search grows, toggle stays right */
+  .site-search {
+    order: 4;
+    flex: 1 1 auto;
+    max-width: none;
+    width: auto;
+    min-width: 0;
+  }
+
+  .site-search .input-group {
+    width: 100%;
+  }
+
+  .gca-header-toggler {
+    order: 5;
+    margin-left: 0.75rem;
+  }
+
+  .gca-header-nav {
+    margin-top: 0.75rem;
+  }
+}
+
+/* -------------------------
+   Footer
+   ------------------------- */
+
+.site-footer {
+  background: $gca-footer-bg;
+  border-top: 1rem solid $gca-accent-lime;
+  padding-block: 2rem;
+}
+
+.site-footer a,
+.site-footer a:visited {
+  color: $gca-text;
+}
+
+.site-footer .gca-footer-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 3rem;
+  flex-wrap: wrap;
+}
+
+.site-footer .footer-legal-nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2.5rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.site-footer .footer-legal-nav a {
+  padding: 0;
   text-decoration: underline;
   text-underline-offset: 0.1875rem;
   text-decoration-thickness: 0.0625rem;
@@ -12,43 +437,64 @@
   }
 }
 
-.navbar .navbar-nav .nav-link {
-  padding-top: 0.75rem;
-  padding-bottom: 0.75rem;
+/* Crest + copyright centered */
+.site-footer .gca-footer-brand {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.6rem;
+  text-align: center;
+
+  margin-left: auto;
+  margin-right: auto;
 }
 
-.navbar .navbar-nav .gca-dd-toggle {
-  padding-left: 0.25rem;
-  padding-right: 0.25rem;
-  border: 0;
-  background: transparent;
+.site-footer img.gca-footer-crest {
+  height: 4.75rem;
+  width: auto;
+  max-width: 100%;
+  display: block;
+}
 
-  &:focus-visible {
-    outline: 2px solid currentColor;
-    outline-offset: 2px;
-    border-radius: 0.25rem;
+.site-footer .footer-crown-link {
+  white-space: nowrap;
+}
+
+@media (max-width: 991.98px) {
+  .site-footer .gca-footer-row {
+    flex-direction: column !important;
+    align-items: center !important;
+    justify-content: center !important;
+    text-align: center !important;
+    gap: 1.5rem;
+  }
+
+  .site-footer .footer-legal-nav {
+    justify-content: center;
+    gap: 1.75rem;
+  }
+
+  .site-footer img.gca-footer-crest {
+    height: 4rem;
   }
 }
 
-.site-footer {
-  background: $gca-footer-bg;
-  border-top: 0.625rem solid $gca-accent-lime;
-  padding-block: 2rem;
+@media (min-width: 768px) {
+  .site-footer .gca-footer-brand {
+    margin-left: auto;
+    margin-right: 0;
+    align-items: flex-end;
+    text-align: right;
+  }
 }
 
-.custom-logo-link {
-  display: inline-flex;
-  align-items: center;
+.site-header a:focus-visible,
+.site-footer a:focus-visible {
+  outline: 2px solid $gca-action-blue;
+  outline-offset: 2px;
 }
-
-.gca-header-logo {
-  height: 3.75rem; /* tweak if needed */
-  width: auto;
-  display: block;
-}
-
-.gca-footer-crest {
-  height: 4.5rem; /* tweak if needed */
-  width: auto;
-  display: block;
+@media (min-width: 992px) {
+  .gca-header-logo-col {
+    pointer-events: auto;
+  } /* default */
 }
