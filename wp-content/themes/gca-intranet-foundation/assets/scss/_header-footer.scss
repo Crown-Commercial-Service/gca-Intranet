@@ -396,7 +396,10 @@ body {
 @media (min-width: 992px) and (max-width: 1599.98px) {
   .gca-header-logo-col {
     transform: none; /* keep it inside the container */
+    position:absolute;
+    left:6.25rem)
   }
+  .site-header .navbar {padding-left: 6.25rem;}
 }
 
 /* -------------------------
