@@ -1,0 +1,24 @@
+/*
+Theme Name: GCA Intranet
+Template: gca-intranet-foundation
+Version: 1.0.0
+Text Domain: gca-intranet
+*/
+
+/*Uncomment this to move the 'Skip to main content' link off-screen visually but still comply with AAA Accesibilty*/
+
+.skip-link {
+  position: absolute;
+  top: -40px;
+  left: 0;
+  background: #ffffff;
+  color: #000000;
+  padding: 8px 12px;
+  z-index: 1000;
+  text-decoration: none;
+}
+
+.skip-link:focus,
+.skip-link:focus-visible {
+  top: 0;
+}

@@ -1,0 +1,41 @@
+/* Utility + footer links: underline like design */
+.utility-nav .nav-link,
+.site-footer .nav-link {
+  padding: 0;
+  text-decoration-line: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 3px;
+}
+
+/* Stronger underline on hover/focus for clarity */
+.utility-nav .nav-link:hover,
+.utility-nav .nav-link:focus-visible,
+.site-footer .nav-link:hover,
+.site-footer .nav-link:focus-visible {
+  text-decoration-thickness: 2px;
+}
+
+/* Primary nav spacing (top row) */
+.navbar .navbar-nav .nav-link {
+  padding-top: 0.75rem;
+  padding-bottom: 0.75rem;
+}
+
+/* Split toggle button styling */
+.navbar .navbar-nav .gca-dd-toggle {
+  padding-left: 0.25rem;
+  padding-right: 0.25rem;
+  border: 0;
+  background: transparent;
+}
+
+.navbar .navbar-nav .gca-dd-toggle:focus-visible {
+  outline: 2px solid currentColor;
+  outline-offset: 2px;
+  border-radius: 0.25rem;
+}
+
+/* Keep parent link clickable area generous */
+.navbar .navbar-nav .nav-item.dropdown > .nav-link:first-child {
+  padding-right: 0.25rem;
+}

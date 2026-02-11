@@ -1,0 +1,238 @@
+/*
+Theme Name: GCA Intranet Foundation
+Description: Parent foundation theme for GCA Intranet (Bootstrap 5.3, WCAG AAA)
+Version: 1.0.0
+Text Domain: gca-intranet
+*/
+/* AAA focus visibility + skip-link support */
+:focus-visible {
+  outline: 3px solid currentColor;
+  outline-offset: 3px;
+}
+
+.skip-link {
+  position: absolute;
+  top: -40px;
+  left: 0;
+  background: #fff;
+  padding: 8px 12px;
+  z-index: 1000;
+}
+
+.skip-link:focus {
+  top: 0;
+}
+
+/* Navigation accessibility enhancements */
+.navbar a:focus-visible {
+  outline: 3px solid currentColor;
+  outline-offset: 4px;
+}
+
+.navbar-toggler:focus-visible {
+  outline: 3px solid currentColor;
+  outline-offset: 4px;
+}
+/* --------------------------------------------------
+   Minimal layout & readability (design-agnostic)
+   -------------------------------------------------- */
+
+/*
+Purpose:
+- Provide sensible defaults for readability
+- Avoid browser quirks
+- Do NOT impose visual design decisions
+*/
+
+html {
+  box-sizing: border-box;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: inherit;
+}
+
+body {
+  margin: 0;
+  line-height: 1.6;
+}
+
+/* Main content area */
+main {
+  display: block;
+  max-width: 72ch; /* readable line length */
+  padding: 1.5rem;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+/* Prevent content touching screen edges on small devices */
+@media (max-width: 600px) {
+  main {
+    padding: 1rem;
+  }
+}
+
+/* Basic spacing for common elements */
+h1,
+h2,
+h3,
+h4,
+h5,
+h6,
+p,
+ul,
+ol {
+  margin-top: 0;
+  margin-bottom: 1rem;
+}
+
+/* Avoid list indentation surprises */
+ul,
+ol {
+  padding-left: 1.25rem;
+}
+
+/* --------------------------------------------------
+   Link styles (Bootstrap-aligned, WCAG AAA)
+   -------------------------------------------------- */
+
+/*
+Intent:
+- Align GOV.UK link behaviour with Bootstrap defaults
+- Preserve strong focus visibility
+- Avoid framework conflicts
+- Remain design-agnostic
+*/
+
+/* Bootstrap-aligned link tokens */
+:root {
+  --link-color: #1d70b8; /* GOV.UK blue */
+  --link-hover-color: #003078; /* GOV.UK dark blue */
+  --link-active-color: #0b0c0c; /* GOV.UK black */
+  --link-visited-color: #4c2c92;
+  --link-focus-bg: #fd0; /* GOV.UK focus yellow */
+}
+
+/* Base link behaviour */
+a {
+  color: var(--link-color);
+  text-decoration: underline;
+  text-decoration-thickness: max(1px, 0.0625rem);
+  text-underline-offset: 0.1578em;
+}
+
+a:visited {
+  color: var(--link-visited-color);
+}
+
+a:hover {
+  color: var(--link-hover-color);
+  text-decoration-thickness: max(3px, 0.1875rem, 0.12em);
+  text-decoration-skip-ink: none;
+}
+
+a:active {
+  color: var(--link-active-color);
+}
+
+/* Focus state — AAA compliant */
+a:focus-visible {
+  outline: 3px solid transparent;
+  color: var(--link-active-color);
+  background-color: var(--link-focus-bg);
+  box-shadow: 0 -2px var(--link-focus-bg), 0 4px var(--link-active-color);
+  text-decoration: none;
+}
+
+/* ---------------------------------------------
+   Link variants (Bootstrap-style utilities)
+   --------------------------------------------- */
+
+/* Muted links */
+.link-muted {
+  color: #505a5f;
+}
+
+.link-muted:hover,
+.link-muted:active,
+.link-muted:focus-visible {
+  color: #0b0c0c;
+}
+
+/* Text-colour links (inherit text colour) */
+.link-text {
+  color: inherit;
+}
+
+.link-text:hover {
+  color: rgba(11, 12, 12, 0.99);
+}
+
+.link-text:active,
+.link-text:focus-visible {
+  color: #0b0c0c;
+}
+
+/* Inverse links (for dark backgrounds) */
+.link-inverse {
+  color: #ffffff;
+}
+
+.link-inverse:hover,
+.link-inverse:active {
+  color: rgba(255, 255, 255, 0.99);
+}
+
+.link-inverse:focus-visible {
+  color: #0b0c0c;
+}
+
+/* No underline unless interactive */
+.link-no-underline:not(:hover):not(:focus-visible):not(:active) {
+  text-decoration: none;
+}
+
+/* No visited-state links */
+.link-no-visited:link,
+.link-no-visited:visited {
+  color: var(--link-color);
+}
+
+.link-no-visited:hover {
+  color: var(--link-hover-color);
+}
+
+.link-no-visited:active,
+.link-no-visited:focus-visible {
+  color: var(--link-active-color);
+}
+
+/* Image links */
+.link-image {
+  display: inline-block;
+  line-height: 0;
+  text-decoration: none;
+}
+
+.link-image:focus-visible {
+  outline: 3px solid transparent;
+  box-shadow: 0 0 0 4px var(--link-focus-bg), 0 0 0 8px var(--link-active-color);
+}
+
+/* ---------------------------------------------
+   Print behaviour (accessibility)
+   --------------------------------------------- */
+
+@media print {
+  a[href^="/"]::after,
+  a[href^="http://"]::after,
+  a[href^="https://"]::after
+  {
+    content: ' (' attr(href) ')';
+    font-size: 90%;
+    word-wrap: break-word;
+  }
+}
