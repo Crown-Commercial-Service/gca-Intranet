@@ -95,3 +95,4 @@ ENTRYPOINT ["wordpress-init.sh"]
 CMD ["apache2-foreground"]
 
 EXPOSE 8080
+
