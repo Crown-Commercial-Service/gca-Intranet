@@ -392,6 +392,12 @@ body {
     margin-top: 0.75rem;
   }
 }
+/* Stop gutter-logo going off-screen on smaller desktops (e.g. MacBook Air) */
+@media (min-width: 992px) and (max-width: 1599.98px) {
+  .gca-header-logo-col {
+    transform: none; /* keep it inside the container */
+  }
+}
 
 /* -------------------------
    Footer
