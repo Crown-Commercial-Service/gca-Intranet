@@ -1,4 +1,5 @@
 # gca-Intranet — WordPress (Docker) Dev Environment
+# gca-Intranet — WordPress Intranet (Themes + Docker Dev Environment)
 
 Local WordPress stack (Docker Compose) with wp-cli auto-install and GCA Intranet themes.
 
