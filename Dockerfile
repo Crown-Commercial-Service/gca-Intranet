@@ -52,6 +52,10 @@ RUN printf "%s\n" \
   > /etc/apache2/conf-available/remoteip.conf \
   && a2enconf remoteip
 
+# Switch Apache to listen on 8080 instead of 80 (for non-root/service user on Fargate)
+RUN sed -i 's/Listen 80/Listen 8080/' /etc/apache2/ports.conf \
+ && sed -i 's/<VirtualHost \*:80>/<VirtualHost *:8080>/' /etc/apache2/sites-available/000-default.conf
+
 # Copy WP content (themes/plugins) into the image
 COPY wp-content/ /var/www/html/wp-content/
 
@@ -84,11 +88,11 @@ RUN chown -R www-data:www-data /var/www/html/wp-content || true
 COPY docker/wp-config-extra.php /opt/wp-config-extra.php
 ENV WORDPRESS_CONFIG_EXTRA="require '/opt/wp-config-extra.php';"
 
-
 HEALTHCHECK --interval=30s --timeout=5s --start-period=30s --retries=3 \
-  CMD curl -fsS http://localhost/wp-login.php >/dev/null || exit 1
+  CMD curl -fsS http://localhost:8080/wp-login.php >/dev/null || exit 1
 
 ENTRYPOINT ["wordpress-init.sh"]
 CMD ["apache2-foreground"]
 
-EXPOSE 80
+EXPOSE 8080
+
