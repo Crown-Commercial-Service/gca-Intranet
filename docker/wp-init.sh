@@ -1,5 +1,5 @@
 #!/bin/sh
-set -e
+set -eu
 
 cd /var/www/html
 
@@ -13,7 +13,8 @@ fi
 mkdir -p wp-content/languages wp-content/upgrade wp-content/uploads || true
 
 # 2) Seed wp-content into volume if empty (covers EFS + also covers cases where entrypoint didn’t run)
-if [ -d /opt/wp-content-seed ] && [ ! -f /var/www/html/wp-content/.seeded ]; then
+# Align with wordpress-init.sh: only seed if themes dir isn't already present (common signal EFS is empty)
+if [ -d /opt/wp-content-seed ] && [ ! -f /var/www/html/wp-content/.seeded ] && [ ! -d /var/www/html/wp-content/themes ]; then
   echo "Seeding wp-content from /opt/wp-content-seed..."
   cp -a /opt/wp-content-seed/. /var/www/html/wp-content/ 2>/dev/null || true
   touch /var/www/html/wp-content/.seeded || true
@@ -44,8 +45,20 @@ if [ ! -f wp-config.php ]; then
     --dbname="$WORDPRESS_DB_NAME" \
     --dbuser="$WORDPRESS_DB_USER" \
     --dbpass="$WORDPRESS_DB_PASSWORD" \
-    --dbhost="$WORDPRESS_DB_HOST"
+    --dbhost="$WORDPRESS_DB_HOST" \
+    --extra-php="require '/opt/wp-config-extra.php';"
 fi
+
+# 4b) Wait for DB to be usable via WP (credentials/schema ready)
+i=0
+until wp db check --allow-root >/dev/null 2>&1; do
+  i=$((i+1))
+  if [ "$i" -gt 60 ]; then
+    echo "Timed out waiting for wp db check"
+    exit 1
+  fi
+  sleep 2
+done
 
 # 5) Install WordPress (idempotent)
 SITE_URL="${WP_HOME:-${WP_URL:-http://localhost:8080}}"
@@ -57,17 +70,18 @@ if ! wp core is-installed --allow-root >/dev/null 2>&1; then
     --title="${WP_TITLE:-GCA Intranet}" \
     --admin_user="$WP_ADMIN_USER" \
     --admin_password="$WP_ADMIN_PASSWORD" \
-    --admin_email="$WP_ADMIN_EMAIL"
+    --admin_email="$WP_ADMIN_EMAIL" \
+    --skip-email
 else
   echo "WordPress already installed."
 fi
 
 # 6) Apply URLs if provided
-[ -n "$WP_HOME" ] && wp option update home "$WP_HOME" --allow-root || true
-[ -n "$WP_SITEURL" ] && wp option update siteurl "$WP_SITEURL" --allow-root || true
+[ -n "${WP_HOME:-}" ] && wp option update home "$WP_HOME" --allow-root || true
+[ -n "${WP_SITEURL:-}" ] && wp option update siteurl "$WP_SITEURL" --allow-root || true
 
 # 7) Activate theme + permalinks
-[ -n "$WP_THEME" ] && wp theme activate "$WP_THEME" --allow-root || true
+[ -n "${WP_THEME:-}" ] && wp theme activate "$WP_THEME" --allow-root || true
 wp rewrite structure "/%postname%/" --allow-root || true
 wp rewrite flush --allow-root || true
 
@@ -75,3 +89,5 @@ wp rewrite flush --allow-root || true
 chown -R www-data:www-data /var/www/html/wp-content 2>/dev/null || true
 
 echo "INIT DONE"
+
+
