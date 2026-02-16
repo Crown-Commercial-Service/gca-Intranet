@@ -61,7 +61,15 @@ until wp db check --allow-root >/dev/null 2>&1; do
 done
 
 # 5) Install WordPress (idempotent)
-SITE_URL="${WP_HOME:-${WP_URL:-http://localhost:8080}}"
+# Prefer explicit URL vars; on AWS require them to avoid installing as http://localhost:8080
+SITE_URL="${WP_HOME:-${WP_SITEURL:-${WP_URL:-}}}"
+if [ -z "$SITE_URL" ]; then
+  if [ "${WP_ENV:-}" = "aws" ]; then
+    echo "ERROR: set WP_HOME or WP_SITEURL for init on AWS (e.g. https://dev.intranet.gca.gov.uk)"
+    exit 1
+  fi
+  SITE_URL="http://localhost:8080"
+fi
 
 if ! wp core is-installed --allow-root >/dev/null 2>&1; then
   echo "Installing WordPress..."
@@ -72,11 +80,15 @@ if ! wp core is-installed --allow-root >/dev/null 2>&1; then
     --admin_password="$WP_ADMIN_PASSWORD" \
     --admin_email="$WP_ADMIN_EMAIL" \
     --skip-email
+
+  # After install, set canonical URLs explicitly (prevents mixed http/https)
+  wp option update home "$SITE_URL" --allow-root || true
+  wp option update siteurl "$SITE_URL" --allow-root || true
 else
   echo "WordPress already installed."
 fi
 
-# 6) Apply URLs if provided
+# 6) Apply URLs if provided (override DB)
 [ -n "${WP_HOME:-}" ] && wp option update home "$WP_HOME" --allow-root || true
 [ -n "${WP_SITEURL:-}" ] && wp option update siteurl "$WP_SITEURL" --allow-root || true
 
@@ -89,5 +101,3 @@ wp rewrite flush --allow-root || true
 chown -R www-data:www-data /var/www/html/wp-content 2>/dev/null || true
 
 echo "INIT DONE"
-
-
