@@ -1,6 +1,4 @@
 <?php
-define('DISALLOW_FILE_EDIT', true);
-
 /**
  * Allow setting canonical URLs from env (useful for AWS ALB / CloudFront / ECS)
  */
@@ -13,9 +11,12 @@ if (getenv('WP_SITEURL') && !defined('WP_SITEURL')) {
 
 /**
  * Respect HTTPS when behind a reverse proxy / load balancer
+ * - Prevents redirects to http://...:8080 when ALB terminates TLS.
  */
-if (!empty($_SERVER['HTTP_X_FORWARDED_PROTO']) && $_SERVER['HTTP_X_FORWARDED_PROTO'] === 'https') {
+$xfp = $_SERVER['HTTP_X_FORWARDED_PROTO'] ?? '';
+$xfport = $_SERVER['HTTP_X_FORWARDED_PORT'] ?? '';
+
+if (($xfp && stripos($xfp, 'https') === 0) || $xfport === '443') {
     $_SERVER['HTTPS'] = 'on';
-    // Optional (safe behind proxy): uncomment if you want admin forced to SSL when proxy says https
-    // if (!defined('FORCE_SSL_ADMIN')) define('FORCE_SSL_ADMIN', true);
+    $_SERVER['SERVER_PORT'] = 443;
 }

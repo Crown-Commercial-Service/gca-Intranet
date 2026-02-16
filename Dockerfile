@@ -52,6 +52,13 @@ RUN printf "%s\n" \
   > /etc/apache2/conf-available/remoteip.conf \
   && a2enconf remoteip
 
+# Respect ALB/CloudFront forwarded proto so WP doesn't redirect to http://...:8080
+RUN printf "%s\n" \
+  "SetEnvIf X-Forwarded-Proto https HTTPS=on" \
+  "SetEnvIf X-Forwarded-Port 443 HTTPS=on" \
+  > /etc/apache2/conf-available/forwarded-ssl.conf \
+  && a2enconf forwarded-ssl
+
 # Switch Apache to listen on 8080 instead of 80 (for non-root/service user on Fargate)
 RUN sed -i 's/Listen 80/Listen 8080/' /etc/apache2/ports.conf \
  && sed -i 's/<VirtualHost \*:80>/<VirtualHost *:8080>/' /etc/apache2/sites-available/000-default.conf
@@ -95,4 +102,3 @@ ENTRYPOINT ["wordpress-init.sh"]
 CMD ["apache2-foreground"]
 
 EXPOSE 8080
-
