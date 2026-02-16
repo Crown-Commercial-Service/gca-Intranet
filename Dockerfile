@@ -59,8 +59,9 @@ RUN sed -i 's/Listen 80/Listen 8080/' /etc/apache2/ports.conf \
 # Redirect config
 RUN printf "%s\n" \
   "SetEnvIf X-Forwarded-Proto https HTTPS=on" \
-  > /etc/apache2/conf-available/forwarded-ssl.conf \
-  && a2enconf forwarded-ssl
+  "UseCanonicalPhysicalPort Off" \
+  > /etc/apache2/conf-available/proxy-ssl.conf \
+  && a2enconf proxy-ssl
 
 # Copy WP content (themes/plugins) into the image
 COPY wp-content/ /var/www/html/wp-content/
