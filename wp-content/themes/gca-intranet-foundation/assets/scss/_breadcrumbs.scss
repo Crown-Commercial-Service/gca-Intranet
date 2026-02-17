@@ -1,0 +1,29 @@
+.gca-breadcrumbs {
+    padding: 10px 0;
+    background-color: $gca-cream;
+
+    .breadcrumb-item {
+        a {
+            color: black;
+        }
+        color: black;
+        position: relative; 
+        display: inline-flex;
+        align-items: center;
+
+        & + .breadcrumb-item:before {
+            content: ""; 
+            display: inline-block; 
+            
+            border-right: 2px solid black;
+            border-top: 2px solid black;
+            
+            height: 0.3em;
+            width: 0.3em;
+            margin-right: 0.5rem;
+            
+            transform: rotate(45deg); 
+            padding: 0;
+        }
+    }
+}
