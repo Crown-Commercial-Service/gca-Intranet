@@ -28,11 +28,9 @@ services:
       WP_HOME: ${WP_HOME}
       WP_SITEURL: ${WP_SITEURL}
     volumes:
-      # 1. Mount the named volume FIRST (the "EFS" simulation)
       - wp_content:/var/www/html/wp-content
-      
-      # 2. Mount your local theme SECOND (this "overlays" your code on top of the volume)
       - ./wp-content/themes/gca-intranet-foundation:/var/www/html/wp-content/themes/gca-intranet-foundation
+      - ./wp-content/plugins/gca-custom:/var/www/html/wp-content/plugins/gca-custom
     restart: unless-stopped
 
   # Run this as a one-off initializer:
