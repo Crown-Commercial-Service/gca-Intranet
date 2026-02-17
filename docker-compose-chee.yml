@@ -1,0 +1,71 @@
+services:
+  db:
+    image: mysql:8.0
+    ports:
+      - '3307:3306'
+    environment:
+      MYSQL_DATABASE: ${DB_NAME}
+      MYSQL_USER: ${DB_USER}
+      MYSQL_PASSWORD: ${DB_PASSWORD}
+      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD}
+    volumes:
+      - db_data:/var/lib/mysql
+    restart: unless-stopped
+
+  wordpress:
+    build: .
+    depends_on:
+      - db
+    ports:
+      - '${WP_PORT:-8080}:8080'
+    environment:
+      WORDPRESS_DB_HOST: ${DB_HOST}
+      WORDPRESS_DB_NAME: ${DB_NAME}
+      WORDPRESS_DB_USER: ${DB_USER}
+      WORDPRESS_DB_PASSWORD: ${DB_PASSWORD}
+
+      # Passed through so wp-config-extra.php can define WP_HOME / WP_SITEURL
+      WP_HOME: ${WP_HOME}
+      WP_SITEURL: ${WP_SITEURL}
+    volumes:
+      # 1. Mount the named volume FIRST (the "EFS" simulation)
+      - wp_content:/var/www/html/wp-content
+      
+      # 2. Mount your local theme SECOND (this "overlays" your code on top of the volume)
+      - ./wp-content/themes/gca-intranet-foundation:/var/www/html/wp-content/themes/gca-intranet-foundation
+    restart: unless-stopped
+
+  # Run this as a one-off initializer:
+  #   docker compose --env-file .env run --rm init
+  #
+  # NOTE:
+  # - Uses the SAME image as the wordpress service so WordPress core exists at /var/www/html
+  # - Uses /usr/local/bin/wp-init.sh (committed in this repo) instead of an inline command
+  # - This matches how you’ll run a one-off ECS task on AWS as well
+  init:
+    build: .
+    depends_on:
+      - db
+    environment:
+      WORDPRESS_DB_HOST: ${DB_HOST}
+      WORDPRESS_DB_NAME: ${DB_NAME}
+      WORDPRESS_DB_USER: ${DB_USER}
+      WORDPRESS_DB_PASSWORD: ${DB_PASSWORD}
+
+      WP_URL: ${WP_URL}
+      WP_TITLE: ${WP_TITLE}
+      WP_ADMIN_USER: ${WP_ADMIN_USER}
+      WP_ADMIN_PASSWORD: ${WP_ADMIN_PASSWORD}
+      WP_ADMIN_EMAIL: ${WP_ADMIN_EMAIL}
+      WP_THEME: ${WP_THEME}
+      WP_HOME: ${WP_HOME}
+      WP_SITEURL: ${WP_SITEURL}
+    volumes:
+      - wp_content:/var/www/html/wp-content
+    working_dir: /var/www/html
+    command: ['/bin/sh', '-lc', '/usr/local/bin/wp-init.sh']
+    restart: 'no'
+
+volumes:
+  db_data:
+  wp_content:

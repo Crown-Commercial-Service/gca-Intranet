@@ -1,5 +1,10 @@
 .env
 .DS_Store
+.vscode/
+
 docker-compose.yml.save
 wp-content/uploads/
 wp-content/cache/
+wp-content/themes/gca-intranet-foundation/assets/dist
+
+mysql_data
