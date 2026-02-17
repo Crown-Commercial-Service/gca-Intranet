@@ -1,4 +1,8 @@
 @import 'tokens';
+
+// Import GOV.UK Frontend
+@import "../../node_modules/govuk-frontend/dist/govuk/all";
+
 @import '../../node_modules/bootstrap/scss/bootstrap';
 @import 'typography';
 @import 'header-footer';
