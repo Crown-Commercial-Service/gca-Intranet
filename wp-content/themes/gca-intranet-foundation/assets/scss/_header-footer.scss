@@ -25,15 +25,11 @@ body {
    ------------------------- */
 
 .site-header {
-  background: #fff;
-  border-bottom: 0; /* moved to .gca-header-shell so it stays under ALL header content */
-
-  /* Sizes */
-  --gca-logo-height-desktop: 6.25rem;
-  --gca-logo-height-mobile: 4.25rem;
-
-  /* Controls how far the logo sits into the left gutter on desktop */
-  --gca-logo-gap: clamp(0.75rem, 2vw, 1.5rem);
+    background: #fff;
+    border-bottom: 4px solid var(--bs-primary);
+    --gca-logo-height-desktop: 6.25rem;
+    --gca-logo-height-mobile: 4.25rem;
+    --gca-logo-gap: clamp(0.75rem, 2vw, 1.5rem);
 }
 
 /* Blue line should sit beneath the FULL header shell (topbar + nav) */
