@@ -1,0 +1,115 @@
+/**
+ * TablePress Default CSS - Core CSS without DataTables styling.
+ *
+ * @package TablePress
+ * @subpackage Frontend CSS
+ * @author Tobias Bäthge
+ * @since 1.0.0
+ */
+
+/* Default toggle variable for LTR and RTL CSS. */
+$direction: "ltr" !default;
+
+/* Default variables for the LTR CSS. */
+$align-side: left;
+
+/* Variables for the RTL CSS. */
+@if "rtl" == $direction {
+	$align-side: right;
+}
+
+.tablepress {
+	/* Custom properties. */
+	--text-color: #111111;
+	--head-text-color: var(--text-color);
+	--head-bg-color: #d9edf7;
+	--odd-text-color: var(--text-color);
+	--odd-bg-color: #ffffff;
+	--even-text-color: var(--text-color);
+	--even-bg-color: #f9f9f9;
+	--hover-text-color: var(--text-color);
+	--hover-bg-color: #f3f3f3;
+	--border-color: #dddddd;
+	--padding: 0.5rem;
+
+	/* General table style. */
+	table-layout: auto;
+	width: 100%;
+	margin: 0 auto 1rem;
+	clear: both;
+	border-collapse: collapse;
+	border-spacing: 0;
+	border: none;
+
+	/* General table cell style. */
+	> :not(caption) > * > * {
+		padding: var(--padding);
+		border: none;
+		background: none;
+		text-align: $align-side;
+		vertical-align: top;
+		float: none !important; /* Work around themes that set `float` on `.column-1` CSS classes and similar. */
+		box-sizing: border-box;
+	}
+
+	/* Horizontal borders, except for child rows in the tbody. */
+	> :where(thead) + tbody > :where(:not(.child)) > *,
+	> tbody > * ~ :where(:not(.child)) > *,
+	> tfoot > :where(:first-child) > * {
+		border-top: 1px solid var(--border-color);
+	}
+
+	/* Row background colors. */
+	> :where(thead, tfoot) > tr > * {
+		background-color: var(--head-bg-color);
+		color: var(--head-text-color);
+		font-weight: bold;
+		word-break: normal;
+		vertical-align: middle;
+	}
+	> :where(tbody) {
+		> tr > * {
+			color: var(--text-color);
+		}
+	}
+	> :where(tbody.row-striping) {
+		> :nth-child(odd of :where(:not(.child, .dtrg-group))) { /* Ignore child and group rows. */
+			> *,
+			+ :where(.child) > * { /* Give child rows the same style. */
+				background-color: var(--odd-bg-color);
+				color: var(--odd-text-color);
+			}
+		}
+		> :nth-child(even of :where(:not(.child, .dtrg-group))) { /* Ignore child and group rows. */
+			> *,
+			+ :where(.child) > * { /* Give child rows the same style. */
+				background-color: var(--even-bg-color);
+				color: var(--even-text-color);
+			}
+		}
+	}
+	> .row-hover > tr {
+		content-visibility: auto; /* Improve rendering performance for the :has(+ .child:hover) selector below. */
+
+		&:where(:not(.dtrg-group)):hover > *, /* Ignore group rows. */
+		&:hover + :where(.child) > *, /* Give child rows the same style. */
+		&:has(+ .child:hover) > * { /* Highlight the parent row when a child row is hovered. */
+			background-color: var(--hover-bg-color);
+			color: var(--hover-text-color);
+		}
+	}
+
+	/* Reset image layout in tables. */
+	img {
+		margin: 0;
+		padding: 0;
+		border: none;
+		max-width: none;
+	}
+
+	/* Table description. */
+	&-table-description {
+		clear: both;
+		display: block;
+	}
+}

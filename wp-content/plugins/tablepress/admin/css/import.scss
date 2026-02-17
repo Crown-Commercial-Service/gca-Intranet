@@ -1,0 +1,93 @@
+/**
+ * CSS code for the "Import" screen.
+ *
+ * @package TablePress
+ * @subpackage Views CSS
+ * @author Tobias Bäthge
+ * @since 1.0.0
+ */
+
+/* Red border for form fields that have invalid values */
+#tablepress-page form .postbox:not(.no-validation-highlighting) :invalid {
+	border-color: #d63638 !important;
+	box-shadow: 0 0 0 1px #d63638;
+}
+
+#tablepress_import-import-form {
+	/* Show RadioButtons next to each other (by default the component uses VStack). */
+	.components-radio-control__group-wrapper,
+	.components-radio-control > div > .components-v-stack { /* WP < 6.7 */
+		flex-direction: row;
+		justify-content: flex-start;
+		gap: 20px;
+	}
+
+	/* ComboboxControl can only be disabled artificially. */
+	.components-disabled .components-combobox-control {
+		opacity: 0.7;
+	}
+}
+
+.file-upload-area {
+	width: 100%;
+	position: relative;
+	margin-bottom: -8px;
+
+	.dropzone {
+		background-color: #f5f5f5;
+		border: 2px dashed #ddd;
+		border-radius: 2px;
+		font-size: 18px;
+		box-sizing: border-box;
+		padding: 20px;
+		margin-bottom: 10px;
+		transition: background-color 0.3s ease-in-out;
+		width: 100%;
+		min-height: 180px;
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		justify-content: center;
+		text-align: center;
+
+		/* Print selected file names in italics. */
+		span ~ span {
+			font-style: italic;
+		}
+	}
+
+	&:hover .dropzone {
+		border: 2px dashed #cccccc;
+		background: #ffffff;
+	}
+
+	#tables-import-file-upload {
+		position: absolute;
+		width: 100%;
+		height: 100%;
+		top: 0;
+		left: 0;
+		right: 0;
+		bottom: 0;
+		opacity: 0;
+		cursor: pointer;
+		border: 1px solid transparent;
+		border-radius: 2px;
+
+		&:valid + .dropzone,
+		+ .dropzone.dragover {
+			border-color: rgba(0, 255, 0, 0.4);
+			background-color: rgba(0, 255, 0, 0.1);
+		}
+
+		/* :focus style after :valid style to allow for both. */
+		&:focus + .dropzone {
+			border-color: var(--wp-admin-theme-color);
+			outline: 2px solid #00000000;
+		}
+	}
+
+	.postbox:not(.no-validation-highlighting) & #tables-import-file-upload:invalid + .dropzone {
+		border-color: #d63638;
+	}
+}
