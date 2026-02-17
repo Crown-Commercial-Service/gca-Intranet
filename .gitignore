@@ -5,7 +5,7 @@
 docker-compose.yml.save
 wp-content/uploads/
 wp-content/cache/
-wp-content/themes/gca-intranet-foundation/assets/dist/
+wp-content/themes/gca-intranet-foundation/assets/dist/*
 
 mysql_data
 _docker-wp-content/
