@@ -102,5 +102,7 @@ HEALTHCHECK --interval=30s --timeout=5s --start-period=30s --retries=3 \
 ENTRYPOINT ["wordpress-init.sh"]
 CMD ["apache2-foreground"]
 
+USER www-data
+
 EXPOSE 8080
 
