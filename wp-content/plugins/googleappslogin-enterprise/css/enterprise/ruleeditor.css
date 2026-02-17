@@ -1,0 +1,74 @@
+
+/* For Ent rules */
+
+div#gal-ent-rulestable {
+    max-width: 1200px;
+}
+
+div#gal-ent-rulestable input.groupslist {
+    width: 300px;
+}
+
+div#gal-ent-rulestable select.roleslist {
+    width: 200px;
+}
+
+div#gal-ent-rulestable ul {
+    margin-bottom: 2px;
+}
+
+div#gal-ent-rulestable > span {
+    width: 100%;
+    display: block;
+    text-align: right;
+    position: relative;
+}
+
+div#gal-ent-rulestable li {
+    position: relative;
+}
+
+#gal-ent-rulestable .ui-sortable {
+    list-style-type: none;
+}
+#gal-ent-rulestable .ui-sortable li {
+    margin: 0 3px 3px 3px;
+    padding: 4px;
+    padding-left: 10px;
+}
+
+#gal-ent-rulestable .ui-sortable li span {
+    display: inline-block;
+
+}
+
+#gal-ent-rulestable span.ruleedit-mainspan {
+    margin-left: 25px;
+}
+
+#gal-ent-rulestable .ui-state-default a.ruledelete {
+    padding: 6px;
+
+    color:#ba4c32;
+    text-decoration: underline;
+    cursor:pointer;
+    position: absolute;
+    right: 0;
+}
+
+#gal-ent-rulestable .ui-state-default a.ruledelete:hover {
+    color:#8d341f;
+    text-decoration: none;
+}
+
+#gal-ent-rulestable span.ui-icon.ui-icon-arrowthick-2-n-s {
+    position: absolute;
+    top: 50%;
+    height: 16px;
+    margin-top: -8px;
+}
+
+#gal-ent-rulestable a.ruleadd {
+    position: absolute;
+    right: 10px;
+}
