@@ -99,7 +99,7 @@ ENV WORDPRESS_CONFIG_EXTRA="require '/opt/wp-config-extra.php';"
 HEALTHCHECK --interval=30s --timeout=5s --start-period=30s --retries=3 \
   CMD curl -fsS http://localhost:8080/wp-login.php >/dev/null || exit 1
 
-USER www-data
+#USER www-data
 
 ENTRYPOINT ["wordpress-init.sh"]
 CMD ["apache2-foreground"]
