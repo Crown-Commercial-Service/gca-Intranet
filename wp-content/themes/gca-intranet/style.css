@@ -22,3 +22,13 @@ Text Domain: gca-intranet
 .skip-link:focus-visible {
   top: 0;
 }
+body {
+  outline: 8px solid red !important;
+}
+/* Prevent logo overlapping the primary nav on widths under 1600px */
+@media (min-width: 992px) and (max-width: 1599.98px) {
+  /* Reserve space where the menu actually sits */
+  #primaryNav .navbar-nav {
+    padding-left: clamp(10.5rem, 18vw, 16rem) !important;
+  }
+}
