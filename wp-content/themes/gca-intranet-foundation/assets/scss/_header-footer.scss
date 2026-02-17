@@ -26,7 +26,7 @@ body {
 
 .site-header {
   background: #fff;
-  border-bottom: 4px solid var(--bs-primary);
+  border-bottom: 0; /* moved to .gca-header-shell so it stays under ALL header content */
 
   /* Sizes */
   --gca-logo-height-desktop: 6.25rem;
@@ -34,6 +34,12 @@ body {
 
   /* Controls how far the logo sits into the left gutter on desktop */
   --gca-logo-gap: clamp(0.75rem, 2vw, 1.5rem);
+}
+
+/* Blue line should sit beneath the FULL header shell (topbar + nav) */
+.gca-header-shell {
+  border-bottom: 4px solid var(--bs-primary);
+  padding-bottom: 0.5rem; /* ensures nav never visually sits "below" the border */
 }
 
 /* Make sure our gutter-positioned logo cannot be clipped */
@@ -236,6 +242,11 @@ body {
   position: relative; /* anchor gutter logo */
 }
 
+/* Ensure nav row doesn't create odd spacing vs the border */
+.gca-header-nav {
+  margin-bottom: 0;
+}
+
 /* Hamburger styling */
 .gca-header-toggler {
   flex: 0 0 auto;
@@ -392,14 +403,17 @@ body {
     margin-top: 0.75rem;
   }
 }
+
 /* Stop gutter-logo going off-screen on smaller desktops (e.g. MacBook Air) */
 @media (min-width: 992px) and (max-width: 1599.98px) {
   .gca-header-logo-col {
     transform: none; /* keep it inside the container */
-    position:absolute;
-    left:6.25rem;
+    position: absolute;
+    left: 6.25rem;
   }
-  .site-header .navbar {padding-left: 6.25rem;}
+  .site-header .navbar {
+    padding-left: 6.25rem;
+  }
 }
 
 /* -------------------------
@@ -502,8 +516,80 @@ body {
   outline: 2px solid $gca-action-blue;
   outline-offset: 2px;
 }
+
 @media (min-width: 992px) {
   .gca-header-logo-col {
     pointer-events: auto;
   } /* default */
+}
+/* =======================================================
+   FIX: Primary nav must NOT appear below the blue line
+   Move the blue divider from the shell to the nav row
+   ======================================================= */
+
+/* Remove divider from the shell */
+.gca-header-shell {
+  border-bottom: 0 !important;
+  padding-bottom: 0 !important;
+}
+
+/* Put divider under the primary nav row (always correct visually) */
+.gca-header-nav {
+  border-bottom: 4px solid var(--bs-primary) !important;
+  margin-bottom: 0 !important;
+}
+
+/* Keep the navbar row flush (Bootstrap adds padding by default) */
+.gca-header-nav.navbar {
+  padding-top: 0 !important;
+  padding-bottom: 0 !important;
+}
+
+/* =======================================================
+   FIX: header shell must NOT have a fixed height on desktop
+   Otherwise nav overflows below the blue divider when width reduces
+   ======================================================= */
+
+@media (min-width: 992px) {
+  .gca-header-shell {
+    height: auto !important; /* <-- critical */
+    min-height: var(--gca-logo-height-desktop) !important;
+    grid-template-rows: auto auto !important; /* stop forcing 1fr/1fr */
+  }
+}
+
+/* Put the blue divider UNDER the nav row (not between rows) */
+.gca-header-shell {
+  border-bottom: 0 !important;
+  padding-bottom: 0 !important;
+}
+
+.gca-header-nav {
+  border-bottom: 4px solid var(--bs-primary) !important;
+  margin-bottom: 0 !important;
+}
+
+.gca-header-nav.navbar {
+  padding-top: 0 !important;
+  padding-bottom: 0 !important;
+}
+/* =======================================================
+   FIX: under 1600px reserve enough space for the logo
+   so the primary nav never overlaps it
+   ======================================================= */
+
+@media (min-width: 992px) and (max-width: 1599.98px) {
+  /* Keep logo inside container for these widths */
+  .gca-header-logo-col {
+    transform: none !important;
+    position: absolute !important;
+    left: 0 !important; /* anchor to container edge */
+  }
+
+  /* Reserve space for logo + breathing room */
+  .site-header .navbar,
+  .gca-header-topbar,
+  .gca-header-nav {
+    padding-left: clamp(8.5rem, 12vw, 13rem) !important;
+  }
 }
