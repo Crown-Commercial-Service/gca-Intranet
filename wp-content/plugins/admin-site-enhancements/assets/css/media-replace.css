@@ -1,0 +1,69 @@
+/* Hide media replace field on media frame of media library grid view and add media screen */
+.compat-field-asenha-media-replace {
+	display: none !important;
+}
+
+
+
+.wp-core-ui .button-secondary.asenha-media-replace-button {
+	margin-top: 8px;
+}
+
+.asenha-media-replace-notes {
+	margin-top: 8px;
+}
+
+.asenha-media-replace-notes p:last-child {
+	margin-bottom: 0;
+}
+
+.compat-item .compat-field-asenha-media-replace th.label {
+	display: none;
+	min-width: 0%;
+	width: 0%;
+}
+
+.compat-item .compat-field-asenha-media-replace .field {
+	float: left;
+	width: 99.8%;
+}
+
+.compat-field-asenha-media-replace .postbox {
+	margin-bottom: 0;
+}
+
+.compat-field-asenha-media-replace .postbox .inside {
+	margin-top: 8px;
+	margin-bottom: 0;
+	padding-bottom: 0;
+}
+
+.media-modal .compat-field-asenha-media-replace .postbox .inside {
+	padding-bottom: 12px;
+}
+
+#media-replace-div .postbox .inside {
+	padding-bottom: 0;	
+}
+
+.compat-field-asenha-media-replace .postbox-header .hndle {
+	font-size: 1.125em;
+	line-height: 1;
+	padding-left: 12px;
+	padding-right: 12px;
+}
+
+.mime-type-warning {
+	font-size: 13px;
+	height: 32px;
+	line-height: 32px;
+	margin-top: 15px;
+	color: red;
+	font-weight: 700;
+}
+
+.media-frame-toolbar .media-toolbar-primary {
+	display: flex;
+    flex-direction: row;
+    align-items: center;
+}

@@ -1,0 +1,14 @@
+.media-modal-content .media-frame .media-toolbar select.attachment-filters {
+	padding-left: 8px;
+	padding-right: 8px;
+}
+
+.media-modal-content .media-frame .media-toolbar select#media-attachment-orderby.attachment-filters,
+.media-modal-content .media-frame .media-toolbar select#media-attachment-order.attachment-filters {
+	display: none;
+}
+
+form.compat-item table.compat-attachment-fields tr td.field div.categorydiv div.tabs-panel {
+	margin-top: 4px !important;
+	margin-bottom: 8px;
+}
