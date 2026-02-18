@@ -1,0 +1,242 @@
+services:
+  db0:
+    image: mysql:8.0
+    environment:
+      MYSQL_DATABASE: ${DB_NAME}
+      MYSQL_USER: ${DB_USER}
+      MYSQL_PASSWORD: ${DB_PASSWORD}
+      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD}
+    volumes:
+      - db0_data:/var/lib/mysql
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -uroot -p$$MYSQL_ROOT_PASSWORD --silent"]
+      interval: 5s
+      timeout: 5s
+      retries: 30
+
+  db1:
+    image: mysql:8.0
+    environment:
+      MYSQL_DATABASE: ${DB_NAME}
+      MYSQL_USER: ${DB_USER}
+      MYSQL_PASSWORD: ${DB_PASSWORD}
+      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD}
+    volumes:
+      - db1_data:/var/lib/mysql
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -uroot -p$$MYSQL_ROOT_PASSWORD --silent"]
+      interval: 5s
+      timeout: 5s
+      retries: 30
+
+  db2:
+    image: mysql:8.0
+    environment:
+      MYSQL_DATABASE: ${DB_NAME}
+      MYSQL_USER: ${DB_USER}
+      MYSQL_PASSWORD: ${DB_PASSWORD}
+      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD}
+    volumes:
+      - db2_data:/var/lib/mysql
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -uroot -p$$MYSQL_ROOT_PASSWORD --silent"]
+      interval: 5s
+      timeout: 5s
+      retries: 30
+
+  db3:
+    image: mysql:8.0
+    environment:
+      MYSQL_DATABASE: ${DB_NAME}
+      MYSQL_USER: ${DB_USER}
+      MYSQL_PASSWORD: ${DB_PASSWORD}
+      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD}
+    volumes:
+      - db3_data:/var/lib/mysql
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -uroot -p$$MYSQL_ROOT_PASSWORD --silent"]
+      interval: 5s
+      timeout: 5s
+      retries: 30
+
+  wordpress0:
+    build: .
+    depends_on:
+      db0:
+        condition: service_healthy
+    ports:
+      - "8080:8080"
+    environment:
+      WORDPRESS_DB_HOST: db0:3306
+      WORDPRESS_DB_NAME: ${DB_NAME}
+      WORDPRESS_DB_USER: ${DB_USER}
+      WORDPRESS_DB_PASSWORD: ${DB_PASSWORD}
+      WP_HOME: http://localhost:8080
+      WP_SITEURL: http://localhost:8080
+    volumes:
+      - ./wp-content:/var/www/html/wp-content
+    restart: unless-stopped
+
+  wordpress1:
+    build: .
+    depends_on:
+      db1:
+        condition: service_healthy
+    ports:
+      - "8081:8080"
+    environment:
+      WORDPRESS_DB_HOST: db1:3306
+      WORDPRESS_DB_NAME: ${DB_NAME}
+      WORDPRESS_DB_USER: ${DB_USER}
+      WORDPRESS_DB_PASSWORD: ${DB_PASSWORD}
+      WP_HOME: http://localhost:8081
+      WP_SITEURL: http://localhost:8081
+    volumes:
+      - ./wp-content:/var/www/html/wp-content
+    restart: unless-stopped
+
+  wordpress2:
+    build: .
+    depends_on:
+      db2:
+        condition: service_healthy
+    ports:
+      - "8082:8080"
+    environment:
+      WORDPRESS_DB_HOST: db2:3306
+      WORDPRESS_DB_NAME: ${DB_NAME}
+      WORDPRESS_DB_USER: ${DB_USER}
+      WORDPRESS_DB_PASSWORD: ${DB_PASSWORD}
+      WP_HOME: http://localhost:8082
+      WP_SITEURL: http://localhost:8082
+    volumes:
+      - ./wp-content:/var/www/html/wp-content
+    restart: unless-stopped
+
+  wordpress3:
+    build: .
+    depends_on:
+      db3:
+        condition: service_healthy
+    ports:
+      - "8083:8080"
+    environment:
+      WORDPRESS_DB_HOST: db3:3306
+      WORDPRESS_DB_NAME: ${DB_NAME}
+      WORDPRESS_DB_USER: ${DB_USER}
+      WORDPRESS_DB_PASSWORD: ${DB_PASSWORD}
+      WP_HOME: http://localhost:8083
+      WP_SITEURL: http://localhost:8083
+    volumes:
+      - ./wp-content:/var/www/html/wp-content
+    restart: unless-stopped
+
+  init0:
+    build: .
+    depends_on:
+      db0:
+        condition: service_healthy
+    environment:
+      WORDPRESS_DB_HOST: db0:3306
+      WORDPRESS_DB_NAME: ${DB_NAME}
+      WORDPRESS_DB_USER: ${DB_USER}
+      WORDPRESS_DB_PASSWORD: ${DB_PASSWORD}
+
+      WP_URL: http://localhost:8080
+      WP_TITLE: ${WP_TITLE}
+      WP_ADMIN_USER: ${WP_ADMIN_USER}
+      WP_ADMIN_PASSWORD: ${WP_ADMIN_PASSWORD}
+      WP_ADMIN_EMAIL: ${WP_ADMIN_EMAIL}
+      WP_THEME: ${WP_THEME}
+      WP_HOME: http://localhost:8080
+      WP_SITEURL: http://localhost:8080
+    volumes:
+      - ./wp-content:/var/www/html/wp-content
+    working_dir: /var/www/html
+    command: ["/bin/sh", "-lc", "/usr/local/bin/wp-init.sh"]
+    restart: "no"
+
+  init1:
+    build: .
+    depends_on:
+      db1:
+        condition: service_healthy
+    environment:
+      WORDPRESS_DB_HOST: db1:3306
+      WORDPRESS_DB_NAME: ${DB_NAME}
+      WORDPRESS_DB_USER: ${DB_USER}
+      WORDPRESS_DB_PASSWORD: ${DB_PASSWORD}
+
+      WP_URL: http://localhost:8081
+      WP_TITLE: ${WP_TITLE}
+      WP_ADMIN_USER: ${WP_ADMIN_USER}
+      WP_ADMIN_PASSWORD: ${WP_ADMIN_PASSWORD}
+      WP_ADMIN_EMAIL: ${WP_ADMIN_EMAIL}
+      WP_THEME: ${WP_THEME}
+      WP_HOME: http://localhost:8081
+      WP_SITEURL: http://localhost:8081
+    volumes:
+      - ./wp-content:/var/www/html/wp-content
+    working_dir: /var/www/html
+    command: ["/bin/sh", "-lc", "/usr/local/bin/wp-init.sh"]
+    restart: "no"
+
+  init2:
+    build: .
+    depends_on:
+      db2:
+        condition: service_healthy
+    environment:
+      WORDPRESS_DB_HOST: db2:3306
+      WORDPRESS_DB_NAME: ${DB_NAME}
+      WORDPRESS_DB_USER: ${DB_USER}
+      WORDPRESS_DB_PASSWORD: ${DB_PASSWORD}
+
+      WP_URL: http://localhost:8082
+      WP_TITLE: ${WP_TITLE}
+      WP_ADMIN_USER: ${WP_ADMIN_USER}
+      WP_ADMIN_PASSWORD: ${WP_ADMIN_PASSWORD}
+      WP_ADMIN_EMAIL: ${WP_ADMIN_EMAIL}
+      WP_THEME: ${WP_THEME}
+      WP_HOME: http://localhost:8082
+      WP_SITEURL: http://localhost:8082
+    volumes:
+      - ./wp-content:/var/www/html/wp-content
+    working_dir: /var/www/html
+    command: ["/bin/sh", "-lc", "/usr/local/bin/wp-init.sh"]
+    restart: "no"
+
+  init3:
+    build: .
+    depends_on:
+      db3:
+        condition: service_healthy
+    environment:
+      WORDPRESS_DB_HOST: db3:3306
+      WORDPRESS_DB_NAME: ${DB_NAME}
+      WORDPRESS_DB_USER: ${DB_USER}
+      WORDPRESS_DB_PASSWORD: ${DB_PASSWORD}
+
+      WP_URL: http://localhost:8083
+      WP_TITLE: ${WP_TITLE}
+      WP_ADMIN_USER: ${WP_ADMIN_USER}
+      WP_ADMIN_PASSWORD: ${WP_ADMIN_PASSWORD}
+      WP_ADMIN_EMAIL: ${WP_ADMIN_EMAIL}
+      WP_THEME: ${WP_THEME}
+      WP_HOME: http://localhost:8083
+      WP_SITEURL: http://localhost:8083
+    volumes:
+      - ./wp-content:/var/www/html/wp-content
+    working_dir: /var/www/html
+    command: ["/bin/sh", "-lc", "/usr/local/bin/wp-init.sh"]
+    restart: "no"
+
+volumes:
+  db0_data:
+  db1_data:
+  db2_data:
+  db3_data:
