@@ -12,16 +12,21 @@ COPY wp-content/ ./wp-content/
 # If your theme has package.json, build it.
 # If you don't use Node tooling, this stage does nothing harmful.
 RUN set -eux; \
-  THEME_DIR="$(find wp-content/themes -maxdepth 2 -name package.json -print -quit | xargs -I{} dirname {} || true)"; \
-  if [ -n "$THEME_DIR" ]; then \
+  THEME_DIR="wp-content/themes/gca-intranet-foundation"; \
+  if [ -f "$THEME_DIR/package.json" ]; then \
     cd "$THEME_DIR"; \
-    if [ -f package-lock.json ]; then npm ci; \
-    elif [ -f yarn.lock ]; then yarn install --frozen-lockfile; \
-    elif [ -f pnpm-lock.yaml ]; then corepack enable && pnpm i --frozen-lockfile; \
-    else npm i; fi; \
+    if [ -f package-lock.json ]; then \
+      npm ci; \
+    else \
+      npm i; \
+    fi; \
     npm run build; \
+    echo "=== CSS files in assets stage after build ==="; \
+    ls -lah assets/dist/ || true; \
+    echo "=== Full path check ==="; \
+    find /app -name "gca-theme.css" || echo "File not found"; \
   else \
-    echo "No theme package.json found; skipping asset build"; \
+    echo "No package.json found at $THEME_DIR"; \
   fi
 
 ##########
