@@ -1,0 +1,1 @@
+postboxes.add_postbox_toggles(pagenow),jQuery(".postbox .hndle").off("click.postboxes",postboxes.handle_click);

@@ -1,0 +1,14 @@
+/**
+ * TablePress Default CSS for RTL languages
+ *
+ * Attention: Do not modify this file directly, but use the "Custom CSS" textarea
+ * on the "Plugin Options" screen of TablePress.
+ *
+ * @package TablePress
+ * @subpackage Frontend CSS
+ * @author Tobias Bäthge
+ * @since 1.0.0
+ */
+
+/* Import TablePress default CSS for RTL. */
+@use "default" with ($direction: "rtl");
