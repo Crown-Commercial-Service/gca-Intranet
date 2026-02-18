@@ -1,0 +1,30 @@
+/* Content Admin >> Show IDs */
+
+#asenha-id {
+	width: 50px;
+}
+
+/* Content Admin >> Show Featured Images */
+
+#asenha-featured-image {
+	width: 110px;
+}
+
+.asenha-featured-image img {
+	width: 110px;
+	height: auto;
+	border: 1px solid #e5e5e5;
+}
+
+/* Content Management >> Enable SVG Upload */
+
+table.media .column-title .media-icon img[src*='.svg'] {
+	width: 100%;
+	height: auto;
+}
+
+/* Show ID in Action Row */
+
+.row-actions .asenha-list-table-item-id {
+	color: #50575e;
+}

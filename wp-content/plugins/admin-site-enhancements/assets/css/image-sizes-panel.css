@@ -1,0 +1,74 @@
+/* Adapted from https://plugins.trac.wordpress.org/browser/image-sizes-panel/tags/0.4/admin/css/admin.css */
+
+#image_sizes .inside {
+	margin: 0px;
+	padding: 0px;
+}
+
+#image_sizes table {
+	border: none;
+	border-collapse: collapse;
+	width: 100%;
+}
+
+#image_sizes table th {
+	display: none;
+}
+
+#image_sizes table td {
+	border-bottom: 1px solid #eee;
+	padding: 6px 12px;
+	text-align: left;
+	vertical-align: top;
+}
+
+#image_sizes table .size .name {
+	font-weight: bold;
+	display: block;
+	max-width: 135px;
+	min-width: 1px;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
+#image_sizes table .dim {
+	padding-left: 0px;
+	text-align: right;
+	white-space: nowrap;
+}
+
+#image_sizes table td.copy {
+	padding-right: 0px;
+	width: 20px;
+}
+
+#image_sizes table td .copy-url-button {
+	width: 20px;
+	height: 20px;
+	display: flex;
+	justify-content: center;
+    align-items: center;
+}
+
+#image_sizes table td .copy-url-button:hover {
+	cursor: pointer;
+}
+
+#image_sizes table td .copy-url-button:hover svg g {
+	stroke: #135e96;
+}
+
+#image_sizes .image-size-row {
+	position: relative;	
+}
+
+#image_sizes .image-size-row .url-copied {
+	position: absolute;
+	top: 4px;
+	left: 40px;
+	background: #fff;
+    border: 1px solid #ccc;
+    padding: 2px 8px;
+    border-radius: 3px;
+}
