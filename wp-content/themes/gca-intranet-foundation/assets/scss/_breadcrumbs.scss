@@ -1,29 +1,29 @@
 .gca-breadcrumbs {
     padding: 10px 0;
     background-color: $gca-cream;
+    width: 100%;
+}
 
-    .breadcrumb-item {
-        a {
-            color: black;
-        }
-        color: black;
-        position: relative; 
-        display: inline-flex;
-        align-items: center;
+.govuk-breadcrumbs__link {
 
-        & + .breadcrumb-item:before {
-            content: ""; 
-            display: inline-block; 
-            
-            border-right: 2px solid black;
-            border-top: 2px solid black;
-            
-            height: 0.3em;
-            width: 0.3em;
-            margin-right: 0.5rem;
-            
-            transform: rotate(45deg); 
-            padding: 0;
-        }
+    &:hover,
+    &:focus,
+    &:active {
+        text-decoration: none;
     }
+}
+
+.govuk-breadcrumbs__current {
+    text-decoration: none;
+}
+
+.govuk-breadcrumbs__list-item:before {
+
+    bottom: auto;
+    height: 0.3em;
+    margin: 0;
+
+    top: calc(50% + 2px);
+    transform: translateY(-50%) rotate(45deg);
+    width: 0.3em;
 }
