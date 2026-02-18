@@ -14,24 +14,20 @@ if (empty($items)) {
 }
 ?>
 
-<nav class="gca-breadcrumbs" aria-label="Breadcrumb">
-  <div class="container-xxl">
-    <ol class="breadcrumb m-0">
-      <?php foreach ($items as $i => $item) : ?>
-        <?php $is_last = ($i === array_key_last($items)); ?>
+<nav class="govuk-breadcrumbs gca-breadcrumbs" aria-label="Breadcrumb">
+  <ol class="govuk-breadcrumbs__list container-xxl">
+    <?php foreach ($items as $i => $item) : ?>
+    <?php $is_last = ($i === array_key_last($items)); ?>
 
-        <?php if ($is_last) : ?>
-          <li class="breadcrumb-item active" aria-current="page">
-            <?php echo esc_html($item['label']); ?>
-          </li>
-        <?php else : ?>
-          <li class="breadcrumb-item">
-            <a href="<?php echo esc_url($item['url']); ?>">
-              <?php echo esc_html($item['label']); ?>
-            </a>
-          </li>
-        <?php endif; ?>
-      <?php endforeach; ?>
-    </ol>
-  </div>
+    <?php if (!$is_last) : ?>
+    <li class="govuk-breadcrumbs__list-item">
+      <a href="<?php echo esc_url($item['url']); ?>" class="govuk-breadcrumbs__link"><?php echo esc_html($item['label']); ?></a>
+    </li>
+    <?php else : ?>
+    <li class="govuk-breadcrumbs__list-item">
+      <?php echo esc_html($item['label']); ?>
+    </li>
+    <?php endif; ?>
+    <?php endforeach; ?>
+  </ol>
 </nav>
