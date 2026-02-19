@@ -20,3 +20,15 @@ if (($xfp && stripos($xfp, 'https') === 0) || $xfport === '443') {
     $_SERVER['HTTPS'] = 'on';
     $_SERVER['SERVER_PORT'] = 443;
 }
+
+/**
+ * WordPress memory limits
+ * - WP_MEMORY_LIMIT: frontend
+ * - WP_MAX_MEMORY_LIMIT: wp-admin (imports, updates, etc.)
+ */
+if (!defined('WP_MEMORY_LIMIT')) {
+    define('WP_MEMORY_LIMIT', '256M');
+}
+if (!defined('WP_MAX_MEMORY_LIMIT')) {
+    define('WP_MAX_MEMORY_LIMIT', '1024M');
+}
