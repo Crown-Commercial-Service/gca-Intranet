@@ -14,13 +14,13 @@
   }
 }
 
-.gca-news-section-title{
+.gca-homepage-section-title{
   border-bottom: 1px solid $gca-border-mid;
   margin-bottom: govuk-spacing(6);
-}
 
-.gca-featured-news__title {
-  margin-bottom: govuk-spacing(1);
+  h2{
+    margin-bottom: govuk-spacing(1);
+  }
 }
 
 .gca-equal-height-row {

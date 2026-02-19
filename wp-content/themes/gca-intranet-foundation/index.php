@@ -24,8 +24,8 @@
         <main class="govuk-main-wrapper">
             <div class="govuk-grid-row">
                 <div class="govuk-grid-column-two-thirds ">
-                    <div class="gca-news-section-title">
-                        <h2 class="govuk-heading-m gca-featured-news__title">Latest news</h2>
+                    <div class="gca-homepage-section-title">
+                        <h2 class="govuk-heading-m">Latest news</h2>
                         <p class="govuk-body">What's happening in our organisation</p>
                     </div>
 
@@ -94,9 +94,10 @@
 
                 </div>
                 <div class="govuk-grid-column-one-third">
-                    <h2 class="govuk-heading-m gca-featured-news__title">Take a look</h2>
-                    <p class="govuk-body">Lorem ipsum Alakazam is a Psi Pokémon.</p>
-
+                    <div class="gca-homepage-section-title">
+                        <h2 class="govuk-heading-m">Take a look</h2>
+                        <p class="govuk-body">Lorem ipsum Alakazam is a Psi Pokémon.</p>
+                    </div>
                     <div class="govuk-!-padding-4" style="background-color: #7fffd4; height: 200px;">
                         <p class="govuk-body">Additional content...</p>
                     </div>
@@ -107,14 +108,16 @@
                 <main class="govuk-main-wrapper">
                     <div class="govuk-grid-row">
                     <div class="govuk-grid-column-two-thirds">
-                        <div class="gca-news-section-title">
-                            <h2 class="govuk-heading-m gca-featured-news__title">Work updates</h2>
+                        <div class="gca-homepage-section-title">
+                            <h2 class="govuk-heading-m">Work updates</h2>
                             <p class="govuk-body">Lorem ipsum Super Nerd's favorite Pokémon is Weepinbell.</p>
                         </div>
                     </div>
-                    <div class="govuk-grid-column-one-third">
-                        <h2 class="govuk-heading-m">Blogs</h2>
-                        <p class="govuk-body">Lorem ipsum Rising Star used a Dusk Ball to catch Electrode.</p>
+                    <div class="govuk-grid-column-one-third ">
+                        <div class="gca-homepage-section-title">
+                            <h2 class="govuk-heading-m">Blogs</h2>
+                            <p class="govuk-body">Lorem ipsum Rising Star used a Dusk Ball.</p>
+                        </div>
                     </div>
                     </div>
                 </main>
