@@ -33,3 +33,4 @@ _docker-wp-content/
 !wp-content/themes/gca-intranet/**
 !wp-content/themes/gca-intranet-foundation/
 !wp-content/themes/gca-intranet-foundation/**
+!wp-content/themes/gca-intranet-foundation/assets/scss
