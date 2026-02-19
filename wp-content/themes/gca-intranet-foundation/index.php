@@ -77,7 +77,7 @@
                                 </div>
                             <?php endwhile; endif; wp_reset_postdata(); ?>
                         </div>
-                        <div class="see-all-news-link">
+                        <div class="see-more-link-homepage">
                             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="22" fill="currentColor" 
                                 class="bi bi-chevron-right govuk-!-padding-top-1" viewBox="0 0 16 16" 
                                 style="stroke: currentColor; stroke-width: 1.8;">  
@@ -130,6 +130,16 @@
                                     </div>
                                 </div>
                             <?php endwhile; endif; wp_reset_postdata(); ?>
+
+                            <div class="see-more-link-homepage">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="22" fill="currentColor" 
+                                    class="bi bi-chevron-right govuk-!-padding-top-1" viewBox="0 0 16 16" 
+                                    style="stroke: currentColor; stroke-width: 1.8;">  
+                                <path fill-rule="evenodd" d="M4.646 1.646a.5.5 0 0 1 .708 0l6 6a.5.5 0 0 1 0 .708l-6 6a.5.5 0 0 1-.708-.708L10.293 8 4.646 2.354a.5.5 0 0 1 0-.708"/>
+                                </svg>
+                                <p><a href="#" class="govuk-!-padding-left-1"> More work updates </a></p>
+                            </div>
+
                         </div>
 
                     </div>
