@@ -81,19 +81,45 @@
                             endif;
                             wp_reset_postdata(); ?>
                         </div>
+                        <div class="see-all-news-link">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="22" fill="currentColor" 
+                                class="bi bi-chevron-right govuk-!-padding-top-1" viewBox="0 0 16 16" 
+                                style="stroke: currentColor; stroke-width: 1.8;">  
+                            <path fill-rule="evenodd" d="M4.646 1.646a.5.5 0 0 1 .708 0l6 6a.5.5 0 0 1 0 .708l-6 6a.5.5 0 0 1-.708-.708L10.293 8 4.646 2.354a.5.5 0 0 1 0-.708"/>
+                            </svg>
+                            <p><a href="#" class="govuk-!-padding-left-1"> Browse all news articles</a></p>
+                        </div>
                     </div>
 
 
                 </div>
                 <div class="govuk-grid-column-one-third">
                     <h2 class="govuk-heading-m gca-featured-news__title">Take a look</h2>
-                    <p class="govuk-body">Hello world</p>
+                    <p class="govuk-body">Lorem ipsum Alakazam is a Psi Pokémon.</p>
 
                     <div class="govuk-!-padding-4" style="background-color: #7fffd4; height: 200px;">
                         <p class="govuk-body">Additional content...</p>
                     </div>
                 </div>
             </div>
+
+            <div class="govuk-width-container">
+                <main class="govuk-main-wrapper">
+                    <div class="govuk-grid-row">
+                    <div class="govuk-grid-column-two-thirds">
+                        <div class="gca-news-section-title">
+                            <h2 class="govuk-heading-m gca-featured-news__title">Work updates</h2>
+                            <p class="govuk-body">Lorem ipsum Super Nerd's favorite Pokémon is Weepinbell.</p>
+                        </div>
+                    </div>
+                    <div class="govuk-grid-column-one-third">
+                        <h2 class="govuk-heading-m">Blogs</h2>
+                        <p class="govuk-body">Lorem ipsum Rising Star used a Dusk Ball to catch Electrode.</p>
+                    </div>
+                    </div>
+                </main>
+            </div>
+
         </main>
     </div>
 </main>
