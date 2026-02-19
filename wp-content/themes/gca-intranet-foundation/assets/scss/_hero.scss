@@ -1,0 +1,96 @@
+
+.gca-home-hero {
+  position: relative;
+  overflow: hidden;
+  padding: 56px 0;
+  background: #9fb9ff; /* base hero blue */
+}
+
+/* Big curved shape (like the design) */
+.gca-home-hero::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 60%;
+  width: 1900px; /* bigger circle = smoother curve */
+  height: 1000px;
+  transform: translateY(-50%);
+  border-radius: 9999px;
+  background: #7f9fff; /* darker curve blue */
+  z-index: 0;
+}
+
+/* Ensure hero content sits above curve */
+.gca-home-hero .container-xxl,
+.gca-home-hero-inner {
+  position: relative;
+  z-index: 1;
+}
+
+.gca-home-hero-inner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 56px;
+  min-height: 170px; /* gives more “banner” feel */
+}
+
+.gca-home-hero-content {
+  max-width: 640px;
+}
+
+.gca-home-hero-kicker {
+  font-size: 18px;
+  margin: 0;
+}
+
+.gca-home-hero-title {
+  font-size: clamp(46px, 4vw, 58px);
+  line-height: 1.05;
+  font-weight: 800;
+  margin: 0;
+}
+
+/* Tagline block on right */
+.gca-home-hero-tagline {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  font-size: 30px; /* slightly smaller */
+  line-height: 1.1;
+  font-weight: 500;
+  white-space: nowrap;
+  color: #111;
+  border-top: 2px solid #111;
+}
+
+
+/* Mobile stack */
+@media (max-width: 991.98px) {
+  .gca-home-hero {
+    padding: 40px 0;
+  }
+
+  .gca-home-hero::after {
+    right: -640px;
+    width: 980px;
+    height: 980px;
+    opacity: 0.85;
+  }
+
+  .gca-home-hero-inner {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 18px;
+    min-height: auto;
+  }
+
+  .gca-home-hero-tagline {
+    font-size: 26px;
+    padding-right: 0;
+  }
+
+  .gca-home-hero-tagline-rule {
+    width: 220px;
+  }
+}
