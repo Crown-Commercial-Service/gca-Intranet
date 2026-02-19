@@ -28,7 +28,7 @@
   flex-wrap: wrap;
 }
 
-.gca-flex-box{
+.gca-flex-box-news{
   display: flex;
   flex-direction: column;
   padding: govuk-spacing(3);
@@ -75,4 +75,34 @@
   padding-top: govuk-spacing(2); 
   margin-left: auto; 
   display: flex;
+}
+
+.gca-work-update-card{
+  display: flex;
+  margin-bottom: govuk-spacing(4);
+
+  @include govuk-media-query($from: tablet) {
+    margin: 0; 
+  }
+}
+
+.gca-work-updates {
+  border-radius: 15px;
+  border: 1px solid $gca-border-mid;
+  margin: 0;
+  width: 100%;
+  height: 100%;
+
+  h3{
+    margin-bottom: govuk-spacing(1); 
+    margin-top: govuk-spacing(3); 
+  }
+  
+  img{
+    margin: govuk-spacing(4) 0; 
+    width: 100px;
+    height: 100px;
+    border-radius: 50%;
+  }
+
 }

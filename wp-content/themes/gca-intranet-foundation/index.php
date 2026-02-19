@@ -48,12 +48,10 @@
                                             <p><?php echo get_the_date('jS F Y'); ?></p>
                                         </div>
 
-                                <?php endwhile;
-                                endif;
-                                wp_reset_postdata(); ?>
+                                <?php endwhile; endif; wp_reset_postdata(); ?>
                             </div>
                         </div>
-                        <div class="govuk-grid-column-one-half gca-flex-box">
+                        <div class="govuk-grid-column-one-half gca-flex-box-news">
 
                             <?php
                             $secondary_posts = new WP_Query(array('posts_per_page' => 3, 'offset' => 1));
@@ -70,16 +68,14 @@
                                                     alt="<?php the_title(); ?>">
                                             <?php endif; ?>
                                         </div>
-                                        <div class="govuk-grid-column-two-third gca-flex-box">
+                                        <div class="govuk-grid-column-two-third gca-flex-box-news">
                                             <h3 class="govuk-heading-s govuk-!-margin-bottom-1"><a href="<?php the_permalink(); ?>"><?php the_title(); ?></a></h3>
                                             <p><?php echo wp_trim_words(get_the_excerpt(), 12, '...'); ?></p>
                                             <p><?php echo get_the_date('jS F Y'); ?></p>
                                         </div>
                                     </div>
                                 </div>
-                            <?php endwhile;
-                            endif;
-                            wp_reset_postdata(); ?>
+                            <?php endwhile; endif; wp_reset_postdata(); ?>
                         </div>
                         <div class="see-all-news-link">
                             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="22" fill="currentColor" 
@@ -112,6 +108,30 @@
                             <h2 class="govuk-heading-m">Work updates</h2>
                             <p class="govuk-body">Lorem ipsum Super Nerd's favorite Pokémon is Weepinbell.</p>
                         </div>
+
+                        <div class="govuk-grid-row gca-equal-height-row">
+                            <?php
+                                $work_updates = new WP_Query(array('post_type' => 'work update', 'posts_per_page' => 2));
+                                if ($work_updates->have_posts()) : while ($work_updates->have_posts()) : $work_updates->the_post();
+                                
+                                ?>
+                                <div class="govuk-grid-column-one-half gca-work-update-card">
+                                    <div class="govuk-grid-row gca-work-updates" >
+                                        <div class="govuk-grid-column-one-third" >
+                                            <?php if($avatar = get_avatar(get_the_author_meta('ID')) !== FALSE): ?>
+                                                <?php echo get_avatar(get_the_author_meta('ID')); ?>
+                                            <?php endif; ?>
+                                        </div>
+                                        <div class="govuk-grid-column-two-thirds">
+                                            <h3 class="govuk-heading-s"><a href="<?php the_permalink(); ?>"><?php the_title(); ?></a></h3>
+                                            <p>By <?php echo get_the_author(); ?></p>
+                                            <p><?php echo get_the_date('jS F Y'); ?></p>
+                                        </div>
+                                    </div>
+                                </div>
+                            <?php endwhile; endif; wp_reset_postdata(); ?>
+                        </div>
+
                     </div>
                     <div class="govuk-grid-column-one-third ">
                         <div class="gca-homepage-section-title">
