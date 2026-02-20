@@ -102,7 +102,7 @@
 
             <div class="govuk-width-container">
                 <main class="govuk-main-wrapper">
-                    <div class="govuk-grid-row">
+                    <div class="govuk-grid-row flex" >
                     <div class="govuk-grid-column-two-thirds">
                         <div class="gca-homepage-section-title">
                             <h2 class="govuk-heading-m">Work updates</h2>
@@ -143,12 +143,47 @@
                         </div>
 
                     </div>
-                    <div class="govuk-grid-column-one-third ">
+
+                    <div>
+                        <div class="vr"></div>
+                    </div>
+
+                    <div class="govuk-grid-column-one-third">
                         <div class="gca-homepage-section-title">
                             <h2 class="govuk-heading-m">Blogs</h2>
                             <p class="govuk-body">Lorem ipsum Rising Star used a Dusk Ball.</p>
                         </div>
-                    </div>
+                        <div class="govuk-grid-row">
+                            <div class="govuk-grid-column-full gca-work-update-card">
+                                <div class="govuk-grid-row gca-work-updates" >
+                                    <div class="govuk-grid-column-one-third" >
+                                        <?php $blogs = new WP_Query(array('post_type' => 'blog', 'posts_per_page' => 1));
+                                        if ($blogs->have_posts()) : while ($blogs->have_posts()) : $blogs->the_post();
+                                        
+                                        ?>
+                                        <?php if($avatar = get_avatar(get_the_author_meta('ID')) !== FALSE): ?>
+                                            <?php echo get_avatar(get_the_author_meta('ID')); ?>
+                                        <?php endif; ?>
+                                    </div>
+
+                                    <div class="govuk-grid-column-two-thirds">
+                                        <h3 class="govuk-heading-s"><a href="<?php the_permalink(); ?>"><?php the_title(); ?></a></h3>
+                                        <p>By <?php echo get_the_author(); ?></p>
+                                        <p><?php echo get_the_date('jS F Y'); ?></p>
+                                    </div>
+                                    <?php endwhile; endif; wp_reset_postdata(); ?>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="see-more-link-homepage">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="22" fill="currentColor" 
+                                class="bi bi-chevron-right govuk-!-padding-top-1" viewBox="0 0 16 16" 
+                                style="stroke: currentColor; stroke-width: 1.8;">  
+                            <path fill-rule="evenodd" d="M4.646 1.646a.5.5 0 0 1 .708 0l6 6a.5.5 0 0 1 0 .708l-6 6a.5.5 0 0 1-.708-.708L10.293 8 4.646 2.354a.5.5 0 0 1 0-.708"/>
+                            </svg>
+                            <p><a href="#" class="govuk-!-padding-left-1"> More blogs </a></p>
+                        </div>
+                        
                     </div>
                 </main>
             </div>
