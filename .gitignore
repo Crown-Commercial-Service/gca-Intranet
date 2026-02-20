@@ -32,6 +32,7 @@ _docker-wp-content/
 # Track our themes (override the ignore above)
 !/wp-content/themes/gca-intranet/
 !/wp-content/themes/gca-intranet/**
+
 !/wp-content/themes/gca-intranet-foundation/
 !/wp-content/themes/gca-intranet-foundation/**
 
