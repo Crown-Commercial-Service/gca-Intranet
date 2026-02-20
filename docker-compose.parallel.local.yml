@@ -1,3 +1,5 @@
+name: gca-intranet
+
 services:
   db0:
     image: mysql:8.0
@@ -78,8 +80,16 @@ services:
       WP_HOME: http://localhost:8080
       WP_SITEURL: http://localhost:8080
     volumes:
-      - ./wp-content:/var/www/html/wp-content
+      - wp0_content:/var/www/html/wp-content
+      - ./wp-content/themes:/var/www/html/wp-content/themes:ro
+      - ./wp-content/plugins:/var/www/html/wp-content/plugins:ro
+      - ./wp-content/mu-plugins:/var/www/html/wp-content/mu-plugins:ro
     restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS http://localhost:8080/wp-login.php >/dev/null || exit 1"]
+      interval: 5s
+      timeout: 5s
+      retries: 30
 
   wordpress1:
     build: .
@@ -96,8 +106,16 @@ services:
       WP_HOME: http://localhost:8081
       WP_SITEURL: http://localhost:8081
     volumes:
-      - ./wp-content:/var/www/html/wp-content
+      - wp1_content:/var/www/html/wp-content
+      - ./wp-content/themes:/var/www/html/wp-content/themes:ro
+      - ./wp-content/plugins:/var/www/html/wp-content/plugins:ro
+      - ./wp-content/mu-plugins:/var/www/html/wp-content/mu-plugins:ro
     restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS http://localhost:8080/wp-login.php >/dev/null || exit 1"]
+      interval: 5s
+      timeout: 5s
+      retries: 30
 
   wordpress2:
     build: .
@@ -114,8 +132,16 @@ services:
       WP_HOME: http://localhost:8082
       WP_SITEURL: http://localhost:8082
     volumes:
-      - ./wp-content:/var/www/html/wp-content
+      - wp2_content:/var/www/html/wp-content
+      - ./wp-content/themes:/var/www/html/wp-content/themes:ro
+      - ./wp-content/plugins:/var/www/html/wp-content/plugins:ro
+      - ./wp-content/mu-plugins:/var/www/html/wp-content/mu-plugins:ro
     restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS http://localhost:8080/wp-login.php >/dev/null || exit 1"]
+      interval: 5s
+      timeout: 5s
+      retries: 30
 
   wordpress3:
     build: .
@@ -132,8 +158,16 @@ services:
       WP_HOME: http://localhost:8083
       WP_SITEURL: http://localhost:8083
     volumes:
-      - ./wp-content:/var/www/html/wp-content
+      - wp3_content:/var/www/html/wp-content
+      - ./wp-content/themes:/var/www/html/wp-content/themes:ro
+      - ./wp-content/plugins:/var/www/html/wp-content/plugins:ro
+      - ./wp-content/mu-plugins:/var/www/html/wp-content/mu-plugins:ro
     restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS http://localhost:8080/wp-login.php >/dev/null || exit 1"]
+      interval: 5s
+      timeout: 5s
+      retries: 30
 
   init0:
     build: .
@@ -145,7 +179,6 @@ services:
       WORDPRESS_DB_NAME: ${DB_NAME}
       WORDPRESS_DB_USER: ${DB_USER}
       WORDPRESS_DB_PASSWORD: ${DB_PASSWORD}
-
       WP_URL: http://localhost:8080
       WP_TITLE: ${WP_TITLE}
       WP_ADMIN_USER: ${WP_ADMIN_USER}
@@ -155,7 +188,10 @@ services:
       WP_HOME: http://localhost:8080
       WP_SITEURL: http://localhost:8080
     volumes:
-      - ./wp-content:/var/www/html/wp-content
+      - wp0_content:/var/www/html/wp-content
+      - ./wp-content/themes:/var/www/html/wp-content/themes:ro
+      - ./wp-content/plugins:/var/www/html/wp-content/plugins:ro
+      - ./wp-content/mu-plugins:/var/www/html/wp-content/mu-plugins:ro
     working_dir: /var/www/html
     command: ["/bin/sh", "-lc", "/usr/local/bin/wp-init.sh"]
     restart: "no"
@@ -170,7 +206,6 @@ services:
       WORDPRESS_DB_NAME: ${DB_NAME}
       WORDPRESS_DB_USER: ${DB_USER}
       WORDPRESS_DB_PASSWORD: ${DB_PASSWORD}
-
       WP_URL: http://localhost:8081
       WP_TITLE: ${WP_TITLE}
       WP_ADMIN_USER: ${WP_ADMIN_USER}
@@ -180,7 +215,10 @@ services:
       WP_HOME: http://localhost:8081
       WP_SITEURL: http://localhost:8081
     volumes:
-      - ./wp-content:/var/www/html/wp-content
+      - wp1_content:/var/www/html/wp-content
+      - ./wp-content/themes:/var/www/html/wp-content/themes:ro
+      - ./wp-content/plugins:/var/www/html/wp-content/plugins:ro
+      - ./wp-content/mu-plugins:/var/www/html/wp-content/mu-plugins:ro
     working_dir: /var/www/html
     command: ["/bin/sh", "-lc", "/usr/local/bin/wp-init.sh"]
     restart: "no"
@@ -195,7 +233,6 @@ services:
       WORDPRESS_DB_NAME: ${DB_NAME}
       WORDPRESS_DB_USER: ${DB_USER}
       WORDPRESS_DB_PASSWORD: ${DB_PASSWORD}
-
       WP_URL: http://localhost:8082
       WP_TITLE: ${WP_TITLE}
       WP_ADMIN_USER: ${WP_ADMIN_USER}
@@ -205,7 +242,10 @@ services:
       WP_HOME: http://localhost:8082
       WP_SITEURL: http://localhost:8082
     volumes:
-      - ./wp-content:/var/www/html/wp-content
+      - wp2_content:/var/www/html/wp-content
+      - ./wp-content/themes:/var/www/html/wp-content/themes:ro
+      - ./wp-content/plugins:/var/www/html/wp-content/plugins:ro
+      - ./wp-content/mu-plugins:/var/www/html/wp-content/mu-plugins:ro
     working_dir: /var/www/html
     command: ["/bin/sh", "-lc", "/usr/local/bin/wp-init.sh"]
     restart: "no"
@@ -220,7 +260,6 @@ services:
       WORDPRESS_DB_NAME: ${DB_NAME}
       WORDPRESS_DB_USER: ${DB_USER}
       WORDPRESS_DB_PASSWORD: ${DB_PASSWORD}
-
       WP_URL: http://localhost:8083
       WP_TITLE: ${WP_TITLE}
       WP_ADMIN_USER: ${WP_ADMIN_USER}
@@ -230,7 +269,10 @@ services:
       WP_HOME: http://localhost:8083
       WP_SITEURL: http://localhost:8083
     volumes:
-      - ./wp-content:/var/www/html/wp-content
+      - wp3_content:/var/www/html/wp-content
+      - ./wp-content/themes:/var/www/html/wp-content/themes:ro
+      - ./wp-content/plugins:/var/www/html/wp-content/plugins:ro
+      - ./wp-content/mu-plugins:/var/www/html/wp-content/mu-plugins:ro
     working_dir: /var/www/html
     command: ["/bin/sh", "-lc", "/usr/local/bin/wp-init.sh"]
     restart: "no"
@@ -240,3 +282,7 @@ volumes:
   db1_data:
   db2_data:
   db3_data:
+  wp0_content:
+  wp1_content:
+  wp2_content:
+  wp3_content:
