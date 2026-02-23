@@ -111,7 +111,7 @@
 
                         <div class="govuk-grid-row gca-equal-height-row">
                             <?php
-                                $work_updates = new WP_Query(array('post_type' => 'work update', 'posts_per_page' => 2));
+                                $work_updates = new WP_Query(array('post_type' => 'work_update', 'posts_per_page' => 2));
                                 if ($work_updates->have_posts()) : while ($work_updates->have_posts()) : $work_updates->the_post();
                                 
                                 ?>

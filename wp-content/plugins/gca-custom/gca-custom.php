@@ -11,3 +11,4 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 include('library/custom-post-types.php');
+include('library/custom-post-taxonomies.php');

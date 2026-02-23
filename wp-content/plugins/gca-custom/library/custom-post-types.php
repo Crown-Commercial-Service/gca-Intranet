@@ -17,6 +17,7 @@ function gca_register_my_cpts()
 
     $event = array(
         'labels' => get_labels('event'),
+        'taxonomies' => ['category'],
         "menu_icon" => "dashicons-calendar-alt",
         'public' => true,
         'has_archive' => true,
@@ -26,6 +27,7 @@ function gca_register_my_cpts()
 
     $work_update = array(
         'labels' => get_labels('work update'),
+        'taxonomies' => ['category'],
         "menu_icon" => "dashicons-sort",
         'public' => true,
         'has_archive' => true,
@@ -45,7 +47,7 @@ function gca_register_my_cpts()
 
     register_post_type('blog', $blog);
     register_post_type('event', $event);
-    register_post_type('work update', $work_update);
+    register_post_type('work_update', $work_update);
     register_post_type('information', $information);
 }
 
