@@ -160,7 +160,7 @@
                             <div class="govuk-grid-row gca-equal-height-row" data-testid="work-updates-section">
                                 <?php
                                 $work_updates = new WP_Query(array(
-                                    'post_type' => 'work update',
+                                    'post_type' => 'work_update',
                                     'posts_per_page' => 2
                                 ));
 
