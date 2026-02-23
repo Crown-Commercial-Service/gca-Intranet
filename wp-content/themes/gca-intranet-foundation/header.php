@@ -19,11 +19,8 @@
 <body <?php body_class(); ?>>
 <?php wp_body_open(); ?>
 
-<a class="visually-hidden-focusable skip-link" href="#main-content">
-  Skip to main content
-</a>
-
 <header class="site-header" role="banner">
+  <a href="#main-content" class="govuk-skip-link" data-module="govuk-skip-link">Skip to main content</a>
   <div class="bg-white gca-header-bg">
     <div class="container-xxl pt-3">
       <div class="gca-header-shell">
