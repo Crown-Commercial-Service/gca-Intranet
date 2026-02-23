@@ -196,6 +196,17 @@ add_filter('dashboard_glance_items', function($items) {
 ////////// remove post tags and related UI elements //////////
 
 
+////////// assigning category to page object //////////
+add_action('init', function() {
+    register_taxonomy_for_object_type('category', 'page');
+    
+    global $wp_taxonomies;
+    if (isset($wp_taxonomies['category'])) {
+        $wp_taxonomies['category']->show_in_rest = true;
+    }
+});
+////////// assigning category to page object //////////
+
 // ?import_gca_categories=1
 add_action('init', function() {
     if (!isset($_GET['import_gca_categories'])) {
@@ -206,12 +217,12 @@ add_action('init', function() {
         'About GCA', 'People survey', 'Accessibility', 'Change management', 'Customers and suppliers', 'Digital and data', 'Finance', 'Knowledge Centre', 'Marketing and communications', 'Events', 'Inclusion and diversity', 'HR', 'Anti-fraud and corruption', 'Employee benefits', 'Health and wellbeing', 'Learning and development', 'Leave, absence and flexible working', 'New starters and leavers', 'Recruitment', 'Performance management', 'Pay and pensions', 'Respect at work', 'Workday', 'Information security', 'IT support', 'Workplace and travel', 'Health and safety', 'Community'
     ];
 
-    $sub_categories = [
+    $labels = [
         'CCS live', 'People update', 'One Big Thing', 'Business update', 'Reward', 'Recognition'
     ];
 
     $content_types = [
-        'Corporate information', 'Guidance', 'Blogs', 'Events', 'Staff network', 'News', 'Work updates'
+        'Corporate information', 'Guidance', 'Staff network',
     ];
     
     $audience = [
@@ -227,7 +238,7 @@ add_action('init', function() {
     ];
 
     add_tax($categories, 'category');
-    add_tax($sub_categories, 'sub_categories');
+    add_tax($labels, 'label');
     add_tax($content_types, 'content_type');
     add_tax($audience, 'audience');
     add_tax($responsible_team, 'responsible_team');
@@ -260,5 +271,26 @@ function add_tax($array, $tax_name){
             echo "<li style='color:orange;'>Skipped: " . $cat_name . " (Already exists)</li>";
         }
     }
-
 }
+
+//  ?nuke_terms=1
+add_action('init', function() {
+    if (!isset($_GET['nuke_terms'])) return;
+
+    // List the taxonomies you want to empty
+    $taxonomies = ['category', 'label', 'content_type', 'audience', 'responsible_team', 'event_location',];
+
+    foreach ($taxonomies as $tax) {
+        $terms = get_terms([
+            'taxonomy'   => $tax,
+            'hide_empty' => false,
+        ]);
+
+        foreach ($terms as $term) {
+            wp_delete_term($term->term_id, $tax);
+        }
+    }
+
+    echo "All terms in specified taxonomies have been deleted.";
+    exit;
+});
