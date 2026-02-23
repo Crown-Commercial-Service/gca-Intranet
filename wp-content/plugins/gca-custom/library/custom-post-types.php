@@ -11,6 +11,8 @@ function gca_register_my_cpts()
         'public' => true,
         'has_archive' => true,
         'show_in_rest' => true,
+        'rest_base' => 'blogs',
+        'rest_controller_class' => 'WP_REST_Posts_Controller',
         'supports' => array('title', 'editor', 'author', 'thumbnail', 'excerpt'),
     );
 
@@ -22,6 +24,8 @@ function gca_register_my_cpts()
         'public' => true,
         'has_archive' => true,
         'show_in_rest' => true,
+        'rest_base' => 'events',
+        'rest_controller_class' => 'WP_REST_Posts_Controller',
         'supports' => array('title', 'editor', 'author', 'thumbnail', 'excerpt'),
     );
 
@@ -32,6 +36,8 @@ function gca_register_my_cpts()
         'public' => true,
         'has_archive' => true,
         'show_in_rest' => true,
+        'rest_base' => 'work_updates',
+        'rest_controller_class' => 'WP_REST_Posts_Controller',
         'supports' => array('title', 'editor', 'author', 'thumbnail', 'excerpt'),
     );
 
@@ -42,6 +48,8 @@ function gca_register_my_cpts()
         'public' => true,
         'has_archive' => true,
         'show_in_rest' => true,
+        'rest_base' => 'information',
+        'rest_controller_class' => 'WP_REST_Posts_Controller',
         'supports' => array('title', 'editor', 'author', 'thumbnail', 'excerpt'),
     );
 
