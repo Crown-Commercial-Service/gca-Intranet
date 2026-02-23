@@ -11,28 +11,28 @@ function gca_register_my_taxonomies()
         'show_in_rest' => true
     ));
 
-    register_taxonomy('sub_categories', array('post', 'work_update', 'blog'), array(
+    register_taxonomy('label', array('post', 'blog'), array(
         'hierarchical' => true,
-        'label'        => 'Sub Categories',
+        'label'        => 'Label *strategic use case only*',
         'capabilities' => ['assign_terms' => 'edit_posts', 'edit_terms' => 'manage_categories'],
         'show_in_rest' => true
     ));
 
-    register_taxonomy('content_type', array('post', 'blog', 'work_update', 'event'), array(
+    register_taxonomy('content_type', array('post', 'page'), array(
         'hierarchical' => true,
         'label'        => 'Content Type',
         'capabilities' => ['assign_terms' => 'edit_posts', 'edit_terms' => 'manage_categories'],
         'show_in_rest' => true
     ));
     
-    register_taxonomy('responsible_team', array('work_update'), array(
+    register_taxonomy('responsible_team', array('work_update', 'page'), array(
         'hierarchical' => true,
         'label'        => 'Responsible directorate/team',
         'capabilities' => ['assign_terms' => 'edit_posts', 'edit_terms' => 'manage_categories'],
         'show_in_rest' => true
     ));
 
-    register_taxonomy('audience', array('post', 'work_update', 'blog', 'event'), array(
+    register_taxonomy('audience', array('post', 'page', 'work_update', 'blog', 'event'), array(
         'hierarchical' => true,
         'label'        => 'Audience',
         'capabilities' => ['assign_terms' => 'edit_posts', 'edit_terms' => 'manage_categories'],
