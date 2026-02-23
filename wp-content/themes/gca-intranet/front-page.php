@@ -210,7 +210,7 @@
                             </svg>
 
                             <p data-testid="work-updates-see-more-text">
-                                <a class="govuk-link" data-testid="work-updates-see-more-link" href="/work-updates/"
+                                <a class="govuk-link" data-testid="work-updates-see-more-link" href="/work_update/"
                                     class="govuk-!-padding-left-1">
                                     More work updates
                                 </a>
