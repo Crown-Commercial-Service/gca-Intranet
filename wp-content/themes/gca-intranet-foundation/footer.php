@@ -1,53 +1,64 @@
 <?php
 /**
  * Footer template
- * - Legal / policy links
- * - Crown mark + copyright
+ * GOV.UK Design System structure (no Bootstrap layout)
+ * - Legal / policy links (menu: footer_legal)
+ * - Crest + Crown copyright
  */
 ?>
 
 </main><!-- #main-content -->
 
-<footer class="site-footer mt-auto" role="contentinfo">
-  <div class="container-xxl py-4">
-    <div class="gca-footer-row">
+<footer class="govuk-footer site-footer" role="contentinfo">
+  <div class="govuk-width-container">
 
-      <!-- Legal links -->
-      <nav class="footer-legal-links" aria-label="Footer legal links">
+    <div class="govuk-footer__meta gca-footer-row">
+
+      <!-- Links -->
+      <div class="govuk-footer__meta-item govuk-footer__meta-item--grow">
+        <h2 class="govuk-visually-hidden">Support links</h2>
+
         <?php
-          if (has_nav_menu('footer_legal')) {
-            wp_nav_menu([
-              'theme_location' => 'footer_legal',
-              'container'      => false,
-              'menu_class'     => 'footer-legal-nav',
-              'depth'          => 1,
-              'fallback_cb'    => false,
-              'item_spacing'   => 'discard',
-            ]);
-          } else {
-            $links = [
-              ['label' => 'Accessibility statement', 'url' => get_theme_mod('gca_accessibility_url', '#')],
-              ['label' => 'Cookie settings',         'url' => get_theme_mod('gca_cookies_url', '#')],
-              ['label' => 'Privacy notice',          'url' => get_theme_mod('gca_privacy_url', '#')],
-              ['label' => 'Cabinet Office intranet', 'url' => get_theme_mod('gca_co_intranet_url', '#')],
-              ['label' => 'GCA website',             'url' => get_theme_mod('gca_gca_website_url', '#')],
-            ];
-
-            echo '<ul class="footer-legal-nav">';
+          // Helper to render links as GOV.UK footer inline list
+          $render_links = function(array $links) {
+            echo '<ul class="govuk-footer__inline-list footer-legal-nav">';
             foreach ($links as $l) {
               printf(
-                '<li class="menu-item"><a href="%s">%s</a></li>',
+                '<li class="govuk-footer__inline-list-item"><a class="govuk-footer__link" href="%s">%s</a></li>',
                 esc_url($l['url']),
                 esc_html($l['label'])
               );
             }
             echo '</ul>';
+          };
+
+          if (has_nav_menu('footer_legal')) {
+            // Pull menu items and output them with GOV.UK markup (no walker needed)
+            $items = wp_get_nav_menu_items(get_nav_menu_locations()['footer_legal'] ?? 0);
+
+            if (!empty($items)) {
+              $links = [];
+              foreach ($items as $it) {
+                if ((int) $it->menu_item_parent !== 0) continue; // depth 1 only
+                $links[] = ['label' => $it->title, 'url' => $it->url];
+              }
+              $render_links($links);
+            }
+
+          } else {
+            $render_links([
+              ['label' => 'Accessibility statement', 'url' => get_theme_mod('gca_accessibility_url', '#')],
+              ['label' => 'Cookie settings',         'url' => get_theme_mod('gca_cookies_url', '#')],
+              ['label' => 'Privacy notice',          'url' => get_theme_mod('gca_privacy_url', '#')],
+              ['label' => 'Cabinet Office intranet', 'url' => get_theme_mod('gca_co_intranet_url', '#')],
+              ['label' => 'GCA website',             'url' => get_theme_mod('gca_gca_website_url', '#')],
+            ]);
           }
         ?>
-      </nav>
+      </div>
 
-      <!-- Crown brand area -->
-      <div class="gca-footer-brand">
+      <!-- Crest + copyright -->
+      <div class="govuk-footer__meta-item gca-footer-brand">
         <img
           src="<?php echo esc_url(get_template_directory_uri() . '/assets/img/govuk-crest.svg'); ?>"
           class="gca-footer-crest"
@@ -57,13 +68,16 @@
           decoding="async"
         >
         <div class="small">
-          <a class="footer-crown-link text-decoration-underline" href="#">
-            &copy; Crown copyright
+          <a
+            class="govuk-footer__link footer-crown-link"
+            href="https://www.nationalarchives.gov.uk/information-management/re-using-public-sector-information/uk-government-licensing-framework/crown-copyright/">
+            © Crown copyright
           </a>
         </div>
       </div>
 
     </div>
+
   </div>
 </footer>
 
