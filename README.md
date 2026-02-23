@@ -136,13 +136,13 @@ If your theme uses an npm build step for CSS/JS, use the built-in Docker contain
 To install dependencies and build once:
 
 ```bash
-docker compose run --rm theme-builder
+docker compose -f docker-compose.local.yml run --rm theme-builder
 ```
 
 To watch for file changes during development:
 
 ```bash
-docker compose run --rm theme-builder npm run watch
+docker compose -f docker-compose.local.yml run --rm theme-builder npm run watch
 ```
 
 > Whether compiled assets should be committed depends on repo convention. Follow existing patterns in this repo.
