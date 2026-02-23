@@ -33,3 +33,10 @@ _docker-wp-content/
 !/wp-content/themes/gca-intranet-foundation/assets/
 /wp-content/themes/gca-intranet-foundation/assets/*
 !/wp-content/themes/gca-intranet-foundation/assets/scss/
+
+# Ignore WordPress uploads and upgrades
+wp-content/uploads/
+wp-content/upgrade/
+wp-content/cache/
+
+local.db.latest.sql
