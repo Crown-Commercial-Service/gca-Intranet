@@ -5,8 +5,11 @@ Version: 1.0.0
 Text Domain: gca-intranet
 */
 
-/*Uncomment this to move the 'Skip to main content' link off-screen visually but still comply with AAA Accesibilty*/
+/* =========================================================
+   Accessibility
+   ========================================================= */
 
+/* Skip link (visible on focus) */
 .skip-link {
   position: absolute;
   top: -40px;
@@ -23,324 +26,30 @@ Text Domain: gca-intranet
   top: 0;
 }
 
+/* =========================================================
+   Header / Nav tweaks
+   ========================================================= */
+
 /* Prevent logo overlapping the primary nav on widths under 1600px */
 @media (min-width: 992px) and (max-width: 1599.98px) {
-  /* Reserve space where the menu actually sits */
   #primaryNav .navbar-nav {
     padding-left: clamp(10.5rem, 18vw, 16rem) !important;
   }
 }
 
-/* Home page layout */
-.gca-home-hero {
-  padding: 2rem 0 1.5rem;
-  background: #fff;
-}
-.gca-home-hero-inner {
-  display: grid;
-  grid-template-columns: 1fr;
-  gap: 1.25rem;
-  align-items: stretch;
-}
-@media (min-width: 992px) {
-  .gca-home-hero-inner {
-    grid-template-columns: 2fr 1fr;
-    gap: 1.5rem;
+/* =========================================================
+   Layout width (optional)
+   ========================================================= */
+
+@media (min-width: 1024px) {
+  .govuk-width-container {
+    max-width: 1200px;
   }
 }
 
-.gca-home-hero-title {
-  margin: 0 0 0.5rem;
-  font-size: clamp(2rem, 2.2vw, 2.75rem);
-  line-height: 1.1;
-}
-.gca-home-hero-lede {
-  margin: 0 0 1rem;
-  max-width: 65ch;
-}
-.gca-home-hero-actions {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.75rem;
-}
-
-.gca-home-hero-panel {
-  border: 1px solid rgba(0, 0, 0, 0.12);
-  border-radius: 0.75rem;
-  background: #fff;
-  padding: 1.25rem;
-  height: 100%;
-}
-.gca-home-panel-title {
-  margin: 0 0 0.75rem;
-  font-size: 1.125rem;
-}
-
-.gca-home-quicklinks {
-  margin: 0;
-  padding: 0;
-  list-style: none;
-}
-.gca-home-quicklinks li + li {
-  margin-top: 0.5rem;
-}
-
-.gca-home-grid {
-  padding: 1rem 0 2rem;
-}
-
-.gca-home-card {
-  border: 1px solid rgba(0, 0, 0, 0.12);
-  border-radius: 0.75rem;
-  padding: 1.25rem;
-  background: #fff;
-  height: 100%;
-}
-.gca-home-card-title {
-  margin: 0 0 1rem;
-  font-size: 1.25rem;
-}
-
-.gca-home-list {
-  margin: 0;
-  padding: 0;
-  list-style: none;
-}
-.gca-home-list-item + .gca-home-list-item {
-  margin-top: 0.75rem;
-}
-.gca-home-meta {
-  font-size: 0.875rem;
-  opacity: 0.8;
-  margin-top: 0.15rem;
-}
-/* =========================
-   GI-100 Home hero (child overrides)
-   ========================= */
-
-.gca-home-hero {
-  /* Design-like blue panel */
-  background: #9fb9ff;
-  position: relative;
-  overflow: hidden;
-  padding: 2.25rem 0;
-}
-
-/* Right “oval” overlay shape */
-.gca-home-hero::after {
-  content: '';
-  position: absolute;
-  right: -8rem;
-  top: 50%;
-  transform: translateY(-50%);
-  width: 46rem;
-  height: 14rem;
-  background: rgba(70, 110, 220, 0.25);
-  border-radius: 999px;
-  pointer-events: none;
-}
-
-/* Layout */
-.gca-home-hero-inner {
-  position: relative; /* above overlay */
-  z-index: 1;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 2rem;
-  min-height: 10rem;
-}
-
-.gca-home-hero-left {
-  display: flex;
-  flex-direction: column;
-  gap: 0.25rem;
-}
-
-.gca-home-hero-kicker {
-  margin: 0;
-  font-size: 1.125rem;
-  font-weight: 600;
-}
-
-.gca-home-hero-title {
-  margin: 0;
-  font-size: clamp(2.2rem, 3vw, 3.25rem);
-  line-height: 1.05;
-  font-weight: 800;
-}
-
-/* Right tagline block */
-.gca-home-hero-right {
-  margin-left: auto;
-}
-
-.gca-home-hero-pill {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 0.5rem;
-  padding: 1.25rem 2rem;
-  min-width: min(28rem, 44vw);
-}
-
-.gca-home-hero-pill-line {
-  display: block;
-  width: 11rem;
-  height: 2px;
-  background: currentColor;
-  opacity: 0.85;
-}
-
-.gca-home-hero-pill-text {
-  font-size: clamp(1.5rem, 2.2vw, 2.25rem);
-  font-weight: 300;
-  letter-spacing: 0.02em;
-}
-
-/* Keep it tidy on smaller screens */
-@media (max-width: 991.98px) {
-  .gca-home-hero {
-    padding: 1.5rem 0;
-  }
-
-  .gca-home-hero-inner {
-    flex-direction: column;
-    align-items: flex-start;
-    min-height: auto;
-  }
-
-  .gca-home-hero-right {
-    width: 100%;
-  }
-
-  .gca-home-hero-pill {
-    align-items: flex-start;
-    padding: 1rem 0;
-    min-width: 0;
-  }
-
-  .gca-home-hero::after {
-    right: -14rem;
-    width: 40rem;
-    height: 12rem;
-  }
-}
-/* =========================
-   GI-100: Homepage hero
-   ========================= */
-
-.gca-home-hero {
-  position: relative;
-  overflow: hidden;
-  padding: 56px 0;
-  background: #9fb9ff; /* light blue hero */
-}
-
-/* The blue curve */
-.gca-home-hero::after {
-  content: '';
-  position: absolute;
-  top: 50%;
-  right: -260px; /* pushes circle off-screen so you see a curve */
-  width: 620px;
-  height: 620px;
-  transform: translateY(-50%);
-  border-radius: 9999px;
-  background: #7f9fff; /* darker blue curve */
-  z-index: 0;
-}
-
-.gca-home-hero .container-xxl,
-.gca-home-hero-inner {
-  position: relative;
-  z-index: 1; /* keep text above the curve */
-}
-
-.gca-home-hero-inner {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 48px;
-  min-height: 140px;
-}
-
-.gca-home-hero-kicker {
-  font-size: 18px;
-  margin: 0;
-}
-
-.gca-home-hero-title {
-  font-size: clamp(44px, 4vw, 56px);
-  line-height: 1.05;
-  font-weight: 800;
-  margin: 0;
-}
-
-.gca-home-hero-tagline {
-  text-align: left;
-  font-size: 32px;
-  line-height: 1.1;
-  font-weight: 500;
-  white-space: nowrap;
-  color: #111;
-}
-
-.gca-home-hero-tagline-rule {
-  display: block;
-  width: 260px;
-  height: 3px;
-  background: #111;
-  margin: 0 0 10px 0;
-}
-
-/* Stack on smaller screens */
-@media (max-width: 991.98px) {
-  .gca-home-hero {
-    padding: 40px 0;
-  }
-
-  .gca-home-hero::after {
-    right: -340px;
-    width: 560px;
-    height: 560px;
-    opacity: 0.85;
-  }
-
-  .gca-home-hero-inner {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 18px;
-  }
-
-  .gca-home-hero-tagline-rule {
-    width: 220px;
-  }
-
-  .gca-home-hero-tagline {
-    font-size: 26px;
-  }
-}
-
-/* Optional: light card styling so the placeholders look like the design */
-.gca-home-grid {
-  padding: 40px 0 10px;
-}
-
-.gca-home-card {
-  background: #fff;
-  border-radius: 16px;
-  padding: 22px 22px;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.06);
-}
-
-.gca-home-card-title {
-  font-size: 22px;
-  margin: 0 0 12px;
-}
-/* =========================
-   GI-100: Homepage hero
-   ========================= */
+/* =========================================================
+   GI-100: Homepage hero (final)
+   ========================================================= */
 
 .gca-home-hero {
   position: relative;
@@ -349,13 +58,13 @@ Text Domain: gca-intranet
   background: #9fb9ff; /* base hero blue */
 }
 
-/* Big curved shape (like the design) */
+/* Big curved shape */
 .gca-home-hero::after {
   content: '';
   position: absolute;
   top: 50%;
-  right: -520px; /* push further off-screen */
-  width: 980px; /* bigger circle = smoother curve */
+  right: -520px; /* push off-screen */
+  width: 980px; /* bigger = smoother curve */
   height: 980px;
   transform: translateY(-50%);
   border-radius: 9999px;
@@ -375,7 +84,7 @@ Text Domain: gca-intranet
   align-items: center;
   justify-content: space-between;
   gap: 56px;
-  min-height: 170px; /* gives more “banner” feel */
+  min-height: 170px;
 }
 
 .gca-home-hero-content {
@@ -394,17 +103,25 @@ Text Domain: gca-intranet
   margin: 0;
 }
 
-/* Tagline block on right */
+/* Right tagline block */
 .gca-home-hero-tagline {
   display: flex;
   flex-direction: column;
   justify-content: center;
-  font-size: 30px; /* slightly smaller */
+  font-size: 30px;
   line-height: 1.1;
   font-weight: 500;
   white-space: nowrap;
   color: #111;
-  padding-right: 22px; /* pulls it away from edge */
+  padding-right: 22px;
+}
+
+.gca-home-hero-tagline-rule {
+  display: block;
+  width: 260px;
+  height: 3px;
+  background: #111;
+  margin: 0 0 10px 0;
 }
 
 /* Mobile stack */
@@ -435,4 +152,159 @@ Text Domain: gca-intranet
   .gca-home-hero-tagline-rule {
     width: 220px;
   }
+}
+
+/* Home grid/cards */
+.gca-home-grid {
+  padding: 40px 0 10px;
+}
+
+.gca-home-card {
+  background: #fff;
+  border-radius: 16px;
+  padding: 22px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.06);
+  height: 100%;
+}
+
+.gca-home-card-title {
+  font-size: 22px;
+  margin: 0 0 12px;
+}
+
+/* =========================================================
+   Hero banner + breadcrumbs (single/news)
+   ========================================================= */
+
+.gca-hero-banner {
+  position: relative;
+  background: #99b7ff;
+  padding: 72px 0; /* taller hero */
+  overflow: hidden;
+}
+
+.gca-hero-banner__inner {
+  position: relative;
+  z-index: 2;
+}
+
+.gca-hero-banner__title {
+  margin: 0;
+  font-weight: 700;
+  font-size: clamp(2.25rem, 3vw, 3.25rem);
+  line-height: 1.1;
+  max-width: 40rem;
+}
+
+/* Hero image: curve on LEFT only, square right */
+.gca-hero-banner__media {
+  position: absolute;
+  right: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  width: min(720px, 52vw);
+  height: 280px;
+  overflow: hidden;
+  border-radius: 9999px 0 0 9999px;
+  z-index: 1;
+}
+
+.gca-hero-banner__media img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+/* Breadcrumb bar (shorter) */
+.gca-breadcrumbs-bar {
+  background: #e9edc2;
+  padding: 10px 0; /* shorter */
+}
+
+.gca-breadcrumbs {
+  font-size: 0.95rem;
+}
+
+/* Breadcrumbs: black */
+.gca-breadcrumbs a,
+.gca-breadcrumbs a:visited,
+.gca-breadcrumbs a:hover,
+.gca-breadcrumbs a:active,
+.gca-breadcrumbs a:focus,
+.gca-breadcrumbs [aria-current='page'] {
+  color: #000 !important;
+  text-decoration-color: #000;
+}
+
+.gca-breadcrumbs__sep {
+  margin: 0 8px;
+  color: #000;
+}
+
+/* Ensure no inner "box" background */
+.gca-breadcrumbs-bar .govuk-width-container,
+.gca-breadcrumbs-bar .container-xxl,
+.gca-breadcrumbs-bar .container {
+  background: transparent !important;
+}
+
+/* Mobile: hero image stacks nicely */
+@media (max-width: 991px) {
+  .gca-hero-banner {
+    padding: 48px 0;
+  }
+
+  .gca-hero-banner__media {
+    position: static;
+    transform: none;
+    width: 100%;
+    height: 220px;
+    margin-top: 16px;
+    border-radius: 24px;
+  }
+}
+
+/* =========================================================
+   Single (News) layout helpers
+   ========================================================= */
+
+/* Left column featured image */
+.gca-featured-media {
+  margin: 0;
+}
+
+.gca-featured-media__img {
+  width: 100%;
+  height: auto;
+  display: block;
+  border-radius: 8px;
+}
+
+/* Title/date/tag row spacing */
+.gca-news-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  align-items: center;
+}
+
+/* WordPress content spacing */
+.gca-richtext > *:first-child {
+  margin-top: 0;
+}
+
+.gca-richtext p {
+  margin-bottom: 1rem;
+}
+
+.gca-richtext ul,
+.gca-richtext ol {
+  margin-bottom: 1rem;
+  padding-left: 1.25rem;
+}
+
+.gca-richtext img {
+  max-width: 100%;
+  height: auto;
 }
