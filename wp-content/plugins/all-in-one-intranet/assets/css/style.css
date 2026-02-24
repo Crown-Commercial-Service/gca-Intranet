@@ -1,0 +1,22 @@
+#gal-tablewrapper {
+    display: table;
+    width: 100%;
+}
+.gal-tablecell {
+    display: table-cell;
+    height: 500px;
+    margin: 0;
+    padding: 0;
+    vertical-align: top;
+}
+#gal-tableright {
+    padding: 0 0 0 40px;
+    width: 281px;
+}
+#gal-tableright div {
+    width: 235px;
+    padding: 10px 5px;
+    background-color: #E4E4E4;
+    text-align: center;
+    margin-bottom: 20px;
+}

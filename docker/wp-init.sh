@@ -80,8 +80,10 @@ fi
 [ -n "${WP_HOME:-}" ] && wp option update home "$WP_HOME" --allow-root || true
 [ -n "${WP_SITEURL:-}" ] && wp option update siteurl "$WP_SITEURL" --allow-root || true
 
-# 7) Activate theme + permalinks
+# 7) Activate theme + plugin + permalinks
 [ -n "${WP_THEME:-}" ] && wp theme activate "$WP_THEME" --allow-root || true
+
+wp plugin activate gca-custom --allow-root || true
 wp rewrite structure "/%postname%/" --allow-root || true
 wp rewrite flush --allow-root || true
 

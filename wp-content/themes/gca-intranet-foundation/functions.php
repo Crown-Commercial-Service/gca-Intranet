@@ -175,3 +175,122 @@ function gca_get_breadcrumb_items(): array
 
     return $items;
 }
+
+////////// remove post tags and related UI elements //////////
+add_action('admin_menu', function() {
+    remove_menu_page('edit-tags.php?taxonomy=post_tag');
+});
+
+add_action('init', function() {
+    unregister_taxonomy_for_object_type('post_tag', 'post');
+});
+
+add_filter('dashboard_glance_items', function($items) {
+    foreach ($items as $key => $item) {
+        if (strpos($item, 'taxonomy=post_tag') !== false) {
+            unset($items[$key]);
+        }
+    }
+    return $items;
+}, 10, 1);
+////////// remove post tags and related UI elements //////////
+
+
+////////// assigning category to page object //////////
+add_action('init', function() {
+    register_taxonomy_for_object_type('category', 'page');
+    
+    global $wp_taxonomies;
+    if (isset($wp_taxonomies['category'])) {
+        $wp_taxonomies['category']->show_in_rest = true;
+    }
+});
+////////// assigning category to page object //////////
+
+// ?import_gca_categories=1
+add_action('init', function() {
+    if (!isset($_GET['import_gca_categories'])) {
+        return;
+    }
+    
+    $categories = [
+        'About GCA', 'People survey', 'Accessibility', 'Change management', 'Customers and suppliers', 'Digital and data', 'Finance', 'Knowledge Centre', 'Marketing and communications', 'Events', 'Inclusion and diversity', 'HR', 'Anti-fraud and corruption', 'Employee benefits', 'Health and wellbeing', 'Learning and development', 'Leave, absence and flexible working', 'New starters and leavers', 'Recruitment', 'Performance management', 'Pay and pensions', 'Respect at work', 'Workday', 'Information security', 'IT support', 'Workplace and travel', 'Health and safety', 'Community'
+    ];
+
+    $labels = [
+        'CCS live', 'People update', 'One Big Thing', 'Business update', 'Reward', 'Recognition'
+    ];
+
+    $content_types = [
+        'Corporate information', 'Guidance', 'Staff network',
+    ];
+    
+    $audience = [
+        'All colleagues', 'Line managers'
+    ];
+
+    $responsible_team = [
+        'HR Directorate', 'Customer Experience Directorate', 'Procurement Operations Directorate', 'Commercial Directorate', 'Digital and Data Directorate', 'Strategic Delivery Directorate', 'Marketing and Communications', 'Finance, Planning and Performance Directorate', 'Finance', 'Workplace services', 'Customer service centere', 'Pride Network', 'Gender Equality Network', 'Race Equality Network', 'Able Network', 'Uniformed Services Network'
+    ];
+
+    $event_location = [
+        'Online', 'In-person'
+    ];
+
+    add_tax($categories, 'category');
+    add_tax($labels, 'label');
+    add_tax($content_types, 'content_type');
+    add_tax($audience, 'audience');
+    add_tax($responsible_team, 'responsible_team');
+    add_tax($event_location, 'event_location');
+
+
+    echo '</ul><p><strong>Import complete!</strong></p></div>';
+    exit; 
+});
+
+function add_tax($array, $tax_name){
+
+    foreach ($array as $cat_name) {
+        $term = term_exists($cat_name, $tax_name);
+
+        if (!$term) {
+            $result = wp_insert_term(
+                $cat_name,
+                $tax_name,
+                array(
+                    'slug' => sanitize_title($cat_name)
+                )
+            );
+            if (is_wp_error($result)) {
+                echo "<li style='color:red;'>Error: " . $cat_name . " - " . $result->get_error_message() . "</li>";
+            } else {
+                echo "<li style='color:green;'>Created: " . $cat_name . "</li>";
+            }
+        } else {
+            echo "<li style='color:orange;'>Skipped: " . $cat_name . " (Already exists)</li>";
+        }
+    }
+}
+
+//  ?nuke_terms=1
+add_action('init', function() {
+    if (!isset($_GET['nuke_terms'])) return;
+
+    // List the taxonomies you want to empty
+    $taxonomies = ['category', 'label', 'content_type', 'audience', 'responsible_team', 'event_location',];
+
+    foreach ($taxonomies as $tax) {
+        $terms = get_terms([
+            'taxonomy'   => $tax,
+            'hide_empty' => false,
+        ]);
+
+        foreach ($terms as $term) {
+            wp_delete_term($term->term_id, $tax);
+        }
+    }
+
+    echo "All terms in specified taxonomies have been deleted.";
+    exit;
+});

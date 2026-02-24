@@ -12,10 +12,13 @@ This repo also includes an AWS-friendly WordPress container build for deployment
 - WordPress runs from the official WordPress Docker image
 - WordPress core is **not** committed to Git
 
-### Themes (committed to Git)
-Custom themes live under:
+### Themes & Plugins (committed to Git)
+Custom themes and plugins live under:
 - `wp-content/themes/gca-intranet-foundation` (parent theme)
 - `wp-content/themes/gca-intranet` (child theme)
+- `wp-content/plugins/gca-custom`
+
+*Note: The entire local `./wp-content` folder is bind-mounted to the container locally. If you install a new plugin via the WordPress Admin GUI, it will sync to your local machine so it can be committed to Git.*
 
 ### Database
 - MySQL 8.0 for local development (via Docker Compose)
@@ -37,6 +40,7 @@ DB credentials should be provided via environment variables or secrets.
 ## Prerequisites
 - Docker Desktop (or Docker Engine) installed and running
 - Git
+- *No local PHP, Node.js, or npm required (Docker handles all dependencies).*
 
 ---
 
@@ -53,9 +57,19 @@ Common values you may want to change:
 - `WP_URL`
 - `WP_PORT`
 - Admin username / password
+- **Important:** Ensure `WP_HOME` and `WP_SITEURL` explicitly match your URL and port (e.g., `http://localhost:8090`) to prevent WordPress redirect loops.
 
 ### 2) Start containers
-Build and start WordPress + MySQL:
+If you're on local you need to pass in the compose file to use: `docker-compose.local.yml`.
+
+**LOCAL build:**
+
+```bash
+docker compose -f docker-compose.local.yml up -d --build
+```
+
+
+**SERVER build:**
 
 ```bash
 docker compose --env-file .env up -d --build
@@ -117,17 +131,18 @@ This removes all local data and re-initialises WordPress.
 ---
 
 ## Front-end build (theme assets)
-If your theme uses an npm build step for CSS/JS:
+If your theme uses an npm build step for CSS/JS, use the built-in Docker container to compile assets (no local Node installation required).
+
+To install dependencies and build once:
 
 ```bash
-npm install
-npm run build
+docker compose -f docker-compose.local.yml run --rm theme-builder
 ```
 
-Watch during development:
+To watch for file changes during development:
 
 ```bash
-npm run watch
+docker compose -f docker-compose.local.yml run --rm theme-builder npm run watch
 ```
 
 > Whether compiled assets should be committed depends on repo convention. Follow existing patterns in this repo.
@@ -175,6 +190,9 @@ Start Docker Desktop and retry.
 ### Port already in use
 - Change `WP_PORT` in `.env`
 - Restart containers
+
+### Redirecting to Port 80 or blank localhost
+WordPress relies on absolute URLs. Ensure `WP_HOME` and `WP_SITEURL` in your `.env` file explicitly include your custom port (e.g., `http://localhost:8090`). Restart the container and test in an **Incognito Window** to clear cached browser redirects.
 
 ### Stuck on WordPress install screen
 Run the wp-cli bootstrap again:

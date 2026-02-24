@@ -589,3 +589,78 @@ body {
     padding-left: clamp(8.5rem, 12vw, 13rem) !important;
   }
 }
+
+/* =======================================================
+   GOV.UK footer markup overrides (keep GCA layout)
+   Fixes:
+   - crest centred above copyright link
+   - remove huge mobile whitespace between links + crest
+   ======================================================= */
+
+/* Make the GOV.UK meta row behave like our old footer row */
+.site-footer .govuk-footer__meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 3rem;
+
+  /* GOV.UK adds spacing that creates the "big empty band" */
+  margin: 0;
+  padding: 0;
+}
+
+/* Left column (links) – remove GOV.UK bottom margins */
+.site-footer .govuk-footer__meta-item--grow {
+  margin: 0;
+  padding: 0;
+}
+
+/* Ensure the inline list doesn’t introduce extra vertical space */
+.site-footer .govuk-footer__inline-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2.5rem;
+}
+
+/* Right column (crest + copyright) */
+.site-footer .gca-footer-brand {
+  display: flex;
+  flex-direction: column;
+  align-items: center; /* <-- centers crest over link */
+  text-align: center; /* <-- centers link text */
+  gap: 0.6rem;
+
+  margin: 0; /* <-- prevent “push to bottom” behaviour */
+  padding: 0;
+}
+
+.site-footer img.gca-footer-crest {
+  display: block;
+  margin: 0 auto; /* <-- belt + braces centering */
+}
+
+/* Mobile: stack neatly, no weird spacing */
+@media (max-width: 991.98px) {
+  .site-footer .govuk-footer__meta {
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 1.5rem;
+  }
+
+  .site-footer .govuk-footer__inline-list {
+    justify-content: center;
+    gap: 1.75rem;
+  }
+}
+@media (max-width: 40.0525em) {
+  .site-footer .govuk-footer__meta-item--grow {
+    flex: 1 1 100% !important;
+    flex-basis: 100% !important;
+  }
+}
