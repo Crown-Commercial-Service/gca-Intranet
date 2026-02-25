@@ -49,7 +49,7 @@ function gca_render_govuk_pagination(int $current, int $total): void
   if ($current > 1) {
     $prev = $current - 1;
     echo '<div class="govuk-pagination__prev">';
-    echo '<a class="govuk-link govuk-pagination__link" href="' . esc_url(get_pagenum_link($prev)) . '" rel="prev">';
+    echo '<a class="govuk-link govuk-pagination__link" data-testid="pagination-prev" href="' . esc_url(get_pagenum_link($prev)) . '" rel="prev">';
     echo '<svg class="govuk-pagination__icon govuk-pagination__icon--prev" xmlns="http://www.w3.org/2000/svg" height="13" width="15" aria-hidden="true" focusable="false" viewBox="0 0 15 13"><path d="m6.5938-0.0078125-6.7266 6.7266 6.7441 6.4062 1.377-1.449-4.1856-3.9768h12.896v-2h-12.984l4.2931-4.293-1.414-1.414z"></path></svg>';
     echo '<span class="govuk-pagination__link-title">Previous<span class="govuk-visually-hidden"> page</span></span>';
     echo '</a></div>';
@@ -86,7 +86,7 @@ function gca_render_govuk_pagination(int $current, int $total): void
   if ($current < $total) {
     $next = $current + 1;
     echo '<div class="govuk-pagination__next">';
-    echo '<a class="govuk-link govuk-pagination__link" href="' . esc_url(get_pagenum_link($next)) . '" rel="next">';
+    echo '<a class="govuk-link govuk-pagination__link" data-testid="pagination-next" href="' . esc_url(get_pagenum_link($next)) . '" rel="next">';
     echo '<span class="govuk-pagination__link-title">Next<span class="govuk-visually-hidden"> page</span></span>';
     echo '<svg class="govuk-pagination__icon govuk-pagination__icon--next" xmlns="http://www.w3.org/2000/svg" height="13" width="15" aria-hidden="true" focusable="false" viewBox="0 0 15 13"><path d="m8.107-0.0078125-1.4136 1.414 4.2926 4.293h-12.986v2h12.896l-4.1855 3.9766 1.377 1.4492 6.7441-6.4062-6.7246-6.7266z"></path></svg>';
     echo '</a></div>';
@@ -129,17 +129,27 @@ function gca_render_govuk_pagination(int $current, int $total): void
           ?>
 
           <div class="govuk-grid-column-one-third govuk-!-margin-bottom-6" data-testid="three-col-category-col">
-            <article class="gca-threecol-card" data-testid="three-col-category-card">
+            <article
+              class="gca-threecol-card"
+              data-testid="three-col-category-card"
+              data-post-id="<?php echo esc_attr((string) get_the_ID()); ?>"
+            >
               <h3 class="govuk-heading-m gca-threecol-card__title" data-testid="three-col-category-card-title">
-                <a class="govuk-link govuk-link--no-visited-state gca-threecol-card__link"
-                   href="<?php the_permalink(); ?>"
-                   data-testid="three-col-category-card-link">
+                <a
+                  class="govuk-link govuk-link--no-visited-state gca-threecol-card__link"
+                  href="<?php the_permalink(); ?>"
+                  data-testid="three-col-category-card-link"
+                >
                   <?php the_title(); ?>
                   <span class="gca-threecol-card__chevron" aria-hidden="true">›</span>
                 </a>
               </h3>
 
-              <p class="govuk-body gca-threecol-card__excerpt" data-testid="three-col-category-card-excerpt">
+              <p
+                class="govuk-body gca-threecol-card__excerpt"
+                data-testid="three-col-category-card-excerpt"
+                data-test="card-post-info"
+              >
                 <?php echo esc_html($summary); ?>
               </p>
             </article>
