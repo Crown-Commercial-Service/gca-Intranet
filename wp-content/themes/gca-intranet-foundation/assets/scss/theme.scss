@@ -1,6 +1,6 @@
 @import 'tokens';
 // Import GOV.UK Frontend
-@import "../../node_modules/govuk-frontend/dist/govuk/all";
+@import '../../node_modules/govuk-frontend/dist/govuk/all';
 
 @import '../../node_modules/bootstrap/scss/bootstrap';
 @import 'typography';
@@ -9,3 +9,68 @@
 @import 'homepage';
 @import 'hero';
 @import 'breadcrumbs';
+
+/* =========================================================
+   GI-17: Three Column Template (Category) cards
+   Scoped so other templates are NOT affected
+   ========================================================= */
+
+.gca-three-col-category .gca-threecol-card {
+  position: relative;
+  height: 100%;
+  border: 1px solid #c8c8c8;
+  border-left: 6px solid #9caf27;
+  border-radius: 15px;
+  background: #fff;
+  box-shadow: 0 2px 0 rgba(0, 0, 0, 0.08);
+  padding: 18px 18px 16px;
+}
+
+.gca-three-col-category .gca-threecol-card:hover {
+  box-shadow: 0 4px 0 rgba(0, 0, 0, 0.12);
+}
+
+.gca-three-col-category .gca-threecol-card__title {
+  margin-top: 0;
+  margin-bottom: 10px;
+}
+
+.gca-three-col-category .gca-threecol-card__link {
+  position: relative;
+  display: block;
+  padding-right: 28px;
+  text-decoration: none;
+  color: #0b0c0c;
+}
+
+.gca-three-col-category .gca-threecol-card__link:visited {
+  color: #0b0c0c;
+}
+
+.gca-three-col-category .gca-threecol-card__link:hover,
+.gca-three-col-category .gca-threecol-card__link:focus {
+  color: #0b0c0c;
+  text-decoration: underline;
+}
+
+.gca-three-col-category .gca-threecol-card__chevron {
+  position: absolute;
+  right: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 28px;
+  line-height: 1;
+  color: #0b0c0c;
+}
+
+.gca-three-col-category .gca-threecol-card__excerpt {
+  margin-bottom: 0;
+}
+
+.gca-three-col-category .govuk-pagination {
+  margin-top: 10px;
+}
+
+.govuk-breadcrumbs {
+  margin-top: 0px;
+}
