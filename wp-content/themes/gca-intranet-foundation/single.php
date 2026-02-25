@@ -9,17 +9,29 @@ get_template_part('template-parts/hero', null, [
 get_template_part('template-parts/breadcrumbs');
 ?>
 
-<div class="govuk-width-container">
-  <main class="govuk-main-wrapper" id="main-content">
-    <div class="govuk-grid-row">
-      <div class="govuk-grid-column-two-thirds">
-        <?php
-        if (have_posts()) :
-          while (have_posts()) : the_post();
-            the_content();
-          endwhile;
-        endif;
-        ?>
+<div class="govuk-width-container" data-testid="single-container">
+  <main class="govuk-main-wrapper" id="main-content" data-testid="single-main">
+    <div class="govuk-grid-row" data-testid="single-row">
+      <div class="govuk-grid-column-two-thirds" data-testid="single-col">
+        <?php if (have_posts()) : while (have_posts()) : the_post(); ?>
+
+          <article
+            <?php post_class(); ?>
+            data-testid="single-article"
+            data-post-id="<?php echo esc_attr((string) get_the_ID()); ?>"
+          >
+            <header data-testid="single-header">
+              <h1 class="govuk-heading-xl" data-testid="single-title">
+                <?php the_title(); ?>
+              </h1>
+            </header>
+
+            <div class="govuk-body" data-testid="single-content">
+              <?php the_content(); ?>
+            </div>
+          </article>
+
+        <?php endwhile; endif; ?>
       </div>
     </div>
   </main>
