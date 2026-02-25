@@ -141,9 +141,10 @@ function gca_render_govuk_pagination(int $current, int $total): void
                   data-testid="three-col-category-card-link"
                 >
                   <?php the_title(); ?>
-                  <span class="gca-threecol-card__chevron" aria-hidden="true">›</span>
                 </a>
               </h3>
+
+              <span class="gca-threecol-card__chevron" aria-hidden="true">›</span>
 
               <p
                 class="govuk-body gca-threecol-card__excerpt"
