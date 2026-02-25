@@ -44,3 +44,19 @@ RUN sed -i 's/Listen 80/Listen 8080/' /etc/apache2/ports.conf && \
 # One-off init script (used by docker compose run init, and by ECS one-off init tasks)
 COPY docker/wp-init.sh /usr/local/bin/wp-init.sh
 RUN chmod +x /usr/local/bin/wp-init.sh
+
+# Add the custom WordPress config bridge
+COPY docker/wp-config-extra.php /opt/wp-config-extra.php
+ENV WORDPRESS_CONFIG_EXTRA="require '/opt/wp-config-extra.php';"
+
+# Add the main startup init script
+COPY docker/wordpress-init.sh /usr/local/bin/wordpress-init.sh
+RUN chmod +x /usr/local/bin/wordpress-init.sh
+
+# Tell AWS ECS how to verify the container is healthy
+HEALTHCHECK --interval=30s --timeout=5s --start-period=30s --retries=3 \
+  CMD curl -fsS http://localhost:8080/wp-login.php >/dev/null || exit 1
+
+# Run the init script, then start Apache
+ENTRYPOINT ["wordpress-init.sh"]
+CMD ["apache2-foreground"]
