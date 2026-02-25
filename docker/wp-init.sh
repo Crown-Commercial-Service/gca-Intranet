@@ -49,16 +49,16 @@ if [ ! -f wp-config.php ]; then
     --extra-php="require '/opt/wp-config-extra.php';"
 fi
 
-# 4b) Wait for DB to be usable via WP (credentials/schema ready)
-i=0
-until wp db check --allow-root >/dev/null 2>&1; do
-  i=$((i+1))
-  if [ "$i" -gt 60 ]; then
-    echo "Timed out waiting for wp db check"
-    exit 1
-  fi
-  sleep 2
-done
+# # 4b) Wait for DB to be usable via WP (credentials/schema ready)
+# i=0
+# until wp db check --allow-root >/dev/null 2>&1; do
+#   i=$((i+1))
+#   if [ "$i" -gt 60 ]; then
+#     echo "Timed out waiting for wp db check"
+#     exit 1
+#   fi
+#   sleep 2
+# done
 
 # 5) Install WordPress (idempotent)
 SITE_URL="${WP_HOME:-${WP_URL:-http://localhost:8080}}"
