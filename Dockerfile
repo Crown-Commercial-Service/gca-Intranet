@@ -23,10 +23,16 @@ COPY docker/php.ini /usr/local/etc/php/conf.d/custom-php.ini
 # 1. Install system dependencies (zip for WP-CLI/GDS)
 RUN apt-get update && apt-get install -y libzip-dev unzip && docker-php-ext-install zip
 
-# 2. Copy the whole wp-content (contains your php files)
+# 2. Install WP-CLI into the image
+ARG WP_CLI_VERSION=2.12.0
+RUN curl -sSLo /usr/local/bin/wp "https://github.com/wp-cli/wp-cli/releases/download/v${WP_CLI_VERSION}/wp-cli-${WP_CLI_VERSION}.phar" \
+  && chmod +x /usr/local/bin/wp \
+  && wp --info
+
+# 3. Copy the whole wp-content (contains your php files)
 COPY wp-content/ /var/www/html/wp-content/
 
-# 3. Pull ONLY the compiled CSS/JS from the builder stage
+# 4. Pull ONLY the compiled CSS/JS from the builder stage
 # This ensures ECR gets the "ready to go" assets
 COPY --from=builder /app/theme-folder/assets/dist/ /var/www/html/wp-content/themes/gca-intranet-foundation/assets/dist/
 COPY --from=builder /app/theme-folder/assets/scripts/ /var/www/html/wp-content/themes/gca-intranet-foundation/assets/scripts/
