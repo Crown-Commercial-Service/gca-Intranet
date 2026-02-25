@@ -34,3 +34,7 @@ COPY --from=builder /app/theme-folder/assets/scripts/ /var/www/html/wp-content/t
 # Ensure Apache listens on 8080 for ECS
 RUN sed -i 's/Listen 80/Listen 8080/' /etc/apache2/ports.conf && \
     sed -i 's/<VirtualHost \*:80>/<VirtualHost *:8080>/' /etc/apache2/sites-available/000-default.conf
+
+# One-off init script (used by docker compose run init, and by ECS one-off init tasks)
+COPY docker/wp-init.sh /usr/local/bin/wp-init.sh
+RUN chmod +x /usr/local/bin/wp-init.sh
