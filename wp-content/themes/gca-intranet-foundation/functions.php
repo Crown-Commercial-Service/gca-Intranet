@@ -199,7 +199,7 @@ add_filter('dashboard_glance_items', function($items) {
 ////////// assigning category to page object //////////
 add_action('init', function() {
     register_taxonomy_for_object_type('category', 'page');
-    
+
     global $wp_taxonomies;
     if (isset($wp_taxonomies['category'])) {
         $wp_taxonomies['category']->show_in_rest = true;
@@ -212,7 +212,7 @@ add_action('init', function() {
     if (!isset($_GET['import_gca_categories'])) {
         return;
     }
-    
+
     $categories = [
         'About GCA', 'People survey', 'Accessibility', 'Change management', 'Customers and suppliers', 'Digital and data', 'Finance', 'Knowledge Centre', 'Marketing and communications', 'Events', 'Inclusion and diversity', 'HR', 'Anti-fraud and corruption', 'Employee benefits', 'Health and wellbeing', 'Learning and development', 'Leave, absence and flexible working', 'New starters and leavers', 'Recruitment', 'Performance management', 'Pay and pensions', 'Respect at work', 'Workday', 'Information security', 'IT support', 'Workplace and travel', 'Health and safety', 'Community'
     ];
@@ -224,7 +224,7 @@ add_action('init', function() {
     $content_types = [
         'Corporate information', 'Guidance', 'Staff network',
     ];
-    
+
     $audience = [
         'All colleagues', 'Line managers'
     ];
@@ -246,7 +246,7 @@ add_action('init', function() {
 
 
     echo '</ul><p><strong>Import complete!</strong></p></div>';
-    exit; 
+    exit;
 });
 
 function add_tax($array, $tax_name){
@@ -294,3 +294,137 @@ add_action('init', function() {
     echo "All terms in specified taxonomies have been deleted.";
     exit;
 });
+
+// Make sure WP_CLI is actually running before defining the class
+if ( defined( 'WP_CLI' ) && WP_CLI ) {
+
+    class GCA_Import_Command {
+
+        /**
+         * Runs the custom GCA permalink and hierarchy importer.
+         *
+         * ## OPTIONS
+         *
+         * <file>
+         * : The path to the CSV file you want to import.
+         *
+         * [--dry-run]
+         * : Run the command without actually modifying the database.
+         *
+         * ## EXAMPLES
+         *
+         * wp gca importPermaLinks uat-permalinks-import.csv
+         * wp gca importPermaLinks uat-permalinks-import.csv --dry-run
+         *
+         * @when after_wp_load
+         */
+        public function importPermaLinks( $args, $assoc_args ) {
+            list( $file ) = $args;
+            $dry_run = \WP_CLI\Utils\get_flag_value( $assoc_args, 'dry-run', false );
+
+            if ( ! file_exists( $file ) ) {
+                \WP_CLI::error( "File not found: $file" );
+            }
+
+            \WP_CLI::line( "Starting import from: $file" );
+
+            if ( $dry_run ) {
+                \WP_CLI::success( "Dry run complete! No data was changed." );
+                return;
+            }
+
+            global $wpdb;
+
+            if ( ( $handle = fopen( $file, 'r' ) ) !== false ) {
+
+                $file_lines = file( $file, FILE_SKIP_EMPTY_LINES );
+                $row_count  = count( $file_lines );
+                $progress   = \WP_CLI\Utils\make_progress_bar( 'Updating permalinks & hierarchy', $row_count );
+
+                while ( ( $data = fgetcsv( $handle, 1000, ',' ) ) !== false ) {
+
+                    // 1. Grab raw data from CSV
+                    $raw_old_slug = trim( $data[0] );
+                    $raw_new_path = trim( $data[1] );
+
+                    // Skip empty rows or header rows if necessary
+                    if ( empty( $raw_old_slug ) || empty( $raw_new_path ) || $raw_old_slug === 'old_slug' ) {
+                        $progress->tick();
+                        continue;
+                    }
+
+                    $old_slug     = sanitize_title( $raw_old_slug );
+                    $cleaned_path = trim( $raw_new_path, '/' ); // Remove leading/trailing slashes
+                    $path_parts   = explode( '/', $cleaned_path ); // e.g., ['hr', 'workday', 'workday-staff-directory']
+
+                    // ==========================================
+                    // PHASE 1: RENAME THE SLUG
+                    // ==========================================
+                    // The new slug is always the very last part of the path array
+                    $new_final_slug = sanitize_title( end( $path_parts ) );
+
+                    // Only run the update if the slug actually needs changing
+                    if ( $old_slug !== $new_final_slug ) {
+                        $wpdb->update(
+                            $wpdb->posts,
+                            array( 'post_name' => $new_final_slug ),
+                            array( 'post_name' => $old_slug ),
+                            array( '%s' ),
+                            array( '%s' )
+                        );
+                    }
+
+                    // ==========================================
+                    // PHASE 2: BUILD THE HIERARCHY
+                    // ==========================================
+                    $current_parent_id = 0;
+
+                    foreach ( $path_parts as $index => $slug ) {
+                        $safe_slug = sanitize_title( $slug );
+
+                        // Find the post ID for this piece of the path
+                        // (We search by post_name, making sure we only hit actual pages/posts, not attachments)
+                        $post_id = $wpdb->get_var( $wpdb->prepare(
+                            "SELECT ID FROM {$wpdb->posts} WHERE post_name = %s AND post_type IN ('page', 'post') LIMIT 1",
+                            $safe_slug
+                        ) );
+
+                        if ( $post_id ) {
+                            // If this isn't the first item, assign it to the previous parent
+                            if ( $index > 0 && $current_parent_id > 0 ) {
+                                $wpdb->update(
+                                    $wpdb->posts,
+                                    array( 'post_parent' => $current_parent_id ),
+                                    array( 'ID'          => $post_id ),
+                                    array( '%d' ),
+                                    array( '%d' )
+                                );
+                            }
+
+                            // Set this current page as the parent for the NEXT loop iteration
+                            $current_parent_id = $post_id;
+
+                        } else {
+                            // If a page in the middle of the folder path doesn't exist, we warn you and break the chain
+                            \WP_CLI::warning( "Missing page: '$safe_slug' (from path: $cleaned_path). Breaking hierarchy." );
+                            $current_parent_id = 0;
+                        }
+                    }
+
+                    $progress->tick();
+                }
+
+                fclose( $handle );
+                $progress->finish();
+
+                \WP_CLI::success( "Boom! All permalinks and hierarchies updated successfully." );
+                \WP_CLI::warning( "Remember to run 'wp rewrite flush' so WordPress picks up the new URLs!" );
+
+            } else {
+                \WP_CLI::error( "Could not open the CSV file for reading." );
+            }
+        }
+    }
+
+    \WP_CLI::add_command( 'gca', 'GCA_Import_Command' );
+}
