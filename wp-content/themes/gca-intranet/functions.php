@@ -15,7 +15,7 @@ add_action('wp_enqueue_scripts', function (): void {
     'gca-intranet-child',
     get_stylesheet_directory_uri() . '/style.css',
     [],
-    filemtime(get_stylesheet_directory() . '/style.css')
+    (string) filemtime(get_stylesheet_directory() . '/style.css')
   );
 
   /**
@@ -26,7 +26,6 @@ add_action('wp_enqueue_scripts', function (): void {
    * In a child theme, get_template_directory_uri() points to the parent theme.
    */
   if (is_single()) {
-
     $govuk_js_rel = '/assets/scripts/all.min.js';
     $govuk_js_abs = get_template_directory() . $govuk_js_rel;
     $govuk_js_ver = file_exists($govuk_js_abs) ? (string) filemtime($govuk_js_abs) : '1.0.0';
@@ -90,7 +89,7 @@ add_action('add_meta_boxes', function (): void {
 
 add_action('save_post', function (int $post_id): void {
 
-  if (!isset($_POST['gca_hero_image_nonce']) || !wp_verify_nonce($_POST['gca_hero_image_nonce'], 'gca_hero_image_save')) {
+  if (!isset($_POST['gca_hero_image_nonce']) || !wp_verify_nonce((string) $_POST['gca_hero_image_nonce'], 'gca_hero_image_save')) {
     return;
   }
 
@@ -166,4 +165,119 @@ JS;
 
   // Load after jquery-core (available in WP admin)
   wp_add_inline_script('jquery-core', $js, 'after');
+});
+
+/**
+ * GI-100: Take a look component fields on the homepage (WYSIWYG)
+ * Stores HTML in: _gca_take_a_look_content
+ */
+add_action('add_meta_boxes', function (): void {
+
+  add_meta_box(
+    'gca_take_a_look',
+    __('Homepage: Take a look', 'gca-intranet'),
+    'gca_render_take_a_look_metabox',
+    'page',
+    'normal',
+    'high'
+  );
+});
+
+function gca_render_take_a_look_metabox(\WP_Post $post): void
+{
+  // Only show/use on the page set as "Front page" in Settings → Reading
+  $front_page_id = (int) get_option('page_on_front');
+
+  if ($front_page_id !== (int) $post->ID) {
+    echo '<p>' . esc_html__('This box is only used on the Front page (Settings → Reading).', 'gca-intranet') . '</p>';
+    return;
+  }
+
+  wp_nonce_field('gca_take_a_look_save', 'gca_take_a_look_nonce');
+
+  $title   = (string) get_post_meta($post->ID, '_gca_take_a_look_title', true);
+  $desc    = (string) get_post_meta($post->ID, '_gca_take_a_look_desc', true);
+  $content = (string) get_post_meta($post->ID, '_gca_take_a_look_content', true);
+  ?>
+  <p>
+    <label for="gca_take_a_look_title"><strong><?php esc_html_e('Title', 'gca-intranet'); ?></strong></label><br>
+    <input
+      type="text"
+      id="gca_take_a_look_title"
+      name="gca_take_a_look_title"
+      class="widefat"
+      value="<?php echo esc_attr($title); ?>"
+      placeholder="<?php echo esc_attr__('Take a look', 'gca-intranet'); ?>"
+    >
+  </p>
+
+  <p>
+    <label for="gca_take_a_look_desc"><strong><?php esc_html_e('Description', 'gca-intranet'); ?></strong></label><br>
+    <textarea
+      id="gca_take_a_look_desc"
+      name="gca_take_a_look_desc"
+      class="widefat"
+      rows="3"
+      placeholder="<?php echo esc_attr__('Short description under the title', 'gca-intranet'); ?>"
+    ><?php echo esc_textarea($desc); ?></textarea>
+  </p>
+
+  <p>
+    <strong><?php esc_html_e('Box content', 'gca-intranet'); ?></strong><br>
+    <span class="description">
+      <?php esc_html_e('Add text, links, and images. Everything renders inside the green box.', 'gca-intranet'); ?>
+    </span>
+  </p>
+
+  <?php
+  wp_editor(
+    $content,
+    'gca_take_a_look_content',
+    [
+      'textarea_name' => 'gca_take_a_look_content',
+      'textarea_rows' => 6,
+      'media_buttons' => true,
+      'teeny'         => false,
+      'quicktags'     => true,
+    ]
+  );
+}
+
+add_action('save_post_page', function (int $post_id): void {
+
+  // Autosave / permissions
+  if (defined('DOING_AUTOSAVE') && DOING_AUTOSAVE) {
+    return;
+  }
+
+  if (!current_user_can('edit_post', $post_id)) {
+    return;
+  }
+
+  // Only save for the page set as Front page
+  $front_page_id = (int) get_option('page_on_front');
+  if ($front_page_id !== (int) $post_id) {
+    return;
+  }
+
+  // Nonce
+  if (!isset($_POST['gca_take_a_look_nonce']) || !wp_verify_nonce((string) $_POST['gca_take_a_look_nonce'], 'gca_take_a_look_save')) {
+    return;
+  }
+
+  $title = isset($_POST['gca_take_a_look_title'])
+    ? sanitize_text_field((string) $_POST['gca_take_a_look_title'])
+    : '';
+
+  $desc = isset($_POST['gca_take_a_look_desc'])
+    ? sanitize_textarea_field((string) $_POST['gca_take_a_look_desc'])
+    : '';
+
+  $content = isset($_POST['gca_take_a_look_content'])
+    ? wp_kses_post((string) $_POST['gca_take_a_look_content'])
+    : '';
+
+  update_post_meta($post_id, '_gca_take_a_look_title', $title);
+  update_post_meta($post_id, '_gca_take_a_look_desc', $desc);
+  update_post_meta($post_id, '_gca_take_a_look_content', $content);
 });
