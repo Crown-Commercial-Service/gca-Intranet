@@ -308,3 +308,158 @@ Text Domain: gca-intranet
   max-width: 100%;
   height: auto;
 }
+
+.govuk-breadcrumbs {
+  margin-top: 0px;
+  margin-bottom: 10px;
+}
+
+/* =========================================================
+   GI-17: Three Column Template (Category) cards
+   Scoped so other templates are NOT affected
+   ========================================================= */
+
+/* Make cards equal height in each row */
+.gca-three-col-category .govuk-grid-column-one-third {
+  display: flex;
+}
+
+/* Card base */
+.gca-three-col-category .gca-threecol-card {
+  position: relative;
+  width: 100%;
+  flex: 1 1 auto;
+
+  background: #fff;
+  border: 1px solid #c8c8c8;
+  border-left: 6px solid #9caf27;
+
+  border-radius: 4px;
+  padding: 20px 52px 18px 20px; /* room for chevron */
+
+  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.12);
+}
+
+.gca-three-col-category .gca-threecol-card:hover {
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.14);
+}
+
+.gca-three-col-category .gca-threecol-card__title {
+  margin: 0 0 10px 0;
+}
+
+.gca-three-col-category .gca-threecol-card__link {
+  display: block;
+  text-decoration: none;
+  color: #0b0c0c;
+  position: relative;
+  padding-right: 28px; /* space for chevron */
+}
+
+.gca-three-col-category .gca-threecol-card__link:visited {
+  color: #0b0c0c;
+}
+
+.gca-three-col-category .gca-threecol-card__link:hover,
+.gca-three-col-category .gca-threecol-card__link:focus {
+  color: #0b0c0c;
+  text-decoration: underline;
+}
+
+.gca-three-col-category .gca-threecol-card__chevron {
+  position: absolute;
+  right: 7px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 38px;
+  line-height: 1;
+  color: #0b0c0c;
+}
+
+.gca-three-col-category .gca-threecol-card__excerpt {
+  margin: 0;
+}
+
+/* Keep pagination breathing room */
+.gca-three-col-category .govuk-pagination {
+  margin-top: 10px;
+}
+
+/* =========================================================
+   GI-100: Take a look component (Homepage only)
+   - Scoped to the homepage column to avoid affecting other pages
+   - Supports WYSIWYG (links/images/etc.)
+   - Responsive and accessible
+   - No px for sizing
+   ========================================================= */
+
+[data-testid='take-a-look-column'] .gca-take-a-look {
+  border-radius: 0.375rem;
+  box-shadow: 0 0.125rem 0.375rem rgba(0, 0, 0, 0.12);
+  background: #e9edc2; /* match site accent green */
+  min-block-size: clamp(7.5rem, 18vw, 10rem);
+  position: relative;
+  padding: clamp(1rem, 2.5vw, 1.5rem);
+}
+
+/* Content area (from WYSIWYG) */
+[data-testid='take-a-look-column'] .gca-take-a-look__content {
+  color: #0b0c0c;
+}
+
+/* Force all WYSIWYG text + links to be black in this component */
+[data-testid='take-a-look-column'] .gca-take-a-look__content,
+[data-testid='take-a-look-column'] .gca-take-a-look__content * {
+  color: #0b0c0c;
+}
+
+[data-testid='take-a-look-column'] .gca-take-a-look__content a,
+[data-testid='take-a-look-column'] .gca-take-a-look__content a:visited {
+  color: #0b0c0c;
+  text-decoration: underline;
+  text-decoration-thickness: 0.08em;
+  text-underline-offset: 0.12em;
+}
+
+[data-testid='take-a-look-column'] .gca-take-a-look__content a:hover {
+  text-decoration-thickness: 0.12em;
+}
+
+/* GOV.UK focus treatment for links inside WYSIWYG */
+[data-testid='take-a-look-column'] .gca-take-a-look__content a:focus,
+[data-testid='take-a-look-column'] .gca-take-a-look__content a:focus-visible {
+  outline: 0.1875rem solid #ffdd00;
+  outline-offset: 0.125rem;
+}
+
+[data-testid='take-a-look-column'] .gca-take-a-look__content a:focus:not(:focus-visible) {
+  outline: none;
+}
+
+/* Make images inserted via WYSIWYG responsive */
+[data-testid='take-a-look-column'] .gca-take-a-look__content img {
+  max-width: 100%;
+  height: auto;
+  display: block;
+}
+
+/* Decorative icon (bottom-right) */
+[data-testid='take-a-look-column'] .gca-take-a-look__icon {
+  position: absolute;
+  inset-inline-end: clamp(0.75rem, 2vw, 1rem);
+  inset-block-end: clamp(0.75rem, 2vw, 1rem);
+
+  inline-size: clamp(2.25rem, 4vw, 2.5rem);
+  block-size: clamp(2.25rem, 4vw, 2.5rem);
+
+  border-radius: 9999rem;
+  display: grid;
+  place-items: center;
+  background: rgba(0, 0, 0, 0.08);
+  pointer-events: none;
+}
+
+[data-testid='take-a-look-column'] .gca-take-a-look__icon svg {
+  inline-size: 1.125em;
+  block-size: 1.125em;
+}
