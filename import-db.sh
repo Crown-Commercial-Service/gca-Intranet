@@ -18,9 +18,10 @@ DB_FILE="local.db.latest.sql"
 DB_CONTAINER="gca-intranet-db-1"
 WP_CONTAINER="gca-intranet-wordpress-1"
 
+
 # URLs for Find & Replace
-OLD_URL="http://localhost:8080"
-NEW_URL="http://localhost:${WP_PORT}"
+OLD_URL="${FIND_REPLACE_OLD_URL}"
+NEW_URL="${FIND_REPLACE_NEW_URL}"
 
 # Admin Email Fallback (WP requires an email to create a user)
 ADMIN_EMAIL="${WP_ADMIN_EMAIL:-admin@localhost.com}"
