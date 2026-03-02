@@ -1,0 +1,199 @@
+/* --- Base Variables & Setup --- */
+:root {
+  --gca-text: #0b0c0c;
+  --gca-active-bg: #8faef1; /* From your screenshot */
+  --gca-hover-bg: #f3f2f1;
+  --gca-border: #b1b4b6;
+}
+
+.global-navigation {
+  margin-top: 20px;
+  width: 100%;
+}
+
+.nav-list--primary {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column; /* Mobile first */
+}
+
+.nav-list--primary a {
+  text-decoration: none;
+  color: var(--gca-text);
+  font-weight: 400;
+  display: block;
+}
+
+/* --- Top Level Items --- */
+.nav-list--primary > li > a {
+  padding: 15px;
+  border-bottom: 1px solid var(--gca-border);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.nav-list--primary > li > a:hover {
+  background-color: #9fb9ff;
+}
+
+/* Active Tab Styling (e.g., The "HR" tab) */
+.nav-list--primary > li.active > a {
+  background-color: var(--gca-active-bg);
+  font-weight: 700;
+}
+
+/* --- Mega Menu Wrapper (Hidden by default on mobile) --- */
+.mega-menu-wrapper {
+  display: none;
+  background-color: #ffffff;
+  border-bottom: 1px solid var(--gca-border);
+  padding-bottom: 15px;
+}
+
+/* Show mega menu on hover or active state */
+.nav-list--primary > li.has-mega-menu:hover .mega-menu-wrapper,
+.nav-list--primary > li.has-mega-menu:focus-within .mega-menu-wrapper {
+  display: block;
+}
+
+/* Sub-menu links */
+.sub-menu {
+  list-style: none;
+  padding: 20px;
+  margin: 0;
+  text-align: center;
+}
+
+.sub-menu li a {
+  padding: 10px 0;
+  color: var(--gca-text);
+}
+
+.sub-menu li a:hover {
+  background-color: #9fb9ff;
+}
+
+/* --- Desktop Layout Breakpoint --- */
+@media (min-width: 768px) {
+  /* 1. Hide the mobile "Menu" button entirely */
+  .global-navigation__toggler {
+    display: none !important;
+  }
+
+  /* 2. Force the navigation to always be visible, overriding the mobile JS */
+  .global-navigation {
+    display: block !important; 
+  }
+
+  .global-navigation {
+    position: relative; /* Crucial for absolute positioning of mega menu */
+  }
+
+  .nav-list--primary {
+    flex-direction: row; /* Make items horizontal */
+    gap: 5px;
+  }
+
+  .nav-list--primary > li > a {
+    border-bottom: none;
+    padding: 15px 25px;
+    border-radius: 4px 4px 0 0; /* Match design curve */
+  }
+
+  /* Dropdown container spans full width */
+  .mega-menu-wrapper {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    width: 100%;
+    box-shadow: 0 0px 8px 2px rgba(0, 0, 0, 0.1);
+    z-index: 100;
+    border-bottom-left-radius: 10px;
+    border-bottom-right-radius: 10px;
+  }
+
+  /* CSS Grid for columns */
+  .sub-menu {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr); /* 3 columns */
+    gap: 15px 30px;
+  }
+}
+
+/* --- Mobile Menu View (Screens under 768px) --- */
+@media (max-width: 767px) {
+  
+  /* 1. Hide the main navigation wrapper by default */
+  .global-navigation {
+    display: none;
+    width: 100%;
+    background-color: #ffffff;
+    /* Optional: A solid line above the menu separates it from the header */
+    border-top: 1px solid var(--gca-border, #b1b4b6); 
+  }
+
+  /* 2. Show the navigation when the button's JS sets aria-hidden="false" */
+  .global-navigation[aria-hidden="false"] {
+    display: block;
+  }
+
+  /* 3. Style the Menu toggle button to match your screenshot */
+  .global-navigation__toggler {
+    display: inline-flex;
+    align-items: center;
+    padding: 6px 12px;
+    border: 1px solid #0b0c0c; /* Black border like the design */
+    background-color: transparent;
+    font-size: 16px;
+    cursor: pointer;
+  }
+
+  /* 4. Style the top-level mobile menu links */
+  .nav-list--primary > li > a {
+    padding: 15px 20px;
+    border-bottom: 1px solid var(--gca-border, #b1b4b6);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    color: #0b0c0c;
+    font-size: 18px;
+    font-weight: 500;
+  }
+
+  /* 5. Style the active state (The light blue "About GCA" in your image) */
+  .nav-list--primary > li.active > a {
+    background-color: var(--gca-active-bg, #9cb4ef);
+    font-weight: 700;
+  }
+
+  .sub-menu {
+        text-align: left;
+    }
+}
+
+@media (min-width: 1024px) {
+  .sub-menu {
+    grid-template-columns: repeat(4, 1fr); /* 4 columns for large screens */
+  }
+}
+
+.nav-wrapper {
+
+    padding: 0 0 govuk-px-to-rem(20) 0;
+    position: relative;
+    margin: 0 auto;
+
+    @include govuk-media-query($from: desktop) {
+
+        display: flex;
+        flex-flow: row nowrap;
+        padding: 0 0 0 0;
+        text-align: right;
+        gap: 80px;
+
+    }
+
+}
