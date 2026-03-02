@@ -1,4 +1,10 @@
-<?php get_header(); ?>
+<?php
+/**
+ * Posts index (home) template
+ * Shows latest posts when Settings → Reading → “Your homepage displays” is set to “Your latest posts”.
+ */
+get_header();
+?>
 
 <?php
 get_template_part('template-parts/hero', null, [
@@ -7,11 +13,22 @@ get_template_part('template-parts/hero', null, [
 ]);
 
 get_template_part('template-parts/breadcrumbs');
+
+// Take a look (Customizer-driven)
+$take_enabled = (bool) get_theme_mod('gca_takealook_enabled', true);
+$take_title   = (string) get_theme_mod('gca_takealook_title', __('Take a look', 'gca-intranet'));
+$take_desc    = (string) get_theme_mod('gca_takealook_desc', '');
+$take_text    = (string) get_theme_mod('gca_takealook_link_text', __('Learn more', 'gca-intranet'));
+$take_url_raw = (string) get_theme_mod('gca_takealook_link_url', '');
+
+$take_href = $take_url_raw !== '' ? esc_url($take_url_raw) : '';
 ?>
 
 <div class="govuk-width-container" data-testid="home-container">
   <main class="govuk-main-wrapper" id="main-content" data-testid="home-main">
     <div class="govuk-grid-row" data-testid="home-row">
+
+      <!-- Main column: posts -->
       <div class="govuk-grid-column-two-thirds" data-testid="home-col">
 
         <?php if (have_posts()) : ?>
@@ -55,6 +72,57 @@ get_template_part('template-parts/breadcrumbs');
         <?php endif; ?>
 
       </div>
+
+      <!-- Sidebar: Take a look -->
+      <div class="govuk-grid-column-one-third" data-testid="take-a-look-column">
+        <?php if ($take_enabled) : ?>
+
+          <div class="gca-homepage-section-title" data-testid="take-a-look-header">
+            <h2 class="govuk-heading-m" data-testid="take-a-look-heading">
+              <?php echo esc_html($take_title); ?>
+            </h2>
+
+            <?php if ($take_desc !== '') : ?>
+              <p class="govuk-body" data-testid="take-a-look-subheading">
+                <?php echo esc_html($take_desc); ?>
+              </p>
+            <?php endif; ?>
+          </div>
+
+          <?php if ($take_href !== '') : ?>
+            <div class="gca-take-a-look" data-testid="take-a-look-card">
+              <a
+                class="gca-take-a-look__link govuk-link"
+                data-testid="take-a-look-link"
+                href="<?php echo $take_href; ?>"
+              >
+                <span class="gca-take-a-look__text">
+                  <?php echo esc_html($take_text); ?>
+                </span>
+
+                <span class="gca-take-a-look__icon" aria-hidden="true">
+                  <svg width="18" height="18" viewBox="0 0 20 20" focusable="false" aria-hidden="true">
+                    <path d="M6 14L14 6M9 6h5v5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                  </svg>
+                </span>
+              </a>
+            </div>
+          <?php else : ?>
+            <div class="gca-take-a-look" data-testid="take-a-look-card">
+              <div
+                class="gca-take-a-look__link"
+                aria-label="<?php echo esc_attr__('Take a look not configured', 'gca-intranet'); ?>"
+              >
+                <span class="gca-take-a-look__text">
+                  <?php echo esc_html($take_text); ?>
+                </span>
+              </div>
+            </div>
+          <?php endif; ?>
+
+        <?php endif; ?>
+      </div>
+
     </div>
   </main>
 </div>

@@ -170,6 +170,10 @@ JS;
 /**
  * GI-100: Take a look component fields on the homepage (WYSIWYG)
  * Stores HTML in: _gca_take_a_look_content
+ *
+ * NOTE:
+ * We keep this metabox for now (backwards compatible), but the homepage
+ * template is now driven by Customizer settings (theme_mods).
  */
 add_action('add_meta_boxes', function (): void {
 
@@ -280,4 +284,182 @@ add_action('save_post_page', function (int $post_id): void {
   update_post_meta($post_id, '_gca_take_a_look_title', $title);
   update_post_meta($post_id, '_gca_take_a_look_desc', $desc);
   update_post_meta($post_id, '_gca_take_a_look_content', $content);
+});
+
+/**
+ * Homepage options (Customizer)
+ * - Take a look component settings stored as theme_mods
+ * - Link text is a plain-text paragraph with a hard 90 char limit (no HTML, no images)
+ */
+if (!function_exists('gca_sanitize_takealook_link_text')) {
+  function gca_sanitize_takealook_link_text($value): string {
+    $value = (string) $value;
+
+    // Prevent HTML (and therefore images/links/etc)
+    $value = wp_strip_all_tags($value);
+
+    // Normalise whitespace and trim
+    $value = preg_replace('/\s+/', ' ', $value);
+    $value = trim((string) $value);
+
+    // Hard cap to 90 characters (multibyte safe)
+    if (function_exists('mb_substr')) {
+      $value = (string) mb_substr($value, 0, 90);
+    } else {
+      $value = (string) substr($value, 0, 90);
+    }
+
+    return $value;
+  }
+}
+
+add_action('customize_register', function (\WP_Customize_Manager $wp_customize): void {
+
+  $section = 'gca_homepage_options';
+
+  $wp_customize->add_section($section, [
+    'title'       => __('Homepage options', 'gca-intranet'),
+    'priority'    => 30,
+    'description' => __('Controls for homepage components (e.g. “Take a look”).', 'gca-intranet'),
+  ]);
+
+  // Toggle
+  $wp_customize->add_setting('gca_takealook_enabled', [
+    'default'           => true,
+    'sanitize_callback' => static fn ($v) => (bool) $v,
+    'transport'         => 'refresh',
+  ]);
+
+  $wp_customize->add_control('gca_takealook_enabled', [
+    'type'    => 'checkbox',
+    'section' => $section,
+    'label'   => __('Show “Take a look” block', 'gca-intranet'),
+  ]);
+
+  // Title
+  $wp_customize->add_setting('gca_takealook_title', [
+    'default'           => __('Take a look', 'gca-intranet'),
+    'sanitize_callback' => 'sanitize_text_field',
+    'transport'         => 'refresh',
+  ]);
+
+  $wp_customize->add_control('gca_takealook_title', [
+    'type'    => 'text',
+    'section' => $section,
+    'label'   => __('Take a look: title', 'gca-intranet'),
+  ]);
+
+  // Description
+  $wp_customize->add_setting('gca_takealook_desc', [
+    'default'           => '',
+    'sanitize_callback' => 'sanitize_textarea_field',
+    'transport'         => 'refresh',
+  ]);
+
+  $wp_customize->add_control('gca_takealook_desc', [
+    'type'        => 'textarea',
+    'section'     => $section,
+    'label'       => __('Take a look: description', 'gca-intranet'),
+    'description' => __('Optional text shown under the title.', 'gca-intranet'),
+  ]);
+
+  // Link text (short paragraph, max 90 chars, no HTML)
+  $wp_customize->add_setting('gca_takealook_link_text', [
+    'default'           => __('Learn more', 'gca-intranet'),
+    'sanitize_callback' => 'gca_sanitize_takealook_link_text',
+    'transport'         => 'refresh',
+  ]);
+
+  $wp_customize->add_control('gca_takealook_link_text', [
+    'type'        => 'textarea',
+    'section'     => $section,
+    'label'       => __('Take a look: link text', 'gca-intranet'),
+    'description' => __('Plain text only. Max 90 characters. No images or HTML.', 'gca-intranet'),
+    'input_attrs' => [
+      'maxlength' => 90,
+      'rows'      => 3,
+    ],
+  ]);
+
+  // Link URL
+  $wp_customize->add_setting('gca_takealook_link_url', [
+    'default'           => '',
+    'sanitize_callback' => 'esc_url_raw',
+    'transport'         => 'refresh',
+  ]);
+
+  $wp_customize->add_control('gca_takealook_link_url', [
+    'type'        => 'url',
+    'section'     => $section,
+    'label'       => __('Take a look: link URL', 'gca-intranet'),
+    'description' => __('If empty, the block renders as “not configured”.', 'gca-intranet'),
+  ]);
+});
+
+/**
+ * Customizer UI: character counter for Take a look link text
+ */
+add_action('customize_controls_enqueue_scripts', function (): void {
+  $js = <<<'JS'
+(function(){
+  function initCounter(){
+    var control = document.getElementById('customize-control-gca_takealook_link_text');
+    if(!control) return;
+
+    var textarea = control.querySelector('textarea');
+    if(!textarea) return;
+
+    var max = parseInt(textarea.getAttribute('maxlength') || '90', 10);
+
+    var counter = document.createElement('div');
+    counter.style.marginTop = '6px';
+    counter.style.fontSize = '12px';
+    counter.style.opacity = '0.85';
+
+    function update(){
+      var len = textarea.value.length;
+
+      if(len > max){
+        textarea.value = textarea.value.substring(0, max);
+        len = max;
+      }
+
+      counter.textContent = (max - len) + ' characters remaining';
+    }
+
+    textarea.parentNode.appendChild(counter);
+    textarea.addEventListener('input', update);
+    update();
+  }
+
+  document.addEventListener('DOMContentLoaded', initCounter);
+})();
+JS;
+
+  wp_add_inline_script('customize-controls', $js, 'after');
+});
+
+/**
+ * Admin shortcut: Appearance → Homepage options
+ * Sends editors straight to the Customizer section for the homepage blocks.
+ */
+add_action('admin_menu', function (): void {
+  add_theme_page(
+    __('Homepage options', 'gca-intranet'),
+    __('Homepage options', 'gca-intranet'),
+    'edit_theme_options',
+    'gca-homepage-options',
+    function (): void {
+      $url = add_query_arg(
+        [
+          'autofocus[section]' => 'gca_homepage_options',
+          'return'             => urlencode(admin_url('themes.php?page=gca-homepage-options')),
+        ],
+        admin_url('customize.php')
+      );
+
+      wp_safe_redirect($url);
+      exit;
+    }
+  );
 });

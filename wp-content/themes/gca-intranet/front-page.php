@@ -135,52 +135,84 @@ get_header();
         </div>
       </div>
 
-      <!-- Take a look -->
-      <div class="govuk-grid-column-one-third" data-testid="take-a-look-column">
-        <?php
-        $home_id = (int) get_option('page_on_front');
+      <?php
+      // ------------------------------------------------------------
+      // Take a look (Customizer-driven)
+      // ------------------------------------------------------------
+      $take_enabled = (bool) get_theme_mod('gca_takealook_enabled', true);
 
-        $take_title = $home_id ? (string) get_post_meta($home_id, '_gca_take_a_look_title', true) : '';
-        $take_desc  = $home_id ? (string) get_post_meta($home_id, '_gca_take_a_look_desc', true) : '';
-        $take_text  = $home_id ? (string) get_post_meta($home_id, '_gca_take_a_look_link_text', true) : '';
-        $take_url   = $home_id ? (string) get_post_meta($home_id, '_gca_take_a_look_link_url', true) : '';
+      $take_title = (string) get_theme_mod('gca_takealook_title', __('Take a look', 'gca-intranet'));
+      $take_desc  = (string) get_theme_mod('gca_takealook_desc', '');
+      // This is now the short paragraph (max 90 chars enforced in Customizer sanitization)
+      $take_text  = (string) get_theme_mod('gca_takealook_link_text', __('Learn more', 'gca-intranet'));
+      $take_url   = (string) get_theme_mod('gca_takealook_link_url', '');
 
-        $take_title = $take_title !== '' ? $take_title : __('Take a look', 'gca-intranet');
-        $take_text  = $take_text  !== '' ? $take_text  : __('Learn more', 'gca-intranet');
+      $take_title = trim($take_title);
+      $take_desc  = trim($take_desc);
+      $take_text  = trim($take_text);
+      $take_url   = trim($take_url);
 
-        $take_href = $take_url !== '' ? esc_url($take_url) : '';
-        ?>
+      if ($take_title === '') {
+        $take_title = __('Take a look', 'gca-intranet');
+      }
+      if ($take_text === '') {
+        $take_text = __('Learn more', 'gca-intranet');
+      }
 
-        <div class="gca-homepage-section-title" data-testid="take-a-look-header">
-          <h2 class="govuk-heading-m" data-testid="take-a-look-heading"><?php echo esc_html($take_title); ?></h2>
+      $take_href = ($take_url !== '') ? esc_url($take_url) : '';
+      ?>
 
-          <?php if ($take_desc !== '') : ?>
-            <p class="govuk-body" data-testid="take-a-look-subheading"><?php echo esc_html($take_desc); ?></p>
+      <?php if ($take_enabled) : ?>
+        <!-- Take a look -->
+        <div class="govuk-grid-column-one-third" data-testid="take-a-look-column">
+
+          <div class="gca-homepage-section-title" data-testid="take-a-look-header">
+            <h2 class="govuk-heading-m" data-testid="take-a-look-heading"><?php echo esc_html($take_title); ?></h2>
+
+            <?php if ($take_desc !== '') : ?>
+              <p class="govuk-body" data-testid="take-a-look-subheading"><?php echo esc_html($take_desc); ?></p>
+            <?php endif; ?>
+          </div>
+
+          <?php if ($take_href !== '') : ?>
+            <div class="gca-take-a-look" data-testid="take-a-look-card">
+              <a class="gca-take-a-look__link govuk-link"
+                data-testid="take-a-look-link"
+                href="<?php echo $take_href; ?>">
+                <span class="gca-take-a-look__content">
+                  <p class="govuk-body gca-take-a-look__text govuk-!-margin-bottom-0">
+                    <?php echo esc_html($take_text); ?>
+                  </p>
+                </span>
+
+                <span class="gca-take-a-look__icon" aria-hidden="true">
+                  <svg width="33" height="33" viewBox="0 0 33 33" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M32 16C32 12.8355 31.0616 9.74206 29.3035 7.11088C27.5454 4.47969 25.0466 2.42893 22.1229 1.21793C19.1993 0.00692534 15.9823 -0.309928 12.8786 0.307436C9.77486 0.924799 6.92393 2.44865 4.68629 4.68629C2.44865 6.92393 0.924799 9.77486 0.307435 12.8786C-0.309928 15.9823 0.00692538 19.1993 1.21793 22.1229C2.42893 25.0466 4.47969 27.5454 7.11088 29.3035C9.74206 31.0616 12.8355 32 16 32L16 16H32Z" fill="#9CAF27"/>
+                    <path d="M22 22L31.3802 31.5833M31.3802 31.5833V22M31.3802 31.5833H22" stroke="black" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                  </svg>
+                </span>
+              </a>
+            </div>
+          <?php else : ?>
+            <div class="gca-take-a-look" data-testid="take-a-look-card">
+              <div class="gca-take-a-look__link" aria-label="<?php echo esc_attr__('Take a look not configured', 'gca-intranet'); ?>">
+                <span class="gca-take-a-look__content">
+                  <p class="govuk-body gca-take-a-look__text govuk-!-margin-bottom-0">
+                    <?php echo esc_html($take_text); ?>
+                  </p>
+                </span>
+
+                <span class="gca-take-a-look__icon" aria-hidden="true">
+                  <svg width="33" height="33" viewBox="0 0 33 33" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M32 16C32 12.8355 31.0616 9.74206 29.3035 7.11088C27.5454 4.47969 25.0466 2.42893 22.1229 1.21793C19.1993 0.00692534 15.9823 -0.309928 12.8786 0.307436C9.77486 0.924799 6.92393 2.44865 4.68629 4.68629C2.44865 6.92393 0.924799 9.77486 0.307435 12.8786C-0.309928 15.9823 0.00692538 19.1993 1.21793 22.1229C2.42893 25.0466 4.47969 27.5454 7.11088 29.3035C9.74206 31.0616 12.8355 32 16 32L16 16H32Z" fill="#9CAF27"/>
+                    <path d="M22 22L31.3802 31.5833M31.3802 31.5833V22M31.3802 31.5833H22" stroke="black" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                  </svg>
+                </span>
+              </div>
+            </div>
           <?php endif; ?>
         </div>
-
-        <?php if ($take_href !== '') : ?>
-          <div class="gca-take-a-look" data-testid="take-a-look-card">
-            <a class="gca-take-a-look__link govuk-link"
-              data-testid="take-a-look-link"
-              href="<?php echo $take_href; ?>">
-              <span class="gca-take-a-look__text"><?php echo esc_html($take_text); ?></span>
-
-              <span class="gca-take-a-look__icon" aria-hidden="true">
-                <svg width="18" height="18" viewBox="0 0 20 20" focusable="false" aria-hidden="true">
-                  <path d="M6 14L14 6M9 6h5v5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-                </svg>
-              </span>
-            </a>
-          </div>
-        <?php else : ?>
-          <div class="gca-take-a-look" data-testid="take-a-look-card">
-            <div class="gca-take-a-look__link" aria-label="<?php echo esc_attr__('Take a look not configured', 'gca-intranet'); ?>">
-              <span class="gca-take-a-look__text"><?php echo esc_html($take_text); ?></span>
-            </div>
-          </div>
-        <?php endif; ?>
-      </div>
+      <?php endif; ?>
 
     </div>
 
@@ -310,12 +342,12 @@ get_header();
           </div>
 
           <div class="see-more-link-homepage" data-testid="blogs-see-more">
-            <svg data-testid="blogs-see-more-icon" xmlns="http://www.w3.org/2000/svg" width="16" height="22"
-              fill="currentColor" class="bi bi-chevron-right govuk-!-padding-top-1"
-              viewBox="0 0 16 16" style="stroke: currentColor; stroke-width: 1.8;">
-              <path fill-rule="evenodd"
-                d="M4.646 1.646a.5.5 0 0 1 .708 0l6 6a.5.5 0 0 1 0 .708l-6 6a.5.5 0 0 1-.708-.708L10.293 8 4.646 2.354a.5.5 0 0 1 0-.708" />
-            </svg>
+            <<span class="gca-take-a-look__icon" aria-hidden="true">
+              <svg width="33" height="33" viewBox="0 0 33 33" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M32 16C32 12.8355 31.0616 9.74206 29.3035 7.11088C27.5454 4.47969 25.0466 2.42893 22.1229 1.21793C19.1993 0.00692534 15.9823 -0.309928 12.8786 0.307436C9.77486 0.924799 6.92393 2.44865 4.68629 4.68629C2.44865 6.92393 0.924799 9.77486 0.307435 12.8786C-0.309928 15.9823 0.00692538 19.1993 1.21793 22.1229C2.42893 25.0466 4.47969 27.5454 7.11088 29.3035C9.74206 31.0616 12.8355 32 16 32L16 16H32Z" fill="#9CAF27"/>
+                <path d="M22 22L31.3802 31.5833M31.3802 31.5833V22M31.3802 31.5833H22" stroke="black" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+            </span>
 
             <p data-testid="blogs-see-more-text">
               <a class="govuk-link" data-testid="blogs-see-more-link" href="/blog/">
