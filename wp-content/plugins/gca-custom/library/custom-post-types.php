@@ -62,23 +62,10 @@ function gca_register_my_cpts()
         'supports' => array('title', 'editor', 'author', 'thumbnail', 'excerpt'),
     );
 
-
-    $information = array(
-        'labels' => get_labels('information'),
-        "menu_icon" => "dashicons-welcome-learn-more",
-        'public' => true,
-        'has_archive' => true,
-        'show_in_rest' => true,
-        'rest_base' => 'information',
-        'rest_controller_class' => 'WP_REST_Posts_Controller',
-        'supports' => array('title', 'editor', 'author', 'thumbnail', 'excerpt'),
-    );
-
     register_post_type('news', $news);
     register_post_type('blog', $blog);
     register_post_type('event', $event);
     register_post_type('work_update', $work_update);
-    register_post_type('information', $information);
 }
 
 
