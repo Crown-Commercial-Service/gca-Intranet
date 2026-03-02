@@ -241,6 +241,35 @@ function gca_get_breadcrumb_items(): array
     return $items;
 }
 
+add_action('admin_menu', function() {
+    remove_menu_page('edit.php');
+});
+
+add_action('admin_bar_menu', function($wp_admin_bar) {
+    $wp_admin_bar->remove_node('new-post');
+}, 999);
+
+
+add_action('admin_menu', function() {
+    global $menu;
+
+    $pages_key = null;
+    foreach ($menu as $key => $item) {
+        if ($item[2] === 'edit.php?post_type=page') {
+            $pages_key = $key;
+            break;
+        }
+    }
+
+    if ($pages_key !== null) {
+        $pages_item = $menu[$pages_key];
+        unset($menu[$pages_key]);
+        $menu[31] = $pages_item;
+        ksort($menu);
+    }
+}, 999);
+
+
 ////////// remove post tags and related UI elements //////////
 add_action('admin_menu', function() {
     remove_menu_page('edit-tags.php?taxonomy=post_tag');

@@ -5,6 +5,28 @@ add_action('init', 'gca_register_my_cpts');
 function gca_register_my_cpts()
 {
 
+    $news = array(
+        'labels' => array(
+            'name'          => 'News',
+            'singular_name' => 'News',
+            'menu_name'     => 'News',
+            'add_new'       => 'Add News',
+            'add_new_item'  => 'Add News',
+            'new_item'      => 'New News',
+            'edit_item'     => 'Edit News',
+            'view_item'     => 'View News',
+            'all_items'     => 'All News',
+        ),
+        'taxonomies' => ['category'],
+        "menu_icon" => "dashicons-admin-post",
+        'public' => true,
+        'has_archive' => true,
+        'show_in_rest' => true,
+        'rest_base' => 'news',
+        'rest_controller_class' => 'WP_REST_Posts_Controller',
+        'supports' => array('title', 'editor', 'author', 'thumbnail', 'excerpt'),
+    );
+
     $blog = array(
         'labels' => get_labels('Blog'),
         "menu_icon" => "dashicons-welcome-write-blog",
@@ -31,7 +53,6 @@ function gca_register_my_cpts()
 
     $work_update = array(
         'labels' => get_labels('work update'),
-        'taxonomies' => ['category'],
         "menu_icon" => "dashicons-sort",
         'public' => true,
         'has_archive' => true,
@@ -53,6 +74,7 @@ function gca_register_my_cpts()
         'supports' => array('title', 'editor', 'author', 'thumbnail', 'excerpt'),
     );
 
+    register_post_type('news', $news);
     register_post_type('blog', $blog);
     register_post_type('event', $event);
     register_post_type('work_update', $work_update);
