@@ -90,7 +90,17 @@
   @include govuk-media-query($from: tablet) {
     padding-top: govuk-spacing(2);
   }
+
+  p{
+    margin-top: 8px;
+  }
 }
+
+
+.gca-blogs-card{
+  border-left: 1px solid #c8c8c8;
+}
+
 
 /* Work updates */
 .gca-work-update-card {

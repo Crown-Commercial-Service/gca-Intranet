@@ -302,7 +302,7 @@ get_header();
           </div>
 
           <div class="govuk-grid-row" data-testid="blogs-section">
-            <div class="govuk-grid-column-full gca-work-update-card" data-testid="blogs-card">
+            <div class="govuk-grid-column-full gca-work-update-card gca-blogs-card" data-testid="blogs-card">
               <div class="govuk-grid-row gca-work-updates" data-testid="blogs-row">
                 <?php
                 $blogs = new WP_Query(['post_type' => 'blog', 'posts_per_page' => 1]);
