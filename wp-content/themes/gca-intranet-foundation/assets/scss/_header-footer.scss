@@ -1,41 +1,53 @@
-/* =========================
-   HEADER + FOOTER (responsive layout)
-   ========================= */
+/* ==========================================================================
+   HEADER + FOOTER (Responsive Layout)
+   ========================================================================== */
 
-/* Sticky footer */
+/* --------------------------------------------------------------------------
+   1. Global Layout (Sticky Footer)
+   -------------------------------------------------------------------------- */
 html {
-  height: 100%;
+    height: 100%;
 }
 
 body {
-  min-height: 100vh;
-  display: flex;
-  flex-direction: column;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
 }
 
 .site-main {
-  flex: 1 0 auto;
+    flex: 1 0 auto;
 }
+
 .site-footer {
-  margin-top: auto;
+    margin-top: auto;
 }
 
-/* -------------------------
-   Header
-   ------------------------- */
-
+/* --------------------------------------------------------------------------
+   2. Header Base & Shell
+   -------------------------------------------------------------------------- */
 .site-header {
     background: #fff;
-    border-bottom: 4px solid var(--bs-primary);
-    --gca-logo-height-desktop: 6.25rem;
-    --gca-logo-height-mobile: 4.25rem;
-    --gca-logo-gap: clamp(0.75rem, 2vw, 1.5rem);
-}
 
-/* Blue line should sit beneath the FULL header shell (topbar + nav) */
-.gca-header-shell {
-  border-bottom: 4px solid var(--bs-primary);
-  padding-bottom: 0.5rem; /* ensures nav never visually sits "below" the border */
+    a, a:visited {
+        color: #0b0c0c; /* $gca-text */
+    }
+
+    a:focus-visible {
+        outline: 2px solid #1d70b8; /* $gca-action-blue */
+        outline-offset: 2px;
+    }
+
+    .navbar {
+        border: 0;
+        box-shadow: none;
+        padding-top: 0;
+        padding-bottom: 0;
+    }
+
+    .govuk-button {
+      width: auto;
+    }
 }
 
 /* Make sure our gutter-positioned logo cannot be clipped */
@@ -43,624 +55,574 @@ body {
 .site-header .bg-white,
 .site-header .container-xxl,
 .site-header .gca-header-topbar {
-  overflow: visible;
+    overflow: visible;
 }
 
-.site-header .navbar {
-  border: 0 !important;
-  box-shadow: none !important;
+/* Shell & Nav Borders (Fix applied natively: border moved from shell to nav) */
+.gca-header-shell {
+    border-bottom: 0;
+    padding-bottom: 0;
 }
 
-.site-header a,
-.site-header a:visited {
-  color: $gca-text;
+.gca-header-nav {
+    border-bottom: 4px solid var(--bs-primary);
+    margin-bottom: 0;
+
+    &.navbar {
+        padding-top: 0;
+        padding-bottom: 0;
+    }
 }
 
-/* Logo sizing */
+.govuk-link:link {
+  color: inherit;
+}
+
+.govuk-link:focus {
+  background-color: unset;
+  box-shadow: 0 -2px #fff, 0 4px #0b0c0c;
+}
+
+/* --- Desktop / Header Layout --- */
+.gca-header-main-row {
+    display: flex;
+    flex-wrap: wrap; /* Allows stacking on mobile */
+    align-items: center;
+    justify-content: space-between;
+}
+
+.gca-header-logo-col {
+    flex: 0 0 auto; /* Keep logo size based on content */
+    margin-bottom: 15px;
+}
+
+.gca-header-actions-col {
+    flex: 1 1 auto; /* Take up remaining space */
+}
+
+.gca-header-topbar-inner {
+    display: flex;
+    flex-direction: column; /* Stack vertically by default (mobile) */
+    align-items: end;
+    gap: 15px;
+    margin-right: 28px;
+}
+
+/* --- Search Bar Styling --- */
+.search-input-group {
+    display: flex;
+    width: 100%;
+}
+
+#site-search {
+    flex-grow: 1;
+    height: 40px;
+    border: 1px solid #b1b4b6;
+    border-right: none;
+    border-radius: 5px 0 0 5px;
+}
+
+.search-submit {
+    height: 40px;
+    background-color: #528bf8;
+    border-radius: 0 5px 5px 0;
+    margin-bottom: 0 !important;
+}
+
+/* --- Media Queries (Tablet and Up) --- */
+@media (min-width: 768px) {
+    .gca-header-main-row {
+        flex-wrap: nowrap; /* Force side-by-side */
+    }
+
+    .gca-header-topbar-inner {
+        flex-direction: row; /* Horizontal actions */
+        justify-content: flex-end;
+        align-items: center;
+        gap: 30px;
+    }
+
+    #site-search {
+        width: 280px; /* Specific width for desktop */
+    }
+
+    .gca-header-logo-col {
+        margin-bottom: 0;
+    }
+}
+
+/* --------------------------------------------------------------------------
+   3. Logo Sizing (Consolidated)
+   -------------------------------------------------------------------------- */
 .custom-logo-link {
-  display: inline-flex;
-  align-items: flex-start;
+    display: inline-flex;
+    align-items: flex-start;
 }
 
 .gca-header-logo,
 .custom-logo {
-  height: var(--gca-logo-height-desktop);
-  width: auto;
-  max-width: 100%;
-  display: block;
+    height: 100px;
+    width: auto;
+    max-width: 100%;
+    max-height: none; /* Overrides built-in constraints */
+    display: block;
 }
 
-/* Utility links */
+.gca-header-logo-col {
+    flex: 0 0 auto;
+    margin-bottom: 15px;
+    align-self: flex-start; /* Ensures logo stays left even when stacked */
+}
+
+/* --------------------------------------------------------------------------
+   4. Utility Nav, Search, & Hamburger
+   -------------------------------------------------------------------------- */
 .utility-nav .nav {
-  display: flex;
-  flex-direction: row;
-  flex-wrap: nowrap;
-  align-items: center;
-  gap: 2.5rem;
-  margin: 0;
-  padding: 0;
-  list-style: none;
+    display: flex;
+    flex-direction: row;
+    flex-wrap: nowrap;
+    align-items: center;
+    gap: 2.5rem;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+
+    .nav-link {
+        padding: 0;
+        color: #0b0c0c;
+        text-decoration: underline;
+        text-underline-offset: 0.1875rem;
+        text-decoration-thickness: 0.0625rem;
+        white-space: nowrap;
+
+        &:hover,
+        &:focus-visible {
+            text-decoration-thickness: 0.125rem;
+        }
+    }
 }
 
-.utility-nav .nav-link {
-  padding: 0;
-  color: $gca-text;
-  text-decoration: underline;
-  text-underline-offset: 0.1875rem;
-  text-decoration-thickness: 0.0625rem;
-  white-space: nowrap;
-
-  &:hover,
-  &:focus-visible {
-    text-decoration-thickness: 0.125rem;
-  }
-}
-
-/* Search button icon */
 .site-search .btn svg {
-  color: #fff;
-  fill: currentColor;
-  display: block;
-}
-
-/* Primary nav spacing */
-.site-header .navbar {
-  padding-top: 0;
-  padding-bottom: 0;
-}
-
-.site-header .navbar .navbar-nav {
-  gap: 2.25rem;
-}
-
-.site-header .navbar .navbar-nav .nav-link {
-  padding-top: 0.5rem;
-  padding-bottom: 0.5rem;
-}
-
-/* Dropdown/menu styling */
-.site-header .dropdown-menu {
-  border: 1px solid $gca-border-grey;
-  border-radius: 0.625rem;
-  padding: 0.5rem;
-  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.12);
-  min-width: 14rem;
-}
-
-.site-header .dropdown-item {
-  border-radius: 0.5rem;
-  padding: 0.75rem 1rem;
-  color: $gca-text;
-
-  &:hover,
-  &:focus {
-    background: rgba($gca-action-blue, 0.12);
-    color: $gca-text;
-  }
-
-  &:focus-visible {
-    outline: 2px solid $gca-action-blue;
-    outline-offset: 2px;
-  }
-}
-
-/* =========================
-   Dropdown chevrons (outlined V) to the RIGHT of text
-   - Standard Bootstrap dropdown-toggle
-   - And split-toggle walker (.gca-split-dd / .gca-dd-toggle)
-   ========================= */
-
-/* Standard dropdown toggle link */
-.site-header .navbar-nav .dropdown-toggle {
-  display: inline-flex;
-  align-items: center;
-  white-space: nowrap;
-}
-
-.site-header .navbar-nav .dropdown-toggle::after {
-  content: '';
-  display: inline-block;
-  width: 0.45rem;
-  height: 0.45rem;
-  margin-left: 0.45rem;
-
-  border-right: 2px solid currentColor;
-  border-bottom: 2px solid currentColor;
-
-  transform: rotate(45deg) translateY(-1px);
-  transform-origin: center;
-
-  /* neutralise bootstrap triangle borders */
-  border-top: 0 !important;
-  border-left: 0 !important;
-}
-
-/* Split-toggle (if your navwalker uses a separate toggle element) */
-.site-header .gca-split-dd {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.35rem;
-}
-
-.site-header .gca-parent-link {
-  display: inline-flex;
-  align-items: center;
-  white-space: nowrap;
-}
-
-/* Minimal inline toggle, no box, no wrap underneath */
-.site-header .gca-dd-toggle {
-  display: inline-flex !important;
-  align-items: center;
-  justify-content: center;
-  width: auto !important;
-  background: transparent !important;
-  border: 0 !important;
-  padding: 0 !important;
-  margin: 0 !important;
-  line-height: 1;
-}
-
-/* Hide any built-in icon and use our chevron */
-.site-header .gca-dd-toggle svg {
-  display: none !important;
-}
-
-.site-header .gca-dd-toggle::after {
-  content: '';
-  display: inline-block;
-  width: 0.45rem;
-  height: 0.45rem;
-
-  border-right: 2px solid currentColor;
-  border-bottom: 2px solid currentColor;
-
-  transform: rotate(45deg) translateY(-1px);
-  transform-origin: center;
-}
-
-/* =========================
-   HEADER LAYOUT
-   Desktop:
-     - Boxed content is 2 equal rows (utility+search) / (nav)
-     - Logo sits in the left gutter (outside boxed layout), robust across widths
-   Mobile:
-     - Row 1: logo left | utility right (stacked links)
-     - Row 2: search left | toggle right
-   ========================= */
-
-/* Base topbar */
-.gca-header-topbar {
-  display: flex;
-  align-items: center;
-  justify-content: flex-end;
-  gap: 2.5rem;
-  position: relative; /* anchor gutter logo */
-}
-
-/* Ensure nav row doesn't create odd spacing vs the border */
-.gca-header-nav {
-  margin-bottom: 0;
+    color: #fff;
+    fill: currentColor;
+    display: block;
 }
 
 /* Hamburger styling */
 .gca-header-toggler {
-  flex: 0 0 auto;
-  border: 1px solid rgba(0, 0, 0, 0.25);
-  border-radius: 0.375rem;
-  padding: 0.375rem 0.5rem;
+    flex: 0 0 auto;
+    border: 1px solid rgba(0, 0, 0, 0.25);
+    border-radius: 0.375rem;
+    padding: 0.375rem 0.5rem;
+
+    .navbar-toggler-icon {
+        width: 1.5rem;
+        height: 1.5rem;
+        background-image: none;
+        position: relative;
+        display: inline-block;
+
+        &::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            right: 0;
+            top: 50%;
+            height: 2px;
+            background: currentColor;
+            transform: translateY(-50%);
+            box-shadow: 0 -0.4rem 0 currentColor, 0 0.4rem 0 currentColor;
+        }
+    }
 }
 
-.gca-header-toggler .navbar-toggler-icon {
-  width: 1.5rem;
-  height: 1.5rem;
-  background-image: none;
-  position: relative;
-  display: inline-block;
+/* --------------------------------------------------------------------------
+   5. Dropdowns & Chevrons
+   -------------------------------------------------------------------------- */
+.site-header .navbar .navbar-nav {
+    gap: 2.25rem;
+
+    .nav-link {
+        padding-top: 0.5rem;
+        padding-bottom: 0.5rem;
+    }
 }
 
-.gca-header-toggler .navbar-toggler-icon::before {
-  content: '';
-  position: absolute;
-  left: 0;
-  right: 0;
-  top: 50%;
-  height: 2px;
-  background: currentColor;
-  transform: translateY(-50%);
-  box-shadow:
-    0 -0.4rem 0 currentColor,
-    0 0.4rem 0 currentColor;
+.site-header .dropdown-menu {
+    border: 1px solid #b1b4b6; /* $gca-border-grey */
+    border-radius: 0.625rem;
+    padding: 0.5rem;
+    box-shadow: 0 10px 24px rgba(0, 0, 0, 0.12);
+    min-width: 14rem;
 }
 
-/* Desktop */
-@media (min-width: 992px) {
-  /* 2 equal-height rows matching the logo height */
-  .gca-header-shell {
-    display: grid;
-    height: var(--gca-logo-height-desktop);
-    grid-template-rows: 1fr 1fr;
-  }
+.site-header .dropdown-item {
+    border-radius: 0.5rem;
+    padding: 0.75rem 1rem;
+    color: #0b0c0c;
 
-  .gca-header-topbar {
-    height: 100%;
+    &:hover,
+    &:focus {
+        background: rgba(29, 112, 184, 0.12);
+        color: #0b0c0c;
+    }
+
+    &:focus-visible {
+        outline: 2px solid #1d70b8;
+        outline-offset: 2px;
+    }
+}
+
+/* Universal Chevron Logic */
+.site-header .navbar-nav .dropdown-toggle,
+.site-header .gca-parent-link {
+    display: inline-flex;
     align-items: center;
-  }
-
-  .gca-header-nav {
-    height: 100%;
-    margin-top: 0;
-    display: flex;
-    align-items: center;
-  }
-
-  .site-search {
-    flex: 0 0 28rem;
-    max-width: 28rem;
-  }
-
-  .gca-header-toggler {
-    display: none;
-  }
-
-  /* Robust gutter logo positioning:
-     align to the container edge, then move left by its own width + gap */
-  .gca-header-logo-col {
-    position: absolute;
-    top: 0;
-    left: 0;
-    transform: translateX(calc(-100% - var(--gca-logo-gap)));
-
-    height: var(--gca-logo-height-desktop);
-    display: flex;
-    align-items: center;
-    justify-content: flex-end;
-    z-index: 10;
-  }
-
-  .gca-header-logo-col .site-branding {
-    display: flex;
-    justify-content: flex-end;
-  }
-
-  /* Tighten nav link padding so it fits nicely in lower half */
-  .site-header .navbar .navbar-nav .nav-link {
-    padding-top: 0.25rem;
-    padding-bottom: 0.25rem;
-  }
+    white-space: nowrap;
 }
 
-/* Mobile */
-@media (max-width: 991.98px) {
-  /* Smaller logo on mobile */
-  .gca-header-logo,
-  .custom-logo {
-    height: var(--gca-logo-height-mobile);
-  }
-
-  /* Wrap into two lines:
-     line 1: logo left + utility right
-     line 2: search left + toggle right */
-  .gca-header-topbar {
-    flex-wrap: wrap;
-    align-items: flex-start;
-    align-content: flex-start;
-    column-gap: 1rem;
-    row-gap: 0.5rem;
-    margin-bottom: 0.5rem;
-  }
-
-  /* Logo in flow on mobile, aligned left */
-  .gca-header-logo-col {
-    position: static;
-    order: 1;
-  }
-
-  /* Utility top-right */
-  .utility-nav {
-    order: 2;
-    margin-left: auto;
-    text-align: right;
-  }
-
-  /* Force new line after utility (so search/toggle are row 2) */
-  .gca-header-topbar::after {
+.site-header .navbar-nav .dropdown-toggle::after,
+.site-header .gca-dd-toggle::after {
     content: '';
-    flex-basis: 100%;
-    order: 3;
-  }
-
-  /* Utility links stack on mobile */
-  .utility-nav .nav {
-    flex-direction: column;
-    align-items: flex-end;
-    gap: 0.25rem;
-  }
-
-  /* Row 2: search grows, toggle stays right */
-  .site-search {
-    order: 4;
-    flex: 1 1 auto;
-    max-width: none;
-    width: auto;
-    min-width: 0;
-  }
-
-  .site-search .input-group {
-    width: 100%;
-  }
-
-  .gca-header-toggler {
-    order: 5;
-    margin-left: 0.75rem;
-  }
-
-  .gca-header-nav {
-    margin-top: 0.75rem;
-  }
+    display: inline-block;
+    width: 0.45rem;
+    height: 0.45rem;
+    margin-left: 0.45rem;
+    border-right: 2px solid currentColor;
+    border-bottom: 2px solid currentColor;
+    transform: rotate(45deg) translateY(-1px);
+    transform-origin: center;
+    border-top: 0;
+    border-left: 0;
 }
 
-/* Stop gutter-logo going off-screen on smaller desktops (e.g. MacBook Air) */
-@media (min-width: 992px) and (max-width: 1599.98px) {
-  .gca-header-logo-col {
-    transform: none; /* keep it inside the container */
-    position: absolute;
-    left: 6.25rem;
-  }
-  .site-header .navbar {
-    padding-left: 6.25rem;
-  }
+.site-header .gca-split-dd {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
 }
 
-/* -------------------------
-   Footer
-   ------------------------- */
-
-.site-footer {
-  background: $gca-footer-bg;
-  border-top: 1rem solid $gca-accent-lime;
-  padding-block: 2rem;
-}
-
-.site-footer a,
-.site-footer a:visited {
-  color: $gca-text;
-}
-
-.site-footer .gca-footer-row {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 3rem;
-  flex-wrap: wrap;
-}
-
-.site-footer .footer-legal-nav {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 2.5rem;
-  margin: 0;
-  padding: 0;
-  list-style: none;
-}
-
-.site-footer .footer-legal-nav a {
-  padding: 0;
-  text-decoration: underline;
-  text-underline-offset: 0.1875rem;
-  text-decoration-thickness: 0.0625rem;
-
-  &:hover,
-  &:focus-visible {
-    text-decoration-thickness: 0.125rem;
-  }
-}
-
-/* Crest + copyright centered */
-.site-footer .gca-footer-brand {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 0.6rem;
-  text-align: center;
-
-  margin-left: auto;
-  margin-right: auto;
-}
-
-.site-footer img.gca-footer-crest {
-  height: 4.75rem;
-  width: auto;
-  max-width: 100%;
-  display: block;
-}
-
-.site-footer .footer-crown-link {
-  white-space: nowrap;
-}
-
-@media (max-width: 991.98px) {
-  .site-footer .gca-footer-row {
-    flex-direction: column !important;
-    align-items: center !important;
-    justify-content: center !important;
-    text-align: center !important;
-    gap: 1.5rem;
-  }
-
-  .site-footer .footer-legal-nav {
+.site-header .gca-dd-toggle {
+    display: inline-flex;
+    align-items: center;
     justify-content: center;
-    gap: 1.75rem;
-  }
+    width: auto;
+    background: transparent;
+    border: 0;
+    padding: 0;
+    margin: 0;
+    line-height: 1;
 
-  .site-footer img.gca-footer-crest {
-    height: 4rem;
-  }
+    svg {
+        display: none;
+    }
+}
+
+/* --------------------------------------------------------------------------
+   6. Header Responsive Layout Grids
+   -------------------------------------------------------------------------- */
+
+/* Base topbar */
+.gca-header-topbar {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 2.5rem;
+    position: relative; 
+}
+
+/* --- DESKTOP (992px and up) --- */
+@media (min-width: 992px) {
+    .gca-header-shell {
+        height: auto; 
+        min-height: 100px;
+        display: grid;
+        grid-template-rows: auto auto; 
+    }
+
+    .gca-header-topbar,
+    .gca-header-nav {
+        height: 100%;
+        align-items: center;
+    }
+
+    .gca-header-nav {
+        display: flex;
+    }
+
+    .site-search {
+        flex: 0 0 28rem;
+        max-width: 28rem;
+    }
+
+    .gca-header-toggler {
+        display: none;
+    }
+
+    .gca-header-logo-col .site-branding {
+        display: flex;
+        justify-content: flex-end;
+    }
+
+    .site-header .navbar .navbar-nav .nav-link {
+        padding-top: 0.25rem;
+        padding-bottom: 0.25rem;
+    }
 }
 
 @media (min-width: 768px) {
-  .site-footer .gca-footer-brand {
-    margin-left: auto;
-    margin-right: 0;
-    align-items: flex-end;
-    text-align: right;
-  }
-}
-
-.site-header a:focus-visible,
-.site-footer a:focus-visible {
-  outline: 2px solid $gca-action-blue;
-  outline-offset: 2px;
-}
-
-@media (min-width: 992px) {
+  /* Gutter logo positioning */
   .gca-header-logo-col {
-    pointer-events: auto;
-  } /* default */
-}
-/* =======================================================
-   FIX: Primary nav must NOT appear below the blue line
-   Move the blue divider from the shell to the nav row
-   ======================================================= */
-
-/* Remove divider from the shell */
-.gca-header-shell {
-  border-bottom: 0 !important;
-  padding-bottom: 0 !important;
-}
-
-/* Put divider under the primary nav row (always correct visually) */
-.gca-header-nav {
-  border-bottom: 4px solid var(--bs-primary) !important;
-  margin-bottom: 0 !important;
-}
-
-/* Keep the navbar row flush (Bootstrap adds padding by default) */
-.gca-header-nav.navbar {
-  padding-top: 0 !important;
-  padding-bottom: 0 !important;
-}
-
-/* =======================================================
-   FIX: header shell must NOT have a fixed height on desktop
-   Otherwise nav overflows below the blue divider when width reduces
-   ======================================================= */
-
-@media (min-width: 992px) {
-  .gca-header-shell {
-    height: auto !important; /* <-- critical */
-    min-height: var(--gca-logo-height-desktop) !important;
-    grid-template-rows: auto auto !important; /* stop forcing 1fr/1fr */
+      position: absolute;
+      left: 5px;
+      top: 35px;
+      transform: translateX(calc(-100% - var(--gca-logo-gap)));
+      height: 100px;
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      z-index: 10;
+      pointer-events: auto;
   }
 }
 
-/* Put the blue divider UNDER the nav row (not between rows) */
-.gca-header-shell {
-  border-bottom: 0 !important;
-  padding-bottom: 0 !important;
-}
 
-.gca-header-nav {
-  border-bottom: 4px solid var(--bs-primary) !important;
-  margin-bottom: 0 !important;
-}
-
-.gca-header-nav.navbar {
-  padding-top: 0 !important;
-  padding-bottom: 0 !important;
-}
-/* =======================================================
-   FIX: under 1600px reserve enough space for the logo
-   so the primary nav never overlaps it
-   ======================================================= */
-
+/* --- SMALL DESKTOP / LAPTOP (992px to 1599.98px) --- */
 @media (min-width: 992px) and (max-width: 1599.98px) {
-  /* Keep logo inside container for these widths */
-  .gca-header-logo-col {
-    transform: none !important;
-    position: absolute !important;
-    left: 0 !important; /* anchor to container edge */
-  }
+    .gca-header-logo-col {
+        transform: none; 
+        position: absolute;
+        left: 5px;
+    }
 
-  /* Reserve space for logo + breathing room */
-  .site-header .navbar,
-  .gca-header-topbar,
-  .gca-header-nav {
-    padding-left: clamp(8.5rem, 12vw, 13rem) !important;
-  }
+    /* Reserve space for logo + breathing room */
+    .site-header .navbar,
+    .gca-header-topbar,
+    .gca-header-nav {
+        padding-left: clamp(8.5rem, 12vw, 13rem); 
+    }
+
+    .gca-header-topbar-inner {
+      margin-top: 20px;
+    }
 }
 
-/* =======================================================
-   GOV.UK footer markup overrides (keep GCA layout)
-   Fixes:
-   - crest centred above copyright link
-   - remove huge mobile whitespace between links + crest
-   ======================================================= */
-
-/* Make the GOV.UK meta row behave like our old footer row */
-.site-footer .govuk-footer__meta {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  justify-content: space-between;
-  gap: 3rem;
-
-  /* GOV.UK adds spacing that creates the "big empty band" */
-  margin: 0;
-  padding: 0;
-}
-
-/* Left column (links) – remove GOV.UK bottom margins */
-.site-footer .govuk-footer__meta-item--grow {
-  margin: 0;
-  padding: 0;
-}
-
-/* Ensure the inline list doesn’t introduce extra vertical space */
-.site-footer .govuk-footer__inline-list {
-  margin: 0;
-  padding: 0;
-  list-style: none;
-
-  display: flex;
-  flex-wrap: wrap;
-  gap: 2.5rem;
-}
-
-/* Right column (crest + copyright) */
-.site-footer .gca-footer-brand {
-  display: flex;
-  flex-direction: column;
-  align-items: center; /* <-- centers crest over link */
-  text-align: center; /* <-- centers link text */
-  gap: 0.6rem;
-
-  margin: 0; /* <-- prevent “push to bottom” behaviour */
-  padding: 0;
-}
-
-.site-footer img.gca-footer-crest {
-  display: block;
-  margin: 0 auto; /* <-- belt + braces centering */
-}
-
-/* Mobile: stack neatly, no weird spacing */
+/* --- MOBILE (Under 992px) --- */
 @media (max-width: 991.98px) {
-  .site-footer .govuk-footer__meta {
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    gap: 1.5rem;
-  }
+    /* Switch from Flexbox to a strict CSS Grid to prevent weird wrapping */
+    .gca-header-topbar {
+        display: grid;
+        grid-template-columns: 1fr auto auto; /* Logo gets left space, Nav & Toggler hug the right */
+        align-items: center;
+        column-gap: 1.5rem;
+        row-gap: 1rem;
+        margin-bottom: 0.5rem;
+    }
 
-  .site-footer .govuk-footer__inline-list {
-    justify-content: center;
-    gap: 1.75rem;
-  }
+    /* 1. Logo anchored to top-left */
+    .gca-header-logo-col {
+        position: static;
+        grid-column: 1 / 2;
+        grid-row: 1;
+        margin: 0;
+        
+        .site-branding {
+            justify-content: flex-start;
+        }
+    }
+
+    /* 2. Utility nav sits tightly in the middle-right */
+    .utility-nav {
+        grid-column: 2 / 3;
+        grid-row: 1;
+        text-align: right;
+        margin: 0;
+
+        .nav {
+            flex-direction: column;
+            align-items: flex-end;
+            gap: 0.25rem;
+        }
+    }
+
+    /* 3. Hamburger menu pinned to the far top-right */
+    .gca-header-toggler {
+        grid-column: 3 / 4;
+        grid-row: 1;
+        margin: 0;
+    }
+
+    /* 4. Search bar drops to Row 2 and spans 100% (col-sm-12 effect) */
+    .site-search {
+        grid-column: 1 / -1; /* The "-1" tells it to span across all columns */
+        grid-row: 2;
+        max-width: 100%;
+
+        .input-group {
+            width: 100%;
+        }
+    }
 }
+
+/* ==========================================================================
+   FOOTER (GCA + GOV.UK Overrides Merged)
+   ========================================================================== */
+
+.site-footer {
+    background: #e9edc1; /* $gca-footer-bg */
+    border-top: 1rem solid #97c03d; /* $gca-accent-lime */
+    padding-block: 2rem;
+
+    a, a:visited {
+        color: #0b0c0c;
+    }
+
+    a:focus-visible {
+        outline: 2px solid #1d70b8;
+        outline-offset: 2px;
+    }
+
+    /* Merged standard row + GOV.UK meta row layouts */
+    .gca-footer-row,
+    .govuk-footer__meta {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        justify-content: space-between;
+        gap: 3rem;
+        margin: 0;
+        padding: 0;
+    }
+
+    /* GOV.UK specific resets */
+    .govuk-footer__meta-item--grow {
+        margin: 0;
+        padding: 0;
+    }
+
+    /* Merged legal links + GOV.UK inline list layouts */
+    .footer-legal-nav,
+    .govuk-footer__inline-list {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 2.5rem;
+        margin: 0;
+        padding: 0;
+        list-style: none;
+
+        a {
+            padding: 0;
+            text-decoration: underline;
+            text-underline-offset: 0.1875rem;
+            text-decoration-thickness: 0.0625rem;
+
+            &:hover,
+            &:focus-visible {
+                text-decoration-thickness: 0.125rem;
+            }
+        }
+    }
+
+    /* Right column (Crest + Copyright) */
+    .gca-footer-brand {
+        display: flex;
+        flex-direction: column;
+        align-items: center; 
+        text-align: center;
+        gap: 0.6rem;
+        margin: 0 auto; /* Removed push-to-bottom behavior */
+        padding: 0;
+    }
+
+    img.gca-footer-crest {
+        height: 4.75rem;
+        width: auto;
+        max-width: 100%;
+        display: block;
+        margin: 0 auto;
+    }
+
+    .footer-crown-link {
+        white-space: nowrap;
+    }
+}
+
+/* Footer Responsive Adjustments */
+@media (min-width: 768px) {
+    .site-footer .gca-footer-brand {
+        margin-left: auto;
+        margin-right: 0;
+        align-items: flex-end;
+        text-align: right;
+    }
+}
+
+@media (max-width: 991.98px) {
+    .site-footer {
+        .gca-footer-row,
+        .govuk-footer__meta {
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            gap: 1.5rem;
+        }
+
+        .footer-legal-nav,
+        .govuk-footer__inline-list {
+            justify-content: center;
+            gap: 1.75rem;
+        }
+
+        img.gca-footer-crest {
+            height: 4rem;
+        }
+    }
+}
+
 @media (max-width: 40.0525em) {
-  .site-footer .govuk-footer__meta-item--grow {
-    flex: 1 1 100% !important;
-    flex-basis: 100% !important;
-  }
+    .site-footer .govuk-footer__meta-item--grow {
+        flex: 1 1 100%;
+        flex-basis: 100%;
+    }
+}
+
+@media (min-width: 40.0625em) {
+    .govuk-input {
+      font-size: revert;
+        /* font-size: 1.1875rem; */
+        /* line-height: 1.3157894737; */
+    }
+}
+
+/* --- Mobile Default --- */
+.global-navigation__toggler {
+    background: none;
+    border: 2px solid #0b0c0c;
+    color: #0b0c0c;
+    padding: 5px 10px;
+    font-weight: bold;
+    cursor: pointer;
+    display: block; /* Show on mobile */
+}
+
+/* --- Inside your Media Query (@min-width: 768px) --- */
+@media (min-width: 768px) {
+    .global-navigation__toggler {
+        display: none; /* Hide toggle on desktop as nav is visible */
+    }
+}
+
+.utility-nav-list {
+    display: flex;
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    gap: 15px;
+}
+
+.utility-nav-list a {
+    text-decoration: underline;
+    color: #505a5f;
+    font-size: 16px;
 }

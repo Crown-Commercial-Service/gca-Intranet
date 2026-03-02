@@ -15,7 +15,7 @@ if (empty($items)) {
 ?>
 
 <nav class="govuk-breadcrumbs gca-breadcrumbs" aria-label="Breadcrumb">
-  <ol class="govuk-breadcrumbs__list container-xxl">
+  <ol class="govuk-breadcrumbs__list govuk-width-container">
     <?php foreach ($items as $i => $item) : ?>
     <?php $is_last = ($i === array_key_last($items)); ?>
 

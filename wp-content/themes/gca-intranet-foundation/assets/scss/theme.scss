@@ -1,10 +1,15 @@
 @import 'tokens';
-// Import GOV.UK Frontend
-@import '../../node_modules/govuk-frontend/dist/govuk/all';
 
-@import '../../node_modules/bootstrap/scss/bootstrap';
+// 1. Import GOV.UK Frontend (Clean paths!)
+@import "govuk-frontend/dist/govuk/all";
+
+// 2. Import Crown Commercial Service Frontend
+@import "ccs-frontend/dist/ccs/all";
+
+// 3. Your Custom Partials
 @import 'typography';
 @import 'header-footer';
+@import 'navigation'; 
 @import 'cards';
 @import 'homepage';
 @import 'hero';
