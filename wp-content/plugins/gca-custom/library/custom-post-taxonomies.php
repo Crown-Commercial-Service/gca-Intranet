@@ -11,7 +11,7 @@ function gca_register_my_taxonomies()
         'show_in_rest' => true
     ));
 
-    register_taxonomy('label', array('post', 'blog'), array(
+    register_taxonomy('label', array('news','post', 'blog', 'work_update'), array(
         'hierarchical' => true,
         'label'        => 'Label *strategic use case only*',
         'capabilities' => ['assign_terms' => 'edit_posts', 'edit_terms' => 'manage_categories'],
@@ -32,7 +32,7 @@ function gca_register_my_taxonomies()
         'show_in_rest' => true
     ));
 
-    register_taxonomy('audience', array('post', 'page', 'work_update', 'blog', 'event'), array(
+    register_taxonomy('audience', array('post', 'page', 'event'), array(
         'hierarchical' => true,
         'label'        => 'Audience',
         'capabilities' => ['assign_terms' => 'edit_posts', 'edit_terms' => 'manage_categories'],

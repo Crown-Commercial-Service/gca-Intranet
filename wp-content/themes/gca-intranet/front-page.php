@@ -37,7 +37,7 @@ get_header();
           <div class="govuk-grid-column-one-half" data-testid="latest-news-featured-col">
             <div class="gca-featured-news" data-testid="latest-news-featured-card">
               <?php
-              $latest_post = new WP_Query(['posts_per_page' => 1]);
+              $latest_post = new WP_Query(['post_type' => 'news', 'posts_per_page' => 1]);
               if ($latest_post->have_posts()):
                 while ($latest_post->have_posts()):
                   $latest_post->the_post();
@@ -75,7 +75,7 @@ get_header();
 
           <div class="govuk-grid-column-one-half gca-flex-box-news" data-testid="latest-news-secondary-col">
             <?php
-            $secondary_posts = new WP_Query(['posts_per_page' => 3, 'offset' => 1]);
+            $secondary_posts = new WP_Query(['post_type' => 'news', 'posts_per_page' => 3, 'offset' => 1]);
             if ($secondary_posts->have_posts()):
               while ($secondary_posts->have_posts()):
                 $secondary_posts->the_post();
@@ -127,7 +127,7 @@ get_header();
             </svg>
 
             <p data-testid="latest-news-see-more-text">
-              <a class="govuk-link" data-testid="latest-news-see-more-link" href="#">
+              <a class="govuk-link" data-testid="latest-news-see-more-link" href="/news/">
                 Browse all news articles
               </a>
             </p>
