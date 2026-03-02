@@ -52,7 +52,7 @@ get_header();
 
                   <div data-testid="latest-news-featured-content">
                     <h3 class="govuk-heading-m" data-testid="latest-news-featured-title">
-                      <a class="govuk-link" data-testid="latest-news-featured-link" href="<?php the_permalink(); ?>">
+                      <a class="govuk-link" data-testid="latest-news-featured-link govuk-!-text-break-word" href="<?php the_permalink(); ?>">
                         <?php the_title(); ?>
                       </a>
                     </h3>
@@ -96,7 +96,7 @@ get_header();
 
                     <div class="govuk-grid-column-two-third gca-flex-box-news" data-testid="latest-news-secondary-content">
                       <h3 class="govuk-heading-s govuk-!-margin-bottom-1" data-testid="latest-news-secondary-title">
-                        <a class="govuk-link" data-testid="latest-news-secondary-link" href="<?php the_permalink(); ?>">
+                        <a class="govuk-link" data-testid="latest-news-secondary-link govuk-!-text-break-word" href="<?php the_permalink(); ?>">
                           <?php the_title(); ?>
                         </a>
                       </h3>
@@ -217,8 +217,11 @@ get_header();
 
                     <div class="govuk-grid-column-two-thirds" data-testid="work-update-content">
                       <h3 class="govuk-heading-s" data-testid="work-update-title">
-                        <a class="govuk-link" href="<?php the_permalink(); ?>" data-testid="work-update-link">
-                          <?php the_title(); ?>
+                        <a class="govuk-link govuk-!-text-break-word" href="<?php the_permalink(); ?>" data-testid="work-update-link">
+                          <?php
+                            $title = get_the_title();
+                            echo esc_html(mb_strlen($title) > 30 ? mb_substr($title, 0, 30) . '...' : $title);
+                          ?>
                         </a>
                       </h3>
 
@@ -283,8 +286,11 @@ get_header();
 
                     <div class="govuk-grid-column-two-thirds" data-testid="blogs-content">
                       <h3 class="govuk-heading-s" data-testid="blogs-title">
-                        <a class="govuk-link" data-testid="blogs-link" href="<?php the_permalink(); ?>">
-                          <?php the_title(); ?>
+                        <a class="govuk-link" data-testid="blogs-link govuk-!-text-break-word" href="<?php the_permalink(); ?>">
+                          <?php
+                            $title = get_the_title();
+                            echo esc_html(mb_strlen($title) > 30 ? mb_substr($title, 0, 30) . '...' : $title);
+                          ?>
                         </a>
                       </h3>
 
