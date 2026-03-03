@@ -98,7 +98,9 @@
 
 
 .gca-blogs-card{
-  border-left: 1px solid #c8c8c8;
+  @include govuk-media-query($from: tablet) {
+    border-left: 1px solid #c8c8c8;
+  }
 }
 
 
@@ -123,7 +125,7 @@
 
   h3 {
     margin-top: govuk-spacing(3);
-    margin-bottom: govuk-spacing(1);
+    margin-bottom: govuk-spacing(2);
   }
 
   img {
@@ -156,10 +158,6 @@
       display: block;
     }
   }
-}
-
-.border-left {
-  border-left: 1px solid $gca-border-mid;
 }
 
 /* ============================================================
