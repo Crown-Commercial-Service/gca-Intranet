@@ -153,78 +153,99 @@
 }
 
 /* ============================================================
-   Homepage-only: "Take a look" component
-   - Single source of truth
-   - Prevent overflow + clamp
+   GI-100: Homepage-only "Take a look"
+   - Single card only (kills inner panel)
+   - Text smaller (19px)
+   - Icon background transparent
+   - Prevent overflow + stop icon leaking into next component
    ============================================================ */
 
 [data-testid='take-a-look-column'] {
-  .gca-take-a-look {
-    width: 100%;
+  overflow: hidden; /* safety net */
+
+  .gca-take-a-look,
+  .gca-take-a-look__content,
+  .gca-take-a-look__link {
+    max-width: 100%;
+    box-sizing: border-box;
   }
 
+  /* Kill the “second panel” if a wrapper exists */
+  .gca-take-a-look__content {
+    background: transparent !important;
+    box-shadow: none !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    border-radius: 0 !important;
+  }
+
+  /* Make the link be the one true card */
   .gca-take-a-look__link {
     position: relative;
     display: block;
     width: 100%;
-    min-height: 190px;
-    padding: 34px 32px;
+    margin: 0;
 
-    border-radius: 12px;
+    padding: 34px 84px 34px 32px; /* room for icon on right */
+    min-height: 180px;
+
+    border-radius: 6px;
     text-decoration: none;
 
     background: #e9efc6;
     box-shadow: 0 4px 10px rgba(0, 0, 0, 0.12);
+
+    overflow: hidden; /* stops any “leak” */
   }
 
+  /* Paragraph/text */
   .gca-take-a-look__text {
-    display: -webkit-box;
-    -webkit-box-orient: vertical;
-    -webkit-line-clamp: 3;
-
-    overflow: hidden;
-
-    /* leave room for icon */
-    padding-right: 84px;
-
-    font-size: 36px;
-    line-height: 1.15;
-    color: #0b0c0c;
-
-    /* stop long strings overflowing */
+    margin: 0;
+    max-width: 100%;
     overflow-wrap: anywhere;
     word-break: break-word;
-    max-width: 100%;
+
+    font-size: 19px;
+    line-height: 1.4;
+    color: #0b0c0c;
   }
 
-  /* If rendered as a non-link variation where icon isn't present */
-  .gca-take-a-look__link[aria-label] .gca-take-a-look__text {
-    padding-right: 0;
-  }
-
+  /* Icon inside the card */
   .gca-take-a-look__icon {
     position: absolute;
-    right: 22px;
-    bottom: 22px;
+    right: 2px;
+    bottom: 2px;
 
     width: 64px;
     height: 64px;
-    border-radius: 999px;
-
-    background: rgba(0, 0, 0, 0.08);
 
     display: flex;
     align-items: center;
     justify-content: center;
 
+    border-radius: 999px;
+
+    /* IMPORTANT: transparent background (no halo) */
+    background: none !important;
+    box-shadow: none !important;
+
     /* ensure nothing else can force top/left */
     top: auto;
     left: auto;
+
+    /* this is decorative */
+    pointer-events: none;
+
+    &::before,
+    &::after {
+      display: none !important;
+      content: none !important;
+    }
   }
 
   .gca-take-a-look__icon svg {
-    display: block;
     width: 36px;
     height: 36px;
+    display: block;
   }
 }
