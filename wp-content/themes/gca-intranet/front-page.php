@@ -9,8 +9,8 @@ get_header();
   <div class="govuk-width-container" data-testid="home-hero-container">
     <div class="gca-home-hero-inner" data-testid="home-hero-inner">
       <div class="gca-home-hero-content" data-testid="home-hero-content">
-        <p class="gca-home-hero-kicker mb-2" data-testid="home-hero-kicker">Welcome to our</p>
-        <h1 class="gca-home-hero-title mb-0" data-testid="home-hero-title">GCA Intranet</h1>
+        <p class="govuk-body gca-home-hero-kicker" data-testid="home-hero-kicker">Welcome to our</p>
+        <h1 class="govuk-body gca-home-hero-title" data-testid="home-hero-title">GCA Intranet</h1>
       </div>
 
       <div class="gca-home-hero-tagline" aria-hidden="true" data-testid="home-hero-tagline">
@@ -57,11 +57,11 @@ get_header();
                       </a>
                     </h3>
 
-                    <p data-testid="latest-news-featured-excerpt">
+                    <p class="govuk-body-s" data-testid="latest-news-featured-excerpt">
                       <?php echo esc_html(wp_trim_words(get_the_excerpt(), 32, '...')); ?>
                     </p>
 
-                    <p data-testid="latest-news-featured-date">
+                    <p class="govuk-body-s" data-testid="latest-news-featured-date">
                       <?php echo esc_html(get_the_date('jS F Y')); ?>
                     </p>
                   </div>
@@ -101,11 +101,11 @@ get_header();
                         </a>
                       </h3>
 
-                      <p data-testid="latest-news-secondary-excerpt">
+                      <p class="govuk-body-s" data-testid="latest-news-secondary-excerpt">
                         <?php echo esc_html(wp_trim_words(get_the_excerpt(), 12, '...')); ?>
                       </p>
 
-                      <p data-testid="latest-news-secondary-date">
+                      <p class="govuk-body-s" data-testid="latest-news-secondary-date">
                         <?php echo esc_html(get_the_date('jS F Y')); ?>
                       </p>
                     </div>
@@ -256,9 +256,9 @@ get_header();
                         </a>
                       </h3>
 
-                      <p data-testid="work-update-author">By <?php echo esc_html(get_the_author()); ?></p>
+                      <p class="govuk-body-s" data-testid="work-update-author">By <?php echo esc_html(get_the_author()); ?></p>
 
-                      <p data-testid="work-update-date">
+                      <p class="govuk-body-s" data-testid="work-update-date">
                         <?php echo esc_html(get_the_date('jS F Y')); ?>
                       </p>
                     </div>
@@ -325,9 +325,9 @@ get_header();
                         </a>
                       </h3>
 
-                      <p data-testid="blogs-author">By <?php echo esc_html(get_the_author()); ?></p>
+                      <p class="govuk-body-s" data-testid="blogs-author">By <?php echo esc_html(get_the_author()); ?></p>
 
-                      <p data-testid="blogs-date">
+                      <p class="govuk-body-s" data-testid="blogs-date">
                         <?php echo esc_html(get_the_date('jS F Y')); ?>
                       </p>
                     </div>
