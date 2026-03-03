@@ -313,6 +313,18 @@ if (!function_exists('gca_sanitize_takealook_link_text')) {
   }
 }
 
+/**
+ * GI-101: Quick links sanitiser (plain text)
+ */
+if (!function_exists('gca_sanitize_quicklink_text')) {
+  function gca_sanitize_quicklink_text($value): string {
+    $value = (string) $value;
+    $value = wp_strip_all_tags($value);
+    $value = preg_replace('/\s+/', ' ', $value);
+    return trim((string) $value);
+  }
+}
+
 add_action('customize_register', function (\WP_Customize_Manager $wp_customize): void {
 
   $section = 'gca_homepage_options';
@@ -394,6 +406,76 @@ add_action('customize_register', function (\WP_Customize_Manager $wp_customize):
     'label'       => __('Take a look: link URL', 'gca-intranet'),
     'description' => __('If empty, the block renders as “not configured”.', 'gca-intranet'),
   ]);
+
+  // ============================================================
+  // GI-101: Quick links (Customizer)
+  // ============================================================
+
+  $wp_customize->add_setting('gca_quicklinks_enabled', [
+    'default'           => true,
+    'sanitize_callback' => static fn ($v) => (bool) $v,
+    'transport'         => 'refresh',
+  ]);
+
+  $wp_customize->add_control('gca_quicklinks_enabled', [
+    'type'    => 'checkbox',
+    'section' => $section,
+    'label'   => __('Show “Quick links” block', 'gca-intranet'),
+  ]);
+
+  $wp_customize->add_setting('gca_quicklinks_title', [
+    'default'           => __('Quick links', 'gca-intranet'),
+    'sanitize_callback' => 'sanitize_text_field',
+    'transport'         => 'refresh',
+  ]);
+
+  $wp_customize->add_control('gca_quicklinks_title', [
+    'type'    => 'text',
+    'section' => $section,
+    'label'   => __('Quick links: title', 'gca-intranet'),
+  ]);
+
+  $wp_customize->add_setting('gca_quicklinks_desc', [
+    'default'           => '',
+    'sanitize_callback' => 'sanitize_textarea_field',
+    'transport'         => 'refresh',
+  ]);
+
+  $wp_customize->add_control('gca_quicklinks_desc', [
+    'type'        => 'textarea',
+    'section'     => $section,
+    'label'       => __('Quick links: description', 'gca-intranet'),
+    'description' => __('Optional text shown under the title.', 'gca-intranet'),
+  ]);
+
+  for ($i = 1; $i <= 3; $i++) {
+
+    $wp_customize->add_setting("gca_quicklinks_{$i}_text", [
+      'default'           => '',
+      'sanitize_callback' => 'gca_sanitize_quicklink_text',
+      'transport'         => 'refresh',
+    ]);
+
+    $wp_customize->add_control("gca_quicklinks_{$i}_text", [
+      'type'        => 'text',
+      'section'     => $section,
+      'label'       => sprintf(__('Quick link %d: text', 'gca-intranet'), $i),
+      'description' => __('Plain text only.', 'gca-intranet'),
+    ]);
+
+    $wp_customize->add_setting("gca_quicklinks_{$i}_url", [
+      'default'           => '',
+      'sanitize_callback' => 'esc_url_raw',
+      'transport'         => 'refresh',
+    ]);
+
+    $wp_customize->add_control("gca_quicklinks_{$i}_url", [
+      'type'        => 'url',
+      'section'     => $section,
+      'label'       => sprintf(__('Quick link %d: URL', 'gca-intranet'), $i),
+      'description' => __('Full URL (e.g. https://…).', 'gca-intranet'),
+    ]);
+  }
 });
 
 /**
