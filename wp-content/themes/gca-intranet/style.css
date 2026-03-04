@@ -463,6 +463,7 @@ Text Domain: gca-intranet
   inline-size: 1.125em;
   block-size: 1.125em;
 }
+
 /* GI-100 Take a look — layout + icon placement */
 [data-testid='take-a-look-column'] .gca-take-a-look__link {
   position: relative;
@@ -500,6 +501,7 @@ Text Domain: gca-intranet
   height: 33px;
   display: block;
 }
+
 /* GI-100: Take a look should be a single card (no inner panel) */
 [data-testid='take-a-look-column'] .gca-take-a-look__content {
   background: transparent !important;
@@ -509,8 +511,13 @@ Text Domain: gca-intranet
   margin: 0 !important;
   border-radius: 0 !important;
 }
-<<<<<<< HEAD
-/* GI-101: Quick links (homepage right column) */
+
+/* =========================================================
+   GI-101: Quick links (homepage right column)
+   - single source of truth (no duplicates)
+   - accessible focus styles
+   ========================================================= */
+
 .gca-quick-links {
   margin-top: 24px; /* spacing below Take a look card */
 }
@@ -519,12 +526,16 @@ Text Domain: gca-intranet
   margin-bottom: 12px;
 }
 
+/* add breathing room above first card */
+.gca-quick-links .gca-homepage-section-title + .gca-quick-links__list {
+  margin-top: 20px;
+}
+
 /* list wrapper */
 .gca-quick-links__list {
   display: flex;
   flex-direction: column;
   gap: 16px;
-  margin-top: 8px;
 }
 
 /* each “card” link */
@@ -566,15 +577,18 @@ Text Domain: gca-intranet
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  max-width: calc(100% - 28px); /* leave room for chevron */
+  max-width: calc(100% - 34px); /* leave room for chevron */
 }
 
-/* chevron */
+/* chevron wrapper (svg inside) */
 .gca-quick-links__chevron {
-  font-size: 22px;
-  line-height: 1;
-  color: #0b0c0c;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+
   margin-left: 12px;
+  color: #0b0c0c;
+  flex: 0 0 auto;
 }
 
 /* hover/focus */
@@ -583,29 +597,18 @@ Text Domain: gca-intranet
   text-decoration: none;
 }
 
+/* GOV.UK-ish focus treatment */
 .gca-quick-links__item:focus {
+  outline: none;
+}
+
+.gca-quick-links__item:focus-visible {
   outline: 3px solid #ffdd00;
   outline-offset: 2px;
 }
-/* GI-101: Quick links – a touch more breathing room above the cards */
-.gca-quick-links__list {
-  margin-top: 12px; /* was tighter - bump this */
-}
 
-/* Optional: if you want slightly more vertical spacing between cards too */
-.gca-quick-links__item {
-  margin-bottom: 12px;
+/* visited should not go purple */
+.gca-quick-links__item:visited,
+.gca-quick-links__item:visited .gca-quick-links__text {
+  color: #1d70b8;
 }
-.gca-quick-links__item:last-child {
-  margin-bottom: 0;
-}
-/* GI-101: Quick links – add breathing room after the divider line */
-.gca-quick-links__list {
-  margin-top: 20px; /* increase gap above first card */
-}
-
-.gca-quick-links .gca-homepage-section-title + .gca-quick-links__list {
-  margin-top: 20px;
-}
-=======
->>>>>>> origin/main
