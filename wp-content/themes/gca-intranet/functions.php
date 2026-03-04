@@ -314,10 +314,32 @@ if (!function_exists('gca_sanitize_takealook_link_text')) {
 }
 
 /**
- * GI-101: Quick links sanitiser (plain text)
+ * GI-101: Quick links sanitiser (plain text, hard cap)
  */
 if (!function_exists('gca_sanitize_quicklink_text')) {
   function gca_sanitize_quicklink_text($value): string {
+    $value = (string) $value;
+    $value = wp_strip_all_tags($value);
+    $value = preg_replace('/\s+/', ' ', $value);
+    $value = trim((string) $value);
+
+    // Hard cap so it stays within the card nicely
+    $max = 48;
+    if (function_exists('mb_substr')) {
+      $value = (string) mb_substr($value, 0, $max);
+    } else {
+      $value = (string) substr($value, 0, $max);
+    }
+
+    return $value;
+  }
+}
+
+/**
+ * Editable homepage section descriptions sanitiser (plain text, trimmed)
+ */
+if (!function_exists('gca_sanitize_home_desc')) {
+  function gca_sanitize_home_desc($value): string {
     $value = (string) $value;
     $value = wp_strip_all_tags($value);
     $value = preg_replace('/\s+/', ' ', $value);
@@ -461,6 +483,9 @@ add_action('customize_register', function (\WP_Customize_Manager $wp_customize):
       'section'     => $section,
       'label'       => sprintf(__('Quick link %d: text', 'gca-intranet'), $i),
       'description' => __('Plain text only.', 'gca-intranet'),
+      'input_attrs' => [
+        'maxlength' => 48,
+      ],
     ]);
 
     $wp_customize->add_setting("gca_quicklinks_{$i}_url", [
@@ -476,22 +501,56 @@ add_action('customize_register', function (\WP_Customize_Manager $wp_customize):
       'description' => __('Full URL (e.g. https://…).', 'gca-intranet'),
     ]);
   }
+
+  // ============================================================
+  // Editable homepage descriptions (Customizer)
+  // ============================================================
+
+  // Work updates description
+  $wp_customize->add_setting('gca_workupdates_desc', [
+    'default'           => '',
+    'sanitize_callback' => 'gca_sanitize_home_desc',
+    'transport'         => 'refresh',
+  ]);
+
+  $wp_customize->add_control('gca_workupdates_desc', [
+    'type'        => 'textarea',
+    'section'     => $section,
+    'label'       => __('Work updates: description', 'gca-intranet'),
+    'description' => __('Text shown under the “Work updates” heading on the homepage.', 'gca-intranet'),
+  ]);
+
+  // Blogs description
+  $wp_customize->add_setting('gca_blogs_desc', [
+    'default'           => '',
+    'sanitize_callback' => 'gca_sanitize_home_desc',
+    'transport'         => 'refresh',
+  ]);
+
+  $wp_customize->add_control('gca_blogs_desc', [
+    'type'        => 'textarea',
+    'section'     => $section,
+    'label'       => __('Blogs: description', 'gca-intranet'),
+    'description' => __('Text shown under the “Blogs” heading on the homepage.', 'gca-intranet'),
+  ]);
 });
 
 /**
  * Customizer UI: character counter for Take a look link text
+ * + Quick links text counters (48 chars)
  */
 add_action('customize_controls_enqueue_scripts', function (): void {
   $js = <<<'JS'
 (function(){
-  function initCounter(){
-    var control = document.getElementById('customize-control-gca_takealook_link_text');
+  function addCounter(controlId, maxDefault){
+    var control = document.getElementById(controlId);
     if(!control) return;
 
-    var textarea = control.querySelector('textarea');
-    if(!textarea) return;
+    var input = control.querySelector('textarea, input[type="text"]');
+    if(!input) return;
 
-    var max = parseInt(textarea.getAttribute('maxlength') || '90', 10);
+    var max = parseInt(input.getAttribute('maxlength') || String(maxDefault || 0), 10);
+    if(!max) return;
 
     var counter = document.createElement('div');
     counter.style.marginTop = '6px';
@@ -499,22 +558,32 @@ add_action('customize_controls_enqueue_scripts', function (): void {
     counter.style.opacity = '0.85';
 
     function update(){
-      var len = textarea.value.length;
+      var val = input.value || '';
+      var len = val.length;
 
       if(len > max){
-        textarea.value = textarea.value.substring(0, max);
+        input.value = val.substring(0, max);
         len = max;
       }
 
       counter.textContent = (max - len) + ' characters remaining';
     }
 
-    textarea.parentNode.appendChild(counter);
-    textarea.addEventListener('input', update);
+    input.parentNode.appendChild(counter);
+    input.addEventListener('input', update);
     update();
   }
 
-  document.addEventListener('DOMContentLoaded', initCounter);
+  function init(){
+    addCounter('customize-control-gca_takealook_link_text', 90);
+
+    // Quick links (3 fields)
+    addCounter('customize-control-gca_quicklinks_1_text', 48);
+    addCounter('customize-control-gca_quicklinks_2_text', 48);
+    addCounter('customize-control-gca_quicklinks_3_text', 48);
+  }
+
+  document.addEventListener('DOMContentLoaded', init);
 })();
 JS;
 
