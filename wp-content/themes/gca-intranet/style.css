@@ -500,3 +500,12 @@ Text Domain: gca-intranet
   height: 33px;
   display: block;
 }
+/* GI-100: Take a look should be a single card (no inner panel) */
+[data-testid='take-a-look-column'] .gca-take-a-look__content {
+  background: transparent !important;
+  box-shadow: none !important;
+  border: 0 !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  border-radius: 0 !important;
+}
