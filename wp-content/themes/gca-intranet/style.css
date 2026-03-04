@@ -500,3 +500,109 @@ Text Domain: gca-intranet
   height: 33px;
   display: block;
 }
+/* GI-100: Take a look should be a single card (no inner panel) */
+[data-testid='take-a-look-column'] .gca-take-a-look__content {
+  background: transparent !important;
+  box-shadow: none !important;
+  border: 0 !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  border-radius: 0 !important;
+}
+/* GI-101: Quick links (homepage right column) */
+.gca-quick-links {
+  margin-top: 24px; /* spacing below Take a look card */
+}
+
+.gca-quick-links .gca-homepage-section-title {
+  margin-bottom: 12px;
+}
+
+/* list wrapper */
+.gca-quick-links__list {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  margin-top: 8px;
+}
+
+/* each “card” link */
+.gca-quick-links__item {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+
+  text-decoration: none;
+  background: #fff;
+  border: 1px solid #b1b4b6;
+  border-radius: 6px;
+
+  padding: 16px 16px 16px 20px;
+  box-shadow: 0 2px 0 rgba(0, 0, 0, 0.08);
+}
+
+/* left blue bar */
+.gca-quick-links__item::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  height: 100%;
+  width: 6px;
+  background: #9fb9ff;
+  border-top-left-radius: 6px;
+  border-bottom-left-radius: 6px;
+}
+
+/* link text */
+.gca-quick-links__text {
+  font-weight: 700;
+  color: #1d70b8;
+  display: block;
+
+  /* keep it tidy inside the card */
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: calc(100% - 28px); /* leave room for chevron */
+}
+
+/* chevron */
+.gca-quick-links__chevron {
+  font-size: 22px;
+  line-height: 1;
+  color: #0b0c0c;
+  margin-left: 12px;
+}
+
+/* hover/focus */
+.gca-quick-links__item:hover {
+  background: #f3f2f1;
+  text-decoration: none;
+}
+
+.gca-quick-links__item:focus {
+  outline: 3px solid #ffdd00;
+  outline-offset: 2px;
+}
+/* GI-101: Quick links – a touch more breathing room above the cards */
+.gca-quick-links__list {
+  margin-top: 12px; /* was tighter - bump this */
+}
+
+/* Optional: if you want slightly more vertical spacing between cards too */
+.gca-quick-links__item {
+  margin-bottom: 12px;
+}
+.gca-quick-links__item:last-child {
+  margin-bottom: 0;
+}
+/* GI-101: Quick links – add breathing room after the divider line */
+.gca-quick-links__list {
+  margin-top: 20px; /* increase gap above first card */
+}
+
+.gca-quick-links .gca-homepage-section-title + .gca-quick-links__list {
+  margin-top: 20px;
+}
