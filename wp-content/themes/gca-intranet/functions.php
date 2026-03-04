@@ -314,13 +314,18 @@ if (!function_exists('gca_sanitize_takealook_link_text')) {
 }
 
 /**
+<<<<<<< HEAD
  * GI-101: Quick links sanitiser (plain text, hard cap)
+=======
+ * GI-101: Quick links sanitiser (plain text)
+>>>>>>> origin/main
  */
 if (!function_exists('gca_sanitize_quicklink_text')) {
   function gca_sanitize_quicklink_text($value): string {
     $value = (string) $value;
     $value = wp_strip_all_tags($value);
     $value = preg_replace('/\s+/', ' ', $value);
+<<<<<<< HEAD
     $value = trim((string) $value);
 
     // Hard cap so it stays within the card nicely
@@ -343,6 +348,8 @@ if (!function_exists('gca_sanitize_home_desc')) {
     $value = (string) $value;
     $value = wp_strip_all_tags($value);
     $value = preg_replace('/\s+/', ' ', $value);
+=======
+>>>>>>> origin/main
     return trim((string) $value);
   }
 }
@@ -483,9 +490,12 @@ add_action('customize_register', function (\WP_Customize_Manager $wp_customize):
       'section'     => $section,
       'label'       => sprintf(__('Quick link %d: text', 'gca-intranet'), $i),
       'description' => __('Plain text only.', 'gca-intranet'),
+<<<<<<< HEAD
       'input_attrs' => [
         'maxlength' => 48,
       ],
+=======
+>>>>>>> origin/main
     ]);
 
     $wp_customize->add_setting("gca_quicklinks_{$i}_url", [
@@ -501,6 +511,7 @@ add_action('customize_register', function (\WP_Customize_Manager $wp_customize):
       'description' => __('Full URL (e.g. https://…).', 'gca-intranet'),
     ]);
   }
+<<<<<<< HEAD
 
   // ============================================================
   // GI-102: Editable descriptions (Customizer)
@@ -533,6 +544,8 @@ add_action('customize_register', function (\WP_Customize_Manager $wp_customize):
     'label'       => __('Blogs: description', 'gca-intranet'),
     'description' => __('Text shown under the “Blogs” heading on the homepage.', 'gca-intranet'),
   ]);
+=======
+>>>>>>> origin/main
 });
 
 /**

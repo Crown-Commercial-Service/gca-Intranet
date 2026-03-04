@@ -509,6 +509,7 @@ Text Domain: gca-intranet
   margin: 0 !important;
   border-radius: 0 !important;
 }
+<<<<<<< HEAD
 /* GI-101: Quick links (homepage right column) */
 .gca-quick-links {
   margin-top: 24px; /* spacing below Take a look card */
@@ -606,3 +607,5 @@ Text Domain: gca-intranet
 .gca-quick-links .gca-homepage-section-title + .gca-quick-links__list {
   margin-top: 20px;
 }
+=======
+>>>>>>> origin/main
