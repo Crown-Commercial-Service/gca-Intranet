@@ -17,14 +17,30 @@ services:
     ports:
       - '${WP_PORT:-8080}:8080'
     environment:
-      WORDPRESS_DB_HOST: ${DB_HOST}
-      WORDPRESS_DB_NAME: ${DB_NAME}
-      WORDPRESS_DB_USER: ${DB_USER}
-      WORDPRESS_DB_PASSWORD: ${DB_PASSWORD}
+      WORDPRESS_DB_HOST: ${WP_DB_HOST:-${DB_HOST}}
+      WORDPRESS_DB_NAME: ${WP_DB_NAME:-${DB_NAME}}
+      WORDPRESS_DB_USER: ${WP_DB_USER:-${DB_USER}}
+      WORDPRESS_DB_PASSWORD: ${WP_DB_PASSWORD:-${DB_PASSWORD}}
 
       # Passed through so wp-config-extra.php can define WP_HOME / WP_SITEURL
       WP_HOME: ${WP_HOME}
       WP_SITEURL: ${WP_SITEURL}
+      REQUIRE_TEST_DB: ${REQUIRE_TEST_DB:-false}
+      WP_DB_HOST: ${WP_DB_HOST:-}
+      WP_DB_NAME: ${WP_DB_NAME:-}
+
+    entrypoint:
+      - /bin/sh
+      - -lc
+      - |
+        if [ "$REQUIRE_TEST_DB" = "true" ]; then
+          if [ -z "$WP_DB_HOST" ] || [ -z "$WP_DB_NAME" ]; then
+            echo "ERROR: REQUIRE_TEST_DB=true but WP_DB_HOST/WP_DB_NAME not set."
+            exit 1
+          fi
+        fi
+        exec docker-entrypoint.sh apache2-foreground
+
     volumes:
       # EFS-like: persist only wp-content (uploads, plugins, languages, etc.)
       - wp_content:/var/www/html/wp-content
@@ -42,10 +58,10 @@ services:
     depends_on:
       - db
     environment:
-      WORDPRESS_DB_HOST: ${DB_HOST}
-      WORDPRESS_DB_NAME: ${DB_NAME}
-      WORDPRESS_DB_USER: ${DB_USER}
-      WORDPRESS_DB_PASSWORD: ${DB_PASSWORD}
+      WORDPRESS_DB_HOST: ${WP_DB_HOST:-${DB_HOST}}
+      WORDPRESS_DB_NAME: ${WP_DB_NAME:-${DB_NAME}}
+      WORDPRESS_DB_USER: ${WP_DB_USER:-${DB_USER}}
+      WORDPRESS_DB_PASSWORD: ${WP_DB_PASSWORD:-${DB_PASSWORD}}
 
       WP_URL: ${WP_URL}
       WP_TITLE: ${WP_TITLE}
