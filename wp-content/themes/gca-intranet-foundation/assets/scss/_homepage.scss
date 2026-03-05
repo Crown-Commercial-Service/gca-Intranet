@@ -98,13 +98,11 @@
   }
 }
 
-
-.gca-blogs-card{
+.gca-blogs-card {
   @include govuk-media-query($from: tablet) {
     border-left: 1px solid #c8c8c8;
   }
 }
-
 
 /* Work updates */
 .gca-work-update-card {
@@ -223,8 +221,8 @@
   /* Icon inside the card */
   .gca-take-a-look__icon {
     position: absolute;
-    right: 2px;
-    bottom: 2px;
+    right: 16px; /* CHANGED: pull icon left into the card */
+    bottom: 16px; /* CHANGED: pull icon up into the card */
 
     width: 64px;
     height: 64px;
@@ -260,6 +258,11 @@
   }
 }
 
+/* Take a look: keep icon inside card (front end + customiser) */
+[data-testid='take-a-look-column'] .gca-take-a-look__icon {
+  right: 6px !important;
+  bottom: 6px !important;
+}
 
 .gca-events {
   background-image: url('/wp-content/themes/gca-intranet-foundation/assets/img/calendar.png');
@@ -339,3 +342,4 @@
     position: absolute;
     bottom: 10px;
 }
+

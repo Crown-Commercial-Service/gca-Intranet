@@ -1,0 +1,66 @@
+//Font Overrides
+html, 
+body {
+  font-family: 'Source Sans Pro', arial, sans-serif !important;
+}
+
+// Target all GDS Typography classes at once
+[class*="govuk-heading-"],
+[class*="govuk-body"],
+[class*="govuk-label"],
+[class*="govuk-hint"],
+[class*="govuk-error-message"],
+.govuk-link,
+.govuk-footer__link,
+.govuk-header__link,
+.govuk-breadcrumbs__link,
+.govuk-button {
+  font-family: 'Source Sans Pro', arial, sans-serif !important;
+}
+
+// Ensure all standard elements inherit it correctly
+input, 
+select, 
+textarea, 
+button {
+  font-family: 'Source Sans Pro', arial, sans-serif !important;
+}
+
+// Map standard bold/regular to your specific font files
+b, strong, 
+.govuk-font-weight-bold,
+[class*="govuk-heading-"] {
+  font-weight: 700 !important; // Triggers SourceSansPro-Bold.ttf.woff2
+}
+
+.nav-list--primary > li > a {
+  font-weight: 600 !important; // Triggers SourceSansPro-Semibold.ttf.woff2
+}
+
+body, p, .govuk-body {
+  font-weight: 400 !important; // Triggers SourceSansPro-Regular.ttf.woff2
+}
+
+// Map standard bold/regular to your specific font files
+b, strong, 
+.govuk-font-weight-bold,
+[class*="govuk-heading-"] {
+  font-weight: 700 !important; // Triggers SourceSansPro-Bold.ttf.woff2
+}
+
+.nav-list--primary > li > a {
+  font-weight: 600 !important; // Triggers SourceSansPro-Semibold.ttf.woff2
+}
+
+body, p, .govuk-body {
+  font-weight: 400 !important; // Triggers SourceSansPro-Regular.ttf.woff2
+}
+//Font Overrides END
+
+.govuk-button:hover {
+  background-color: #8BA9FE;
+}
+
+.govuk-button {
+  box-shadow: none;
+}

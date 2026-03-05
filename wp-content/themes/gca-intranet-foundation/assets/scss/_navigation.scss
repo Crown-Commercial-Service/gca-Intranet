@@ -62,9 +62,14 @@
 /* Sub-menu links */
 .sub-menu {
   list-style: none;
-  padding: 20px;
+  padding: 10px 20px 0 20px;
   margin: 0;
-  text-align: center;
+  text-align: left;
+}
+
+.sub-menu li {
+  padding-left: 20px;
+  align-self: anchor-center;
 }
 
 .sub-menu li a {
@@ -72,8 +77,9 @@
   color: var(--gca-text);
 }
 
-.sub-menu li a:hover {
+.sub-menu li:hover {
   background-color: #9fb9ff;
+  border-radius: 5px;
 }
 
 /* --- Desktop Layout Breakpoint --- */
@@ -176,7 +182,7 @@
 
 @media (min-width: 1024px) {
   .sub-menu {
-    grid-template-columns: repeat(4, 1fr); /* 4 columns for large screens */
+    grid-template-columns: repeat(5, 1fr); /* 4 columns for large screens */
   }
 }
 

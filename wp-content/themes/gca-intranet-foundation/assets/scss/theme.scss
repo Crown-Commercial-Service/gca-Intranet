@@ -1,87 +1,17 @@
 @import 'tokens';
 
 // 1. Import GOV.UK Frontend (Clean paths!)
-@import "govuk-frontend/dist/govuk/all";
+@import 'govuk-frontend/dist/govuk/all';
 
 // 2. Import Crown Commercial Service Frontend
-@import "ccs-frontend/dist/ccs/all";
+@import 'ccs-frontend/dist/ccs/all';
 
 // 3. Your Custom Partials
+@import 'gov-overrides';
 @import 'typography';
 @import 'header-footer';
-@import 'navigation'; 
+@import 'navigation';
 @import 'cards';
 @import 'homepage';
 @import 'hero';
 @import 'breadcrumbs';
-
-/* =========================================================
-   GI-17: Three Column Template (Category) cards
-   Scoped so other templates are NOT affected
-   ========================================================= */
-
-/* Make cards equal height in each row */
-.gca-three-col-category .govuk-grid-column-one-third {
-  display: flex;
-}
-
-/* Card base */
-.gca-three-col-category .gca-threecol-card {
-  position: relative;
-  width: 100%;
-  flex: 1 1 auto;
-
-  background: #fff;
-  border: 1px solid #c8c8c8;
-  border-left: 6px solid #9caf27;
-
-  border-radius: 4px;
-  padding: 20px 52px 18px 20px; /* room for chevron */
-
-  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.12);
-}
-
-.gca-three-col-category .gca-threecol-card:hover {
-  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.14);
-}
-
-.gca-three-col-category .gca-threecol-card__title {
-  margin: 0 0 10px 0;
-}
-
-.gca-three-col-category .gca-threecol-card__link {
-  display: block;
-  text-decoration: none;
-  color: #0b0c0c;
-}
-
-.gca-three-col-category .gca-threecol-card__link:visited {
-  color: #0b0c0c;
-}
-
-.gca-three-col-category .gca-threecol-card__link:hover,
-.gca-three-col-category .gca-threecol-card__link:focus {
-  color: #0b0c0c;
-  text-decoration: underline;
-}
-
-.gca-three-col-category .gca-threecol-card__chevron {
-  position: absolute;
-  right: 7px;
-  top: 50%;
-  transform: translateY(-50%);
-  font-size: 38px;
-  line-height: 1;
-  color: #0b0c0c;
-}
-.gca-three-col-category .gca-threecol-card__excerpt {
-  margin: 0;
-}
-
-.gca-three-col-category .govuk-pagination {
-  margin-top: 10px;
-}
-
-.govuk-breadcrumbs {
-  margin-top: 0px;
-}
