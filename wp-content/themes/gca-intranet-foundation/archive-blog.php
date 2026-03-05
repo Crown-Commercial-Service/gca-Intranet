@@ -37,7 +37,10 @@ get_template_part('template-parts/breadcrumbs');
               ?>
             </p>
 
-            <p class="date_bottom" data-testid="blog-post-date">
+            <div class="date_bottom" data-testid="blog-post-date">
+              <span class="govuk-!-margin-right-2">
+                <?php echo esc_html(get_the_date('jS F Y')); ?>
+            </span>
               <?php 
               $terms = get_the_terms(get_the_ID(), 'label');
 
@@ -47,8 +50,7 @@ get_template_part('template-parts/breadcrumbs');
                     <?php echo esc_html($term->name); ?>
                 </span>
               <?php endif; ?>
-              <?php echo esc_html(get_the_date('jS F Y')); ?>
-            </p>
+            </div>
           </div>
 
         </article>
