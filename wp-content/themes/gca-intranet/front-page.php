@@ -486,7 +486,7 @@ get_header();
                       <?php endif; 
 
                       if ($locations) : ?>
-                          <span class="govuk-body-s tag_label location">
+                          <span class="govuk-body-s tag_label grey">
                               <?php echo esc_html($locations[0]->name); ?>
                           </span>
                       <?php endif; ?>
