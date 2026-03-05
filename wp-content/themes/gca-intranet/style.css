@@ -481,15 +481,12 @@ Text Domain: gca-intranet
 [data-testid='take-a-look-column'] .gca-take-a-look__icon {
   width: 56px;
   height: 56px;
-
   position: absolute;
-  right: -25px;
-  bottom: -30px;
-
+  right: 0px;
+  bottom: 0px;
   display: flex;
   align-items: center;
   justify-content: center;
-
   border-radius: 9999px;
 
   /* remove the “weird halo” */
