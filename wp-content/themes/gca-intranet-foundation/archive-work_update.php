@@ -9,51 +9,66 @@ get_template_part('template-parts/hero', null, [
 get_template_part('template-parts/breadcrumbs');
 ?>
 
-<div class="govuk-width-container" data-testid="archive-work-update-container">
-  <main class="govuk-main-wrapper" id="main-content" data-testid="archive-work-update-main">
-    <div class="govuk-grid-row" data-testid="archive-work-update-row">
-      <div class="govuk-grid-column-two-thirds" data-testid="archive-work-update-col">
+<div class="govuk-width-container" data-testid="work-update-container">
+  <main class="govuk-main-wrapper" id="main-content" data-testid="work-update-main">
 
-        <?php if (have_posts()) : ?>
+    <?php if (have_posts()) : ?>
 
-          <div data-testid="archive-work-update-posts">
-            <?php while (have_posts()) : the_post(); ?>
-              <article
-                class="govuk-!-margin-bottom-6"
-                data-testid="archive-work-update-post"
-                data-post-id="<?php echo esc_attr((string) get_the_ID()); ?>"
-              >
-                <h2 class="govuk-heading-m govuk-!-margin-bottom-2" data-testid="archive-work-update-post-title">
-                  <a
-                    class="govuk-link"
-                    href="<?php the_permalink(); ?>"
-                    data-testid="archive-work-update-post-link"
-                  >
-                    <?php the_title(); ?>
-                  </a>
-                </h2>
+      <?php while (have_posts()) : the_post(); ?>
+        <article class="work-update-box flex" data-testid="work-update-post">
 
-                <p class="govuk-body govuk-!-margin-bottom-1" data-testid="archive-work-update-post-date">
-                  <?php echo esc_html(get_the_date('jS F Y')); ?>
-                </p>
-
-                <div class="govuk-body" data-testid="archive-work-update-post-excerpt">
-                  <?php the_excerpt(); ?>
-                </div>
-              </article>
-            <?php endwhile; ?>
+          <div class="work_update_profile_img" >
+            <?php if ($avatar = get_avatar(get_the_author_meta('ID'))): ?>
+              <?php echo $avatar; ?>
+            <?php endif; ?>
           </div>
 
-          <div class="govuk-!-margin-top-6" data-testid="archive-work-update-pagination">
-            <?php the_posts_pagination(); ?>
+          <div>
+            <h2 class="govuk-heading-m govuk-!-margin-bottom-2" data-testid="work-update-post-title">
+              <a class="govuk-link" href="<?php the_permalink(); ?>" data-testid="work-update-post-link" >
+                <?php the_title(); ?>
+              </a>
+            </h2>
+
+            <p data-testid="work-update-decs">
+              <?php 
+                $content = strip_tags(get_the_content());
+                echo esc_html(mb_strlen($content) > 320 ? mb_substr($content, 0, 320) . '...' : $content);
+              ?>
+            </p>
+
+            <p class="date_bottom" data-testid="work-update-post-date">
+              <?php echo esc_html(get_the_date('jS F Y')); ?>
+            </p>
           </div>
 
-        <?php else : ?>
-          <p class="govuk-body" data-testid="archive-work-update-no-posts">No work updates found.</p>
-        <?php endif; ?>
+        </article>
+      <?php endwhile; ?>
 
-      </div>
-    </div>
+        <div class="govuk-!-margin-top-8 govuk-!-margin-bottom-8" data-testid="work-update-pagination">
+          <?php 
+            the_posts_pagination( array(
+                'mid_size'  => 2,
+                'prev_text' => sprintf(
+                    '<span class="icon">
+                        <svg width="17" height="14" xmlns="http://www.w3.org/2000/svg"><path d="M6.7 0l1.4 1.4-4.3 4.3h13v2H3.9l4.2 4-1.4 1.4L0 6.7z" fill="#007194" fill-rule="evenodd"/></svg>
+                      </span> <span>Previous</span>
+                    <span class="govuk-visually-hidden">page</span>'
+                ),
+                'next_text' => sprintf(
+                    '<span>Next</span> <span class="govuk-visually-hidden">page</span>
+                    <span class="icon">
+                        <svg width="17" height="14" xmlns="http://www.w3.org/2000/svg"><path d="M10.1 0L8.7 1.4 13 5.7H0v2h12.9l-4.2 4 1.4 1.4 6.7-6.4z" fill="#007194" fill-rule="evenodd"/></svg>
+                    </span>'
+                ),
+            ) ); 
+          ?>
+        </div>
+
+      <?php else : ?>
+        <p class="govuk-body" data-testid="work-update-no-posts">No work updates found.</p>
+      <?php endif; ?>
+
   </main>
 </div>
 
