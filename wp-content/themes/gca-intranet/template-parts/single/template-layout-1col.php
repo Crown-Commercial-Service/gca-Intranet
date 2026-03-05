@@ -32,17 +32,50 @@ $is_page = !empty($GLOBALS['gca_is_page']);
           <?php the_title(); ?>
         </h1>
 
-        <div class="gca-news-meta govuk-!-margin-bottom-4" data-testid="content-meta">
+        <div class="gca-news-meta govuk-!-margin-bottom-2" data-testid="content-meta">
           <time class="govuk-body-s" datetime="<?php echo esc_attr(get_the_date('c')); ?>">
-            <?php echo esc_html(get_the_date('j F Y')); ?>
+            <?php echo esc_html(get_the_date('jS F Y')); ?>
           </time>
         </div>
+
+        <?php
+        /* Show taxonomy tags for News + Blog */
+        if (in_array($post_type, ['news', 'blog'], true)) :
+
+          $categories = get_the_terms($post_id, 'category');
+          $labels     = get_the_terms($post_id, 'label');
+
+          if (!empty($categories) || !empty($labels)) :
+        ?>
+
+          <div class="gca-taxonomy-tags govuk-!-margin-bottom-4" data-testid="content-tags">
+
+            <?php if (!empty($categories) && !is_wp_error($categories)) : ?>
+              <?php foreach ($categories as $term) : ?>
+                <span class="govuk-tag govuk-tag--green">
+                  <?php echo esc_html($term->name); ?>
+                </span>
+              <?php endforeach; ?>
+            <?php endif; ?>
+
+            <?php if (!empty($labels) && !is_wp_error($labels)) : ?>
+              <?php foreach ($labels as $term) : ?>
+                <span class="govuk-tag govuk-tag--grey">
+                  <?php echo esc_html($term->name); ?>
+                </span>
+              <?php endforeach; ?>
+            <?php endif; ?>
+
+          </div>
+
+        <?php endif; endif; ?>
 
         <?php if (has_post_thumbnail($post_id) && !$hide_featured) : ?>
           <figure class="gca-featured-media govuk-!-margin-bottom-4" data-testid="featured-image">
             <?php echo get_the_post_thumbnail($post_id, 'large', ['class' => 'gca-featured-media__img']); ?>
           </figure>
         <?php endif; ?>
+
       <?php endif; ?>
 
       <div class="gca-richtext" data-testid="content-body">
