@@ -621,3 +621,15 @@ Text Domain: gca-intranet
   line-height: 1.25;
   max-height: calc(1.25em * 2);
 }
+
+.gca-single--2col .govuk-grid-row::after {
+  content: '';
+  display: block;
+  clear: both;
+}
+@media (min-width: 1024px) {
+  .govuk-width-container {
+    max-width: 1024px;
+    min-width: 1200px;
+  }
+}
