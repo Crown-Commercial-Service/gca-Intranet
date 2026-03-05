@@ -25,7 +25,7 @@ add_action('wp_enqueue_scripts', function (): void {
    *
    * In a child theme, get_template_directory_uri() points to the parent theme.
    */
-  if (is_single()) {
+  if (is_singular()) { // was is_single(); pages need this too for GOVUK components
     $govuk_js_rel = '/assets/scripts/all.min.js';
     $govuk_js_abs = get_template_directory() . $govuk_js_rel;
     $govuk_js_ver = file_exists($govuk_js_abs) ? (string) filemtime($govuk_js_abs) : '1.0.0';
@@ -81,7 +81,8 @@ add_action('add_meta_boxes', function (): void {
       echo '<button type="button" class="button" id="gca-hero-image-remove" ' . ($image_id ? '' : 'disabled') . '>' . esc_html__('Remove', 'gca-intranet') . '</button>';
       echo '</p>';
     },
-    ['post', 'page'],
+    // Apply to CPTs + pages (and keep 'post' if you still use standard posts anywhere)
+    ['page', 'news', 'blog', 'event', 'work_update', 'post'],
     'side',
     'default'
   );
@@ -111,16 +112,135 @@ add_action('save_post', function (int $post_id): void {
 });
 
 /**
- * Admin JS for the Hero header image meta box (uses WP Media Library)
+ * GI-17: Two-column layout left column WYSIWYG
+ * Stored in post meta: _gca_col2_wysiwyg
+ * Only shown in the editor UI when template-layout-2col.php is selected
  */
-add_action('admin_enqueue_scripts', function (): void {
+add_action('add_meta_boxes', function (): void {
+  $screens = ['page', 'news', 'blog', 'event', 'work_update'];
+
+  add_meta_box(
+    'gca_col2_content',
+    __('Layout: left column content', 'gca-intranet'),
+    'gca_render_col2_metabox',
+    $screens,
+    'normal',
+    'high'
+  );
+});
+
+function gca_render_col2_metabox(\WP_Post $post): void
+{
+  wp_nonce_field('gca_save_layout_col2', 'gca_layout_col2_nonce');
+
+  $value = (string) get_post_meta($post->ID, '_gca_col2_wysiwyg', true);
+
+  wp_editor(
+    $value,
+    'gca_col2_wysiwyg_editor',
+    [
+      'textarea_name' => 'gca_col2_wysiwyg',
+      'media_buttons' => true,
+      'textarea_rows' => 10,
+      'tinymce'       => true,
+      'quicktags'     => true,
+    ]
+  );
+
+  echo '<p class="description">' . esc_html__(
+    'Only used when the “Layout – 2 column” template is selected.',
+    'gca-intranet'
+  ) . '</p>';
+}
+
+add_action('save_post', function (int $post_id): void {
+  if (defined('DOING_AUTOSAVE') && DOING_AUTOSAVE) return;
+
+  if (!isset($_POST['gca_layout_col2_nonce']) || !wp_verify_nonce((string) $_POST['gca_layout_col2_nonce'], 'gca_save_layout_col2')) {
+    return;
+  }
+
+  if (!current_user_can('edit_post', $post_id)) return;
+
+  if (isset($_POST['gca_col2_wysiwyg'])) {
+    update_post_meta($post_id, '_gca_col2_wysiwyg', wp_kses_post((string) $_POST['gca_col2_wysiwyg']));
+  }
+});
+
+/**
+ * Featured image display toggle (UNIVERSAL)
+ * Applies to: news, blog
+ * Stored in post meta: _gca_hide_featured_image (1/0)
+ *
+ * This affects BOTH 1-col and 2-col templates (and any future ones).
+ */
+add_action('add_meta_boxes', function (): void {
+  $screens = ['news', 'blog'];
+
+  add_meta_box(
+    'gca_featured_image_toggle',
+    __('Featured image', 'gca-intranet'),
+    function (\WP_Post $post): void {
+      wp_nonce_field('gca_save_featured_image_toggle', 'gca_featured_image_toggle_nonce');
+
+      $checked = get_post_meta($post->ID, '_gca_hide_featured_image', true) ? 'checked' : '';
+
+      echo '<label style="display:flex;gap:8px;align-items:center;">';
+      echo '<input type="checkbox" name="gca_hide_featured_image" value="1" ' . $checked . ' />';
+      echo esc_html__('Hide featured image on page', 'gca-intranet');
+      echo '</label>';
+
+      echo '<p class="description" style="margin-top:8px;">' . esc_html__(
+        'If checked, the featured image will not show on the page (regardless of template).',
+        'gca-intranet'
+      ) . '</p>';
+    },
+    $screens,
+    'side',
+    'default'
+  );
+});
+
+add_action('save_post', function (int $post_id): void {
+  if (defined('DOING_AUTOSAVE') && DOING_AUTOSAVE) return;
+
+  if (!isset($_POST['gca_featured_image_toggle_nonce']) || !wp_verify_nonce((string) $_POST['gca_featured_image_toggle_nonce'], 'gca_save_featured_image_toggle')) {
+    return;
+  }
+
+  if (!current_user_can('edit_post', $post_id)) return;
+
+  $hide = isset($_POST['gca_hide_featured_image']) ? 1 : 0;
+
+  if ($hide) {
+    update_post_meta($post_id, '_gca_hide_featured_image', 1);
+  } else {
+    delete_post_meta($post_id, '_gca_hide_featured_image');
+  }
+});
+
+/**
+ * Admin JS for:
+ * - Hero header image meta box (WP Media Library)
+ * - Only show GI-17 left column metabox when template-layout-2col.php is selected
+ */
+add_action('admin_enqueue_scripts', function (string $hook): void {
+
+  // Only on post editor screens
+  if ($hook !== 'post.php' && $hook !== 'post-new.php') {
+    return;
+  }
 
   wp_enqueue_media();
 
   $js = <<<'JS'
 (function(){
   function ready(fn){ if(document.readyState!=='loading'){ fn(); } else { document.addEventListener('DOMContentLoaded', fn); } }
-  ready(function(){
+
+  // ----------------------------
+  // Hero image metabox behaviour
+  // ----------------------------
+  function initHeroImage(){
     var selectBtn = document.getElementById('gca-hero-image-select');
     var removeBtn = document.getElementById('gca-hero-image-remove');
     var input = document.getElementById('gca_hero_image_id');
@@ -159,131 +279,49 @@ add_action('admin_enqueue_scripts', function (): void {
         removeBtn.disabled = true;
       });
     }
+  }
+
+  // --------------------------------------------
+  // Template switcher helpers (classic + Gutenberg)
+  // --------------------------------------------
+  function getTemplateValue(){
+    // Classic editor uses #page_template
+    var sel = document.getElementById('page_template');
+    if (sel) return sel.value;
+
+    // Some editors store it in a hidden input
+    var input = document.querySelector('input[name="page_template"]');
+    if (input) return input.value;
+
+    return '';
+  }
+
+  function set2ColBoxesVisibility(){
+    var template = getTemplateValue();
+    var shouldShow = (template === 'template-layout-2col.php');
+
+    // Main left column WYSIWYG
+    var col2Box = document.getElementById('gca_col2_content');
+    if (col2Box) col2Box.style.display = shouldShow ? '' : 'none';
+  }
+
+  ready(function(){
+    initHeroImage();
+    set2ColBoxesVisibility();
+
+    // Watch for changes (classic editor)
+    var sel = document.getElementById('page_template');
+    if (sel) {
+      sel.addEventListener('change', set2ColBoxesVisibility);
+    }
+
+    // Gutenberg: keep it simple and robust
+    setInterval(set2ColBoxesVisibility, 800);
   });
 })();
 JS;
 
-  // Load after jquery-core (available in WP admin)
   wp_add_inline_script('jquery-core', $js, 'after');
-});
-
-/**
- * GI-100: Take a look component fields on the homepage (WYSIWYG)
- * Stores HTML in: _gca_take_a_look_content
- *
- * NOTE:
- * We keep this metabox for now (backwards compatible), but the homepage
- * template is now driven by Customizer settings (theme_mods).
- */
-add_action('add_meta_boxes', function (): void {
-
-  add_meta_box(
-    'gca_take_a_look',
-    __('Homepage: Take a look', 'gca-intranet'),
-    'gca_render_take_a_look_metabox',
-    'page',
-    'normal',
-    'high'
-  );
-});
-
-function gca_render_take_a_look_metabox(\WP_Post $post): void
-{
-  // Only show/use on the page set as "Front page" in Settings → Reading
-  $front_page_id = (int) get_option('page_on_front');
-
-  if ($front_page_id !== (int) $post->ID) {
-    echo '<p>' . esc_html__('This box is only used on the Front page (Settings → Reading).', 'gca-intranet') . '</p>';
-    return;
-  }
-
-  wp_nonce_field('gca_take_a_look_save', 'gca_take_a_look_nonce');
-
-  $title   = (string) get_post_meta($post->ID, '_gca_take_a_look_title', true);
-  $desc    = (string) get_post_meta($post->ID, '_gca_take_a_look_desc', true);
-  $content = (string) get_post_meta($post->ID, '_gca_take_a_look_content', true);
-  ?>
-  <p>
-    <label for="gca_take_a_look_title"><strong><?php esc_html_e('Title', 'gca-intranet'); ?></strong></label><br>
-    <input
-      type="text"
-      id="gca_take_a_look_title"
-      name="gca_take_a_look_title"
-      class="widefat"
-      value="<?php echo esc_attr($title); ?>"
-      placeholder="<?php echo esc_attr__('Take a look', 'gca-intranet'); ?>"
-    >
-  </p>
-
-  <p>
-    <label for="gca_take_a_look_desc"><strong><?php esc_html_e('Description', 'gca-intranet'); ?></strong></label><br>
-    <textarea
-      id="gca_take_a_look_desc"
-      name="gca_take_a_look_desc"
-      class="widefat"
-      rows="3"
-      placeholder="<?php echo esc_attr__('Short description under the title', 'gca-intranet'); ?>"
-    ><?php echo esc_textarea($desc); ?></textarea>
-  </p>
-
-  <p>
-    <strong><?php esc_html_e('Box content', 'gca-intranet'); ?></strong><br>
-    <span class="description">
-      <?php esc_html_e('Add text, links, and images. Everything renders inside the green box.', 'gca-intranet'); ?>
-    </span>
-  </p>
-
-  <?php
-  wp_editor(
-    $content,
-    'gca_take_a_look_content',
-    [
-      'textarea_name' => 'gca_take_a_look_content',
-      'textarea_rows' => 6,
-      'media_buttons' => true,
-      'teeny'         => false,
-      'quicktags'     => true,
-    ]
-  );
-}
-
-add_action('save_post_page', function (int $post_id): void {
-
-  // Autosave / permissions
-  if (defined('DOING_AUTOSAVE') && DOING_AUTOSAVE) {
-    return;
-  }
-
-  if (!current_user_can('edit_post', $post_id)) {
-    return;
-  }
-
-  // Only save for the page set as Front page
-  $front_page_id = (int) get_option('page_on_front');
-  if ($front_page_id !== (int) $post_id) {
-    return;
-  }
-
-  // Nonce
-  if (!isset($_POST['gca_take_a_look_nonce']) || !wp_verify_nonce((string) $_POST['gca_take_a_look_nonce'], 'gca_take_a_look_save')) {
-    return;
-  }
-
-  $title = isset($_POST['gca_take_a_look_title'])
-    ? sanitize_text_field((string) $_POST['gca_take_a_look_title'])
-    : '';
-
-  $desc = isset($_POST['gca_take_a_look_desc'])
-    ? sanitize_textarea_field((string) $_POST['gca_take_a_look_desc'])
-    : '';
-
-  $content = isset($_POST['gca_take_a_look_content'])
-    ? wp_kses_post((string) $_POST['gca_take_a_look_content'])
-    : '';
-
-  update_post_meta($post_id, '_gca_take_a_look_title', $title);
-  update_post_meta($post_id, '_gca_take_a_look_desc', $desc);
-  update_post_meta($post_id, '_gca_take_a_look_content', $content);
 });
 
 /**
