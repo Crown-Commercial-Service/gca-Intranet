@@ -58,9 +58,13 @@ body, p, .govuk-body {
 //Font Overrides END
 
 .govuk-button:hover {
-  background-color: #8BA9FE;
+  background-color: $gca-blue-2;
 }
 
 .govuk-button {
   box-shadow: none;
+}
+
+.govuk-width-container {
+    width: 100%
 }

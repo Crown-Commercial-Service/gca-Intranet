@@ -1,0 +1,32 @@
+.nav-links {
+    display: flex;
+    justify-content: flex-end;
+
+    padding: govuk-spacing(3) 0;
+
+    margin-top: govuk-spacing(6);
+
+    .page-numbers {
+        padding: 5px 10px;
+        margin-right: 5px;
+        text-decoration: none;
+        font-family: "GDS Transport", arial, sans-serif;
+
+        &:hover {
+
+        text-decoration: underline;
+        }
+
+        &.current {
+            font-weight: bold;
+            border-radius: 2px;
+        }
+
+        /* Dots (...) */
+            &.dots {
+            border: none;
+            background: none;
+            text-decoration: none;
+        }
+    }
+}
