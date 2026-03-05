@@ -348,6 +348,25 @@ if (!function_exists('gca_sanitize_home_text')) {
   }
 }
 
+/**
+ * Editable homepage DESCRIPTION sanitiser (plain text, trimmed, hard 40 char cap)
+ * Use this for homepage section descriptions so they stay short.
+ */
+if (!function_exists('gca_sanitize_home_desc_40')) {
+  function gca_sanitize_home_desc_40($value): string {
+    $value = (string) $value;
+    $value = wp_strip_all_tags($value);
+    $value = preg_replace('/\s+/', ' ', $value);
+    $value = trim((string) $value);
+
+    $max = 40;
+    if (function_exists('mb_substr')) {
+      return (string) mb_substr($value, 0, $max);
+    }
+    return (string) substr($value, 0, $max);
+  }
+}
+
 add_action('customize_register', function (\WP_Customize_Manager $wp_customize): void {
 
   $section = 'gca_homepage_options';
@@ -377,7 +396,7 @@ add_action('customize_register', function (\WP_Customize_Manager $wp_customize):
 
   $wp_customize->add_setting('gca_latestnews_desc', [
     'default'           => "What's happening in our organisation",
-    'sanitize_callback' => 'gca_sanitize_home_text',
+    'sanitize_callback' => 'gca_sanitize_home_desc_40',
     'transport'         => 'refresh',
   ]);
 
@@ -385,7 +404,11 @@ add_action('customize_register', function (\WP_Customize_Manager $wp_customize):
     'type'        => 'textarea',
     'section'     => $section,
     'label'       => __('Latest news: description', 'gca-intranet'),
-    'description' => __('Text shown under the “Latest news” heading on the homepage.', 'gca-intranet'),
+    'description' => __('Text shown under the “Latest news” heading on the homepage. Max 40 characters (longer text is truncated).', 'gca-intranet'),
+    'input_attrs' => [
+      'maxlength' => 40,
+      'rows'      => 2,
+    ],
     'priority'    => 20,
   ]);
 
@@ -421,7 +444,7 @@ add_action('customize_register', function (\WP_Customize_Manager $wp_customize):
 
   $wp_customize->add_setting('gca_takealook_desc', [
     'default'           => '',
-    'sanitize_callback' => 'gca_sanitize_home_text',
+    'sanitize_callback' => 'gca_sanitize_home_desc_40',
     'transport'         => 'refresh',
   ]);
 
@@ -429,7 +452,11 @@ add_action('customize_register', function (\WP_Customize_Manager $wp_customize):
     'type'        => 'textarea',
     'section'     => $section,
     'label'       => __('Take a look: description', 'gca-intranet'),
-    'description' => __('Optional text shown under the title.', 'gca-intranet'),
+    'description' => __('Optional text shown under the title. Max 40 characters (longer text is truncated).', 'gca-intranet'),
+    'input_attrs' => [
+      'maxlength' => 40,
+      'rows'      => 2,
+    ],
     'priority'    => 50,
   ]);
 
@@ -497,7 +524,7 @@ add_action('customize_register', function (\WP_Customize_Manager $wp_customize):
 
   $wp_customize->add_setting('gca_quicklinks_desc', [
     'default'           => '',
-    'sanitize_callback' => 'gca_sanitize_home_text',
+    'sanitize_callback' => 'gca_sanitize_home_desc_40',
     'transport'         => 'refresh',
   ]);
 
@@ -505,7 +532,11 @@ add_action('customize_register', function (\WP_Customize_Manager $wp_customize):
     'type'        => 'textarea',
     'section'     => $section,
     'label'       => __('Quick links: description', 'gca-intranet'),
-    'description' => __('Optional text shown under the title.', 'gca-intranet'),
+    'description' => __('Optional text shown under the title. Max 40 characters (longer text is truncated).', 'gca-intranet'),
+    'input_attrs' => [
+      'maxlength' => 40,
+      'rows'      => 2,
+    ],
     'priority'    => 100,
   ]);
 
@@ -567,7 +598,7 @@ add_action('customize_register', function (\WP_Customize_Manager $wp_customize):
 
   $wp_customize->add_setting('gca_workupdates_desc', [
     'default'           => '',
-    'sanitize_callback' => 'gca_sanitize_home_text',
+    'sanitize_callback' => 'gca_sanitize_home_desc_40',
     'transport'         => 'refresh',
   ]);
 
@@ -575,7 +606,11 @@ add_action('customize_register', function (\WP_Customize_Manager $wp_customize):
     'type'        => 'textarea',
     'section'     => $section,
     'label'       => __('Work updates: description', 'gca-intranet'),
-    'description' => __('Text shown under the “Work updates” heading on the homepage.', 'gca-intranet'),
+    'description' => __('Text shown under the “Work updates” heading on the homepage. Max 40 characters (longer text is truncated).', 'gca-intranet'),
+    'input_attrs' => [
+      'maxlength' => 40,
+      'rows'      => 2,
+    ],
     'priority'    => 180,
   ]);
 
@@ -598,7 +633,7 @@ add_action('customize_register', function (\WP_Customize_Manager $wp_customize):
 
   $wp_customize->add_setting('gca_blogs_desc', [
     'default'           => '',
-    'sanitize_callback' => 'gca_sanitize_home_text',
+    'sanitize_callback' => 'gca_sanitize_home_desc_40',
     'transport'         => 'refresh',
   ]);
 
@@ -606,7 +641,11 @@ add_action('customize_register', function (\WP_Customize_Manager $wp_customize):
     'type'        => 'textarea',
     'section'     => $section,
     'label'       => __('Blogs: description', 'gca-intranet'),
-    'description' => __('Text shown under the “Blogs” heading on the homepage.', 'gca-intranet'),
+    'description' => __('Text shown under the “Blogs” heading on the homepage. Max 40 characters (longer text is truncated).', 'gca-intranet'),
+    'input_attrs' => [
+      'maxlength' => 40,
+      'rows'      => 2,
+    ],
     'priority'    => 200,
   ]);
 });
@@ -614,6 +653,7 @@ add_action('customize_register', function (\WP_Customize_Manager $wp_customize):
 /**
  * Customizer UI: character counter for Take a look link text
  * + Quick links text counters (48 chars)
+ * + Homepage description counters (40 chars)
  */
 add_action('customize_controls_enqueue_scripts', function (): void {
   $js = <<<'JS'
@@ -651,12 +691,20 @@ add_action('customize_controls_enqueue_scripts', function (): void {
   }
 
   function init(){
+    // Take a look link text (90 chars)
     addCounter('customize-control-gca_takealook_link_text', 90);
 
-    // Quick links (3 fields)
+    // Quick links text fields (48 chars)
     addCounter('customize-control-gca_quicklinks_1_text', 48);
     addCounter('customize-control-gca_quicklinks_2_text', 48);
     addCounter('customize-control-gca_quicklinks_3_text', 48);
+
+    // Homepage section descriptions (40 chars)
+    addCounter('customize-control-gca_latestnews_desc', 40);
+    addCounter('customize-control-gca_takealook_desc', 40);
+    addCounter('customize-control-gca_quicklinks_desc', 40);
+    addCounter('customize-control-gca_workupdates_desc', 40);
+    addCounter('customize-control-gca_blogs_desc', 40);
   }
 
   document.addEventListener('DOMContentLoaded', init);

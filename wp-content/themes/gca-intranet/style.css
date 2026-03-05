@@ -609,3 +609,15 @@ Text Domain: gca-intranet
 .gca-quick-links__item:visited .gca-quick-links__text {
   color: #1d70b8;
 }
+/* Clamp text to 2 lines + ellipsis */
+.gca-clamp-2 {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+
+  overflow: hidden;
+  text-overflow: ellipsis;
+
+  line-height: 1.25;
+  max-height: calc(1.25em * 2);
+}

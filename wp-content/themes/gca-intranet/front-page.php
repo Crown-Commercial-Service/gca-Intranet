@@ -29,7 +29,7 @@ get_header();
       <!-- Latest news -->
       <div class="govuk-grid-column-two-thirds" data-testid="latest-news-column">
         <div class="gca-homepage-section-title" data-testid="latest-news-header">
-          <h2 class="govuk-heading-m" data-testid="latest-news-heading">
+          <h2 class="govuk-heading-m gca-clamp-2" data-testid="latest-news-heading">
             <?php
             $latestnews_title = trim((string) get_theme_mod('gca_latestnews_title', __('Latest news', 'gca-intranet')));
             echo esc_html($latestnews_title !== '' ? $latestnews_title : __('Latest news', 'gca-intranet'));
@@ -193,7 +193,7 @@ get_header();
         <div class="govuk-grid-column-one-third" data-testid="take-a-look-column">
 
           <div class="gca-homepage-section-title" data-testid="take-a-look-header">
-            <h2 class="govuk-heading-m" data-testid="take-a-look-heading"><?php echo esc_html($take_title); ?></h2>
+            <h2 class="govuk-heading-m gca-clamp-2" data-testid="take-a-look-heading"><?php echo esc_html($take_title); ?></h2>
 
             <?php if ($take_desc !== '') : ?>
               <p class="govuk-body" data-testid="take-a-look-subheading"><?php echo esc_html($take_desc); ?></p>
@@ -242,7 +242,7 @@ get_header();
             <div class="gca-quick-links" data-testid="quick-links">
 
               <div class="gca-homepage-section-title" data-testid="quick-links-header">
-                <h2 class="govuk-heading-m" data-testid="quick-links-heading">
+                <h2 class="govuk-heading-m gca-clamp-2" data-testid="quick-links-heading">
                   <?php echo esc_html($ql_title !== '' ? $ql_title : __('Quick links', 'gca-intranet')); ?>
                 </h2>
 
@@ -290,7 +290,7 @@ get_header();
         <!-- Work updates -->
         <div class="govuk-grid-column-two-thirds" data-testid="work-updates-column">
           <div class="gca-homepage-section-title" data-testid="work-updates-header">
-            <h2 class="govuk-heading-m" data-testid="work-updates-heading">
+            <h2 class="govuk-heading-m gca-clamp-2" data-testid="work-updates-heading">
               <?php
               $workupdates_title = trim((string) get_theme_mod('gca_workupdates_title', __('Work updates', 'gca-intranet')));
               echo esc_html($workupdates_title !== '' ? $workupdates_title : __('Work updates', 'gca-intranet'));
@@ -379,7 +379,7 @@ get_header();
         <!-- Blogs -->
         <div class="govuk-grid-column-one-third" data-testid="blogs-column">
           <div class="gca-homepage-section-title" data-testid="blogs-header">
-            <h2 class="govuk-heading-m" data-testid="blogs-heading">
+            <h2 class="govuk-heading-m gca-clamp-2" data-testid="blogs-heading">
               <?php
               $blogs_title = trim((string) get_theme_mod('gca_blogs_title', __('Blogs', 'gca-intranet')));
               echo esc_html($blogs_title !== '' ? $blogs_title : __('Blogs', 'gca-intranet'));
