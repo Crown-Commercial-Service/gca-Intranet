@@ -29,8 +29,19 @@ get_header();
       <!-- Latest news -->
       <div class="govuk-grid-column-two-thirds" data-testid="latest-news-column">
         <div class="gca-homepage-section-title" data-testid="latest-news-header">
-          <h2 class="govuk-heading-m" data-testid="latest-news-heading">Latest news</h2>
-          <p class="govuk-body" data-testid="latest-news-subheading">What's happening in our organisation</p>
+          <h2 class="govuk-heading-m" data-testid="latest-news-heading">
+            <?php
+            $latestnews_title = trim((string) get_theme_mod('gca_latestnews_title', __('Latest news', 'gca-intranet')));
+            echo esc_html($latestnews_title !== '' ? $latestnews_title : __('Latest news', 'gca-intranet'));
+            ?>
+          </h2>
+
+          <?php
+          $latestnews_desc = trim((string) get_theme_mod('gca_latestnews_desc', ''));
+          ?>
+          <p class="govuk-body" data-testid="latest-news-subheading">
+            <?php echo esc_html($latestnews_desc !== '' ? $latestnews_desc : "What's happening in our organisation"); ?>
+          </p>
         </div>
 
         <div class="govuk-grid-row gca-equal-height-row" data-testid="latest-news-section">
@@ -279,7 +290,13 @@ get_header();
         <!-- Work updates -->
         <div class="govuk-grid-column-two-thirds" data-testid="work-updates-column">
           <div class="gca-homepage-section-title" data-testid="work-updates-header">
-            <h2 class="govuk-heading-m" data-testid="work-updates-heading">Work updates</h2>
+            <h2 class="govuk-heading-m" data-testid="work-updates-heading">
+              <?php
+              $workupdates_title = trim((string) get_theme_mod('gca_workupdates_title', __('Work updates', 'gca-intranet')));
+              echo esc_html($workupdates_title !== '' ? $workupdates_title : __('Work updates', 'gca-intranet'));
+              ?>
+            </h2>
+
             <?php
             $workupdates_desc = trim((string) get_theme_mod('gca_workupdates_desc', ''));
             ?>
@@ -356,7 +373,13 @@ get_header();
         <!-- Blogs -->
         <div class="govuk-grid-column-one-third" data-testid="blogs-column">
           <div class="gca-homepage-section-title" data-testid="blogs-header">
-            <h2 class="govuk-heading-m" data-testid="blogs-heading">Blogs</h2>
+            <h2 class="govuk-heading-m" data-testid="blogs-heading">
+              <?php
+              $blogs_title = trim((string) get_theme_mod('gca_blogs_title', __('Blogs', 'gca-intranet')));
+              echo esc_html($blogs_title !== '' ? $blogs_title : __('Blogs', 'gca-intranet'));
+              ?>
+            </h2>
+
             <?php
             $blogs_desc = trim((string) get_theme_mod('gca_blogs_desc', ''));
             ?>

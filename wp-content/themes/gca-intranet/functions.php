@@ -336,10 +336,11 @@ if (!function_exists('gca_sanitize_quicklink_text')) {
 }
 
 /**
- * Editable homepage section descriptions sanitiser (plain text, trimmed)
+ * Editable homepage text sanitiser (plain text, trimmed)
+ * Use this for titles + descriptions to keep them consistent.
  */
-if (!function_exists('gca_sanitize_home_desc')) {
-  function gca_sanitize_home_desc($value): string {
+if (!function_exists('gca_sanitize_home_text')) {
+  function gca_sanitize_home_text($value): string {
     $value = (string) $value;
     $value = wp_strip_all_tags($value);
     $value = preg_replace('/\s+/', ' ', $value);
@@ -354,10 +355,44 @@ add_action('customize_register', function (\WP_Customize_Manager $wp_customize):
   $wp_customize->add_section($section, [
     'title'       => __('Homepage options', 'gca-intranet'),
     'priority'    => 30,
-    'description' => __('Controls for homepage components (e.g. “Take a look”).', 'gca-intranet'),
+    'description' => __('Controls for homepage components.', 'gca-intranet'),
   ]);
 
-  // Toggle
+  // ============================================================
+  // Latest news (Customizer) — order: 1st on homepage
+  // ============================================================
+
+  $wp_customize->add_setting('gca_latestnews_title', [
+    'default'           => __('Latest news', 'gca-intranet'),
+    'sanitize_callback' => 'gca_sanitize_home_text',
+    'transport'         => 'refresh',
+  ]);
+
+  $wp_customize->add_control('gca_latestnews_title', [
+    'type'     => 'text',
+    'section'  => $section,
+    'label'    => __('Latest news: title', 'gca-intranet'),
+    'priority' => 10,
+  ]);
+
+  $wp_customize->add_setting('gca_latestnews_desc', [
+    'default'           => "What's happening in our organisation",
+    'sanitize_callback' => 'gca_sanitize_home_text',
+    'transport'         => 'refresh',
+  ]);
+
+  $wp_customize->add_control('gca_latestnews_desc', [
+    'type'        => 'textarea',
+    'section'     => $section,
+    'label'       => __('Latest news: description', 'gca-intranet'),
+    'description' => __('Text shown under the “Latest news” heading on the homepage.', 'gca-intranet'),
+    'priority'    => 20,
+  ]);
+
+  // ============================================================
+  // GI-100: Take a look (Customizer) — order: 2nd on homepage
+  // ============================================================
+
   $wp_customize->add_setting('gca_takealook_enabled', [
     'default'           => true,
     'sanitize_callback' => static fn ($v) => (bool) $v,
@@ -365,28 +400,28 @@ add_action('customize_register', function (\WP_Customize_Manager $wp_customize):
   ]);
 
   $wp_customize->add_control('gca_takealook_enabled', [
-    'type'    => 'checkbox',
-    'section' => $section,
-    'label'   => __('Show “Take a look” block', 'gca-intranet'),
+    'type'     => 'checkbox',
+    'section'  => $section,
+    'label'    => __('Show “Take a look” block', 'gca-intranet'),
+    'priority' => 30,
   ]);
 
-  // Title
   $wp_customize->add_setting('gca_takealook_title', [
     'default'           => __('Take a look', 'gca-intranet'),
-    'sanitize_callback' => 'sanitize_text_field',
+    'sanitize_callback' => 'gca_sanitize_home_text',
     'transport'         => 'refresh',
   ]);
 
   $wp_customize->add_control('gca_takealook_title', [
-    'type'    => 'text',
-    'section' => $section,
-    'label'   => __('Take a look: title', 'gca-intranet'),
+    'type'     => 'text',
+    'section'  => $section,
+    'label'    => __('Take a look: title', 'gca-intranet'),
+    'priority' => 40,
   ]);
 
-  // Description
   $wp_customize->add_setting('gca_takealook_desc', [
     'default'           => '',
-    'sanitize_callback' => 'sanitize_textarea_field',
+    'sanitize_callback' => 'gca_sanitize_home_text',
     'transport'         => 'refresh',
   ]);
 
@@ -395,9 +430,9 @@ add_action('customize_register', function (\WP_Customize_Manager $wp_customize):
     'section'     => $section,
     'label'       => __('Take a look: description', 'gca-intranet'),
     'description' => __('Optional text shown under the title.', 'gca-intranet'),
+    'priority'    => 50,
   ]);
 
-  // Link text (short paragraph, max 90 chars, no HTML)
   $wp_customize->add_setting('gca_takealook_link_text', [
     'default'           => __('Learn more', 'gca-intranet'),
     'sanitize_callback' => 'gca_sanitize_takealook_link_text',
@@ -413,9 +448,9 @@ add_action('customize_register', function (\WP_Customize_Manager $wp_customize):
       'maxlength' => 90,
       'rows'      => 3,
     ],
+    'priority'    => 60,
   ]);
 
-  // Link URL
   $wp_customize->add_setting('gca_takealook_link_url', [
     'default'           => '',
     'sanitize_callback' => 'esc_url_raw',
@@ -427,10 +462,11 @@ add_action('customize_register', function (\WP_Customize_Manager $wp_customize):
     'section'     => $section,
     'label'       => __('Take a look: link URL', 'gca-intranet'),
     'description' => __('If empty, the block renders as “not configured”.', 'gca-intranet'),
+    'priority'    => 70,
   ]);
 
   // ============================================================
-  // GI-101: Quick links (Customizer)
+  // GI-101: Quick links (Customizer) — order: 3rd on homepage
   // ============================================================
 
   $wp_customize->add_setting('gca_quicklinks_enabled', [
@@ -440,26 +476,28 @@ add_action('customize_register', function (\WP_Customize_Manager $wp_customize):
   ]);
 
   $wp_customize->add_control('gca_quicklinks_enabled', [
-    'type'    => 'checkbox',
-    'section' => $section,
-    'label'   => __('Show “Quick links” block', 'gca-intranet'),
+    'type'     => 'checkbox',
+    'section'  => $section,
+    'label'    => __('Show “Quick links” block', 'gca-intranet'),
+    'priority' => 80,
   ]);
 
   $wp_customize->add_setting('gca_quicklinks_title', [
     'default'           => __('Quick links', 'gca-intranet'),
-    'sanitize_callback' => 'sanitize_text_field',
+    'sanitize_callback' => 'gca_sanitize_home_text',
     'transport'         => 'refresh',
   ]);
 
   $wp_customize->add_control('gca_quicklinks_title', [
-    'type'    => 'text',
-    'section' => $section,
-    'label'   => __('Quick links: title', 'gca-intranet'),
+    'type'     => 'text',
+    'section'  => $section,
+    'label'    => __('Quick links: title', 'gca-intranet'),
+    'priority' => 90,
   ]);
 
   $wp_customize->add_setting('gca_quicklinks_desc', [
     'default'           => '',
-    'sanitize_callback' => 'sanitize_textarea_field',
+    'sanitize_callback' => 'gca_sanitize_home_text',
     'transport'         => 'refresh',
   ]);
 
@@ -468,8 +506,10 @@ add_action('customize_register', function (\WP_Customize_Manager $wp_customize):
     'section'     => $section,
     'label'       => __('Quick links: description', 'gca-intranet'),
     'description' => __('Optional text shown under the title.', 'gca-intranet'),
+    'priority'    => 100,
   ]);
 
+  $priority = 110;
   for ($i = 1; $i <= 3; $i++) {
 
     $wp_customize->add_setting("gca_quicklinks_{$i}_text", [
@@ -486,7 +526,10 @@ add_action('customize_register', function (\WP_Customize_Manager $wp_customize):
       'input_attrs' => [
         'maxlength' => 48,
       ],
+      'priority'    => $priority,
     ]);
+
+    $priority += 10;
 
     $wp_customize->add_setting("gca_quicklinks_{$i}_url", [
       'default'           => '',
@@ -499,17 +542,32 @@ add_action('customize_register', function (\WP_Customize_Manager $wp_customize):
       'section'     => $section,
       'label'       => sprintf(__('Quick link %d: URL', 'gca-intranet'), $i),
       'description' => __('Full URL (e.g. https://…).', 'gca-intranet'),
+      'priority'    => $priority,
     ]);
+
+    $priority += 10;
   }
 
   // ============================================================
-  // Editable homepage descriptions (Customizer)
+  // Work updates (Customizer) — order: 4th on homepage
   // ============================================================
 
-  // Work updates description
+  $wp_customize->add_setting('gca_workupdates_title', [
+    'default'           => __('Work updates', 'gca-intranet'),
+    'sanitize_callback' => 'gca_sanitize_home_text',
+    'transport'         => 'refresh',
+  ]);
+
+  $wp_customize->add_control('gca_workupdates_title', [
+    'type'     => 'text',
+    'section'  => $section,
+    'label'    => __('Work updates: title', 'gca-intranet'),
+    'priority' => 170,
+  ]);
+
   $wp_customize->add_setting('gca_workupdates_desc', [
     'default'           => '',
-    'sanitize_callback' => 'gca_sanitize_home_desc',
+    'sanitize_callback' => 'gca_sanitize_home_text',
     'transport'         => 'refresh',
   ]);
 
@@ -518,12 +576,29 @@ add_action('customize_register', function (\WP_Customize_Manager $wp_customize):
     'section'     => $section,
     'label'       => __('Work updates: description', 'gca-intranet'),
     'description' => __('Text shown under the “Work updates” heading on the homepage.', 'gca-intranet'),
+    'priority'    => 180,
   ]);
 
-  // Blogs description
+  // ============================================================
+  // Blogs (Customizer) — order: 5th on homepage
+  // ============================================================
+
+  $wp_customize->add_setting('gca_blogs_title', [
+    'default'           => __('Blogs', 'gca-intranet'),
+    'sanitize_callback' => 'gca_sanitize_home_text',
+    'transport'         => 'refresh',
+  ]);
+
+  $wp_customize->add_control('gca_blogs_title', [
+    'type'     => 'text',
+    'section'  => $section,
+    'label'    => __('Blogs: title', 'gca-intranet'),
+    'priority' => 190,
+  ]);
+
   $wp_customize->add_setting('gca_blogs_desc', [
     'default'           => '',
-    'sanitize_callback' => 'gca_sanitize_home_desc',
+    'sanitize_callback' => 'gca_sanitize_home_text',
     'transport'         => 'refresh',
   ]);
 
@@ -532,6 +607,7 @@ add_action('customize_register', function (\WP_Customize_Manager $wp_customize):
     'section'     => $section,
     'label'       => __('Blogs: description', 'gca-intranet'),
     'description' => __('Text shown under the “Blogs” heading on the homepage.', 'gca-intranet'),
+    'priority'    => 200,
   ]);
 });
 
