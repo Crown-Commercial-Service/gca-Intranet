@@ -25,7 +25,7 @@ add_action('wp_enqueue_scripts', function (): void {
    *
    * In a child theme, get_template_directory_uri() points to the parent theme.
    */
-  if (is_single()) {
+  if (is_singular()) { // was is_single(); pages need this too for GOVUK components
     $govuk_js_rel = '/assets/scripts/all.min.js';
     $govuk_js_abs = get_template_directory() . $govuk_js_rel;
     $govuk_js_ver = file_exists($govuk_js_abs) ? (string) filemtime($govuk_js_abs) : '1.0.0';
@@ -81,7 +81,8 @@ add_action('add_meta_boxes', function (): void {
       echo '<button type="button" class="button" id="gca-hero-image-remove" ' . ($image_id ? '' : 'disabled') . '>' . esc_html__('Remove', 'gca-intranet') . '</button>';
       echo '</p>';
     },
-    ['post', 'page'],
+    // Apply to CPTs + pages (and keep 'post' if you still use standard posts anywhere)
+    ['page', 'news', 'blog', 'event', 'work_update', 'post'],
     'side',
     'default'
   );
@@ -111,16 +112,135 @@ add_action('save_post', function (int $post_id): void {
 });
 
 /**
- * Admin JS for the Hero header image meta box (uses WP Media Library)
+ * GI-17: Two-column layout left column WYSIWYG
+ * Stored in post meta: _gca_col2_wysiwyg
+ * Only shown in the editor UI when template-layout-2col.php is selected
  */
-add_action('admin_enqueue_scripts', function (): void {
+add_action('add_meta_boxes', function (): void {
+  $screens = ['page', 'news', 'blog', 'event', 'work_update'];
+
+  add_meta_box(
+    'gca_col2_content',
+    __('Layout: left column content', 'gca-intranet'),
+    'gca_render_col2_metabox',
+    $screens,
+    'normal',
+    'high'
+  );
+});
+
+function gca_render_col2_metabox(\WP_Post $post): void
+{
+  wp_nonce_field('gca_save_layout_col2', 'gca_layout_col2_nonce');
+
+  $value = (string) get_post_meta($post->ID, '_gca_col2_wysiwyg', true);
+
+  wp_editor(
+    $value,
+    'gca_col2_wysiwyg_editor',
+    [
+      'textarea_name' => 'gca_col2_wysiwyg',
+      'media_buttons' => true,
+      'textarea_rows' => 10,
+      'tinymce'       => true,
+      'quicktags'     => true,
+    ]
+  );
+
+  echo '<p class="description">' . esc_html__(
+    'Only used when the “Layout – 2 column” template is selected.',
+    'gca-intranet'
+  ) . '</p>';
+}
+
+add_action('save_post', function (int $post_id): void {
+  if (defined('DOING_AUTOSAVE') && DOING_AUTOSAVE) return;
+
+  if (!isset($_POST['gca_layout_col2_nonce']) || !wp_verify_nonce((string) $_POST['gca_layout_col2_nonce'], 'gca_save_layout_col2')) {
+    return;
+  }
+
+  if (!current_user_can('edit_post', $post_id)) return;
+
+  if (isset($_POST['gca_col2_wysiwyg'])) {
+    update_post_meta($post_id, '_gca_col2_wysiwyg', wp_kses_post((string) $_POST['gca_col2_wysiwyg']));
+  }
+});
+
+/**
+ * Featured image display toggle (UNIVERSAL)
+ * Applies to: news, blog
+ * Stored in post meta: _gca_hide_featured_image (1/0)
+ *
+ * This affects BOTH 1-col and 2-col templates (and any future ones).
+ */
+add_action('add_meta_boxes', function (): void {
+  $screens = ['news', 'blog'];
+
+  add_meta_box(
+    'gca_featured_image_toggle',
+    __('Featured image', 'gca-intranet'),
+    function (\WP_Post $post): void {
+      wp_nonce_field('gca_save_featured_image_toggle', 'gca_featured_image_toggle_nonce');
+
+      $checked = get_post_meta($post->ID, '_gca_hide_featured_image', true) ? 'checked' : '';
+
+      echo '<label style="display:flex;gap:8px;align-items:center;">';
+      echo '<input type="checkbox" name="gca_hide_featured_image" value="1" ' . $checked . ' />';
+      echo esc_html__('Hide featured image on page', 'gca-intranet');
+      echo '</label>';
+
+      echo '<p class="description" style="margin-top:8px;">' . esc_html__(
+        'If checked, the featured image will not show on the page (regardless of template).',
+        'gca-intranet'
+      ) . '</p>';
+    },
+    $screens,
+    'side',
+    'default'
+  );
+});
+
+add_action('save_post', function (int $post_id): void {
+  if (defined('DOING_AUTOSAVE') && DOING_AUTOSAVE) return;
+
+  if (!isset($_POST['gca_featured_image_toggle_nonce']) || !wp_verify_nonce((string) $_POST['gca_featured_image_toggle_nonce'], 'gca_save_featured_image_toggle')) {
+    return;
+  }
+
+  if (!current_user_can('edit_post', $post_id)) return;
+
+  $hide = isset($_POST['gca_hide_featured_image']) ? 1 : 0;
+
+  if ($hide) {
+    update_post_meta($post_id, '_gca_hide_featured_image', 1);
+  } else {
+    delete_post_meta($post_id, '_gca_hide_featured_image');
+  }
+});
+
+/**
+ * Admin JS for:
+ * - Hero header image meta box (WP Media Library)
+ * - Only show GI-17 left column metabox when template-layout-2col.php is selected
+ */
+add_action('admin_enqueue_scripts', function (string $hook): void {
+
+  // Only on post editor screens
+  if ($hook !== 'post.php' && $hook !== 'post-new.php') {
+    return;
+  }
 
   wp_enqueue_media();
 
   $js = <<<'JS'
 (function(){
   function ready(fn){ if(document.readyState!=='loading'){ fn(); } else { document.addEventListener('DOMContentLoaded', fn); } }
-  ready(function(){
+
+  // ----------------------------
+  // Hero image metabox behaviour
+  // ----------------------------
+  function initHeroImage(){
     var selectBtn = document.getElementById('gca-hero-image-select');
     var removeBtn = document.getElementById('gca-hero-image-remove');
     var input = document.getElementById('gca_hero_image_id');
@@ -159,131 +279,49 @@ add_action('admin_enqueue_scripts', function (): void {
         removeBtn.disabled = true;
       });
     }
+  }
+
+  // --------------------------------------------
+  // Template switcher helpers (classic + Gutenberg)
+  // --------------------------------------------
+  function getTemplateValue(){
+    // Classic editor uses #page_template
+    var sel = document.getElementById('page_template');
+    if (sel) return sel.value;
+
+    // Some editors store it in a hidden input
+    var input = document.querySelector('input[name="page_template"]');
+    if (input) return input.value;
+
+    return '';
+  }
+
+  function set2ColBoxesVisibility(){
+    var template = getTemplateValue();
+    var shouldShow = (template === 'template-layout-2col.php');
+
+    // Main left column WYSIWYG
+    var col2Box = document.getElementById('gca_col2_content');
+    if (col2Box) col2Box.style.display = shouldShow ? '' : 'none';
+  }
+
+  ready(function(){
+    initHeroImage();
+    set2ColBoxesVisibility();
+
+    // Watch for changes (classic editor)
+    var sel = document.getElementById('page_template');
+    if (sel) {
+      sel.addEventListener('change', set2ColBoxesVisibility);
+    }
+
+    // Gutenberg: keep it simple and robust
+    setInterval(set2ColBoxesVisibility, 800);
   });
 })();
 JS;
 
-  // Load after jquery-core (available in WP admin)
   wp_add_inline_script('jquery-core', $js, 'after');
-});
-
-/**
- * GI-100: Take a look component fields on the homepage (WYSIWYG)
- * Stores HTML in: _gca_take_a_look_content
- *
- * NOTE:
- * We keep this metabox for now (backwards compatible), but the homepage
- * template is now driven by Customizer settings (theme_mods).
- */
-add_action('add_meta_boxes', function (): void {
-
-  add_meta_box(
-    'gca_take_a_look',
-    __('Homepage: Take a look', 'gca-intranet'),
-    'gca_render_take_a_look_metabox',
-    'page',
-    'normal',
-    'high'
-  );
-});
-
-function gca_render_take_a_look_metabox(\WP_Post $post): void
-{
-  // Only show/use on the page set as "Front page" in Settings → Reading
-  $front_page_id = (int) get_option('page_on_front');
-
-  if ($front_page_id !== (int) $post->ID) {
-    echo '<p>' . esc_html__('This box is only used on the Front page (Settings → Reading).', 'gca-intranet') . '</p>';
-    return;
-  }
-
-  wp_nonce_field('gca_take_a_look_save', 'gca_take_a_look_nonce');
-
-  $title   = (string) get_post_meta($post->ID, '_gca_take_a_look_title', true);
-  $desc    = (string) get_post_meta($post->ID, '_gca_take_a_look_desc', true);
-  $content = (string) get_post_meta($post->ID, '_gca_take_a_look_content', true);
-  ?>
-  <p>
-    <label for="gca_take_a_look_title"><strong><?php esc_html_e('Title', 'gca-intranet'); ?></strong></label><br>
-    <input
-      type="text"
-      id="gca_take_a_look_title"
-      name="gca_take_a_look_title"
-      class="widefat"
-      value="<?php echo esc_attr($title); ?>"
-      placeholder="<?php echo esc_attr__('Take a look', 'gca-intranet'); ?>"
-    >
-  </p>
-
-  <p>
-    <label for="gca_take_a_look_desc"><strong><?php esc_html_e('Description', 'gca-intranet'); ?></strong></label><br>
-    <textarea
-      id="gca_take_a_look_desc"
-      name="gca_take_a_look_desc"
-      class="widefat"
-      rows="3"
-      placeholder="<?php echo esc_attr__('Short description under the title', 'gca-intranet'); ?>"
-    ><?php echo esc_textarea($desc); ?></textarea>
-  </p>
-
-  <p>
-    <strong><?php esc_html_e('Box content', 'gca-intranet'); ?></strong><br>
-    <span class="description">
-      <?php esc_html_e('Add text, links, and images. Everything renders inside the green box.', 'gca-intranet'); ?>
-    </span>
-  </p>
-
-  <?php
-  wp_editor(
-    $content,
-    'gca_take_a_look_content',
-    [
-      'textarea_name' => 'gca_take_a_look_content',
-      'textarea_rows' => 6,
-      'media_buttons' => true,
-      'teeny'         => false,
-      'quicktags'     => true,
-    ]
-  );
-}
-
-add_action('save_post_page', function (int $post_id): void {
-
-  // Autosave / permissions
-  if (defined('DOING_AUTOSAVE') && DOING_AUTOSAVE) {
-    return;
-  }
-
-  if (!current_user_can('edit_post', $post_id)) {
-    return;
-  }
-
-  // Only save for the page set as Front page
-  $front_page_id = (int) get_option('page_on_front');
-  if ($front_page_id !== (int) $post_id) {
-    return;
-  }
-
-  // Nonce
-  if (!isset($_POST['gca_take_a_look_nonce']) || !wp_verify_nonce((string) $_POST['gca_take_a_look_nonce'], 'gca_take_a_look_save')) {
-    return;
-  }
-
-  $title = isset($_POST['gca_take_a_look_title'])
-    ? sanitize_text_field((string) $_POST['gca_take_a_look_title'])
-    : '';
-
-  $desc = isset($_POST['gca_take_a_look_desc'])
-    ? sanitize_textarea_field((string) $_POST['gca_take_a_look_desc'])
-    : '';
-
-  $content = isset($_POST['gca_take_a_look_content'])
-    ? wp_kses_post((string) $_POST['gca_take_a_look_content'])
-    : '';
-
-  update_post_meta($post_id, '_gca_take_a_look_title', $title);
-  update_post_meta($post_id, '_gca_take_a_look_desc', $desc);
-  update_post_meta($post_id, '_gca_take_a_look_content', $content);
 });
 
 /**
@@ -336,14 +374,34 @@ if (!function_exists('gca_sanitize_quicklink_text')) {
 }
 
 /**
- * Editable homepage section descriptions sanitiser (plain text, trimmed)
+ * Editable homepage text sanitiser (plain text, trimmed)
+ * Use this for titles + descriptions to keep them consistent.
  */
-if (!function_exists('gca_sanitize_home_desc')) {
-  function gca_sanitize_home_desc($value): string {
+if (!function_exists('gca_sanitize_home_text')) {
+  function gca_sanitize_home_text($value): string {
     $value = (string) $value;
     $value = wp_strip_all_tags($value);
     $value = preg_replace('/\s+/', ' ', $value);
     return trim((string) $value);
+  }
+}
+
+/**
+ * Editable homepage DESCRIPTION sanitiser (plain text, trimmed, hard 40 char cap)
+ * Use this for homepage section descriptions so they stay short.
+ */
+if (!function_exists('gca_sanitize_home_desc_40')) {
+  function gca_sanitize_home_desc_40($value): string {
+    $value = (string) $value;
+    $value = wp_strip_all_tags($value);
+    $value = preg_replace('/\s+/', ' ', $value);
+    $value = trim((string) $value);
+
+    $max = 40;
+    if (function_exists('mb_substr')) {
+      return (string) mb_substr($value, 0, $max);
+    }
+    return (string) substr($value, 0, $max);
   }
 }
 
@@ -354,10 +412,48 @@ add_action('customize_register', function (\WP_Customize_Manager $wp_customize):
   $wp_customize->add_section($section, [
     'title'       => __('Homepage options', 'gca-intranet'),
     'priority'    => 30,
-    'description' => __('Controls for homepage components (e.g. “Take a look”).', 'gca-intranet'),
+    'description' => __('Controls for homepage components.', 'gca-intranet'),
   ]);
 
-  // Toggle
+  // ============================================================
+  // Latest news (Customizer) — order: 1st on homepage
+  // ============================================================
+
+  $wp_customize->add_setting('gca_latestnews_title', [
+    'default'           => __('Latest news', 'gca-intranet'),
+    'sanitize_callback' => 'gca_sanitize_home_text',
+    'transport'         => 'refresh',
+  ]);
+
+  $wp_customize->add_control('gca_latestnews_title', [
+    'type'     => 'text',
+    'section'  => $section,
+    'label'    => __('Latest news: title', 'gca-intranet'),
+    'priority' => 10,
+  ]);
+
+  $wp_customize->add_setting('gca_latestnews_desc', [
+    'default'           => "What's happening in our organisation",
+    'sanitize_callback' => 'gca_sanitize_home_desc_40',
+    'transport'         => 'refresh',
+  ]);
+
+  $wp_customize->add_control('gca_latestnews_desc', [
+    'type'        => 'textarea',
+    'section'     => $section,
+    'label'       => __('Latest news: description', 'gca-intranet'),
+    'description' => __('Text shown under the “Latest news” heading on the homepage. Max 40 characters (longer text is truncated).', 'gca-intranet'),
+    'input_attrs' => [
+      'maxlength' => 40,
+      'rows'      => 2,
+    ],
+    'priority'    => 20,
+  ]);
+
+  // ============================================================
+  // GI-100: Take a look (Customizer) — order: 2nd on homepage
+  // ============================================================
+
   $wp_customize->add_setting('gca_takealook_enabled', [
     'default'           => true,
     'sanitize_callback' => static fn ($v) => (bool) $v,
@@ -365,28 +461,28 @@ add_action('customize_register', function (\WP_Customize_Manager $wp_customize):
   ]);
 
   $wp_customize->add_control('gca_takealook_enabled', [
-    'type'    => 'checkbox',
-    'section' => $section,
-    'label'   => __('Show “Take a look” block', 'gca-intranet'),
+    'type'     => 'checkbox',
+    'section'  => $section,
+    'label'    => __('Show “Take a look” block', 'gca-intranet'),
+    'priority' => 30,
   ]);
 
-  // Title
   $wp_customize->add_setting('gca_takealook_title', [
     'default'           => __('Take a look', 'gca-intranet'),
-    'sanitize_callback' => 'sanitize_text_field',
+    'sanitize_callback' => 'gca_sanitize_home_text',
     'transport'         => 'refresh',
   ]);
 
   $wp_customize->add_control('gca_takealook_title', [
-    'type'    => 'text',
-    'section' => $section,
-    'label'   => __('Take a look: title', 'gca-intranet'),
+    'type'     => 'text',
+    'section'  => $section,
+    'label'    => __('Take a look: title', 'gca-intranet'),
+    'priority' => 40,
   ]);
 
-  // Description
   $wp_customize->add_setting('gca_takealook_desc', [
     'default'           => '',
-    'sanitize_callback' => 'sanitize_textarea_field',
+    'sanitize_callback' => 'gca_sanitize_home_desc_40',
     'transport'         => 'refresh',
   ]);
 
@@ -394,10 +490,14 @@ add_action('customize_register', function (\WP_Customize_Manager $wp_customize):
     'type'        => 'textarea',
     'section'     => $section,
     'label'       => __('Take a look: description', 'gca-intranet'),
-    'description' => __('Optional text shown under the title.', 'gca-intranet'),
+    'description' => __('Optional text shown under the title. Max 40 characters (longer text is truncated).', 'gca-intranet'),
+    'input_attrs' => [
+      'maxlength' => 40,
+      'rows'      => 2,
+    ],
+    'priority'    => 50,
   ]);
 
-  // Link text (short paragraph, max 90 chars, no HTML)
   $wp_customize->add_setting('gca_takealook_link_text', [
     'default'           => __('Learn more', 'gca-intranet'),
     'sanitize_callback' => 'gca_sanitize_takealook_link_text',
@@ -413,9 +513,9 @@ add_action('customize_register', function (\WP_Customize_Manager $wp_customize):
       'maxlength' => 90,
       'rows'      => 3,
     ],
+    'priority'    => 60,
   ]);
 
-  // Link URL
   $wp_customize->add_setting('gca_takealook_link_url', [
     'default'           => '',
     'sanitize_callback' => 'esc_url_raw',
@@ -427,10 +527,11 @@ add_action('customize_register', function (\WP_Customize_Manager $wp_customize):
     'section'     => $section,
     'label'       => __('Take a look: link URL', 'gca-intranet'),
     'description' => __('If empty, the block renders as “not configured”.', 'gca-intranet'),
+    'priority'    => 70,
   ]);
 
   // ============================================================
-  // GI-101: Quick links (Customizer)
+  // GI-101: Quick links (Customizer) — order: 3rd on homepage
   // ============================================================
 
   $wp_customize->add_setting('gca_quicklinks_enabled', [
@@ -440,26 +541,28 @@ add_action('customize_register', function (\WP_Customize_Manager $wp_customize):
   ]);
 
   $wp_customize->add_control('gca_quicklinks_enabled', [
-    'type'    => 'checkbox',
-    'section' => $section,
-    'label'   => __('Show “Quick links” block', 'gca-intranet'),
+    'type'     => 'checkbox',
+    'section'  => $section,
+    'label'    => __('Show “Quick links” block', 'gca-intranet'),
+    'priority' => 80,
   ]);
 
   $wp_customize->add_setting('gca_quicklinks_title', [
     'default'           => __('Quick links', 'gca-intranet'),
-    'sanitize_callback' => 'sanitize_text_field',
+    'sanitize_callback' => 'gca_sanitize_home_text',
     'transport'         => 'refresh',
   ]);
 
   $wp_customize->add_control('gca_quicklinks_title', [
-    'type'    => 'text',
-    'section' => $section,
-    'label'   => __('Quick links: title', 'gca-intranet'),
+    'type'     => 'text',
+    'section'  => $section,
+    'label'    => __('Quick links: title', 'gca-intranet'),
+    'priority' => 90,
   ]);
 
   $wp_customize->add_setting('gca_quicklinks_desc', [
     'default'           => '',
-    'sanitize_callback' => 'sanitize_textarea_field',
+    'sanitize_callback' => 'gca_sanitize_home_desc_40',
     'transport'         => 'refresh',
   ]);
 
@@ -467,9 +570,15 @@ add_action('customize_register', function (\WP_Customize_Manager $wp_customize):
     'type'        => 'textarea',
     'section'     => $section,
     'label'       => __('Quick links: description', 'gca-intranet'),
-    'description' => __('Optional text shown under the title.', 'gca-intranet'),
+    'description' => __('Optional text shown under the title. Max 40 characters (longer text is truncated).', 'gca-intranet'),
+    'input_attrs' => [
+      'maxlength' => 40,
+      'rows'      => 2,
+    ],
+    'priority'    => 100,
   ]);
 
+  $priority = 110;
   for ($i = 1; $i <= 3; $i++) {
 
     $wp_customize->add_setting("gca_quicklinks_{$i}_text", [
@@ -486,7 +595,10 @@ add_action('customize_register', function (\WP_Customize_Manager $wp_customize):
       'input_attrs' => [
         'maxlength' => 48,
       ],
+      'priority'    => $priority,
     ]);
+
+    $priority += 10;
 
     $wp_customize->add_setting("gca_quicklinks_{$i}_url", [
       'default'           => '',
@@ -499,17 +611,32 @@ add_action('customize_register', function (\WP_Customize_Manager $wp_customize):
       'section'     => $section,
       'label'       => sprintf(__('Quick link %d: URL', 'gca-intranet'), $i),
       'description' => __('Full URL (e.g. https://…).', 'gca-intranet'),
+      'priority'    => $priority,
     ]);
+
+    $priority += 10;
   }
 
   // ============================================================
-  // Editable homepage descriptions (Customizer)
+  // Work updates (Customizer) — order: 4th on homepage
   // ============================================================
 
-  // Work updates description
+  $wp_customize->add_setting('gca_workupdates_title', [
+    'default'           => __('Work updates', 'gca-intranet'),
+    'sanitize_callback' => 'gca_sanitize_home_text',
+    'transport'         => 'refresh',
+  ]);
+
+  $wp_customize->add_control('gca_workupdates_title', [
+    'type'     => 'text',
+    'section'  => $section,
+    'label'    => __('Work updates: title', 'gca-intranet'),
+    'priority' => 170,
+  ]);
+
   $wp_customize->add_setting('gca_workupdates_desc', [
     'default'           => '',
-    'sanitize_callback' => 'gca_sanitize_home_desc',
+    'sanitize_callback' => 'gca_sanitize_home_desc_40',
     'transport'         => 'refresh',
   ]);
 
@@ -517,13 +644,34 @@ add_action('customize_register', function (\WP_Customize_Manager $wp_customize):
     'type'        => 'textarea',
     'section'     => $section,
     'label'       => __('Work updates: description', 'gca-intranet'),
-    'description' => __('Text shown under the “Work updates” heading on the homepage.', 'gca-intranet'),
+    'description' => __('Text shown under the “Work updates” heading on the homepage. Max 40 characters (longer text is truncated).', 'gca-intranet'),
+    'input_attrs' => [
+      'maxlength' => 40,
+      'rows'      => 2,
+    ],
+    'priority'    => 180,
   ]);
 
-  // Blogs description
+  // ============================================================
+  // Blogs (Customizer) — order: 5th on homepage
+  // ============================================================
+
+  $wp_customize->add_setting('gca_blogs_title', [
+    'default'           => __('Blogs', 'gca-intranet'),
+    'sanitize_callback' => 'gca_sanitize_home_text',
+    'transport'         => 'refresh',
+  ]);
+
+  $wp_customize->add_control('gca_blogs_title', [
+    'type'     => 'text',
+    'section'  => $section,
+    'label'    => __('Blogs: title', 'gca-intranet'),
+    'priority' => 190,
+  ]);
+
   $wp_customize->add_setting('gca_blogs_desc', [
     'default'           => '',
-    'sanitize_callback' => 'gca_sanitize_home_desc',
+    'sanitize_callback' => 'gca_sanitize_home_desc_40',
     'transport'         => 'refresh',
   ]);
 
@@ -531,13 +679,19 @@ add_action('customize_register', function (\WP_Customize_Manager $wp_customize):
     'type'        => 'textarea',
     'section'     => $section,
     'label'       => __('Blogs: description', 'gca-intranet'),
-    'description' => __('Text shown under the “Blogs” heading on the homepage.', 'gca-intranet'),
+    'description' => __('Text shown under the “Blogs” heading on the homepage. Max 40 characters (longer text is truncated).', 'gca-intranet'),
+    'input_attrs' => [
+      'maxlength' => 40,
+      'rows'      => 2,
+    ],
+    'priority'    => 200,
   ]);
 });
 
 /**
  * Customizer UI: character counter for Take a look link text
  * + Quick links text counters (48 chars)
+ * + Homepage description counters (40 chars)
  */
 add_action('customize_controls_enqueue_scripts', function (): void {
   $js = <<<'JS'
@@ -575,12 +729,20 @@ add_action('customize_controls_enqueue_scripts', function (): void {
   }
 
   function init(){
+    // Take a look link text (90 chars)
     addCounter('customize-control-gca_takealook_link_text', 90);
 
-    // Quick links (3 fields)
+    // Quick links text fields (48 chars)
     addCounter('customize-control-gca_quicklinks_1_text', 48);
     addCounter('customize-control-gca_quicklinks_2_text', 48);
     addCounter('customize-control-gca_quicklinks_3_text', 48);
+
+    // Homepage section descriptions (40 chars)
+    addCounter('customize-control-gca_latestnews_desc', 40);
+    addCounter('customize-control-gca_takealook_desc', 40);
+    addCounter('customize-control-gca_quicklinks_desc', 40);
+    addCounter('customize-control-gca_workupdates_desc', 40);
+    addCounter('customize-control-gca_blogs_desc', 40);
   }
 
   document.addEventListener('DOMContentLoaded', init);

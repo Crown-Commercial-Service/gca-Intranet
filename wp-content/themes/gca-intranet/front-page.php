@@ -29,8 +29,19 @@ get_header();
       <!-- Latest news -->
       <div class="govuk-grid-column-two-thirds" data-testid="latest-news-column">
         <div class="gca-homepage-section-title" data-testid="latest-news-header">
-          <h2 class="govuk-heading-m" data-testid="latest-news-heading">Latest news</h2>
-          <p class="govuk-body" data-testid="latest-news-subheading">What's happening in our organisation</p>
+          <h2 class="govuk-heading-m gca-clamp-2" data-testid="latest-news-heading">
+            <?php
+            $latestnews_title = trim((string) get_theme_mod('gca_latestnews_title', __('Latest news', 'gca-intranet')));
+            echo esc_html($latestnews_title !== '' ? $latestnews_title : __('Latest news', 'gca-intranet'));
+            ?>
+          </h2>
+
+          <?php
+          $latestnews_desc = trim((string) get_theme_mod('gca_latestnews_desc', ''));
+          ?>
+          <p class="govuk-body" data-testid="latest-news-subheading">
+            <?php echo esc_html($latestnews_desc !== '' ? $latestnews_desc : "What's happening in our organisation"); ?>
+          </p>
         </div>
 
         <div class="govuk-grid-row gca-equal-height-row" data-testid="latest-news-section">
@@ -182,7 +193,7 @@ get_header();
         <div class="govuk-grid-column-one-third" data-testid="take-a-look-column">
 
           <div class="gca-homepage-section-title" data-testid="take-a-look-header">
-            <h2 class="govuk-heading-m" data-testid="take-a-look-heading"><?php echo esc_html($take_title); ?></h2>
+            <h2 class="govuk-heading-m gca-clamp-2" data-testid="take-a-look-heading"><?php echo esc_html($take_title); ?></h2>
 
             <?php if ($take_desc !== '') : ?>
               <p class="govuk-body" data-testid="take-a-look-subheading"><?php echo esc_html($take_desc); ?></p>
@@ -231,7 +242,7 @@ get_header();
             <div class="gca-quick-links" data-testid="quick-links">
 
               <div class="gca-homepage-section-title" data-testid="quick-links-header">
-                <h2 class="govuk-heading-m" data-testid="quick-links-heading">
+                <h2 class="govuk-heading-m gca-clamp-2" data-testid="quick-links-heading">
                   <?php echo esc_html($ql_title !== '' ? $ql_title : __('Quick links', 'gca-intranet')); ?>
                 </h2>
 
@@ -279,7 +290,13 @@ get_header();
         <!-- Work updates -->
         <div class="govuk-grid-column-two-thirds" data-testid="work-updates-column">
           <div class="gca-homepage-section-title" data-testid="work-updates-header">
-            <h2 class="govuk-heading-m" data-testid="work-updates-heading">Work updates</h2>
+            <h2 class="govuk-heading-m gca-clamp-2" data-testid="work-updates-heading">
+              <?php
+              $workupdates_title = trim((string) get_theme_mod('gca_workupdates_title', __('Work updates', 'gca-intranet')));
+              echo esc_html($workupdates_title !== '' ? $workupdates_title : __('Work updates', 'gca-intranet'));
+              ?>
+            </h2>
+
             <?php
             $workupdates_desc = trim((string) get_theme_mod('gca_workupdates_desc', ''));
             ?>
@@ -318,7 +335,13 @@ get_header();
                         </a>
                       </h3>
 
-                      <p class="govuk-body-s" data-testid="work-update-author">By <?php echo esc_html(get_the_author()); ?></p>
+                      <p class="govuk-body-s" data-testid="work-update-author">
+                        By 
+                        <?php
+                          $author_name = get_the_author();
+                          echo esc_html(mb_strlen($author_name) > 20 ? mb_substr($author_name, 0, 20) . '...' : $author_name);
+                        ?>
+                      </p>
 
                       <p class="govuk-body-s" data-testid="work-update-date">
                         <?php echo esc_html(get_the_date('jS F Y')); ?>
@@ -356,7 +379,13 @@ get_header();
         <!-- Blogs -->
         <div class="govuk-grid-column-one-third" data-testid="blogs-column">
           <div class="gca-homepage-section-title" data-testid="blogs-header">
-            <h2 class="govuk-heading-m" data-testid="blogs-heading">Blogs</h2>
+            <h2 class="govuk-heading-m gca-clamp-2" data-testid="blogs-heading">
+              <?php
+              $blogs_title = trim((string) get_theme_mod('gca_blogs_title', __('Blogs', 'gca-intranet')));
+              echo esc_html($blogs_title !== '' ? $blogs_title : __('Blogs', 'gca-intranet'));
+              ?>
+            </h2>
+
             <?php
             $blogs_desc = trim((string) get_theme_mod('gca_blogs_desc', ''));
             ?>
@@ -391,7 +420,14 @@ get_header();
                         </a>
                       </h3>
 
-                      <p class="govuk-body-s" data-testid="blogs-author">By <?php echo esc_html(get_the_author()); ?></p>
+                      <p class="govuk-body-s" data-testid="blogs-author">
+                        By
+                        <?php
+                          $author_name = get_the_author();
+                          echo esc_html(mb_strlen($author_name) > 20 ? mb_substr($author_name, 0, 20) . '...' : $author_name);
+                        ?>
+                      </p>
+
 
                       <p class="govuk-body-s" data-testid="blogs-date">
                         <?php echo esc_html(get_the_date('jS F Y')); ?>
@@ -426,6 +462,91 @@ get_header();
       </div>
     </div>
 
+    <?php
+    $count_events = wp_count_posts('event')->publish;
+    if ( $count_events ) : ?>
+      
+      <div data-testid="event-section">
+        <div class="gca-homepage-section-title" data-testid="latest-events-header">
+          <h2 class="govuk-heading-m" data-testid="latest-events-heading">Events</h2>
+          <p class="govuk-body" data-testid="latest-events-subheading">Get involve with our events</p>
+        </div>
+
+
+        <div class="govuk-grid-row gca-equal-height-row event-entries" data-testid="events-updates-section">
+          <?php
+          $events = new WP_Query([
+            'post_type'      => 'event',
+            'posts_per_page' => 3,
+          ]);
+
+          if ($events->have_posts()):
+            while ($events->have_posts()):
+              $events->the_post();
+              ?>
+              <div class="govuk-grid-column-one-third gca-event-card" data-testid="events-card">
+                <div class="gca-events" data-testid="events-row">
+                    
+                  <p class="govuk-body-s" data-testid="events-date"> <?php echo esc_html(get_the_date('jS F Y')); ?> </p>
+                  <h3 class="govuk-heading-s" data-testid="events-title">
+                    <a class="govuk-link govuk-!-text-break-word" href="<?php the_permalink(); ?>" data-testid="events-link">
+                      <?php
+                        $title = get_the_title();
+                        echo esc_html(mb_strlen($title) > 60 ? mb_substr($title, 0, 60) . '...' : $title);
+                      ?>
+                    </a>
+                  </h3>
+
+                  <div class="gca-card-meta">
+                      <?php 
+                      $categories = get_the_category();
+                      $locations = get_the_terms(get_the_ID(), 'event_location');
+
+                      if ($categories && $categories[0]->name !== 'Uncategorized') : ?>
+                          <span class="govuk-body-s tag_label">
+                              <?php echo esc_html($categories[0]->name); ?>
+                          </span>
+                      <?php endif; 
+
+                      if ($locations) : ?>
+                          <span class="govuk-body-s tag_label grey">
+                              <?php echo esc_html($locations[0]->name); ?>
+                          </span>
+                      <?php endif; ?>
+                  </div>
+
+                </div>
+              </div>
+              <?php
+            endwhile;
+          endif;
+          wp_reset_postdata();
+          ?>
+        </div>
+
+        <div class="see-more-link-homepage" data-testid="events-see-more">
+          <svg data-testid="events-see-more-icon" xmlns="http://www.w3.org/2000/svg" width="16" height="22"
+            fill="currentColor" class="bi bi-chevron-right govuk-!-padding-top-1" viewBox="0 0 16 16"
+            style="stroke: currentColor; stroke-width: 1.8;">
+            <path fill-rule="evenodd"
+              d="M4.646 1.646a.5.5 0 0 1 .708 0l6 6a.5.5 0 0 1 0 .708l-6 6a.5.5 0 0 1-.708-.708L10.293 8 4.646 2.354a.5.5 0 0 1 0-.708" />
+          </svg>
+
+          <p data-testid="events-see-more-text">
+            <a class="govuk-link" data-testid="events-see-more-link" href="/event/">
+              More events
+            </a>
+          </p>
+        </div>
+        
+        
+        
+        
+        
+      </div>
+      
+    <?php endif; ?>
+    
   </main>
 </div>
 
