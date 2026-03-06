@@ -7,8 +7,9 @@ Version: 0.1
 */
 
 if ( ! defined( 'ABSPATH' ) ) {
-    exit; // Exit if accessed directly
+    exit;
 }
 
 include('library/custom-post-types.php');
 include('library/custom-post-taxonomies.php');
+include('library/direct-admin-access.php');
