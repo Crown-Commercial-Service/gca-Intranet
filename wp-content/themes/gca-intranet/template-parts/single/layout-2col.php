@@ -27,7 +27,7 @@ $is_page = !empty($GLOBALS['gca_is_page']);
         has_post_thumbnail($post_id) &&
         !$hide_featured;
 
-      $has_left_content = $should_show_featured || $col2_html !== '';
+      $has_left_content = $should_show_featured || ($col2_html !== '');
     ?>
 
     <main class="gca-single gca-single--2col" data-testid="layout-2col">
@@ -60,11 +60,44 @@ $is_page = !empty($GLOBALS['gca_is_page']);
               <?php the_title(); ?>
             </h1>
 
-            <div class="gca-news-meta govuk-!-margin-bottom-4" data-testid="content-meta">
-              <time class="govuk-body-s" datetime="<?php echo esc_attr(get_the_date('c')); ?>">
-                <?php echo esc_html(get_the_date('j F Y')); ?>
-              </time>
+            <div class="gca-news-meta govuk-!-margin-bottom-2" data-testid="content-meta">
+            <time class="govuk-body-s" datetime="<?php echo esc_attr(get_the_date('c')); ?>">
+                <?php echo esc_html(get_the_date('jS F Y')); ?>
+            </time>
             </div>
+
+            <?php
+              // Tags only for news/blog (no links)
+              if (in_array($post_type, ['news', 'blog'], true)) :
+                $categories = get_the_terms($post_id, 'category');
+                $labels     = get_the_terms($post_id, 'label');
+
+                $has_categories = !empty($categories) && !is_wp_error($categories);
+                $has_labels     = !empty($labels) && !is_wp_error($labels);
+
+                if ($has_categories || $has_labels) :
+            ?>
+              <div class="gca-taxonomy-tags govuk-!-margin-bottom-4" data-testid="content-tags">
+
+                <?php if ($has_categories) : ?>
+                  <?php foreach ($categories as $term) : ?>
+                    <span class="govuk-tag govuk-tag--green">
+                      <?php echo esc_html($term->name); ?>
+                    </span>
+                  <?php endforeach; ?>
+                <?php endif; ?>
+
+                <?php if ($has_labels) : ?>
+                  <?php foreach ($labels as $term) : ?>
+                    <span class="govuk-tag govuk-tag--grey">
+                      <?php echo esc_html($term->name); ?>
+                    </span>
+                  <?php endforeach; ?>
+                <?php endif; ?>
+
+              </div>
+            <?php endif; endif; ?>
+
           <?php endif; ?>
 
           <div class="gca-richtext" data-testid="content-body">

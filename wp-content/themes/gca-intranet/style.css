@@ -633,3 +633,68 @@ Text Domain: gca-intranet
     min-width: 1200px;
   }
 }
+
+/* ---------------------------------------
+   News / Blog taxonomy chips
+   --------------------------------------- */
+
+/* Date spacing + size */
+.gca-news-meta {
+  margin-bottom: 6px !important;
+}
+
+.gca-news-meta .govuk-body-s {
+  font-size: 16px;
+  line-height: 1.3;
+}
+
+/* Container for the pills */
+.gca-taxonomy-tags {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 18px;
+}
+
+/* Base pill style */
+.gca-taxonomy-tags .govuk-tag {
+  font-size: 14px;
+  font-weight: 400;
+  padding: 6px 12px;
+  border-radius: 16px;
+  text-transform: none;
+  letter-spacing: normal;
+  line-height: 1;
+}
+
+/* Category pill (light green) */
+.gca-taxonomy-tags .govuk-tag--green {
+  background: #d7e6c3;
+  color: #0b0c0c;
+}
+
+/* tighten spacing between date and taxonomy pills */
+
+.gca-news-meta {
+  margin-bottom: 4px !important;
+}
+
+.gca-taxonomy-tags {
+  margin-top: 0;
+  margin-bottom: 18px;
+  display: flex;
+  gap: 10px;
+}
+
+/* Label pill (light grey) */
+.gca-taxonomy-tags .govuk-tag--grey {
+  background: #d9d9d9;
+  color: #0b0c0c;
+}
+.govuk-body.gca-take-a-look__text {
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 2px;
+}
+.gca-single h1.govuk-heading-l {
+  font-weight: 400;
+}
