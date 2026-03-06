@@ -17,7 +17,7 @@ if ($title === '') {
 <section class="gca-hero-banner" aria-label="Page banner">
   <div class="govuk-width-container">
     <div class="gca-hero-banner__inner">
-      <h1 class="gca-hero-banner__title"><?php echo esc_html($title); ?></h1>
+      <h1 class="govuk-body gca-home-hero-title"><?php echo esc_html($title); ?></h1>
     </div>
   </div>
 
