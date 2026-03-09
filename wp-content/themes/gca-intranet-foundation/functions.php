@@ -290,6 +290,66 @@ add_filter('dashboard_glance_items', function($items) {
 ////////// remove post tags and related UI elements //////////
 
 
+function gca_search_get_content_type_label(): string
+{
+    $post_type = (string) get_post_type();
+
+    if ($post_type === 'page') {
+        $ct_terms = get_the_terms(get_the_ID(), 'content_type');
+        if (!empty($ct_terms) && !is_wp_error($ct_terms)) {
+            return $ct_terms[0]->name;
+        }
+        return __('Page', 'gca-intranet');
+    }
+
+    $obj = get_post_type_object($post_type);
+    return $obj ? $obj->labels->singular_name : ucwords(str_replace(['-', '_'], ' ', $post_type));
+}
+
+/**
+ * Get all displayable taxonomy terms for the current post in the loop.
+ *
+ * @return WP_Term[]
+ */
+function gca_search_get_post_terms(): array
+{
+    $post_id  = get_the_ID();
+    $excluded = ['post_format', 'post_tag', 'content_type', 'nav_menu', 'link_category'];
+    $all      = [];
+
+    foreach (get_object_taxonomies((string) get_post_type()) as $tax_name) {
+        if (in_array($tax_name, $excluded, true)) {
+            continue;
+        }
+        $terms = get_the_terms($post_id, $tax_name);
+        if (!empty($terms) && !is_wp_error($terms)) {
+            foreach ($terms as $term) {
+                $all[] = $term;
+            }
+        }
+    }
+
+    return $all;
+}
+
+function gca_search_truncate(string $str, int $length): string
+{
+    $str = wp_strip_all_tags($str);
+    if (mb_strlen($str) <= $length) {
+        return $str;
+    }
+    return rtrim(mb_substr($str, 0, $length - 1)) . '…';
+}
+
+/**
+ * Limit search results to 10 per page.
+ */
+add_action('pre_get_posts', function (WP_Query $query): void {
+    if (!is_admin() && $query->is_main_query() && $query->is_search()) {
+        $query->set('posts_per_page', 10);
+    }
+});
+
 ////////// assigning category to page object //////////
 add_action('init', function() {
     register_taxonomy_for_object_type('category', 'page');

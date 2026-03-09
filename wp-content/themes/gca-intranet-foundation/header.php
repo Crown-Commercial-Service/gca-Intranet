@@ -56,6 +56,7 @@
               </ul>
             </nav>
 
+            <?php if (!is_search()) : ?>
             <form class="site-search" role="search" action="<?php echo esc_url(get_theme_mod('gca_search_url', home_url('/'))); ?>" method="get">
               <label class="govuk-visually-hidden" for="site-search">Search the intranet</label>
               <div class="search-input-group">
@@ -68,6 +69,7 @@
                 </button>
               </div>
             </form>
+            <?php endif; ?>
 
             <button class="global-navigation__toggler" type="button" aria-controls="primaryNav" aria-expanded="false" aria-label="Toggle navigation">
               Menu
