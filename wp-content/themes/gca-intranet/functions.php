@@ -779,33 +779,140 @@ add_action('admin_menu', function (): void {
   );
 });
 
-add_action('rest_api_init', function () {
 
-  $settings = [
-    'gca_takealook_title',
-    'gca_takealook_desc',
-    'gca_takealook_link_text',
-    'gca_takealook_link_url',
+/**
+ * WP-CLI helpers for homepage component test data
+ *
+ * Usage:
+ *   wp gca homepage seed
+ *   wp gca homepage seed --component=takealook
+ *   wp gca homepage seed --component=quicklinks
+ *   wp gca homepage disable --component=takealook
+ *   wp gca homepage disable --component=quicklinks
+ *   wp gca homepage reset
+ */
+if (defined('WP_CLI') && WP_CLI) {
 
-    'gca_quicklinks_title',
-    'gca_quicklinks_desc',
-    'gca_quicklinks_1_text',
-    'gca_quicklinks_1_url',
-    'gca_quicklinks_2_text',
-    'gca_quicklinks_2_url',
-    'gca_quicklinks_3_text',
-    'gca_quicklinks_3_url'
-  ];
+  if (!class_exists('GCA_Homepage_CLI_Command')) {
+    class GCA_Homepage_CLI_Command {
 
-  foreach ($settings as $setting) {
-    register_setting(
-      'general',
-      $setting,
-      [
-        'type' => 'string',
-        'show_in_rest' => true
-      ]
-    );
+      /**
+       * Seed homepage component test data.
+       *
+       * ## OPTIONS
+       *
+       * [--component=<component>]
+       * : Optional. One of: takealook, quicklinks, all
+       *
+       * ## EXAMPLES
+       *
+       *     wp gca homepage seed
+       *     wp gca homepage seed --component=takealook
+       *     wp gca homepage seed --component=quicklinks
+       *
+       * @when after_wp_load
+       */
+      public function seed(array $args, array $assoc_args): void {
+        $component = isset($assoc_args['component']) ? strtolower((string) $assoc_args['component']) : 'all';
+
+        if (!in_array($component, ['all', 'takealook', 'quicklinks'], true)) {
+          \WP_CLI::error('Invalid --component value. Use: takealook, quicklinks, or all.');
+        }
+
+        if ($component === 'all' || $component === 'takealook') {
+          set_theme_mod('gca_takealook_enabled', true);
+          set_theme_mod('gca_takealook_title', 'Take a look');
+          set_theme_mod('gca_takealook_desc', 'Useful featured link');
+          set_theme_mod('gca_takealook_link_text', 'Read the latest guidance');
+          set_theme_mod('gca_takealook_link_url', 'https://www.gov.uk/');
+
+          \WP_CLI::log('Seeded Take a look test data.');
+        }
+
+        if ($component === 'all' || $component === 'quicklinks') {
+          set_theme_mod('gca_quicklinks_enabled', true);
+          set_theme_mod('gca_quicklinks_title', 'Quick links');
+          set_theme_mod('gca_quicklinks_desc', 'Useful shortcuts');
+
+          set_theme_mod('gca_quicklinks_1_text', 'Policies');
+          set_theme_mod('gca_quicklinks_1_url', 'https://www.gov.uk/government/organisations/crown-commercial-service');
+
+          set_theme_mod('gca_quicklinks_2_text', 'Guidance');
+          set_theme_mod('gca_quicklinks_2_url', 'https://www.gov.uk/guidance');
+
+          set_theme_mod('gca_quicklinks_3_text', 'Contact us');
+          set_theme_mod('gca_quicklinks_3_url', 'https://www.gov.uk/contact');
+
+          \WP_CLI::log('Seeded Quick links test data.');
+        }
+
+        \WP_CLI::success('Homepage test data seeded.');
+      }
+
+      /**
+       * Disable a homepage component without deleting its data.
+       *
+       * ## OPTIONS
+       *
+       * --component=<component>
+       * : Required. One of: takealook, quicklinks
+       *
+       * ## EXAMPLES
+       *
+       *     wp gca homepage disable --component=takealook
+       *     wp gca homepage disable --component=quicklinks
+       *
+       * @when after_wp_load
+       */
+      public function disable(array $args, array $assoc_args): void {
+        $component = isset($assoc_args['component']) ? strtolower((string) $assoc_args['component']) : '';
+
+        if (!in_array($component, ['takealook', 'quicklinks'], true)) {
+          \WP_CLI::error('Invalid --component value. Use: takealook or quicklinks.');
+        }
+
+        if ($component === 'takealook') {
+          set_theme_mod('gca_takealook_enabled', false);
+          \WP_CLI::success('Take a look disabled.');
+        }
+
+        if ($component === 'quicklinks') {
+          set_theme_mod('gca_quicklinks_enabled', false);
+          \WP_CLI::success('Quick links disabled.');
+        }
+      }
+
+      /**
+       * Reset homepage component test data.
+       *
+       * ## EXAMPLES
+       *
+       *     wp gca homepage reset
+       *
+       * @when after_wp_load
+       */
+      public function reset(array $args, array $assoc_args): void {
+        remove_theme_mod('gca_takealook_enabled');
+        remove_theme_mod('gca_takealook_title');
+        remove_theme_mod('gca_takealook_desc');
+        remove_theme_mod('gca_takealook_link_text');
+        remove_theme_mod('gca_takealook_link_url');
+
+        remove_theme_mod('gca_quicklinks_enabled');
+        remove_theme_mod('gca_quicklinks_title');
+        remove_theme_mod('gca_quicklinks_desc');
+
+        remove_theme_mod('gca_quicklinks_1_text');
+        remove_theme_mod('gca_quicklinks_1_url');
+        remove_theme_mod('gca_quicklinks_2_text');
+        remove_theme_mod('gca_quicklinks_2_url');
+        remove_theme_mod('gca_quicklinks_3_text');
+        remove_theme_mod('gca_quicklinks_3_url');
+
+        \WP_CLI::success('Homepage test data reset.');
+      }
+    }
   }
 
-});
+  \WP_CLI::add_command('gca homepage', 'GCA_Homepage_CLI_Command');
+}
