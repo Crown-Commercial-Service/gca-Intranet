@@ -776,3 +776,34 @@ add_action('admin_menu', function (): void {
     }
   );
 });
+
+add_action('rest_api_init', function () {
+
+  $settings = [
+    'gca_takealook_title',
+    'gca_takealook_desc',
+    'gca_takealook_link_text',
+    'gca_takealook_link_url',
+
+    'gca_quicklinks_title',
+    'gca_quicklinks_desc',
+    'gca_quicklinks_1_text',
+    'gca_quicklinks_1_url',
+    'gca_quicklinks_2_text',
+    'gca_quicklinks_2_url',
+    'gca_quicklinks_3_text',
+    'gca_quicklinks_3_url'
+  ];
+
+  foreach ($settings as $setting) {
+    register_setting(
+      'general',
+      $setting,
+      [
+        'type' => 'string',
+        'show_in_rest' => true
+      ]
+    );
+  }
+
+});
