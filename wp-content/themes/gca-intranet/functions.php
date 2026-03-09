@@ -777,6 +777,7 @@ add_action('admin_menu', function (): void {
   );
 });
 
+
 /**
  * WP-CLI helpers for homepage component test data
  *
@@ -820,7 +821,7 @@ if (defined('WP_CLI') && WP_CLI) {
           set_theme_mod('gca_takealook_enabled', true);
           set_theme_mod('gca_takealook_title', 'Take a look');
           set_theme_mod('gca_takealook_desc', 'Useful featured link');
-          set_theme_mod('gca_takealook_link_text', 'See the featured guidance and supporting information');
+          set_theme_mod('gca_takealook_link_text', 'Read the latest guidance');
           set_theme_mod('gca_takealook_link_url', 'https://www.gov.uk/');
 
           \WP_CLI::log('Seeded Take a look test data.');
