@@ -1,0 +1,19 @@
+{
+  "name": "folbert/acf-fewbricks-hidden",
+  "type": "wordpress-plugin",
+  "description": "Hidden field for Advanced Custom Fields. Written especially for Fewbricks.",
+  "keywords": ["acf","advanced custom fields", "hidden", "fewbricks"],
+  "homepage": "https://github.com/folbert/acf-fewbricks-hidden",
+  "license": "GPLv3",
+  "authors": [
+    {
+      "name": "Björn Folbert",
+      "email": "b@folbert.com",
+      "homepage": "http://folbert.com",
+      "role": "Developer"
+    }
+  ],
+  "require": {
+    "php": ">=5.4.0"
+  }
+}

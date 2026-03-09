@@ -78,10 +78,7 @@ $is_page = !empty($GLOBALS['gca_is_page']);
 
       <?php endif; ?>
 
-      <div class="gca-richtext" data-testid="content-body">
-        <?php the_content(); ?>
-      </div>
-
+      <?php get_template_part('template-parts/template-body-content'); ?>
     </main>
 
   <?php endwhile; endif; ?>

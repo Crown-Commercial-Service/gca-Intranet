@@ -53,14 +53,12 @@ add_filter('get_custom_logo', function (string $html): string {
 });
 
 /**
- * Enqueue assets
- *
- * - gca-theme.css is compiled from SCSS and includes Bootstrap + theme overrides
- * - Bootstrap JS is served locally for dropdowns/collapse
+ * Enqueue Core Assets
+ * Merged into one block to prevent script conflicts and 404s.
  */
 add_action('wp_enqueue_scripts', function (): void {
 
-    // Cache-bust CSS on every build by using file modified time.
+    // 1. Parent Theme CSS
     $css_rel_path = '/assets/dist/gca-theme.css';
     $css_abs_path = get_template_directory() . $css_rel_path;
     $css_ver      = file_exists($css_abs_path) ? (string) filemtime($css_abs_path) : '1.0.0';
@@ -72,87 +70,36 @@ add_action('wp_enqueue_scripts', function (): void {
         $css_ver
     );
 
-    // ==========================================
-    // ENABLE GOV.UK & CCS FRONTEND
-    // ==========================================
-
-    // Load GOV.UK JS
-    wp_enqueue_script(
-        'govuk-frontend-js',
-        get_template_directory_uri() . '/assets/scripts/govuk.min.js',
-        [],
-        '5.4.0',
-        true
-    );
-
-    // Load CCS JS (It depends on govuk-frontend-js)
-    wp_enqueue_script(
-        'ccs-frontend-js',
-        get_template_directory_uri() . '/assets/scripts/ccs.min.js',
-        ['govuk-frontend-js'],
-        '2.5.0',
-        true
-    );
-
-    // Initialize the components safely and add mobile dropdown logic
-    wp_add_inline_script('ccs-frontend-js', '
+    // 2. Custom Navigation Logic (Mobile Menu & Dropdowns)
+    // We attach this as an inline script to the 'gca-theme' handle
+    wp_add_inline_script('gca-theme', '
     document.addEventListener("DOMContentLoaded", function() {
-        // 1. Initialize GDS/CCS Native Scripts
-        if (window.GOVUKFrontend && window.GOVUKFrontend.initAll) {
-            window.GOVUKFrontend.initAll();
-        }
-        if (window.CCSFrontend && window.CCSFrontend.initAll) {
-            window.CCSFrontend.initAll();
-        }
-
-        // 2. Custom Mobile Dropdown Toggle
-        document.querySelectorAll(".dropdown > .dropbtn").forEach(function(button) {
-            button.addEventListener("click", function(e) {
-                // Only intercept the click on mobile/tablet widths (below 1024px)
-                if (window.innerWidth < 1024) {
-                    e.preventDefault(); // Stop the link from navigating away
-
-                    // Find the sub-menu right next to the button
-                    var dropdownContent = this.nextElementSibling;
-
-                    if (dropdownContent && dropdownContent.classList.contains("dropdown-content")) {
-                        // Toggle the visibility class from your SCSS
-                        dropdownContent.classList.toggle("open-dropdown");
-
-                        // Optional: Flip the arrow icon upside down
-                        var arrow = this.querySelector(".arrow");
-                        if (arrow) {
-                            arrow.classList.toggle("up");
-                            arrow.classList.toggle("down");
-                        }
-                    }
-                }
-            });
-        });
-
-        // 3. Main Mobile Menu Toggle (Header)
+        // Mobile Menu Toggler
         var toggleBtn = document.querySelector(".global-navigation__toggler");
         var navContainer = document.getElementById("primaryNav");
 
         if (toggleBtn && navContainer) {
-            // Click handler
             toggleBtn.addEventListener("click", function() {
                 var isExpanded = this.getAttribute("aria-expanded") === "true";
                 this.setAttribute("aria-expanded", !isExpanded);
                 navContainer.setAttribute("aria-hidden", isExpanded ? "true" : "false");
             });
+        }
 
-            // Escape key handler for GDS accessibility compliance
-            document.addEventListener("keydown", function(event) {
-                if (event.key === "Escape" && toggleBtn.getAttribute("aria-expanded") === "true") {
-                    toggleBtn.setAttribute("aria-expanded", "false");
-                    navContainer.setAttribute("aria-hidden", "true");
-                    toggleBtn.focus(); // Return focus to the button
+        // Mobile Dropdown logic
+        document.querySelectorAll(".dropdown > .dropbtn").forEach(function(button) {
+            button.addEventListener("click", function(e) {
+                if (window.innerWidth < 1024) {
+                    e.preventDefault();
+                    var dropdownContent = this.nextElementSibling;
+                    if (dropdownContent && dropdownContent.classList.contains("dropdown-content")) {
+                        dropdownContent.classList.toggle("open-dropdown");
+                    }
                 }
             });
-        }
-    });
-', 'after');
+        });
+    });');
+
 });
 
 /**
@@ -521,4 +468,9 @@ if ( defined( 'WP_CLI' ) && WP_CLI ) {
     }
 
     \WP_CLI::add_command( 'gca', 'GCA_Import_Command' );
+}
+add_filter('fewbricks/project_files_base_path', 'get_project_files_base_path');
+
+function get_project_files_base_path() {
+    return WP_PLUGIN_DIR . '/fewbricks_definitions';
 }

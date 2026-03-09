@@ -1,0 +1,145 @@
+/*------------------------------------*\
+  #Hero
+
+  The Hero component is not part of the GOV.UK design system
+
+\*------------------------------------*/
+.hero {
+
+    background-color: #B4CDFE;
+    margin-top: 0;
+    margin-right: 0;
+    margin-left: 0;
+
+    //min-height: 32em;
+    position: relative;
+    overflow: visible;
+
+    width: 100%;
+
+}
+
+
+.ccs-hero-text-container {
+    box-sizing: border-box;
+    padding: 0 15px;
+    height: 208px;
+
+    @include govuk-media-query($from: 900) {
+        float: left;
+        width: 110%;
+    }
+}
+
+
+// we position this because the object-fit polyfill needs to be able to reposition the img element itself
+.hero__picture {
+
+    display: none;
+    max-width: govuk-px-to-rem(860);
+
+    @include govuk-media-query($from: 900) {
+
+        display: block;
+
+        bottom: 0;
+        height: 100%;
+        //left: 0;
+        position: absolute;
+        right: 0;
+        top: 0;
+        vertical-align: middle;
+        width: 600px;
+
+    }
+
+    // crop and move the image to align with the
+    @include govuk-media-query($from: 1340) {
+
+        right: calc(50% - 640px);
+
+    }
+
+}
+
+// we use a polyfill to reposition the img element for browsers which don't support object-fit
+.hero__image {
+
+    display: block;
+
+    bottom: 0;
+    height: 100%;
+    left: 0;
+    position: absolute;
+    right: 0;
+    top: 0;
+    vertical-align: middle;
+    width: 100%;
+
+    object-fit: cover;
+    object-position: right center;
+
+}
+
+.hero__picture_newsletter {
+    .hero__image {
+        object-position: right -55px;
+    }
+}
+
+.hero__caption {
+
+    color: #000000;
+    position: relative;
+    padding: govuk-px-to-rem(19) 0 govuk-px-to-rem(19) 0;
+
+    .govuk-button {
+
+        margin-bottom: 0;
+
+    }
+
+    @include govuk-media-query($from: 900) {
+
+        background-color: transparent;
+
+        background-image: svg-url("<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1096.000000 362.000000' preserveAspectRatio='xMidYMid meet'><g transform='translate(0.000000,362.000000) scale(0.100000,-0.100000)' stroke='none'><path d='M0 1810 l0 -1810 3403 1 c2858 1 3388 3 3312 14 -823 121 -1458 777 -1556 1610 -18 151 -6 411 25 561 145 691 659 1231 1341 1409 l90 23 -3307 1 -3308 1 0 -1810z' fill='#B4CDFE'/></g></svg>");
+        background-repeat: no-repeat;
+        background-size: govuk-px-to-rem(1430) govuk-px-to-rem(209.28);
+        background-position: 34% 70%; 
+        height: 170px;
+
+    }
+
+}
+
+.hero__content p {
+    color: white;
+}
+
+.hero__title {
+
+    color: #000000;
+    font-weight: 300;
+    margin-bottom: govuk-px-to-rem(20);
+    
+        @include govuk-media-query($from: 900) {
+            width: 50%;
+        }
+
+}
+
+.hero__content {
+
+    border-style: solid;
+    border-width: 0 0 0 3px;
+    border-color: $ccs-colour;
+    border-color: var(--sub-color);
+    padding: 0 0 0 govuk-px-to-rem(20);
+    margin-bottom: 0;
+
+    @include govuk-media-query($from: 900) {
+        margin-bottom: govuk-px-to-rem(50);
+        width: 50%;
+    }
+}

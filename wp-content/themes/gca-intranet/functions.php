@@ -6,11 +6,11 @@ if (!defined('ABSPATH')) {
 }
 
 /**
- * Child theme assets + GOV.UK JS init (scoped)
+ * Child theme assets + GOV.UK JS init
  */
 add_action('wp_enqueue_scripts', function (): void {
 
-  // Child theme CSS
+  // 1. Child theme CSS (Using stylesheet directory for the child)
   wp_enqueue_style(
     'gca-intranet-child',
     get_stylesheet_directory_uri() . '/style.css',
@@ -19,14 +19,12 @@ add_action('wp_enqueue_scripts', function (): void {
   );
 
   /**
-   * GOV.UK Frontend JS (scoped rollout)
-   * Parent theme build outputs GOV.UK JS to:
-   * /wp-content/themes/gca-intranet-foundation/assets/scripts/all.min.js
-   *
-   * In a child theme, get_template_directory_uri() points to the parent theme.
+   * GOV.UK Frontend JS
+   * Pointing to PARENT theme where the assets actually live.
    */
-  if (is_singular()) { // was is_single(); pages need this too for GOVUK components
-    $govuk_js_rel = '/assets/scripts/all.min.js';
+  if (is_singular()) {
+    $govuk_js_rel = '/assets/scripts/all.js'; // Clean and combined name
+
     $govuk_js_abs = get_template_directory() . $govuk_js_rel;
     $govuk_js_ver = file_exists($govuk_js_abs) ? (string) filemtime($govuk_js_abs) : '1.0.0';
 
@@ -38,10 +36,14 @@ add_action('wp_enqueue_scripts', function (): void {
       true
     );
 
-    // Initialise GOV.UK components
     wp_add_inline_script(
       'gca-govuk-frontend',
-      'window.GOVUKFrontend && window.GOVUKFrontend.initAll && window.GOVUKFrontend.initAll();',
+      'document.addEventListener("DOMContentLoaded", function() {
+          if (window.GOVUKFrontend && typeof window.GOVUKFrontend.initAll === "function") {
+              window.GOVUKFrontend.initAll();
+              document.documentElement.classList.add("js-enabled");
+          }
+      });',
       'after'
     );
   }

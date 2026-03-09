@@ -10,7 +10,7 @@
   <?php wp_head(); ?>
 </head>
 
-<body <?php body_class('govuk-template__body'); ?>>
+<body <?php body_class('govuk-template__body govuk-frontend-supported'); ?>>
 <?php wp_body_open(); ?>
 
 <header class="site-header" role="banner">

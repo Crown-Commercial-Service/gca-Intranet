@@ -1,0 +1,39 @@
+.message-banner {
+  font-family: "Source Sans Pro","HelveticaNeue","Helvetica Neue","Arial","Helvetica",sans-serif;
+  background-color: govuk-colour("mid-grey");
+  color: govuk-colour("white");
+  padding: govuk-spacing(3) 0;
+  background-color: #37484F;
+
+  @include govuk-media-query($from: tablet) {
+    padding: govuk-spacing(6) 0;
+  }
+}
+
+.message-banner-heading {
+  font-weight: bold;
+  font-size:2rem;
+  margin: 0;
+}
+
+.message-banner-description {
+  color: govuk-colour("white");
+  margin-top: 0;
+  margin-bottom: govuk-spacing(4);
+
+  &:last-child {
+    margin-bottom: 0;
+  }
+}
+
+.message-banner-link {
+    font-size:1.2rem;
+  &.govuk-link:link,
+  &.govuk-link:visited {
+    color: govuk-colour("white");
+  }
+
+  &.govuk-link:focus {
+    color: $govuk-focus-text-colour;
+  }
+}

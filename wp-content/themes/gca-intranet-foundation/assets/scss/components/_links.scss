@@ -1,0 +1,39 @@
+/*------------------------------------*\
+  #Links
+\*------------------------------------*/
+
+.ccs-heading-link a {
+
+    display: inline-block;
+    line-height: 1.2;
+    margin-bottom: govuk-px-to-rem(4);
+    margin-right: govuk-px-to-rem(6);
+    text-decoration: none;
+
+    &:hover,
+    &:focus,
+    &:active {
+
+        text-decoration: underline;
+
+    }
+
+}
+
+
+.ccs-heading-link--inline {
+    a {
+        display: inline;
+    }
+}
+
+@media (min-width: 768px) {
+  .mobile-only {
+    display: none;
+  }
+}
+
+.govuk-error-summary__list a:link,
+.govuk-error-summary__list a:visited {
+  color: #a62a16;
+}

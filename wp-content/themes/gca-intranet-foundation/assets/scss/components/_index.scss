@@ -1,0 +1,62 @@
+// =============================================================================
+// GCA INTRANET - COMPONENT MANIFEST
+// =============================================================================
+
+// --- BASE & TYPOGRAPHY ---
+@import "headings";
+@import "links";
+@import "lists";
+@import "wysiwyg";
+@import "icons";
+@import "images";
+@import "tags";
+@import "hints";
+@import "print";
+
+// --- LAYOUT & WRAPPERS ---
+@import "columns";
+@import "sidebar";
+@import "aside";
+@import "enclosure";
+@import "flourishes";
+@import "list-grid";
+@import "page-components";
+
+// --- GLOBAL COMPONENTS ---
+@import "header";
+@import "footer";
+@import "navigation";
+@import "breadcrumbs";
+@import "hero";
+@import "phase-banner";
+@import "message-banner";
+@import "cookie-banner";
+@import "cookie-message";
+@import "back-to-top";
+
+// --- FEWBRICKS COMPONENT SPECIFIC ---
+@import "accordion";
+@import "card";
+@import "card-list";
+@import "free-text";
+@import "intro_and_description";
+@import "subcategories";
+@import "featured-news";
+@import "events";
+@import "video";
+@import "quote-and-image";
+@import "achievement-and-image";
+@import "call-to-action";
+@import "warning-text";
+
+// --- FORMS & INTERACTION ---
+@import "forms";
+@import "search";
+@import "pagination";
+@import "tables";
+@import "feedback-form";
+@import "inline-contact-form";
+@import "talk-to-us-text-box";
+@import "filters-intro";
+@import "filters-summary";
+@import "ppg-login";
