@@ -7,7 +7,7 @@
     "watch": "sass --watch assets/scss/theme.scss assets/dist/gca-theme.css --style=expanded --load-path=node_modules --quiet-deps",
     "build": "npm-run-all css:sass js:copy-govuk",
     "css:sass": "sass assets/scss/theme.scss assets/dist/gca-theme.css --style=compressed --load-path=node_modules --quiet-deps",
-    "js:copy-govuk": "shx mkdir -p assets/scripts && shx cp node_modules/govuk-frontend/dist/govuk/all.bundle.js assets/scripts/all.js"
+    "js:copygovuk-frontend": "shx mkdir -p assets/scripts && shx cp node_modules/govuk-frontend/dist/govuk/all.bundle.js assets/scripts/all.js"
   },
   "keywords": [],
   "author": "",
