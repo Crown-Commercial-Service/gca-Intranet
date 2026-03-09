@@ -5,9 +5,10 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "watch": "sass --watch assets/scss/theme.scss assets/dist/gca-theme.css --style=expanded --load-path=node_modules --quiet-deps",
-    "build": "npm-run-all css:sass js:copy-govuk",
+    "build": "npm-run-all css:sass js:copygovuk-frontend js:minifygovuk-frontend",
     "css:sass": "sass assets/scss/theme.scss assets/dist/gca-theme.css --style=compressed --load-path=node_modules --quiet-deps",
-    "js:copygovuk-frontend": "shx mkdir -p assets/scripts && shx cp node_modules/govuk-frontend/dist/govuk/all.bundle.js assets/scripts/all.js"
+    "js:copygovuk-frontend": "shx mkdir -p assets/scripts && shx cp node_modules/govuk-frontend/dist/govuk/all.bundle.js assets/scripts/all.js",
+    "js:minifygovuk-frontend": "echo 'Skipping minify: Using pre-minified GDS bundle.'"
   },
   "keywords": [],
   "author": "",
