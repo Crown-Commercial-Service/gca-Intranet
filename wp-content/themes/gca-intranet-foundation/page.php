@@ -11,6 +11,7 @@ get_template_part('template-parts/breadcrumbs');
 
 <div class="govuk-width-container">
   <main class="govuk-main-wrapper" id="main-content">
+    
     <div class="govuk-grid-row">
       <div class="govuk-grid-column-two-thirds">
         <?php
@@ -22,6 +23,9 @@ get_template_part('template-parts/breadcrumbs');
         ?>
       </div>
     </div>
+
+    <?php include(get_template_directory() . '/template-parts/fewbricks-components.php' ); ?>
+    
   </main>
 </div>
 

@@ -1,0 +1,71 @@
+/*------------------------------------*\
+  #Tag
+\*------------------------------------*/
+.govuk-tag {
+
+    @include govuk-font(17featured, $weight: bold);
+    padding-top: 0;
+    padding-bottom: 0;
+    color: #fff
+
+}
+
+.govuk-tag--subtle {
+
+    background-color: #6F777B;
+
+}
+
+.govuk-phase-banner__content__tag {
+    color: #0C2D4A;
+}
+
+
+
+.ccs-tag {
+
+    letter-spacing: 0;
+
+}
+
+.ccs-tag--error {
+
+    background-color: #b00c1f;
+    font-weight: bold;
+    letter-spacing: 0;
+    text-transform: none;
+
+}
+
+.ccs-tag--lower-case {
+
+    text-transform: none;
+
+}
+
+.ccs-tag--crp {
+    background-color: #bfe3e0;
+    color: #10403c;
+    vertical-align: text-bottom;
+    font-size: 1.15rem;
+    margin: 0 8px;
+    white-space: nowrap;
+    display: inline;
+    a {
+        color: white;
+        text-decoration: none;
+    }
+}
+
+.ccs-tag--inline {
+    display: inline;
+}
+
+.page-title .govuk-tag {
+
+    position: relative;
+    top: -0.8em;
+
+}
+
+

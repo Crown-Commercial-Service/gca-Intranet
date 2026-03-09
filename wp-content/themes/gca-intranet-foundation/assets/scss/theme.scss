@@ -7,8 +7,10 @@
 @import 'ccs-frontend/dist/ccs/all';
 
 // 3. Your Custom Partials
+@import 'settings';
 @import 'gov-overrides';
 @import 'typography';
+@import 'components/index';
 @import 'header-footer';
 @import 'navigation';
 @import 'cards';

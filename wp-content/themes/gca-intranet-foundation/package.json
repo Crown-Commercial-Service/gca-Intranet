@@ -4,11 +4,10 @@
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "build": "npm-run-all css:sass js:copygovuk-frontend js:minifygovuk-frontend",
     "watch": "sass --watch assets/scss/theme.scss assets/dist/gca-theme.css --style=expanded --load-path=node_modules --quiet-deps",
+    "build": "npm-run-all css:sass js:copy-govuk",
     "css:sass": "sass assets/scss/theme.scss assets/dist/gca-theme.css --style=compressed --load-path=node_modules --quiet-deps",
-    "js:copygovuk-frontend": "shx mkdir -p assets/scripts && shx cp node_modules/govuk-frontend/dist/govuk/govuk-frontend.min.js assets/scripts/all.js",
-    "js:minifygovuk-frontend": "./node_modules/.bin/babel ./node_modules/govuk-frontend/dist/govuk/govuk-frontend.min.js --out-file assets/scripts/all.min.js --presets=@babel/preset-env --minified"
+    "js:copy-govuk": "shx mkdir -p assets/scripts && shx cp node_modules/govuk-frontend/dist/govuk/all.bundle.js assets/scripts/all.js"
   },
   "keywords": [],
   "author": "",

@@ -65,6 +65,27 @@ body, p, .govuk-body {
   box-shadow: none;
 }
 
-.govuk-width-container {
-    width: 100%
+img, 
+video, 
+iframe, 
+.responsive-video {
+    border-radius: #{$gca-global-radius};
+}
+
+.gca-radius-bordered {
+    // Target images, videos, and cards inside this wrapper
+    img, 
+    iframe, 
+    .responsive-video,
+    .card-list__item__wrapper {
+        border-radius: 5px;
+        overflow: hidden; // Keeps corners clipped
+    }
+
+    // Optional: Add some spacing if multiple bordered items are stacked
+    .card-list__item__wrapper {
+        margin-bottom: 20px;
+        padding: 20px; // Gives the card some internal breathing room
+        background: #fff;
+    }
 }
