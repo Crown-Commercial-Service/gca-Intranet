@@ -16,13 +16,13 @@ get_template_part('template-parts/breadcrumbs');
 
       <?php while (have_posts()) : the_post(); ?>
         <article class="news-card flex" data-testid="news-post">
-        <div class="news-image-wrap">
+          <div class="news-image-wrap">
             <?php if (has_post_thumbnail()) : ?>
-            <?php the_post_thumbnail('medium', ['class' => 'news-image']); ?>
+              <?php the_post_thumbnail('medium', ['class' => 'news-image']); ?>
             <?php else : ?>
-            <div class="news-placeholder"></div>
+              <div class="news-placeholder"></div>
             <?php endif; ?>
-        </div>
+          </div>
 
           <div>
             <h2 class="govuk-heading-m govuk-!-margin-bottom-2" data-testid="news-post-title">
@@ -71,7 +71,6 @@ get_template_part('template-parts/breadcrumbs');
             </div>
 
           </div>
-
         </article>
       <?php endwhile; ?>
 
