@@ -51,3 +51,25 @@
     bottom: 10px;
     margin: 0;
 }
+
+.event-card {
+    background: #fff;
+    padding: govuk-spacing(4);
+    margin-bottom: govuk-spacing(4);
+    border: 1px solid $gca-border-mid;
+    border-radius: 10px;
+
+    h2 a {
+        color: $govuk-link-colour !important;
+
+        &:hover {
+            color: $govuk-link-hover-colour !important;
+        }
+    }
+
+    &__tags {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+    }
+}
