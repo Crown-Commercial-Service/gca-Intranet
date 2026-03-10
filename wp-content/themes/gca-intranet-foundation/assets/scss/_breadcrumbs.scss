@@ -30,3 +30,9 @@
     transform: translateY(-50%) rotate(45deg);
     width: 0.3em;
 }
+
+@media (max-width: 1030px) {
+    .govuk-breadcrumbs__list {
+        padding: 0 10px;
+    }
+}
