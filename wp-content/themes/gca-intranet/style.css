@@ -630,18 +630,13 @@ Text Domain: gca-intranet
 @media (min-width: 1024px) {
   .govuk-width-container {
     max-width: 1024px;
-    min-width: 1200px;
+    min-width: 600x;
   }
 }
 
 /* ---------------------------------------
    News / Blog taxonomy chips
    --------------------------------------- */
-
-/* Date spacing + size */
-.gca-news-meta {
-  margin-bottom: 6px !important;
-}
 
 .gca-news-meta .govuk-body-s {
   font-size: 16px;
