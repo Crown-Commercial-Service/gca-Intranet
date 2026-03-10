@@ -24,7 +24,7 @@ if (empty($items)) {
       <a href="<?php echo esc_url($item['url']); ?>" class="govuk-breadcrumbs__link"><?php echo esc_html($item['label']); ?></a>
     </li>
     <?php else : ?>
-    <li class="govuk-breadcrumbs__list-item">
+    <li class="govuk-breadcrumbs__list-item" aria-current="page">
       <?php echo esc_html($item['label']); ?>
     </li>
     <?php endif; ?>
