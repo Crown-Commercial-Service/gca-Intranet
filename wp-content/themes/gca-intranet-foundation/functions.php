@@ -150,16 +150,14 @@ function gca_get_breadcrumb_items(): array
     }
 
     if (is_single()) {
-        $post_id = get_the_ID();
+        $post_type = get_post_type();
+        
+        $items[] = [
+            'label' => get_post_type_object($post_type)->labels->name,
+            'url'   => get_post_type_archive_link($post_type)
+        ];
 
-        // Optional: if posts have a primary category, include it
-        $cats = get_the_category($post_id);
-        if (!empty($cats)) {
-            $items[] = [
-                'label' => $cats[0]->name,
-                'url'   => get_category_link($cats[0]->term_id),
-            ];
-        }
+        $post_id = get_the_ID();
 
         $items[] = [
             'label' => get_the_title($post_id),
@@ -534,3 +532,18 @@ add_filter('fewbricks/project_files_base_path', 'get_project_files_base_path');
 function get_project_files_base_path() {
     return WP_PLUGIN_DIR . '/fewbricks_definitions';
 }
+
+add_filter('get_the_archive_title', function ($title) {
+    if (is_category()) {
+        $title = single_cat_title('', false);
+    } elseif (is_tag()) {
+        $title = single_tag_title('', false);
+    } elseif (is_author()) {
+        $title = get_the_author();
+    } elseif (is_post_type_archive()) {
+        $title = post_type_archive_title('', false);
+    } elseif (is_tax()) {
+        $title = single_term_title('', false);
+    }
+    return $title;
+});
