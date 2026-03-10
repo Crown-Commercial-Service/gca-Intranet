@@ -462,6 +462,7 @@ get_header();
       </div>
     </div>
 
+    <!-- Events -->
     <?php
     $count_events = wp_count_posts('event')->publish;
     if ( $count_events ) : ?>
@@ -487,7 +488,7 @@ get_header();
               <div class="govuk-grid-column-one-third gca-event-card" data-testid="events-card">
                 <div class="gca-events" data-testid="events-row">
                     
-                  <p class="govuk-body-s" data-testid="events-date"> <?php echo esc_html(get_the_date('jS F Y')); ?> </p>
+                  <p class="govuk-body-s" data-testid="events-date"> <?php echo esc_html(date('jS F Y', strtotime(get_field('start_datetime')))); ?> </p>
                   <h3 class="govuk-heading-s" data-testid="events-title">
                     <a class="govuk-link govuk-!-text-break-word" href="<?php the_permalink(); ?>" data-testid="events-link">
                       <?php
@@ -538,10 +539,6 @@ get_header();
             </a>
           </p>
         </div>
-        
-        
-        
-        
         
       </div>
       
