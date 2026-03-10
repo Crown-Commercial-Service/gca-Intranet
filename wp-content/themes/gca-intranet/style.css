@@ -630,7 +630,7 @@ Text Domain: gca-intranet
 @media (min-width: 1024px) {
   .govuk-width-container {
     max-width: 1024px;
-    min-width: 600x;
+    min-width: 600px;
   }
 }
 
