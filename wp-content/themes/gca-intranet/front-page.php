@@ -477,8 +477,19 @@ get_header();
         <div class="govuk-grid-row gca-equal-height-row event-entries" data-testid="events-updates-section">
           <?php
           $events = new WP_Query([
-            'post_type'      => 'event',
-            'posts_per_page' => 3,
+              'post_type'      => 'event',
+              'posts_per_page' => 3,
+              'meta_key'       => 'start_datetime',
+              'orderby'        => 'meta_value',
+              'order'          => 'ASC',
+              'meta_query'     => [
+                  [
+                      'key'     => 'start_datetime',
+                      'value'   => date('Y-m-d H:i:s'), 
+                      'compare' => '>=',                
+                      'type'    => 'DATETIME'
+                  ]
+              ]
           ]);
 
           if ($events->have_posts()):
@@ -493,7 +504,7 @@ get_header();
                     <a class="govuk-link govuk-!-text-break-word" href="<?php the_permalink(); ?>" data-testid="events-link">
                       <?php
                         $title = get_the_title();
-                        echo esc_html(mb_strlen($title) > 60 ? mb_substr($title, 0, 60) . '...' : $title);
+                        echo esc_html(mb_strlen($title) > 58 ? mb_substr($title, 0, 58) . '...' : $title);
                       ?>
                     </a>
                   </h3>
