@@ -931,3 +931,29 @@ function gca_add_gtm_head() {
     <?php
 }
 add_action('wp_head', 'gca_add_gtm_head', 1);
+
+/**
+ * Prevent the left-column metabox being hidden by Screen Options.
+ *
+ * It is still only shown for the 2-column template by the existing admin JS.
+ */
+add_filter('hidden_meta_boxes', function (array $hidden, $screen, $use_defaults) {
+  if (!is_object($screen) || empty($screen->id)) {
+    return $hidden;
+  }
+
+  $target_screens = [
+    'page',
+    'news',
+    'blog',
+    'event',
+    'work_update',
+  ];
+
+  if (in_array($screen->id, $target_screens, true)) {
+    $hidden = array_values(array_diff($hidden, ['gca_col2_content']));
+  }
+
+  return $hidden;
+}, 10, 3);
+
