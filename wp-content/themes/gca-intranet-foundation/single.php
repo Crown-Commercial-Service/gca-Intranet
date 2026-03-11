@@ -34,6 +34,9 @@ get_template_part('template-parts/breadcrumbs');
         <?php endwhile; endif; ?>
       </div>
     </div>
+
+    <?php get_template_part('template-parts/published-by'); ?>
+
   </main>
 </div>
 
