@@ -745,15 +745,6 @@ body.single-news .gca-taxonomy-tags .govuk-tag::after {
 }
 
 /* =========================================================
-   Homepage blog/work update avatars
-   ========================================================= */
-
-.gca-work-updates img.avatar,
-.gca-blogs-card img.avatar {
-  border-radius: 12px;
-}
-
-/* =========================================================
    Global pagination
    ========================================================= */
 
