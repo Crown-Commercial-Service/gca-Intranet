@@ -18,9 +18,17 @@ get_template_part('template-parts/breadcrumbs');
         <article class="blog-box flex" data-testid="blog-post">
 
           <div class="blog_profile_img" >
-            <?php if ($avatar = get_avatar(get_the_author_meta('ID'))): ?>
-              <?php echo $avatar; ?>
-            <?php endif; ?>
+            <?php 
+              $custome_author_img = get_field('image'); 
+              
+              if ($custome_author_img) : 
+                  echo wp_get_attachment_image($custome_author_img, 'thumbnail', false, ['class' => 'avatar']); 
+              else : 
+                  if ($avatar = get_avatar(get_the_author_meta('ID'))) :
+                      echo $avatar;
+                  endif;
+              endif; 
+            ?>
           </div>
 
           <div>
