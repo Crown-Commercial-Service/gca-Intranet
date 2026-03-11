@@ -13,6 +13,8 @@
 <body <?php body_class('govuk-template__body govuk-frontend-supported'); ?>>
 <?php wp_body_open(); ?>
 
+<?php get_template_part('template-parts/cookie-banner'); ?>
+
 <header class="site-header" role="banner">
   <a href="#main-content" class="govuk-skip-link" data-module="govuk-skip-link">Skip to main content</a>
 
@@ -78,7 +80,13 @@
           </div>
         </div>
 
-      </div> <div class="nav-wrapper govuk-width-container">
+      </div>
+
+    </div>
+  </div>
+
+  <div class="bg-white gca-header-bg">
+    <div class="nav-wrapper govuk-width-container">
         <nav class="global-navigation" id="primaryNav" aria-label="Primary navigation">
         <?php
           $args = [
@@ -98,7 +106,5 @@
         ?>
         </nav>
       </div>
-
-    </div>
   </div>
 </header>

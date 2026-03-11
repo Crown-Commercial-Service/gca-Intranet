@@ -30,7 +30,7 @@ $is_page = !empty($GLOBALS['gca_is_page']);
       $has_left_content = $should_show_featured || ($col2_html !== '');
     ?>
 
-    <main class="gca-single gca-single--2col" data-testid="layout-2col">
+    <main class="gca-single gca-single--2col" id="main-content" data-testid="layout-2col">
       <div class="govuk-grid-row">
 
         <?php if ($has_left_content) : ?>

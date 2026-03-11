@@ -9,6 +9,14 @@
 
 </main><!-- #main-content -->
 
+<?php if (is_singular(['page', 'news'])) : ?>
+  <div class="gca-published-by-wrapper">
+    <div class="govuk-width-container">
+      <?php get_template_part('template-parts/published-by'); ?>
+    </div>
+  </div>
+<?php endif; ?>
+
 <footer class="govuk-footer site-footer" role="contentinfo">
   <div class="govuk-width-container">
 

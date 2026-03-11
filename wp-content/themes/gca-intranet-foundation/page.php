@@ -25,7 +25,9 @@ get_template_part('template-parts/breadcrumbs');
     </div>
 
     <?php include(get_template_directory() . '/template-parts/fewbricks-components.php' ); ?>
-    
+
+    <?php get_template_part('template-parts/published-by'); ?>
+
   </main>
 </div>
 
