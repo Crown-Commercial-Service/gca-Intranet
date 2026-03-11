@@ -1,0 +1,129 @@
+/*------------------------------------*\
+  #Subpage-Cards
+  A card grid that links to child pages.
+  Extends .card-list and .card-list__item__wrapper.
+\*------------------------------------*/
+
+.subpage-card-list {
+
+    &.card-list {
+        display: flex;
+        flex-flow: row wrap;
+        align-items: stretch;
+    }
+
+    // Override base margin-top between stacked items (all breakpoints)
+    .card-list__item + .card-list__item {
+        margin-top: 0;
+    }
+
+    .card-list__item {
+        display: flex;
+        flex-direction: column;
+        float: none;
+        // Mobile: full-width stacking
+        width: 100%;
+        box-sizing: border-box;
+        margin-bottom: 0;
+
+        @include govuk-media-query($from: tablet) {
+            width: 49%;
+            margin-right: 2%;
+            margin-bottom: govuk-px-to-rem(40);
+
+            &:nth-child(2n) {
+                margin-right: 0;
+            }
+
+            // Last row: no bottom margin
+            &:nth-last-child(-n+2) {
+                margin-bottom: 0;
+            }
+        }
+
+        @include govuk-media-query($from: 940) {
+            width: 30.6666%;
+            margin-right: 4%;
+
+            &:nth-child(2n) {
+                margin-right: 4%;
+            }
+
+            &:nth-child(3n) {
+                margin-right: 0;
+            }
+
+            // Last row: no bottom margin (covers 3 cols or fewer cards)
+            &:nth-last-child(-n+3) {
+                margin-bottom: 0;
+            }
+        }
+    }
+
+}
+
+
+.subpage-card {
+
+    border-top: none !important;
+    border: 1px solid $ccs-card-border-colour !important;
+    border-left: 6px solid $ccs-button-colour !important;
+
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    box-sizing: border-box;
+
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
+
+    &__title {
+        margin-bottom: govuk-px-to-rem(8);
+        padding-right: govuk-px-to-rem(40);
+    }
+
+    &__link {
+        color: inherit;
+        text-decoration: none;
+
+        &::after {
+            content: "";
+            position: absolute;
+            top: 0;
+            right: 0;
+            bottom: 0;
+            left: 0;
+        }
+
+        &:hover,
+        &:focus {
+            color: $govuk-link-hover-colour;
+            text-decoration: underline;
+        }
+
+        &:focus {
+            outline: 3px solid transparent;
+        }
+    }
+
+    &__summary {
+        margin-bottom: 0;
+        padding-right: govuk-px-to-rem(40);
+        color: $govuk-secondary-text-colour;
+
+        overflow: hidden;
+        display: -webkit-box;
+        -webkit-line-clamp: 4;
+        -webkit-box-orient: vertical;
+    }
+
+    &__arrow {
+        position: absolute;
+        right: govuk-px-to-rem(10);
+        top: 50%;
+        transform: translateY(-50%);
+        display: flex;
+        align-items: center;
+        pointer-events: none;
+    }
+
+}
