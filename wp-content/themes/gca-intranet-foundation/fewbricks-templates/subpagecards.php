@@ -29,14 +29,6 @@ $subpages = get_pages( [
 ] );
 
 if ( empty( $subpages ) ) {
-    if ( current_user_can( 'edit_pages' ) ) {
-        $parent_title = get_the_title( $parent_id );
-        echo '<div class="govuk-width-container" style="margin-top:1rem;margin-bottom:1rem;">';
-        echo '<div style="border-left:4px solid #d4351c;padding:1rem;background:#fff5f5;">';
-        echo '<p class="govuk-body" style="margin:0;color:#d4351c;"><strong>Subpage Cards:</strong> No published child pages found under <em>' . esc_html( $parent_title ) . '</em> (page&nbsp;ID:&nbsp;' . esc_html( $parent_id ) . ').</p>';
-        echo '<p class="govuk-body" style="margin:0.5rem 0 0;">To show cards here, edit each subpage and set its <strong>Parent</strong> to <em>' . esc_html( $parent_title ) . '</em> under <em>Page Attributes</em>.</p>';
-        echo '</div></div>';
-    }
     return;
 }
 ?>
