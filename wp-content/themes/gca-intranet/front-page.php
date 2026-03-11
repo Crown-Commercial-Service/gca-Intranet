@@ -531,13 +531,13 @@ get_header();
                       $locations = get_the_terms(get_the_ID(), 'event_location');
 
                       if ($categories && $categories[0]->name !== 'Uncategorized') : ?>
-                          <span class="govuk-body-s tag_label">
+                          <span class="govuk-body-s tag_label" data-testid="events-category">
                               <?php echo esc_html($categories[0]->name); ?>
                           </span>
                       <?php endif; 
 
                       if ($locations) : ?>
-                          <span class="govuk-body-s tag_label grey">
+                          <span class="govuk-body-s tag_label grey" data-testid="events-location">
                               <?php echo esc_html($locations[0]->name); ?>
                           </span>
                       <?php endif; ?>
