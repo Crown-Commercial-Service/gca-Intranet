@@ -40,5 +40,3 @@ if (!defined('WP_MAX_MEMORY_LIMIT')) {
 if (isset($_SERVER['HTTP_X_GCA_TEST_SUITE']) && $_SERVER['HTTP_X_GCA_TEST_SUITE'] === 'true') {
     define('DB_NAME', 'wordpress-test');
 }
-
-define( 'WP_ENVIRONMENT_TYPE', 'local' );
