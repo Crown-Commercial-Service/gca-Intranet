@@ -12,7 +12,10 @@
 
 <body <?php body_class('govuk-template__body govuk-frontend-supported'); ?>>
 <?php wp_body_open(); ?>
-
+<!-- Google Tag Manager (noscript) -->
+<noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-P9TZ7BPX"
+height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
+<!-- End Google Tag Manager (noscript) -->
 <?php get_template_part('template-parts/cookie-banner'); ?>
 
 <header class="site-header" role="banner">

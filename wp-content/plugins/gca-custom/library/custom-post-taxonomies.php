@@ -41,4 +41,8 @@ function gca_register_my_taxonomies()
 
 }
 
-
+add_filter( "radio_buttons_for_taxonomies_no_term_event_location", "__return_FALSE" );
+add_filter( "radio_buttons_for_taxonomies_no_term_label", "__return_FALSE" );
+add_filter( "radio_buttons_for_taxonomies_no_term_content_type", "__return_FALSE" );
+add_filter( "radio_buttons_for_taxonomies_no_term_responsible_team", "__return_FALSE" );
+add_filter( "radio_buttons_for_taxonomies_no_term_audience", "__return_FALSE" );

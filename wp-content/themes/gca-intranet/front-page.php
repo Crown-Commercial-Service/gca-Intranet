@@ -320,9 +320,17 @@ get_header();
                 <div class="govuk-grid-column-one-half gca-work-update-card" data-testid="work-update-card">
                   <div class="govuk-grid-row gca-work-updates" data-testid="work-update-row">
                     <div class="govuk-grid-column-one-third" data-testid="work-update-avatar">
-                      <?php if ($avatar = get_avatar(get_the_author_meta('ID'))): ?>
-                        <?php echo $avatar; ?>
-                      <?php endif; ?>
+                      <?php 
+                        $custome_author_img = get_field('image'); 
+                        
+                        if ($custome_author_img) : 
+                            echo wp_get_attachment_image($custome_author_img, 'thumbnail', false, ['class' => 'avatar']); 
+                        else : 
+                            if ($avatar = get_avatar(get_the_author_meta('ID'))) :
+                                echo $avatar;
+                            endif;
+                        endif; 
+                      ?>
                     </div>
 
                     <div class="govuk-grid-column-two-thirds" data-testid="work-update-content">
@@ -405,9 +413,17 @@ get_header();
                     $blogs->the_post();
                     ?>
                     <div class="govuk-grid-column-one-third" data-testid="blogs-avatar">
-                      <?php if ($avatar = get_avatar(get_the_author_meta('ID'))): ?>
-                        <?php echo $avatar; ?>
-                      <?php endif; ?>
+                      <?php 
+                        $custome_author_img = get_field('image'); 
+                        
+                        if ($custome_author_img) : 
+                            echo wp_get_attachment_image($custome_author_img, 'thumbnail', false, ['class' => 'avatar']); 
+                        else : 
+                            if ($avatar = get_avatar(get_the_author_meta('ID'))) :
+                                echo $avatar;
+                            endif;
+                        endif; 
+                      ?>
                     </div>
 
                     <div class="govuk-grid-column-two-thirds" data-testid="blogs-content">
@@ -515,13 +531,13 @@ get_header();
                       $locations = get_the_terms(get_the_ID(), 'event_location');
 
                       if ($categories && $categories[0]->name !== 'Uncategorized') : ?>
-                          <span class="govuk-body-s tag_label">
+                          <span class="govuk-body-s tag_label" data-testid="events-category">
                               <?php echo esc_html($categories[0]->name); ?>
                           </span>
                       <?php endif; 
 
                       if ($locations) : ?>
-                          <span class="govuk-body-s tag_label grey">
+                          <span class="govuk-body-s tag_label grey" data-testid="events-location">
                               <?php echo esc_html($locations[0]->name); ?>
                           </span>
                       <?php endif; ?>
