@@ -31,7 +31,7 @@ class component_card_list extends project_brick {
 		$this->add_field( (new acf_fields\repeater('Cards', 'cards', '202002181326b', [
 			'button_label' => 'Add card',
 			'layout' => 'row',
-			'max' => 4
+			'max' => 8
 		]) )
 			->add_sub_field(new acf_fields\text('Title', 'title', '202002181326c'))
 			->add_sub_field(new acf_fields\wysiwyg('Content', 'content', '202002181326d'))
