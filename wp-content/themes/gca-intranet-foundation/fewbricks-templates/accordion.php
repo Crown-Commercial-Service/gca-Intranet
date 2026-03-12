@@ -28,7 +28,7 @@ $search_id    = 'glossary-search-' . $instance_id;
 
         <div class="govuk-grid-column-one-third">
             <div class="ccs-accordion-glossary__search">
-                <label class="govuk-label govuk-!-font-weight-bold" for="<?php echo esc_attr($search_id); ?>">
+                <label class="govuk-label govuk-!-font-weight-medium" for="<?php echo esc_attr($search_id); ?>">
                     Search
                 </label>
                 <div class="ccs-accordion-glossary__search-wrap">
