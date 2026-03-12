@@ -338,7 +338,7 @@ get_header();
                         <a class="govuk-link govuk-!-text-break-word" href="<?php the_permalink(); ?>" data-testid="work-update-link">
                           <?php
                             $title = get_the_title();
-                            echo esc_html(mb_strlen($title) > 30 ? mb_substr($title, 0, 30) . '...' : $title);
+                            echo esc_html(mb_strlen($title) > 27 ? mb_substr($title, 0, 27) . '...' : $title);
                           ?>
                         </a>
                       </h3>
@@ -515,7 +515,7 @@ get_header();
               <div class="govuk-grid-column-one-third gca-event-card" data-testid="events-card">
                 <div class="gca-events" data-testid="events-row">
                     
-                  <p class="govuk-body-s" data-testid="events-date"> <?php echo esc_html(date('jS F Y', strtotime(get_field('start_datetime')))); ?> </p>
+                  <p class="govuk-body-s gca-event-date" data-testid="events-date"> <?php echo esc_html(date('jS F Y', strtotime(get_field('start_datetime')))); ?> </p>
                   <h3 class="govuk-heading-s" data-testid="events-title">
                     <a class="govuk-link govuk-!-text-break-word" href="<?php the_permalink(); ?>" data-testid="events-link">
                       <?php
