@@ -46,18 +46,19 @@ get_template_part('template-parts/breadcrumbs');
                                 $categories = get_the_category();
                                 $terms = get_the_terms(get_the_ID(), 'label');
 
+                                if ($categories && $categories[0]->name !== 'Uncategorized') : ?>
+                                    <span class="govuk-body-s tag_label" data-testid="news-category">
+                                        <?php echo esc_html($categories[0]->name); ?>
+                                    </span>
+                                <?php endif; ?>
+                                
+                                <?php
                                 if ($terms && !is_wp_error($terms)) : $term = array_shift($terms); ?>
-                                    <span class="govuk-body-s tag_label" data-testid="news-tax">
+                                    <span class="govuk-body-s tag_label grey" data-testid="news-tax">
                                         <?php echo esc_html($term->name); ?>
                                     </span>
                                 <?php endif; ?>
 
-                                <?php
-                                if ($categories && $categories[0]->name !== 'Uncategorized') : ?>
-                                    <span class="govuk-body-s tag_label grey" data-testid="news-category">
-                                        <?php echo esc_html($categories[0]->name); ?>
-                                    </span>
-                                <?php endif; ?>
                             </div>
                         </div>
 

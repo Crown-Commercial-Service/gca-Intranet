@@ -53,11 +53,18 @@ get_template_part('template-parts/breadcrumbs');
                         </span>
                         <?php
                         $terms = get_the_terms(get_the_ID(), 'label');
+                        $responsible_teams = get_the_terms(get_the_ID(), 'responsible_team');
 
                         if ($terms && !is_wp_error($terms)) : $term = array_shift($terms); ?>
-
                             <span class="govuk-body-s tag_label" data-testid="work-update-tax">
                                 <?php echo esc_html($term->name); ?>
+                            </span>
+                        <?php endif; ?>
+                        
+                        <?php
+                        if ($responsible_teams && !is_wp_error($responsible_teams)) : $responsible_team = array_shift($responsible_teams); ?>
+                            <span class="govuk-body-s tag_label grey" data-testid="work-update-team">
+                                <?php echo esc_html($responsible_team->name); ?>
                             </span>
                         <?php endif; ?>
                     </div>
