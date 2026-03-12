@@ -15,7 +15,7 @@ get_template_part('template-parts/breadcrumbs');
     <?php if (have_posts()) : ?>
 
       <?php while (have_posts()) : the_post(); ?>
-        <article class="work-update-box flex" data-testid="work-update-post">
+        <article class="work-update-box" data-testid="work-update-post">
 
           <div class="work_update_profile_img" >
             <?php 
