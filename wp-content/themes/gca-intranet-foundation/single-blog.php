@@ -1,9 +1,11 @@
 <?php get_header(); ?>
 
 <?php
+$hero_image_url = get_template_directory_uri() . '/assets/img/office.jpg';
+
 get_template_part('template-parts/hero', null, [
     'title'     => 'Blog',
-    'image_url' => get_the_post_thumbnail_url(get_the_ID(), 'large') ?: '',
+    'image_url' => $hero_image_url
 ]);
 
 get_template_part('template-parts/breadcrumbs');
@@ -23,7 +25,7 @@ get_template_part('template-parts/breadcrumbs');
                     $custome_author_img = get_field('image'); 
                     
                     if ($custome_author_img) : 
-                        echo wp_get_attachment_image($custome_author_img, 'thumbnail', false, ['class' => 'avatar, profile_img']); 
+                        echo wp_get_attachment_image($custome_author_img, 'thumbnail', false, ['class' => 'avatar']); 
                     else : 
                         if ($avatar = get_avatar(get_the_author_meta('ID'))) :
                             echo $avatar;
