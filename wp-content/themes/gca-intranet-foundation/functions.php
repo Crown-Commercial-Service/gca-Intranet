@@ -40,8 +40,8 @@ add_action('after_setup_theme', function (): void {
 
     register_nav_menus([
         'primary'      => __('Primary Navigation', 'gca-intranet'),
+        'top_bar'      => __('Top Bar menu', 'gca-intranet'),
         'footer_legal' => __('Footer legal links', 'gca-intranet'),
-        'footer'       => __('Footer Navigation (legacy)', 'gca-intranet'),
     ]);
 });
 
