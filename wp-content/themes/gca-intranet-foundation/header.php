@@ -47,10 +47,10 @@
 
           <div class="gca-header-topbar-inner">
 
-            <nav class="utility-nav" aria-label="Utility navigation">
+            <nav class="utility-nav" aria-label="Top bar navigation">
               <?php
                 wp_nav_menu([
-                  'theme_location' => 'utility',
+                  'theme_location' => 'top_bar',
                   'container'      => false,
                   'menu_class'     => 'utility-nav-list',
                   'fallback_cb'    => false,
