@@ -21,7 +21,7 @@ get_template_part('template-parts/hero', null, [
 <div class="govuk-width-container" data-testid="search-container">
   <main class="govuk-main-wrapper" id="main-content" data-testid="search-main">
     <div class="govuk-grid-row" data-testid="search-row">
-      <div class="govuk-grid-column-two-thirds" data-testid="search-col">
+      <div class="govuk-grid-column-full" data-testid="search-col">
 
         <h1 class="govuk-heading-l govuk-!-margin-bottom-4" data-testid="search-heading">
           Search results for <span class="gca-search-query">&ldquo;<?php echo esc_html($search_query); ?>&rdquo;</span>
@@ -57,7 +57,7 @@ get_template_part('template-parts/hero', null, [
         <?php if (have_posts()) : ?>
 
           <p class="govuk-body govuk-!-margin-bottom-6" data-testid="search-result-count">
-            Found <?php echo esc_html((string) $found_posts); ?> result<?php echo $found_posts !== 1 ? 's' : ''; ?>
+            Found <?php echo esc_html((string) $found_posts); ?> result(s)
           </p>
 
           <div data-testid="search-results">
@@ -117,7 +117,8 @@ get_template_part('template-parts/hero', null, [
             the_posts_pagination([
               'prev_text' => __('&larr; Previous', 'gca-intranet'),
               'next_text' => __('Next &rarr;', 'gca-intranet'),
-              'mid_size'  => 2,
+              'end_size'  => 1,
+              'mid_size'  => 3,
             ]);
             ?>
           </div>
