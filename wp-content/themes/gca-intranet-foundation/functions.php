@@ -6,6 +6,7 @@ if (!defined('ABSPATH')) {
 }
 
 require_once get_template_directory() . '/inc/class-ccs-mega-menu-walker.php';
+require_once get_template_directory() . '/inc/shortcodes.php';
 
 /**
  * Theme setup
