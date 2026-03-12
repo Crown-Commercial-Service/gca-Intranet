@@ -15,7 +15,7 @@ get_template_part('template-parts/breadcrumbs');
     <?php if (have_posts()) : ?>
 
       <?php while (have_posts()) : the_post(); ?>
-        <article class="blog-box flex" data-testid="blog-post">
+        <article class="blog-box" data-testid="blog-post">
 
           <div class="blog_profile_img" >
             <?php 
@@ -54,7 +54,7 @@ get_template_part('template-parts/breadcrumbs');
 
               if ($terms && !is_wp_error($terms)) : 
                 $term = array_shift($terms); ?>
-                <span class="govuk-body tag_label location">
+                <span class="govuk-body-s tag_label location">
                     <?php echo esc_html($term->name); ?>
                 </span>
               <?php endif; ?>
