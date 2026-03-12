@@ -32,6 +32,11 @@ class component_accordion extends project_brick {
             'default_value' => '0',
         ]));
 
+        $this->add_field(new acf_fields\true_false('Enable Search', 'enable_search', '202503121000a',[
+            'instructions' => 'Enable a search box to filter accordion items by title. When enabled, the layout changes to a two-column view: search on the left (1/3) and accordion on the right (2/3).',
+            'default_value' => '0',
+        ]));
+
         $this->add_field( new acf_fields\wysiwyg( 'Introduction', 'introduction', '202001211615b', [
             'instructions' => 'Brief introductory text to dislay above '
         ] ));
