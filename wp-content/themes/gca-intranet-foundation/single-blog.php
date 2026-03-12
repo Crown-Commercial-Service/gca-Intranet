@@ -2,7 +2,7 @@
 
 <?php
 get_template_part('template-parts/hero', null, [
-    'title'     => 'blog',
+    'title'     => 'Blog',
     'image_url' => get_the_post_thumbnail_url(get_the_ID(), 'large') ?: '',
 ]);
 
