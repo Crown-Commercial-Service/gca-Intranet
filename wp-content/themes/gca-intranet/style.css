@@ -41,6 +41,7 @@ Text Domain: gca-intranet
 
 @media (min-width: 1024px) {
   .govuk-width-container {
+    width: 100%;
     max-width: 1024px;
     min-width: 600px;
   }
@@ -742,15 +743,6 @@ body.single-news .gca-taxonomy-tags .govuk-tag::after {
 .news-card .gca-taxonomy-tags .govuk-tag--grey {
   background: #d9d9d9;
   color: #0b0c0c;
-}
-
-/* =========================================================
-   Homepage blog/work update avatars
-   ========================================================= */
-
-.gca-work-updates img.avatar,
-.gca-blogs-card img.avatar {
-  border-radius: 12px;
 }
 
 /* =========================================================
