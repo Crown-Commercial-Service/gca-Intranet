@@ -1,9 +1,11 @@
 <?php get_header(); ?>
 
 <?php
+$hero_image_url = get_template_directory_uri() . '/assets/img/office.jpg';
+
 get_template_part('template-parts/hero', null, [
   'title'     => post_type_archive_title('', false),
-  'image_url' => '',
+  'image_url' => $hero_image_url
 ]);
 
 get_template_part('template-parts/breadcrumbs');
