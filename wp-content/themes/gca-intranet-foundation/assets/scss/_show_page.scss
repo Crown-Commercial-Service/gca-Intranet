@@ -13,3 +13,11 @@
     margin-bottom: 0;
     white-space: nowrap;
 }
+
+.profile_img_wrapper {
+    padding-right: 40px;
+    
+    img {
+        border-radius: 50%;
+    }
+}

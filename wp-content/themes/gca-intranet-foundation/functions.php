@@ -6,6 +6,7 @@ if (!defined('ABSPATH')) {
 }
 
 require_once get_template_directory() . '/inc/class-ccs-mega-menu-walker.php';
+require_once get_template_directory() . '/inc/shortcodes.php';
 
 /**
  * Theme setup
@@ -40,8 +41,8 @@ add_action('after_setup_theme', function (): void {
 
     register_nav_menus([
         'primary'      => __('Primary Navigation', 'gca-intranet'),
+        'top_bar'      => __('Top Bar menu', 'gca-intranet'),
         'footer_legal' => __('Footer legal links', 'gca-intranet'),
-        'footer'       => __('Footer Navigation (legacy)', 'gca-intranet'),
     ]);
 });
 
