@@ -113,3 +113,49 @@
 .js-enabled .ccs-accordion__section-button {
     color: #0B0C0C;
 }
+.ccs-accordion-glossary {
+
+    &__search {
+        background-color: govuk-colour('light-grey');
+        padding: govuk-spacing(6);
+
+        @include govuk-media-query($until: tablet) {
+            margin-bottom: govuk-spacing(6);
+        }
+    }
+
+    &__search-wrap {
+        position: relative;
+        display: flex;
+        align-items: stretch;
+    }
+
+    &__search-input {
+        padding-right: govuk-spacing(9);
+        margin-bottom: 0;
+        width: 100%;
+    }
+
+    &__search-btn {
+        position: absolute;
+        right: 0;
+        top: 0;
+        bottom: 0;
+        background: none;
+        border: none;
+        cursor: pointer;
+        padding: 0 govuk-spacing(3);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: govuk-colour('black');
+
+        &:hover {
+            color: govuk-colour('dark-grey');
+        }
+
+        &:focus {
+            @include govuk-focused-text;
+        }
+    }
+}
