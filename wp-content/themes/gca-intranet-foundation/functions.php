@@ -17,6 +17,7 @@ add_action('after_setup_theme', function (): void {
 
     add_theme_support('title-tag');
     add_theme_support('post-thumbnails');
+    add_post_type_support('page', 'excerpt');
 
     // Allow WP admin to set a site logo (Customizer)
     add_theme_support('custom-logo', [
