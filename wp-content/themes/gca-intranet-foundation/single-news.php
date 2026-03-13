@@ -38,7 +38,7 @@ get_template_part('template-parts/breadcrumbs');
 
                         <div data-testid="news-details">
                             <span class="govuk-body-s">
-                                <?php echo esc_html(get_the_date('jS F Y')); ?>
+                                <?php echo esc_html(get_the_date('j F Y')); ?>
                             </span>
 
                             <div class="govuk-!-margin-top-5">

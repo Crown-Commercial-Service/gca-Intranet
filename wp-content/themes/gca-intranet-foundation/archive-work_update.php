@@ -48,7 +48,7 @@ get_template_part('template-parts/breadcrumbs');
             </p>
 
             <p class="date_bottom" data-testid="work-update-post-date">
-              <?php echo esc_html(get_the_date('jS F Y')); ?>
+              <?php echo esc_html(get_the_date('j F Y')); ?>
             </p>
           </div>
 

@@ -55,7 +55,7 @@
                                             </p>
 
                                             <p data-testid="latest-news-featured-date">
-                                                <?php echo get_the_date('jS F Y'); ?>
+                                                <?php echo get_the_date('j F Y'); ?>
                                             </p>
                                         </div>
                                         <?php
@@ -103,7 +103,7 @@
                                                 </p>
 
                                                 <p data-testid="latest-news-secondary-date">
-                                                    <?php echo get_the_date('jS F Y'); ?>
+                                                    <?php echo get_the_date('j F Y'); ?>
                                                 </p>
                                             </div>
                                         </div>
@@ -189,7 +189,7 @@
                                                     </p>
 
                                                     <p data-testid="work-update-date">
-                                                        <?php echo get_the_date('jS F Y'); ?>
+                                                        <?php echo get_the_date('j F Y'); ?>
                                                     </p>
                                                 </div>
                                             </div>
@@ -257,7 +257,7 @@
                                                     </p>
 
                                                     <p data-testid="blogs-date">
-                                                        <?php echo get_the_date('jS F Y'); ?>
+                                                        <?php echo get_the_date('j F Y'); ?>
                                                     </p>
                                                 </div>
                                                 <?php
