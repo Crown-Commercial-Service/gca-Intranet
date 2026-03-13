@@ -920,3 +920,52 @@ if (defined('WP_CLI') && WP_CLI) {
 
   \WP_CLI::add_command('gca homepage', 'GCA_Homepage_CLI_Command');
 }
+
+add_action('acf/input/admin_footer', function() {
+?>
+<script type="text/javascript">
+(function($) {
+    if (typeof acf !== 'undefined') {
+        acf.addAction('ready_field/type=time_picker', function(field) {
+
+            var $input = field.$el.find('input[type="text"]');
+
+            // 1. Ensure readonly
+            $input.attr('readonly', 'readonly').css('cursor', 'pointer');
+
+            // 2. Inject Clear button if missing
+            if (!field.$el.find('.gca-clear-time').length) {
+                $input.after('<a href="#" class="gca-clear-time" style="margin-left:10px; color:#cc0000; text-decoration:none; font-size:12px; cursor:pointer;">Clear</a>');
+            }
+
+            // 3. The "Deep Clear" Logic
+            field.$el.on('click', '.gca-clear-time', function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+
+                // Clear the visible text field
+                $input.val('');
+
+                // Clear ACF's internal hidden input (the one that actually saves to DB)
+                field.$el.find('input[type="hidden"]').val('');
+
+                // Force ACF to recognize the change
+                field.val('');
+
+                // Close the picker if it accidentally stayed open
+                $input.datepicker('hide');
+                $input.blur();
+
+                $(this).hide();
+            });
+
+            // Toggle clear button visibility based on value
+            $input.on('focus change keyup', function() {
+                field.$el.find('.gca-clear-time').toggle(!!$(this).val());
+            }).trigger('change');
+        });
+    }
+})(jQuery);
+</script>
+<?php
+});
