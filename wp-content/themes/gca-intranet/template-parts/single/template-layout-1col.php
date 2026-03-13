@@ -1,7 +1,5 @@
 <?php
 /**
- * Template Name: Layout – 1 column
- *
  * Default 1-column layout (shared by pages + CPT singles)
  * - Pages: hero shows title; body does NOT repeat title; no featured image; no date
  * - CPTs: hero shows CPT label; body shows post title + date + optional featured image
