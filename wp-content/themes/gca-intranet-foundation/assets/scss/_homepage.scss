@@ -58,6 +58,11 @@
 .gca-small-list-news {
   height: 100%;
   border-bottom: 1px solid $gca-border-mid;
+
+  img {
+    width: 100%;
+    object-fit: cover;
+  }
 }
 
 .gca-first-small-list-news {
