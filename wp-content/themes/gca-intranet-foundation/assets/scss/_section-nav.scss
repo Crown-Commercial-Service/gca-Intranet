@@ -14,19 +14,23 @@ $section-nav-text:    $gca-black;
 }
 
 .section-nav__header {
-    border-left: 4px solid $section-nav-accent;
+    border-left: 10px solid $section-nav-accent;
     background-color: $section-nav-bg;
-    padding: govuk-spacing(3) govuk-spacing(4);
-    border-bottom: 1px solid $section-nav-divider;
+    padding: govuk-spacing(3) govuk-spacing(6);
 }
 
+.section-nav__list{
+    border-top: 1px solid $section-nav-divider;
+}
 .section-nav__title {
     display: block;
-    font-size: govuk-px-to-rem(16);
     font-weight: 700;
     color: $section-nav-text;
     text-decoration: none;
-    line-height: 1.4;
+    font-weight: 700;
+    font-size: govuk-px-to-rem(19);
+    line-height: govuk-px-to-rem(20);
+    letter-spacing: 0.1px;
 
     &:hover {
         text-decoration: underline;
@@ -89,7 +93,7 @@ $section-nav-text:    $gca-black;
     padding: govuk-spacing(3) govuk-spacing(6);
     color: $section-nav-text;
     text-decoration: none;
-    font-size: govuk-px-to-rem(16);
+    font-size: govuk-px-to-rem(19);
     font-weight: 400;
     line-height: 1.4;
 
@@ -103,21 +107,19 @@ $section-nav-text:    $gca-black;
     }
 
     &--current {
-        font-weight: 700;
         font-size: govuk-px-to-rem(19);
         line-height: govuk-px-to-rem(20);
         letter-spacing: 0.1px;
         color: $section-nav-text;
-        box-shadow: inset 10px 0 0 0 $section-nav-accent;
     }
 }
 
 .section-nav__sublist .section-nav__link {
-    padding-left: govuk-spacing(6);
+    padding-left: govuk-spacing(8);
 }
 
 .section-nav__sublist .section-nav__sublist .section-nav__link {
-    padding-left: govuk-spacing(8);
+    padding-left: govuk-spacing(9);
 }
 
 .section-nav__toggle {
