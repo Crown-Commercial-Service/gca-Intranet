@@ -971,12 +971,13 @@ add_action('acf/input/admin_footer', function() {
 });
 
 /**
- * Generates a formatted date/time string or just the time.
- * * @param bool $time_only If true, returns only the time range. If false, returns date + time.
- * @param int  $post_id   The ID of the post/event. Defaults to current post.
- * @return string         The formatted string.
+ * Universal Event Date/Time Formatter
+ * @param string $return  Options: 'dates', 'times', 'start_date', 'end_date', 'start_time', 'end_time', 'all'
+ * @param int    $post_id The ID of the post. Defaults to current loop ID.
+ *
+ * @return string         The formatted string based on the request.
  */
-function gca_get_formatted_event_date_or_time( $time_only = false, $post_id = null ) {
+function gca_get_event_datetime( $return = 'dates', $post_id = null ) {
     $post_id = $post_id ?: get_the_ID();
 
     // 1. Retrieve raw data
@@ -985,39 +986,46 @@ function gca_get_formatted_event_date_or_time( $time_only = false, $post_id = nu
     $raw_end_date   = get_field('end_date', $post_id);
     $raw_end_time   = get_field('end_time', $post_id);
 
-    // If no start date, we can't really do much
-    if ( ! $raw_start_date ) {
+    // Safety: If no start date, return empty unless specifically asking for a time field
+    if ( ! $raw_start_date && in_array($return, ['dates', 'start_date', 'end_date', 'all'])) {
         return '';
     }
 
-    // 2. Build the Time String first (since it might be used alone)
-    $time_string = '';
-    if ( $raw_start_time && $raw_end_time ) {
-        $time_string = date('g:i a', strtotime($raw_start_time)) . ' to ' . date('g:i a', strtotime($raw_end_time));
-    } elseif ( $raw_start_time ) {
-        $time_string = date('g:i a', strtotime($raw_start_time));
-    } elseif ( $raw_end_time ) {
-        $time_string = 'Until ' . date('g:i a', strtotime($raw_end_time));
+    // 2. Format Individual Components
+    $f_start_date = $raw_start_date ? date('jS F Y', strtotime($raw_start_date)) : '';
+    $f_end_date   = $raw_end_date   ? date('jS F Y', strtotime($raw_end_date))   : '';
+    $f_start_time = $raw_start_time ? date('g:i a',  strtotime($raw_start_time)) : '';
+    $f_end_time   = $raw_end_time   ? date('g:i a',  strtotime($raw_end_time))   : '';
+
+    // 3. Process Logic for Ranges
+
+    // Time Range Logic
+    $time_range = '';
+    if ($f_start_time && $f_end_time) {
+        $time_range = "{$f_start_time} to {$f_end_time}";
+    } elseif ($f_start_time) {
+        $time_range = $f_start_time;
+    } elseif ($f_end_time) {
+        $time_range = "Until {$f_end_time}";
     }
 
-    // 3. Return Logic
-    if ( $time_only ) {
-        return $time_string ?: '';
+    // Date Range Logic
+    $date_range = $f_start_date;
+    if ($f_end_date && $raw_start_date !== $raw_end_date) {
+        $date_range .= " to {$f_end_date}";
     }
 
-    // 4. Build Full Date String
-    $start_ts    = strtotime($raw_start_date);
-    $date_string = date('jS F Y', $start_ts);
-
-    if ( $raw_end_date ) {
-        $end_ts = strtotime($raw_end_date);
-        if ( date('Ymd', $start_ts) !== date('Ymd', $end_ts) ) {
-            $date_string .= ' to ' . date('jS F Y', $end_ts);
-        }
+    // 4. Return the Requested Option
+    switch ( $return ) {
+        case 'start_date': return $f_start_date;
+        case 'end_date':   return $f_end_date;
+        case 'start_time': return $f_start_time;
+        case 'end_time':   return $f_end_time;
+        case 'times':      return $time_range;
+        case 'all':        return $time_range ? "{$date_range}, {$time_range}" : $date_range;
+        case 'dates':
+        default:           return $date_range;
     }
-
-    // Combine Date and Time for the full view
-    return $date_string;
 }
 
 /**

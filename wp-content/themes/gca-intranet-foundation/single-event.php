@@ -43,12 +43,11 @@ get_template_part('template-parts/breadcrumbs');
             <div class="event-details" data-testid="event-details">
                 <p class="govuk-body" data-testid="events-date">
                     <strong class="govuk-!-font-weight-bold">
-                        <?php echo esc_html(gca_get_formatted_event_date_or_time()); ?>
+                        <?php echo esc_html(gca_get_event_datetime('dates')); ?>
                     </strong>
                 </p>
 
-                <?php
-                    if ($time_string = gca_get_formatted_event_date_or_time(true)) : ?>
+                <?php if ($time_string = gca_get_event_datetime('times')) : ?>
                     <p class="govuk-body govuk-!-margin-left-5" data-testid="events-time">
                         <strong class="govuk-!-font-weight-bold">Time:</strong>
                         <?php echo esc_html($time_string); ?>
