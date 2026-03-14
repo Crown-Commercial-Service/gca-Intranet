@@ -41,51 +41,14 @@ get_template_part('template-parts/breadcrumbs');
             </div>
 
             <div class="event-details" data-testid="event-details">
-                <?php
-                    // 1. Retrieve raw data
-                    $raw_start_date = get_field('start_date');
-                    $raw_start_time = get_field('start_time'); // No fallback here so we can check if it exists
-                    $raw_end_date   = get_field('end_date');
-                    $raw_end_time   = get_field('end_time');
-
-                    $date_string = '';
-                    $time_string = '';
-
-                    if ($raw_start_date) {
-                        // Basic setup for Start
-                        $start_ts = strtotime($raw_start_date . ($raw_start_time ? " $raw_start_time" : ""));
-                        $date_string = date('j F Y', $start_ts);
-
-                        // --- TIME STRING LOGIC ---
-                        if ($raw_start_time && $raw_end_time) {
-                            // Scenario: Both times present
-                            $time_string = date('g:i a', strtotime($raw_start_time)) . ' to ' . date('g:i a', strtotime($raw_end_time));
-                        } elseif ($raw_start_time) {
-                            // Scenario: Only start time
-                            $time_string = date('g:i a', strtotime($raw_start_time));
-                        } elseif ($raw_end_time) {
-                            // Scenario: Only end time (rare but handled)
-                            $time_string = 'Until ' . date('g:i a', strtotime($raw_end_time));
-                        }
-
-                        // --- DATE STRING LOGIC (Ranges) ---
-                        if ($raw_end_date) {
-                            $end_ts = strtotime($raw_end_date);
-
-                            // Only append "to [End Date]" if it's actually a different day
-                            if (date('Ymd', $start_ts) !== date('Ymd', $end_ts)) {
-                                $date_string .= ' to ' . date('j F Y', $end_ts);
-                            }
-                        }
-                    }
-                ?>
                 <p class="govuk-body" data-testid="events-date">
-                    <strong class="govuk-!-font-weight-bold">Date:</strong>
-                     <?php echo esc_html($date_string); ?>
+                    <strong class="govuk-!-font-weight-bold">
+                        <?php echo esc_html(gca_get_formatted_event_date_or_time()); ?>
+                    </strong>
                 </p>
 
                 <?php
-                    if ($time_string) : ?>
+                    if ($time_string = gca_get_formatted_event_date_or_time(true)) : ?>
                     <p class="govuk-body govuk-!-margin-left-5" data-testid="events-time">
                         <strong class="govuk-!-font-weight-bold">Time:</strong>
                         <?php echo esc_html($time_string); ?>

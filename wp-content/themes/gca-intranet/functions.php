@@ -969,3 +969,79 @@ add_action('acf/input/admin_footer', function() {
 </script>
 <?php
 });
+
+/**
+ * Generates a formatted date/time string or just the time.
+ * * @param bool $time_only If true, returns only the time range. If false, returns date + time.
+ * @param int  $post_id   The ID of the post/event. Defaults to current post.
+ * @return string         The formatted string.
+ */
+function gca_get_formatted_event_date_or_time( $time_only = false, $post_id = null ) {
+    $post_id = $post_id ?: get_the_ID();
+
+    // 1. Retrieve raw data
+    $raw_start_date = get_field('start_date', $post_id);
+    $raw_start_time = get_field('start_time', $post_id);
+    $raw_end_date   = get_field('end_date', $post_id);
+    $raw_end_time   = get_field('end_time', $post_id);
+
+    // If no start date, we can't really do much
+    if ( ! $raw_start_date ) {
+        return '';
+    }
+
+    // 2. Build the Time String first (since it might be used alone)
+    $time_string = '';
+    if ( $raw_start_time && $raw_end_time ) {
+        $time_string = date('g:i a', strtotime($raw_start_time)) . ' to ' . date('g:i a', strtotime($raw_end_time));
+    } elseif ( $raw_start_time ) {
+        $time_string = date('g:i a', strtotime($raw_start_time));
+    } elseif ( $raw_end_time ) {
+        $time_string = 'Until ' . date('g:i a', strtotime($raw_end_time));
+    }
+
+    // 3. Return Logic
+    if ( $time_only ) {
+        return $time_string ?: '';
+    }
+
+    // 4. Build Full Date String
+    $start_ts    = strtotime($raw_start_date);
+    $date_string = date('jS F Y', $start_ts);
+
+    if ( $raw_end_date ) {
+        $end_ts = strtotime($raw_end_date);
+        if ( date('Ymd', $start_ts) !== date('Ymd', $end_ts) ) {
+            $date_string .= ' to ' . date('jS F Y', $end_ts);
+        }
+    }
+
+    // Combine Date and Time for the full view
+    return $date_string;
+}
+
+/**
+ * Force hide 'Layout – 1 column' from the dropdown
+ * Hooks in at priority 9999 to override Parent themes.
+ */
+add_filter('theme_page_templates', function($post_templates, $theme, $post, $post_type) {
+
+    // Define the filename we want to kill
+    $target_file = 'template-layout-1col.php';
+
+    // Search the array keys (filenames) for our target
+    foreach ( $post_templates as $file => $name ) {
+        // If the filename matches exactly OR ends with our filename (for subdirectories)
+        if ( $file === $target_file || substr($file, -strlen($target_file)) === $target_file ) {
+            unset($post_templates[$file]);
+        }
+    }
+
+    return $post_templates;
+}, 9999, 4);
+
+// Target specific post type templates if the general one fails
+add_filter('theme_event_templates', function($post_templates) {
+    unset($post_templates['template-layout-1col.php']);
+    return $post_templates;
+}, 9999);
