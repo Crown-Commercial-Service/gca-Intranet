@@ -30,25 +30,6 @@ class component_intro extends project_brick {
 
 		$this->add_field( new acf_fields\wysiwyg( 'Content', 'content', '202001031433b' ) );
 
-
-		$this->add_field( new acf_fields\text( 'Button label', 'cta_label', '202001031433d', [
-			'instructions' => 'Keep the text concise and under 140 characters (including spaces) so that it can be displayed for search engine results as the meta description.',
-			'maxlength' => 140
-		] ));
-		$this->add_field( new acf_fields\text( 'Button destination', 'cta_destination', '202001091136a', [
-			'instructions' => 'Leave the default value, `#js-contact-form` to take the user to the form section on the page.',
-			'default_value' => '#js-contact-form'
-		] ));
-
-
-		$this->add_field( new acf_fields\text( 'Secondary label', 'secondary_label', '202001091335a', [
-			'instructions' => 'Keep the CTA concise and under 140 characters (including spaces) so that it can be displayed for search engine results as the meta description.',
-			'maxlength' => 140
-		] ));
-		$this->add_field( new acf_fields\text( 'Secondary link', 'secondary_destination', '202001091136b', [
-			'instructions' => 'Link to a page on the same domain by writing e.g. /agreements',
-		] ));
-
 		$fc = new acf_fields\flexible_content( 'Media', 'media', '2020011440a', [
 			'button_label' => 'Add media to section',
 			'layout'       => 'row',
