@@ -50,7 +50,7 @@ get_template_part('template-parts/breadcrumbs');
             <div class="date_bottom" data-testid="blog-post-date">
               <span class="govuk-!-margin-right-2">
                 <?php echo esc_html(get_the_date('j F Y')); ?>
-            </span>
+              </span>
               <?php 
               $terms = get_the_terms(get_the_ID(), 'label');
 

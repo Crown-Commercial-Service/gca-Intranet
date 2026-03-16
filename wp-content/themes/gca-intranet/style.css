@@ -656,8 +656,7 @@ body.single-news .gca-taxonomy-tags .govuk-tag::after {
 }
 
 .news-image-wrap {
-  width: 140px;
-  min-width: 140px;
+  min-width: 240px;
   height: 140px;
   overflow: hidden;
   border-radius: 24px;
