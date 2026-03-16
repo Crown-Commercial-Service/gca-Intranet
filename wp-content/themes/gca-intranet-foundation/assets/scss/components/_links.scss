@@ -2,6 +2,22 @@
   #Links
 \*------------------------------------*/
 
+#main-content a:not(.govuk-button) {
+  color: #1d70b8;
+
+  &:hover {
+    color: #003078;
+  }
+
+  &:visited {
+    color: #4c2c92;
+  }
+
+  &:active {
+    color: #0b0c0c;
+  }
+}
+
 .ccs-heading-link a {
 
     display: inline-block;
