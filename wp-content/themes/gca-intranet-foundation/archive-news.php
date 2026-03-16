@@ -42,7 +42,7 @@ get_template_part('template-parts/breadcrumbs');
 
             <div class="gca-news-meta date_bottom" data-testid="news-post-meta">
               <span class="govuk-body-s govuk-!-margin-right-2">
-                <?php echo esc_html(get_the_date('jS F Y')); ?>
+                <?php echo esc_html(get_the_date('j F Y')); ?>
               </span>
 
               <div class="gca-taxonomy-tags" data-testid="news-post-tags">

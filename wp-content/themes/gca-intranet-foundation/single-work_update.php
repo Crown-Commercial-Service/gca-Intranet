@@ -49,7 +49,7 @@ get_template_part('template-parts/breadcrumbs');
                     
                     <div class="govuk-!-margin-bottom-5 govuk-!-margin-top-5" data-testid="work-update-date">
                         <span class="govuk-body-s govuk-!-margin-right-3">
-                            <?php echo esc_html(get_the_date('jS F Y')); ?>
+                            <?php echo esc_html(get_the_date('j F Y')); ?>
                         </span>
                         <?php
                         $terms = get_the_terms(get_the_ID(), 'label');
