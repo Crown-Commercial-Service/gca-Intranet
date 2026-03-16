@@ -969,3 +969,81 @@ add_action('acf/input/admin_footer', function() {
 </script>
 <?php
 });
+
+/**
+ * Universal Event Date/Time Formatter
+ * @param string $return  Options: 'dates', 'times', 'start_date', 'end_date', 'start_time', 'end_time', 'all'
+ * @param int    $post_id The ID of the post. Defaults to current loop ID.
+ *
+ * @return string         The formatted string based on the request.
+ */
+function gca_get_event_datetime( $return = 'dates', $post_id = null ) {
+    $post_id = $post_id ?: get_the_ID();
+
+    // 1. Retrieve raw data
+    $raw_start_date = get_field('start_date', $post_id);
+    $raw_start_time = get_field('start_time', $post_id);
+    $raw_end_date   = get_field('end_date', $post_id);
+    $raw_end_time   = get_field('end_time', $post_id);
+
+    // Safety: If no start date, return empty unless specifically asking for a time field
+    if ( ! $raw_start_date && in_array($return, ['dates', 'start_date', 'end_date', 'all'])) {
+        return '';
+    }
+
+    // 2. Format Individual Components
+    $f_start_date = $raw_start_date ? date('j F Y', strtotime($raw_start_date)) : '';
+    $f_end_date   = $raw_end_date   ? date('j F Y', strtotime($raw_end_date))   : '';
+    $f_start_time = $raw_start_time ? date('g:i a',  strtotime($raw_start_time)) : '';
+    $f_end_time   = $raw_end_time   ? date('g:i a',  strtotime($raw_end_time))   : '';
+
+    // 3. Process Logic for Ranges
+
+    // Time Range Logic
+    $time_range = '';
+    if ($f_start_time && $f_end_time) {
+        $time_range = "{$f_start_time} to {$f_end_time}";
+    } elseif ($f_start_time) {
+        $time_range = $f_start_time;
+    } elseif ($f_end_time) {
+        $time_range = "Until {$f_end_time}";
+    }
+
+    // Date Range Logic
+    $date_range = $f_start_date;
+    if ($f_end_date && $raw_start_date !== $raw_end_date) {
+        $date_range .= " to {$f_end_date}";
+    }
+
+    // 4. Return the Requested Option
+    switch ( $return ) {
+        case 'start_date': return $f_start_date;
+        case 'end_date':   return $f_end_date;
+        case 'start_time': return $f_start_time;
+        case 'end_time':   return $f_end_time;
+        case 'times':      return $time_range;
+        case 'all':        return $time_range ? "{$date_range} {$time_range}" : $date_range;
+        case 'dates':
+        default:           return $date_range;
+    }
+}
+
+/**
+ * Force hide 'Layout – 1 column' from the dropdown
+ * Hooks in at priority 9999 to override Parent themes.
+ */
+add_filter('theme_page_templates', function($post_templates, $theme, $post, $post_type) {
+
+    // Define the filename we want to kill
+    $target_file = 'template-layout-1col.php';
+
+    // Search the array keys (filenames) for our target
+    foreach ( $post_templates as $file => $name ) {
+        // If the filename matches exactly OR ends with our filename (for subdirectories)
+        if ( $file === $target_file || substr($file, -strlen($target_file)) === $target_file ) {
+            unset($post_templates[$file]);
+        }
+    }
+
+    return $post_templates;
+}, 9999, 4);

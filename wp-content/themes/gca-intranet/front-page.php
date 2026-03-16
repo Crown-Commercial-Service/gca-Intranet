@@ -320,16 +320,16 @@ get_header();
                 <div class="govuk-grid-column-one-half gca-work-update-card" data-testid="work-update-card">
                   <div class="govuk-grid-row gca-work-updates" data-testid="work-update-row">
                     <div class="govuk-grid-column-one-third" data-testid="work-update-avatar">
-                      <?php 
-                        $custome_author_img = get_field('image'); 
-                        
-                        if ($custome_author_img) : 
-                            echo wp_get_attachment_image($custome_author_img, 'thumbnail', false, ['class' => 'avatar']); 
-                        else : 
+                      <?php
+                        $custome_author_img = get_field('image');
+
+                        if ($custome_author_img) :
+                            echo wp_get_attachment_image($custome_author_img, 'thumbnail', false, ['class' => 'avatar']);
+                        else :
                             if ($avatar = get_avatar(get_the_author_meta('ID'))) :
                                 echo $avatar;
                             endif;
-                        endif; 
+                        endif;
                       ?>
                     </div>
 
@@ -344,7 +344,7 @@ get_header();
                       </h3>
 
                       <p class="govuk-body-s" data-testid="work-update-author">
-                        By 
+                        By
                         <?php
                           $author_name = get_the_author();
                           echo esc_html(mb_strlen($author_name) > 20 ? mb_substr($author_name, 0, 20) . '...' : $author_name);
@@ -413,16 +413,16 @@ get_header();
                     $blogs->the_post();
                     ?>
                     <div class="govuk-grid-column-one-third" data-testid="blogs-avatar">
-                      <?php 
-                        $custome_author_img = get_field('image'); 
-                        
-                        if ($custome_author_img) : 
-                            echo wp_get_attachment_image($custome_author_img, 'thumbnail', false, ['class' => 'avatar']); 
-                        else : 
+                      <?php
+                        $custome_author_img = get_field('image');
+
+                        if ($custome_author_img) :
+                            echo wp_get_attachment_image($custome_author_img, 'thumbnail', false, ['class' => 'avatar']);
+                        else :
                             if ($avatar = get_avatar(get_the_author_meta('ID'))) :
                                 echo $avatar;
                             endif;
-                        endif; 
+                        endif;
                       ?>
                     </div>
 
@@ -482,7 +482,7 @@ get_header();
     <?php
     $count_events = wp_count_posts('event')->publish;
     if ( $count_events ) : ?>
-      
+
       <div data-testid="event-section">
         <div class="gca-homepage-section-title" data-testid="latest-events-header">
           <h2 class="govuk-heading-m" data-testid="latest-events-heading">Events</h2>
@@ -495,14 +495,14 @@ get_header();
           $events = new WP_Query([
               'post_type'      => 'event',
               'posts_per_page' => 3,
-              'meta_key'       => 'start_datetime',
+              'meta_key'       => 'start_date',
               'orderby'        => 'meta_value',
               'order'          => 'ASC',
               'meta_query'     => [
                   [
-                      'key'     => 'start_datetime',
-                      'value'   => date('Y-m-d H:i:s'), 
-                      'compare' => '>=',                
+                      'key'     => 'start_date',
+                      'value'   => date('Y-m-d H:i:s'),
+                      'compare' => '>=',
                       'type'    => 'DATETIME'
                   ]
               ]
@@ -514,8 +514,9 @@ get_header();
               ?>
               <div class="govuk-grid-column-one-third gca-event-card" data-testid="events-card">
                 <div class="gca-events" data-testid="events-row">
-                    
-                  <p class="govuk-body-s gca-event-date" data-testid="events-date"> <?php echo esc_html(date('jS F Y', strtotime(get_field('start_datetime')))); ?> </p>
+                  <p class="govuk-body-s gca-event-date" data-testid="events-date">
+                    <?php echo esc_html(gca_get_event_datetime('start_date')); ?>
+                  </p>
                   <h3 class="govuk-heading-s" data-testid="events-title">
                     <a class="govuk-link govuk-!-text-break-word" href="<?php the_permalink(); ?>" data-testid="events-link">
                       <?php
@@ -526,7 +527,7 @@ get_header();
                   </h3>
 
                   <div class="gca-card-meta">
-                      <?php 
+                      <?php
                       $categories = get_the_category();
                       $locations = get_the_terms(get_the_ID(), 'event_location');
 
@@ -534,7 +535,7 @@ get_header();
                           <span class="govuk-body-s tag_label" data-testid="events-category">
                               <?php echo esc_html($categories[0]->name); ?>
                           </span>
-                      <?php endif; 
+                      <?php endif;
 
                       if ($locations) : ?>
                           <span class="govuk-body-s tag_label grey" data-testid="events-location">
@@ -566,11 +567,11 @@ get_header();
             </a>
           </p>
         </div>
-        
+
       </div>
-      
+
     <?php endif; ?>
-    
+
   </main>
 </div>
 

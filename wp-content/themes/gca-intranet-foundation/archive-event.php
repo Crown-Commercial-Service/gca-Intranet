@@ -33,17 +33,10 @@ get_template_part('template-parts/breadcrumbs');
                   </a>
                 </h2>
 
-                <?php
-                $start_datetime = get_field('start_datetime');
-                if ($start_datetime) {
-                  $dt = DateTime::createFromFormat('d-m-Y g:i a', $start_datetime);
-                  $formatted_date = $dt ? $dt->format('j F Y g:i a') : $start_datetime;
-                } else {
-                  $formatted_date = get_the_date('j F Y');
-                }
-                ?>
                 <p class="govuk-body govuk-!-margin-bottom-2" data-testid="archive-event-post-date">
-                  <strong><?php echo esc_html($formatted_date); ?></strong>
+                  <strong>
+                    <?php echo esc_html(gca_get_event_datetime('all')); ?>
+                  </strong>
                 </p>
 
                 <div class="govuk-body govuk-!-margin-bottom-3" data-testid="archive-event-post-excerpt">
