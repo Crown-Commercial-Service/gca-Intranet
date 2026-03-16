@@ -112,11 +112,10 @@
 /* Work updates */
 .gca-work-update-card {
   display: flex;
-  height: 260px;
   margin-bottom: govuk-spacing(4);
 
   @include govuk-media-query($from: tablet) {
-    height: 150px;
+    min-height: 150px;
     margin: 0;
   }
 }
