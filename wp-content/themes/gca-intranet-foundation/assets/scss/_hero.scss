@@ -2,8 +2,8 @@
 .gca-home-hero {
   position: relative;
   overflow: hidden;
-  padding: 56px 0;
-  background: #9fb9ff; /* base hero blue */
+  padding: 32px 0;
+  background: #95B4F9; /* base hero blue */
 }
 
 /* Big curved shape (like the design) */
@@ -45,7 +45,7 @@
 }
 
 .gca-home-hero-title {
-  font-size: clamp(46px, 4vw, 58px);
+  font-size: clamp(45px, 4vw, 58px);
   line-height: 1.05;
   font-weight: 800;
   margin: 0;

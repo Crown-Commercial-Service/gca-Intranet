@@ -1,14 +1,12 @@
 .tag_label {
     background-color: $gca-cream;
     width: auto;
-    border-radius: 10px;
-    padding: govuk-spacing(1) govuk-spacing(4);
-    margin-right: govuk-spacing(2);
-    margin-bottom: govuk-spacing(2);
+    border-radius: 16px;
+    padding: govuk-spacing(1) govuk-spacing(2);
     bottom: 5px;
 
     &.grey {
-        background-color: $gca-grey;
+        background-color: $gca-light-grey;
     }
 
     &.green {

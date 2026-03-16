@@ -12,7 +12,10 @@
 
 <body <?php body_class('govuk-template__body govuk-frontend-supported'); ?>>
 <?php wp_body_open(); ?>
-
+<!-- Google Tag Manager (noscript) -->
+<noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-P9TZ7BPX"
+height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
+<!-- End Google Tag Manager (noscript) -->
 <?php get_template_part('template-parts/cookie-banner'); ?>
 
 <header class="site-header" role="banner">
@@ -47,15 +50,16 @@
 
           <div class="gca-header-topbar-inner">
 
-            <nav class="utility-nav" aria-label="Utility navigation">
-              <ul class="utility-nav-list">
-                <li>
-                  <a class="govuk-link" href="<?php echo esc_url(get_theme_mod('gca_definition_finder_url', '#')); ?>">Definition finder</a>
-                </li>
-                <li>
-                  <a class="govuk-link" href="<?php echo esc_url(get_theme_mod('gca_staff_directory_url', '#')); ?>">Staff directory</a>
-                </li>
-              </ul>
+            <nav class="utility-nav" aria-label="Top bar navigation">
+              <?php
+                wp_nav_menu([
+                  'theme_location' => 'top_bar',
+                  'container'      => false,
+                  'menu_class'     => 'utility-nav-list',
+                  'fallback_cb'    => false,
+                  'depth'          => 1,
+                ]);
+              ?>
             </nav>
 
             <?php if (!is_search()) : ?>

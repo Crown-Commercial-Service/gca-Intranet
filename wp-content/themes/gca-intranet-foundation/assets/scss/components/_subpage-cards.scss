@@ -7,57 +7,31 @@
 .subpage-card-list {
 
     &.card-list {
-        display: flex;
-        flex-flow: row wrap;
-        align-items: stretch;
-    }
-
-    // Override base margin-top between stacked items (all breakpoints)
-    .card-list__item + .card-list__item {
-        margin-top: 0;
-    }
-
-    .card-list__item {
-        display: flex;
-        flex-direction: column;
-        float: none;
-        // Mobile: full-width stacking
-        width: 100%;
-        box-sizing: border-box;
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: govuk-px-to-rem(20);
         margin-bottom: 0;
 
         @include govuk-media-query($from: tablet) {
-            width: 49%;
-            margin-right: 2%;
-            margin-bottom: govuk-px-to-rem(40);
-
-            &:nth-child(2n) {
-                margin-right: 0;
-            }
-
-            // Last row: no bottom margin
-            &:nth-last-child(-n+2) {
-                margin-bottom: 0;
-            }
+            grid-template-columns: 1fr 1fr;
+            gap: govuk-px-to-rem(40) 2%;
         }
 
         @include govuk-media-query($from: 940) {
-            width: 30.6666%;
-            margin-right: 4%;
-
-            &:nth-child(2n) {
-                margin-right: 4%;
-            }
-
-            &:nth-child(3n) {
-                margin-right: 0;
-            }
-
-            // Last row: no bottom margin (covers 3 cols or fewer cards)
-            &:nth-last-child(-n+3) {
-                margin-bottom: 0;
-            }
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: govuk-px-to-rem(40) 4%;
         }
+    }
+
+    .card-list__item,
+    .card-list__item + .card-list__item {
+        display: flex;
+        flex-direction: column;
+        float: none;
+        clear: none;
+        width: auto;
+        margin: 0;
+        box-sizing: border-box;
     }
 
 }
@@ -72,6 +46,7 @@
     display: flex;
     flex-direction: column;
     flex: 1;
+    height: 100%;
     box-sizing: border-box;
 
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);

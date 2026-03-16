@@ -1,0 +1,23 @@
+.event_cta_button{
+    background-color: $gca-lime;
+    border-radius: 6px;
+}
+
+.event-details {
+    display: flex;
+    align-items: center; 
+    flex-wrap: wrap;
+}
+
+.event-details .govuk-body {
+    margin-bottom: 0;
+    white-space: nowrap;
+}
+
+.profile_img_wrapper {
+    padding-right: 40px;
+    
+    img {
+        border-radius: 50%;
+    }
+}

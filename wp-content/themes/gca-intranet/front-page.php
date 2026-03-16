@@ -132,7 +132,7 @@ get_header();
           <div class="see-more-link-homepage" data-testid="latest-news-see-more">
             <svg data-testid="latest-news-see-more-icon" xmlns="http://www.w3.org/2000/svg" width="16" height="22"
               fill="currentColor" class="bi bi-chevron-right govuk-!-padding-top-1"
-              viewBox="0 0 16 16" style="stroke: currentColor; stroke-width: 1.8;" aria-hidden="true" focusable="false">
+              viewBox="0 0 16 16" style="stroke: currentColor;" aria-hidden="true" focusable="false">
               <path fill-rule="evenodd"
                 d="M4.646 1.646a.5.5 0 0 1 .708 0l6 6a.5.5 0 0 1 0 .708l-6 6a.5.5 0 0 1-.708-.708L10.293 8 4.646 2.354a.5.5 0 0 1 0-.708" />
             </svg>
@@ -266,7 +266,7 @@ get_header();
                       height="22"
                       fill="currentColor"
                       viewBox="0 0 16 16"
-                      style="stroke: currentColor; stroke-width: 1.8;"
+                      style="stroke: currentColor;;"
                       aria-hidden="true"
                       focusable="false">
                       <path fill-rule="evenodd"
@@ -320,9 +320,17 @@ get_header();
                 <div class="govuk-grid-column-one-half gca-work-update-card" data-testid="work-update-card">
                   <div class="govuk-grid-row gca-work-updates" data-testid="work-update-row">
                     <div class="govuk-grid-column-one-third" data-testid="work-update-avatar">
-                      <?php if ($avatar = get_avatar(get_the_author_meta('ID'))): ?>
-                        <?php echo $avatar; ?>
-                      <?php endif; ?>
+                      <?php
+                        $custome_author_img = get_field('image');
+
+                        if ($custome_author_img) :
+                            echo wp_get_attachment_image($custome_author_img, 'thumbnail', false, ['class' => 'avatar']);
+                        else :
+                            if ($avatar = get_avatar(get_the_author_meta('ID'))) :
+                                echo $avatar;
+                            endif;
+                        endif;
+                      ?>
                     </div>
 
                     <div class="govuk-grid-column-two-thirds" data-testid="work-update-content">
@@ -330,13 +338,13 @@ get_header();
                         <a class="govuk-link govuk-!-text-break-word" href="<?php the_permalink(); ?>" data-testid="work-update-link">
                           <?php
                             $title = get_the_title();
-                            echo esc_html(mb_strlen($title) > 30 ? mb_substr($title, 0, 30) . '...' : $title);
+                            echo esc_html(mb_strlen($title) > 27 ? mb_substr($title, 0, 27) . '...' : $title);
                           ?>
                         </a>
                       </h3>
 
                       <p class="govuk-body-s" data-testid="work-update-author">
-                        By 
+                        By
                         <?php
                           $author_name = get_the_author();
                           echo esc_html(mb_strlen($author_name) > 20 ? mb_substr($author_name, 0, 20) . '...' : $author_name);
@@ -358,7 +366,7 @@ get_header();
             <div class="see-more-link-homepage" data-testid="work-updates-see-more">
               <svg data-testid="work-updates-see-more-icon" xmlns="http://www.w3.org/2000/svg" width="16" height="22"
                 fill="currentColor" class="bi bi-chevron-right govuk-!-padding-top-1" viewBox="0 0 16 16"
-                style="stroke: currentColor; stroke-width: 1.8;" aria-hidden="true" focusable="false">
+                style="stroke: currentColor;;" aria-hidden="true" focusable="false">
                 <path fill-rule="evenodd"
                   d="M4.646 1.646a.5.5 0 0 1 .708 0l6 6a.5.5 0 0 1 0 .708l-6 6a.5.5 0 0 1-.708-.708L10.293 8 4.646 2.354a.5.5 0 0 1 0-.708" />
               </svg>
@@ -405,9 +413,17 @@ get_header();
                     $blogs->the_post();
                     ?>
                     <div class="govuk-grid-column-one-third" data-testid="blogs-avatar">
-                      <?php if ($avatar = get_avatar(get_the_author_meta('ID'))): ?>
-                        <?php echo $avatar; ?>
-                      <?php endif; ?>
+                      <?php
+                        $custome_author_img = get_field('image');
+
+                        if ($custome_author_img) :
+                            echo wp_get_attachment_image($custome_author_img, 'thumbnail', false, ['class' => 'avatar']);
+                        else :
+                            if ($avatar = get_avatar(get_the_author_meta('ID'))) :
+                                echo $avatar;
+                            endif;
+                        endif;
+                      ?>
                     </div>
 
                     <div class="govuk-grid-column-two-thirds" data-testid="blogs-content">
@@ -445,7 +461,7 @@ get_header();
           <div class="see-more-link-homepage" data-testid="blogs-see-more">
             <svg data-testid="blogs-see-more-icon" xmlns="http://www.w3.org/2000/svg" width="16" height="22"
               fill="currentColor" class="bi bi-chevron-right govuk-!-padding-top-1" viewBox="0 0 16 16"
-              style="stroke: currentColor; stroke-width: 1.8;" aria-hidden="true" focusable="false">
+              style="stroke: currentColor;;" aria-hidden="true" focusable="false">
               <path fill-rule="evenodd"
                 d="M4.646 1.646a.5.5 0 0 1 .708 0l6 6a.5.5 0 0 1 0 .708l-6 6a.5.5 0 0 1-.708-.708L10.293 8 4.646 2.354a.5.5 0 0 1 0-.708" />
             </svg>
@@ -466,11 +482,23 @@ get_header();
     <?php
     $count_events = wp_count_posts('event')->publish;
     if ( $count_events ) : ?>
-      
+
       <div data-testid="event-section">
         <div class="gca-homepage-section-title" data-testid="latest-events-header">
-          <h2 class="govuk-heading-m" data-testid="latest-events-heading">Events</h2>
-          <p class="govuk-body" data-testid="latest-events-subheading">Get involve with our events</p>
+          <h2 class="govuk-heading-m" data-testid="latest-events-heading">
+          <?php
+          $events_title = trim((string) get_theme_mod('gca_events_title', __('Events', 'gca-intranet')));
+          echo esc_html($events_title !== '' ? $events_title : __('Events', 'gca-intranet'));
+          ?>
+          </h2>
+
+          <?php
+          $events_desc = trim((string) get_theme_mod('gca_events_desc', ''));
+          ?>
+
+          <p class="govuk-body" data-testid="latest-events-subheading">
+          <?php echo esc_html($events_desc !== '' ? $events_desc : 'Get involved with our events'); ?>
+          </p>
         </div>
 
 
@@ -479,14 +507,14 @@ get_header();
           $events = new WP_Query([
               'post_type'      => 'event',
               'posts_per_page' => 3,
-              'meta_key'       => 'start_datetime',
+              'meta_key'       => 'start_date',
               'orderby'        => 'meta_value',
               'order'          => 'ASC',
               'meta_query'     => [
                   [
-                      'key'     => 'start_datetime',
-                      'value'   => date('Y-m-d H:i:s'), 
-                      'compare' => '>=',                
+                      'key'     => 'start_date',
+                      'value'   => date('Y-m-d H:i:s'),
+                      'compare' => '>=',
                       'type'    => 'DATETIME'
                   ]
               ]
@@ -498,8 +526,9 @@ get_header();
               ?>
               <div class="govuk-grid-column-one-third gca-event-card" data-testid="events-card">
                 <div class="gca-events" data-testid="events-row">
-                    
-                  <p class="govuk-body-s" data-testid="events-date"> <?php echo esc_html(date('jS F Y', strtotime(get_field('start_datetime')))); ?> </p>
+                  <p class="govuk-body-s gca-event-date" data-testid="events-date">
+                    <?php echo esc_html(gca_get_event_datetime('start_date')); ?>
+                  </p>
                   <h3 class="govuk-heading-s" data-testid="events-title">
                     <a class="govuk-link govuk-!-text-break-word" href="<?php the_permalink(); ?>" data-testid="events-link">
                       <?php
@@ -510,18 +539,18 @@ get_header();
                   </h3>
 
                   <div class="gca-card-meta">
-                      <?php 
+                      <?php
                       $categories = get_the_category();
                       $locations = get_the_terms(get_the_ID(), 'event_location');
 
                       if ($categories && $categories[0]->name !== 'Uncategorized') : ?>
-                          <span class="govuk-body-s tag_label">
+                          <span class="govuk-body-s tag_label" data-testid="events-category">
                               <?php echo esc_html($categories[0]->name); ?>
                           </span>
-                      <?php endif; 
+                      <?php endif;
 
                       if ($locations) : ?>
-                          <span class="govuk-body-s tag_label grey">
+                          <span class="govuk-body-s tag_label grey" data-testid="events-location">
                               <?php echo esc_html($locations[0]->name); ?>
                           </span>
                       <?php endif; ?>
@@ -539,7 +568,7 @@ get_header();
         <div class="see-more-link-homepage" data-testid="events-see-more">
           <svg data-testid="events-see-more-icon" xmlns="http://www.w3.org/2000/svg" width="16" height="22"
             fill="currentColor" class="bi bi-chevron-right govuk-!-padding-top-1" viewBox="0 0 16 16"
-            style="stroke: currentColor; stroke-width: 1.8;">
+            style="stroke: currentColor;;">
             <path fill-rule="evenodd"
               d="M4.646 1.646a.5.5 0 0 1 .708 0l6 6a.5.5 0 0 1 0 .708l-6 6a.5.5 0 0 1-.708-.708L10.293 8 4.646 2.354a.5.5 0 0 1 0-.708" />
           </svg>
@@ -550,11 +579,11 @@ get_header();
             </a>
           </p>
         </div>
-        
+
       </div>
-      
+
     <?php endif; ?>
-    
+
   </main>
 </div>
 

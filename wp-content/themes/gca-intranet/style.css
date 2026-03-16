@@ -41,7 +41,8 @@ Text Domain: gca-intranet
 
 @media (min-width: 1024px) {
   .govuk-width-container {
-    max-width: 1024px;
+    width: 100%;
+    max-width: 1280px;
     min-width: 600px;
   }
 }
@@ -54,7 +55,7 @@ Text Domain: gca-intranet
   position: relative;
   overflow: hidden;
   padding: 56px 0;
-  background: #9fb9ff;
+  background: #95B4F9;
 }
 
 .gca-home-hero::after {
@@ -90,13 +91,6 @@ Text Domain: gca-intranet
 
 .gca-home-hero-kicker {
   font-size: 18px;
-  margin: 0;
-}
-
-.gca-home-hero-title {
-  font-size: clamp(46px, 4vw, 58px);
-  line-height: 1.05;
-  font-weight: 800;
   margin: 0;
 }
 
@@ -574,7 +568,7 @@ body.single-news .gca-taxonomy-tags .govuk-tag::after {
   top: 0;
   height: 100%;
   width: 6px;
-  background: #9fb9ff;
+  background: #95B4F9;
   border-top-left-radius: 6px;
   border-bottom-left-radius: 6px;
 }
@@ -662,8 +656,7 @@ body.single-news .gca-taxonomy-tags .govuk-tag::after {
 }
 
 .news-image-wrap {
-  width: 140px;
-  min-width: 140px;
+  min-width: 240px;
   height: 140px;
   overflow: hidden;
   border-radius: 24px;
@@ -742,15 +735,6 @@ body.single-news .gca-taxonomy-tags .govuk-tag::after {
 .news-card .gca-taxonomy-tags .govuk-tag--grey {
   background: #d9d9d9;
   color: #0b0c0c;
-}
-
-/* =========================================================
-   Homepage blog/work update avatars
-   ========================================================= */
-
-.gca-work-updates img.avatar,
-.gca-blogs-card img.avatar {
-  border-radius: 12px;
 }
 
 /* =========================================================

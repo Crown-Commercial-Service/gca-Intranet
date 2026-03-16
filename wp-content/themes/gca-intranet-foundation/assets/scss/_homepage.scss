@@ -2,6 +2,10 @@
    Homepage components
    ============================================================ */
 
+[data-testid="home-width-container"] {
+  max-width: 1280px;
+}
+
 .gca-featured-news {
   border: 1px solid $gca-border-mid;
   border-bottom: 0.375rem solid $gca-accent-lime;
@@ -58,6 +62,11 @@
 .gca-small-list-news {
   height: 100%;
   border-bottom: 1px solid $gca-border-mid;
+
+  img {
+    width: 100%;
+    object-fit: cover;
+  }
 }
 
 .gca-first-small-list-news {
@@ -107,11 +116,10 @@
 /* Work updates */
 .gca-work-update-card {
   display: flex;
-  height: 260px;
   margin-bottom: govuk-spacing(4);
 
   @include govuk-media-query($from: tablet) {
-    height: 150px;
+    min-height: 150px;
     margin: 0;
   }
 }
@@ -160,6 +168,14 @@
   }
 }
 
+// Increase gap between section columns
+[data-testid="take-a-look-column"],
+[data-testid="blogs-column"] {
+  @include govuk-media-query($from: tablet) {
+    padding-left: govuk-spacing(6);
+  }
+}
+
 /* ============================================================
    GI-100: Homepage-only "Take a look"
    - Single card only (kills inner panel)
@@ -168,8 +184,14 @@
    - Prevent overflow + stop icon leaking into next component
    ============================================================ */
 
+[data-testid='take-a-look-card'] {
+  height: auto !important;
+}
+
 [data-testid='take-a-look-column'] {
   overflow: hidden; /* safety net */
+  display: flex;
+  flex-direction: column;
 
   .gca-take-a-look,
   .gca-take-a-look__content,
@@ -280,6 +302,14 @@
   border-radius: 15px;
   position: relative;
 
+  .gca-event-date{
+    margin-bottom: govuk-spacing(5);
+
+    @include govuk-media-query($from: tablet) {
+      margin-bottom: 0px;
+    }
+  }
+  
   @include govuk-media-query($from: tablet) {
     padding-top: govuk-spacing(5);
     height: auto;

@@ -11,6 +11,9 @@ if (!$author && !$modified_date) {
   return;
 }
 ?>
+<?php
+  $hide_last_updated = $args['hide_last_updated'] ?? false;
+?>
 
 <div class="gca-published-by" data-testid="published-by">
   <hr class="gca-published-by__divider" aria-hidden="true">
@@ -21,7 +24,7 @@ if (!$author && !$modified_date) {
       </span>
     <?php endif; ?>
 
-    <?php if ($modified_date) : ?>
+    <?php if ($modified_date and !$hide_last_updated) : ?>
       <span class="gca-published-by__date" data-testid="published-by-date">
         Last updated <?php echo esc_html($modified_date); ?>
       </span>

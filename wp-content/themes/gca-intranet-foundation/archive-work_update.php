@@ -1,9 +1,11 @@
 <?php get_header(); ?>
 
 <?php
+$hero_image_url = get_template_directory_uri() . '/assets/img/office.jpg';
+
 get_template_part('template-parts/hero', null, [
   'title'     => post_type_archive_title('', false),
-  'image_url' => '',
+  'image_url' => $hero_image_url
 ]);
 
 get_template_part('template-parts/breadcrumbs');
@@ -15,12 +17,20 @@ get_template_part('template-parts/breadcrumbs');
     <?php if (have_posts()) : ?>
 
       <?php while (have_posts()) : the_post(); ?>
-        <article class="work-update-box flex" data-testid="work-update-post">
+        <article class="work-update-box" data-testid="work-update-post">
 
           <div class="work_update_profile_img" >
-            <?php if ($avatar = get_avatar(get_the_author_meta('ID'))): ?>
-              <?php echo $avatar; ?>
-            <?php endif; ?>
+            <?php 
+              $custome_author_img = get_field('image'); 
+              
+              if ($custome_author_img) : 
+                  echo wp_get_attachment_image($custome_author_img, 'thumbnail', false, ['class' => 'avatar']); 
+              else : 
+                  if ($avatar = get_avatar(get_the_author_meta('ID'))) :
+                      echo $avatar;
+                  endif;
+              endif; 
+            ?>
           </div>
 
           <div>
@@ -38,7 +48,28 @@ get_template_part('template-parts/breadcrumbs');
             </p>
 
             <p class="date_bottom" data-testid="work-update-post-date">
-              <?php echo esc_html(get_the_date('jS F Y')); ?>
+              <?php echo esc_html(get_the_date('j F Y')); ?>
+
+              <?php 
+              $terms = get_the_terms(get_the_ID(), 'label');
+
+              if ($terms && !is_wp_error($terms)) : 
+                $term = array_shift($terms); ?>
+                <span class="govuk-body-s tag_label green">
+                    <?php echo esc_html($term->name); ?>
+                </span>
+              <?endif; ?>
+
+              <?php 
+              $teams = get_the_terms(get_the_ID(), 'responsible_team');
+
+              if ($teams && !is_wp_error($teams)) : 
+                $team = array_shift($teams); ?>
+                <span class="govuk-body-s tag_label grey">
+                    <?php echo esc_html($team->name); ?>
+                </span>
+              <?php endif; ?>
+
             </p>
           </div>
 

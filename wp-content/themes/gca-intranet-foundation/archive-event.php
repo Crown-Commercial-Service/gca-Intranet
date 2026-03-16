@@ -33,17 +33,10 @@ get_template_part('template-parts/breadcrumbs');
                   </a>
                 </h2>
 
-                <?php
-                $start_datetime = get_field('start_datetime');
-                if ($start_datetime) {
-                  $dt = DateTime::createFromFormat('d-m-Y g:i a', $start_datetime);
-                  $formatted_date = $dt ? $dt->format('jS F Y g:i a') : $start_datetime;
-                } else {
-                  $formatted_date = get_the_date('jS F Y');
-                }
-                ?>
                 <p class="govuk-body govuk-!-margin-bottom-2" data-testid="archive-event-post-date">
-                  <strong><?php echo esc_html($formatted_date); ?></strong>
+                  <strong>
+                    <?php echo esc_html(gca_get_event_datetime('all')); ?>
+                  </strong>
                 </p>
 
                 <div class="govuk-body govuk-!-margin-bottom-3" data-testid="archive-event-post-excerpt">
@@ -54,11 +47,14 @@ get_template_part('template-parts/breadcrumbs');
                   <?php
                   $event_categories = get_the_terms(get_the_ID(), 'category');
                   if ($event_categories && !is_wp_error($event_categories)) :
-                    foreach ($event_categories as $i => $cat) : ?>
-                      <span class="tag_label <?php echo $i === 0 ? 'grey' : 'green'; ?> govuk-body-s" data-testid="archive-event-post-category">
+                    $visible_i = 0;
+                    foreach ($event_categories as $cat) :
+                      if (strtolower($cat->name) === 'uncategorized' || strtolower($cat->name) === 'uncategorised') continue; ?>
+                      <span class="tag_label <?php echo $visible_i === 0 ? 'grey' : 'green'; ?> govuk-body-s" data-testid="archive-event-post-category">
                         <?php echo esc_html($cat->name); ?>
                       </span>
-                    <?php endforeach;
+                      <?php $visible_i++;
+                    endforeach;
                   endif; ?>
 
                   <?php

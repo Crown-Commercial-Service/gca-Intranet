@@ -74,10 +74,6 @@ body {
     }
 }
 
-.govuk-link:link {
-  color: inherit;
-}
-
 /* --- Desktop / Header Layout --- */
 .gca-header-main-row {
     display: flex;
@@ -100,7 +96,6 @@ body {
     flex-direction: column; /* Stack vertically by default (mobile) */
     align-items: end;
     gap: 15px;
-    margin-right: 28px;
 }
 
 /* --- Search Bar Styling --- */
@@ -324,6 +319,7 @@ body {
     justify-content: flex-end;
     gap: 2.5rem;
     position: relative; 
+    padding: 40px;
 }
 
 /* --- DESKTOP (992px and up) --- */
