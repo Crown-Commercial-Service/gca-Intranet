@@ -50,6 +50,7 @@ get_template_part('template-parts/breadcrumbs');
                 $categories = get_the_terms(get_the_ID(), 'category');
                 if ($categories && !is_wp_error($categories)) :
                   foreach ($categories as $category) :
+                    if (strtolower($category->name) === 'uncategorized' || strtolower($category->name) === 'uncategorised') continue;
                 ?>
                   <span class="govuk-tag govuk-tag--green">
                     <?php echo esc_html($category->name); ?>

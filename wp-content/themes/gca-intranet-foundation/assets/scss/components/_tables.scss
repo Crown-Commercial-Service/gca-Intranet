@@ -2,6 +2,61 @@
   #Tables
 \*------------------------------------*/
 
+.tablepress {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: govuk-spacing(6);
+    font-family: inherit;
+
+    thead th {
+        background-color: $gca-blue;
+        color: #ffffff;
+        font-weight: 700;
+        padding: 12px 16px;
+        text-align: left;
+        border: none;
+    }
+
+    tbody tr {
+        &:nth-child(odd) {
+            background-color: #f8f9fa;
+        }
+
+        &:nth-child(even) {
+            background-color: #ffffff;
+        }
+
+        &:hover {
+            background-color: rgba($gca-blue, 0.1);
+        }
+    }
+
+    tbody td {
+        padding: 12px 16px;
+        border-bottom: 1px solid $gca-border-grey;
+        vertical-align: top;
+        color: $gca-black;
+    }
+
+    tfoot td {
+        background-color: $gca-blue-2;
+        color: $gca-black;
+        font-weight: 700;
+        padding: 12px 16px;
+        border-top: 2px solid $gca-blue;
+    }
+}
+
+.tablepress-scroll-wrapper {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    margin-bottom: govuk-spacing(6);
+
+    .tablepress {
+        margin-bottom: 0;
+    }
+}
+
 .govuk-table__cell--noborder {
 
     border-bottom: 0;

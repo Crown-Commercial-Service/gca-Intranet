@@ -54,11 +54,14 @@ get_template_part('template-parts/breadcrumbs');
                   <?php
                   $event_categories = get_the_terms(get_the_ID(), 'category');
                   if ($event_categories && !is_wp_error($event_categories)) :
-                    foreach ($event_categories as $i => $cat) : ?>
-                      <span class="tag_label <?php echo $i === 0 ? 'grey' : 'green'; ?> govuk-body-s" data-testid="archive-event-post-category">
+                    $visible_i = 0;
+                    foreach ($event_categories as $cat) :
+                      if (strtolower($cat->name) === 'uncategorized' || strtolower($cat->name) === 'uncategorised') continue; ?>
+                      <span class="tag_label <?php echo $visible_i === 0 ? 'grey' : 'green'; ?> govuk-body-s" data-testid="archive-event-post-category">
                         <?php echo esc_html($cat->name); ?>
                       </span>
-                    <?php endforeach;
+                      <?php $visible_i++;
+                    endforeach;
                   endif; ?>
 
                   <?php
