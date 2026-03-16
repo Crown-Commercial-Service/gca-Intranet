@@ -49,6 +49,27 @@ get_template_part('template-parts/breadcrumbs');
 
             <p class="date_bottom" data-testid="work-update-post-date">
               <?php echo esc_html(get_the_date('j F Y')); ?>
+
+              <?php 
+              $terms = get_the_terms(get_the_ID(), 'label');
+
+              if ($terms && !is_wp_error($terms)) : 
+                $term = array_shift($terms); ?>
+                <span class="govuk-body-s tag_label green">
+                    <?php echo esc_html($term->name); ?>
+                </span>
+              <?endif; ?>
+
+              <?php 
+              $teams = get_the_terms(get_the_ID(), 'responsible_team');
+
+              if ($teams && !is_wp_error($teams)) : 
+                $team = array_shift($teams); ?>
+                <span class="govuk-body-s tag_label grey">
+                    <?php echo esc_html($team->name); ?>
+                </span>
+              <?php endif; ?>
+
             </p>
           </div>
 
