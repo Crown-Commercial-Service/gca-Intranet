@@ -688,42 +688,42 @@ add_action('customize_register', function (\WP_Customize_Manager $wp_customize):
     ],
     'priority'    => 200,
   ]);
+
+  // ============================================================
+  // Events (Customizer) — order: 6th on homepage
+  // ============================================================
+
+  $wp_customize->add_setting('gca_events_title', [
+    'default'           => __('Events', 'gca-intranet'),
+    'sanitize_callback' => 'gca_sanitize_home_text',
+    'transport'         => 'refresh',
+  ]);
+
+  $wp_customize->add_control('gca_events_title', [
+    'type'     => 'text',
+    'section'  => $section,
+    'label'    => __('Events: title', 'gca-intranet'),
+    'priority' => 210,
+  ]);
+
+  $wp_customize->add_setting('gca_events_desc', [
+    'default'           => 'Get involved with our events',
+    'sanitize_callback' => 'gca_sanitize_home_desc_40',
+    'transport'         => 'refresh',
+  ]);
+
+  $wp_customize->add_control('gca_events_desc', [
+    'type'        => 'textarea',
+    'section'     => $section,
+    'label'       => __('Events: description', 'gca-intranet'),
+    'description' => __('Text shown under the “Events” heading on the homepage. Max 40 characters.', 'gca-intranet'),
+    'input_attrs' => [
+      'maxlength' => 40,
+      'rows'      => 2,
+    ],
+    'priority'    => 220,
+  ]);
 });
-
-// ============================================================
-// Events (Customizer) — order: 6th on homepage
-// ============================================================
-
-$wp_customize->add_setting('gca_events_title', [
-  'default'           => __('Events', 'gca-intranet'),
-  'sanitize_callback' => 'gca_sanitize_home_text',
-  'transport'         => 'refresh',
-]);
-
-$wp_customize->add_control('gca_events_title', [
-  'type'     => 'text',
-  'section'  => $section,
-  'label'    => __('Events: title', 'gca-intranet'),
-  'priority' => 210,
-]);
-
-$wp_customize->add_setting('gca_events_desc', [
-  'default'           => 'Get involved with our events',
-  'sanitize_callback' => 'gca_sanitize_home_desc_40',
-  'transport'         => 'refresh',
-]);
-
-$wp_customize->add_control('gca_events_desc', [
-  'type'        => 'textarea',
-  'section'     => $section,
-  'label'       => __('Events: description', 'gca-intranet'),
-  'description' => __('Text shown under the “Events” heading on the homepage. Max 40 characters.', 'gca-intranet'),
-  'input_attrs' => [
-    'maxlength' => 40,
-    'rows'      => 2,
-  ],
-  'priority'    => 220,
-]);
 
 /**
  * Customizer UI: character counter for Take a look link text

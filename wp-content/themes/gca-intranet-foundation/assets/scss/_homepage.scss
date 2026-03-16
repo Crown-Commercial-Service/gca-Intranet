@@ -2,6 +2,10 @@
    Homepage components
    ============================================================ */
 
+[data-testid="home-width-container"] {
+  max-width: 1280px;
+}
+
 .gca-featured-news {
   border: 1px solid $gca-border-mid;
   border-bottom: 0.375rem solid $gca-accent-lime;
@@ -161,6 +165,14 @@
     .vr {
       display: block;
     }
+  }
+}
+
+// Increase gap between section columns
+[data-testid="take-a-look-column"],
+[data-testid="blogs-column"] {
+  @include govuk-media-query($from: tablet) {
+    padding-left: govuk-spacing(6);
   }
 }
 
