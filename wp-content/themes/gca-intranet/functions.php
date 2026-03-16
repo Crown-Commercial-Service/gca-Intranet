@@ -1047,9 +1047,3 @@ add_filter('theme_page_templates', function($post_templates, $theme, $post, $pos
 
     return $post_templates;
 }, 9999, 4);
-
-// Target specific post type templates if the general one fails
-add_filter('theme_event_templates', function($post_templates) {
-    unset($post_templates['template-layout-1col.php']);
-    return $post_templates;
-}, 9999);
