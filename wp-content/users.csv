@@ -1,0 +1,3 @@
+user_login,user_email,first_name,last_name,role
+jdoe,john.doe@example.com,John,Doe,subscriber
+asmith,ann.smith@example.com,Ann,Smith,subscriber
