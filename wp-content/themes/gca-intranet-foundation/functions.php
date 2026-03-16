@@ -338,6 +338,9 @@ function gca_search_get_post_terms(): array
         $terms = get_the_terms($post_id, $tax_name);
         if (!empty($terms) && !is_wp_error($terms)) {
             foreach ($terms as $term) {
+                if (strtolower($term->name) === 'uncategorized' || strtolower($term->name) === 'uncategorised') {
+                    continue;
+                }
                 $all[] = $term;
             }
         }
