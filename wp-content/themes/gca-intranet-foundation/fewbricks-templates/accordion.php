@@ -69,6 +69,12 @@ $search_id    = 'glossary-search-' . $instance_id;
                 </div>
             <?php endif; ?>
 
+            <?php if ($enable_search) : ?>
+            <p class="govuk-body govuk-!-margin-top-4" id="<?php echo esc_attr($accordion_id); ?>-no-results" style="display:none;" aria-live="polite">
+                No results found. Try a different search term.
+            </p>
+            <?php endif; ?>
+
             <div class="govuk-accordion ccs-accordion govuk-!-margin-top-4" data-module="govuk-accordion" id="<?php echo esc_attr($accordion_id); ?>">
 
                 <?php if (!empty($items)) : ?>
@@ -118,13 +124,25 @@ $search_id    = 'glossary-search-' . $instance_id;
         var accordion = document.getElementById('<?php echo esc_js($accordion_id); ?>');
         if (!accordion) return;
 
+        var noResults = document.getElementById('<?php echo esc_js($accordion_id); ?>-no-results');
+        var showAllBtn = accordion.querySelector('.govuk-accordion__show-all');
+
         var sections = accordion.querySelectorAll('.govuk-accordion__section');
+        var visibleCount = 0;
         sections.forEach(function (section) {
             var btn = section.querySelector('.govuk-accordion__section-button');
             if (!btn) return;
             var title = btn.textContent.trim().toLowerCase();
-            section.style.display = (!query || title.indexOf(query) !== -1) ? '' : 'none';
+            var contentEl = section.querySelector('.govuk-accordion__section-content');
+            var content = contentEl ? contentEl.textContent.trim().toLowerCase() : '';
+            var matches = !query || title.indexOf(query) !== -1 || content.indexOf(query) !== -1;
+            section.style.display = matches ? '' : 'none';
+            if (matches) visibleCount++;
         });
+
+        var hasNoResults = query && visibleCount === 0;
+        if (noResults) noResults.style.display = hasNoResults ? '' : 'none';
+        if (showAllBtn) showAllBtn.style.display = hasNoResults ? 'none' : '';
     });
 }());
 </script>
