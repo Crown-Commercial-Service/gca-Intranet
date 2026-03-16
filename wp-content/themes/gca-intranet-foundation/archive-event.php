@@ -35,33 +35,7 @@ get_template_part('template-parts/breadcrumbs');
 
                 <p class="govuk-body govuk-!-margin-bottom-2" data-testid="archive-event-post-date">
                   <strong>
-                    <?php 
-                      $start_d = get_field('start_date');
-                      $end_d   = get_field('end_date');
-                      $start_t = get_field('start_time');
-                      $end_t   = get_field('end_time');
-
-                      // 1. Build the Date string
-                      $display = date('jS F Y', strtotime($start_d));
-                      if ($end_d && $end_d !== $start_d) {
-                          $display .= ' to ' . date('jS F Y', strtotime($end_d));
-                      }
-
-                      // 2. Build and append the Time string
-                      if ($start_t || $end_t) {
-                          $display .= ', '; // Separator between date and time
-                          
-                          if ($start_t && $end_t) {
-                              $display .= date('g:i a', strtotime($start_t)) . ' to ' . date('g:i a', strtotime($end_t));
-                          } elseif ($start_t) {
-                              $display .= date('g:i a', strtotime($start_t));
-                          } else {
-                              $display .= 'Until ' . date('g:i a', strtotime($end_t));
-                          }
-                      }
-
-                      echo esc_html($display); 
-                    ?>
+                    <?php echo esc_html(gca_get_event_datetime('all')); ?>
                   </strong>
                 </p>
 

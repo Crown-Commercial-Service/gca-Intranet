@@ -43,8 +43,9 @@ get_template_part('template-parts/breadcrumbs');
             <div class="event-details" data-testid="event-details">
                 <p class="govuk-body" data-testid="events-date">
                     <strong class="govuk-!-font-weight-bold">
-                        <?php echo esc_html(gca_get_event_datetime('dates')); ?>
+                        Date:
                     </strong>
+                        <?php echo esc_html(gca_get_event_datetime('dates')); ?>
                 </p>
 
                 <?php if ($time_string = gca_get_event_datetime('times')) : ?>

@@ -992,8 +992,8 @@ function gca_get_event_datetime( $return = 'dates', $post_id = null ) {
     }
 
     // 2. Format Individual Components
-    $f_start_date = $raw_start_date ? date('jS F Y', strtotime($raw_start_date)) : '';
-    $f_end_date   = $raw_end_date   ? date('jS F Y', strtotime($raw_end_date))   : '';
+    $f_start_date = $raw_start_date ? date('j F Y', strtotime($raw_start_date)) : '';
+    $f_end_date   = $raw_end_date   ? date('j F Y', strtotime($raw_end_date))   : '';
     $f_start_time = $raw_start_time ? date('g:i a',  strtotime($raw_start_time)) : '';
     $f_end_time   = $raw_end_time   ? date('g:i a',  strtotime($raw_end_time))   : '';
 
@@ -1022,7 +1022,7 @@ function gca_get_event_datetime( $return = 'dates', $post_id = null ) {
         case 'start_time': return $f_start_time;
         case 'end_time':   return $f_end_time;
         case 'times':      return $time_range;
-        case 'all':        return $time_range ? "{$date_range}, {$time_range}" : $date_range;
+        case 'all':        return $time_range ? "{$date_range} {$time_range}" : $date_range;
         case 'dates':
         default:           return $date_range;
     }
