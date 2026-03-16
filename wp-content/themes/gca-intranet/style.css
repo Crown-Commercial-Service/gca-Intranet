@@ -42,7 +42,7 @@ Text Domain: gca-intranet
 @media (min-width: 1024px) {
   .govuk-width-container {
     width: 100%;
-    max-width: 1024px;
+    max-width: 1280px;
     min-width: 600px;
   }
 }
@@ -55,7 +55,7 @@ Text Domain: gca-intranet
   position: relative;
   overflow: hidden;
   padding: 56px 0;
-  background: #9fb9ff;
+  background: #95B4F9;
 }
 
 .gca-home-hero::after {
@@ -568,7 +568,7 @@ body.single-news .gca-taxonomy-tags .govuk-tag::after {
   top: 0;
   height: 100%;
   width: 6px;
-  background: #9fb9ff;
+  background: #95B4F9;
   border-top-left-radius: 6px;
   border-bottom-left-radius: 6px;
 }
