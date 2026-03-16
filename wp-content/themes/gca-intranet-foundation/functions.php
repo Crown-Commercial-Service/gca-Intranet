@@ -6,6 +6,7 @@ if (!defined('ABSPATH')) {
 }
 
 require_once get_template_directory() . '/inc/class-ccs-mega-menu-walker.php';
+require_once get_template_directory() . '/inc/shortcodes.php';
 
 /**
  * Theme setup
@@ -16,6 +17,7 @@ add_action('after_setup_theme', function (): void {
 
     add_theme_support('title-tag');
     add_theme_support('post-thumbnails');
+    add_post_type_support('page', 'excerpt');
 
     // Allow WP admin to set a site logo (Customizer)
     add_theme_support('custom-logo', [
@@ -40,8 +42,8 @@ add_action('after_setup_theme', function (): void {
 
     register_nav_menus([
         'primary'      => __('Primary Navigation', 'gca-intranet'),
+        'top_bar'      => __('Top Bar menu', 'gca-intranet'),
         'footer_legal' => __('Footer legal links', 'gca-intranet'),
-        'footer'       => __('Footer Navigation (legacy)', 'gca-intranet'),
     ]);
 });
 
@@ -336,6 +338,9 @@ function gca_search_get_post_terms(): array
         $terms = get_the_terms($post_id, $tax_name);
         if (!empty($terms) && !is_wp_error($terms)) {
             foreach ($terms as $term) {
+                if (strtolower($term->name) === 'uncategorized' || strtolower($term->name) === 'uncategorised') {
+                    continue;
+                }
                 $all[] = $term;
             }
         }

@@ -1,9 +1,11 @@
 <?php get_header(); ?>
 
 <?php
+$hero_image_url = get_template_directory_uri() . '/assets/img/office.jpg';
+
 get_template_part('template-parts/hero', null, [
   'title'     => post_type_archive_title('', false),
-  'image_url' => '',
+  'image_url' => $hero_image_url
 ]);
 
 get_template_part('template-parts/breadcrumbs');
@@ -15,12 +17,20 @@ get_template_part('template-parts/breadcrumbs');
     <?php if (have_posts()) : ?>
 
       <?php while (have_posts()) : the_post(); ?>
-        <article class="blog-box flex" data-testid="blog-post">
+        <article class="blog-box" data-testid="blog-post">
 
           <div class="blog_profile_img" >
-            <?php if ($avatar = get_avatar(get_the_author_meta('ID'))): ?>
-              <?php echo $avatar; ?>
-            <?php endif; ?>
+            <?php 
+              $custome_author_img = get_field('image'); 
+              
+              if ($custome_author_img) : 
+                  echo wp_get_attachment_image($custome_author_img, 'thumbnail', false, ['class' => 'avatar']); 
+              else : 
+                  if ($avatar = get_avatar(get_the_author_meta('ID'))) :
+                      echo $avatar;
+                  endif;
+              endif; 
+            ?>
           </div>
 
           <div>
@@ -39,14 +49,14 @@ get_template_part('template-parts/breadcrumbs');
 
             <div class="date_bottom" data-testid="blog-post-date">
               <span class="govuk-!-margin-right-2">
-                <?php echo esc_html(get_the_date('jS F Y')); ?>
+                <?php echo esc_html(get_the_date('j F Y')); ?>
             </span>
               <?php 
               $terms = get_the_terms(get_the_ID(), 'label');
 
               if ($terms && !is_wp_error($terms)) : 
                 $term = array_shift($terms); ?>
-                <span class="govuk-body tag_label location">
+                <span class="govuk-body-s tag_label location">
                     <?php echo esc_html($term->name); ?>
                 </span>
               <?php endif; ?>

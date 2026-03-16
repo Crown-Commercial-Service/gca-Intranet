@@ -32,3 +32,11 @@ if (!defined('WP_MEMORY_LIMIT')) {
 if (!defined('WP_MAX_MEMORY_LIMIT')) {
     define('WP_MAX_MEMORY_LIMIT', '1024M');
 }
+
+/**
+ * Playwright Test Database Switcher
+ * We check the header and define the constant EARLY.
+ */
+if (isset($_SERVER['HTTP_X_GCA_TEST_SUITE']) && $_SERVER['HTTP_X_GCA_TEST_SUITE'] === 'true') {
+    define('DB_NAME', 'wordpress-test');
+}

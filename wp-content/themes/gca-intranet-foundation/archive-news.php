@@ -1,9 +1,11 @@
 <?php get_header(); ?>
 
 <?php
+$hero_image_url = get_template_directory_uri() . '/assets/img/office.jpg';
+
 get_template_part('template-parts/hero', null, [
   'title'     => post_type_archive_title('', false),
-  'image_url' => '',
+  'image_url' => $hero_image_url
 ]);
 
 get_template_part('template-parts/breadcrumbs');
@@ -40,7 +42,7 @@ get_template_part('template-parts/breadcrumbs');
 
             <div class="gca-news-meta date_bottom" data-testid="news-post-meta">
               <span class="govuk-body-s govuk-!-margin-right-2">
-                <?php echo esc_html(get_the_date('jS F Y')); ?>
+                <?php echo esc_html(get_the_date('j F Y')); ?>
               </span>
 
               <div class="gca-taxonomy-tags" data-testid="news-post-tags">
@@ -48,6 +50,7 @@ get_template_part('template-parts/breadcrumbs');
                 $categories = get_the_terms(get_the_ID(), 'category');
                 if ($categories && !is_wp_error($categories)) :
                   foreach ($categories as $category) :
+                    if (strtolower($category->name) === 'uncategorized' || strtolower($category->name) === 'uncategorised') continue;
                 ?>
                   <span class="govuk-tag govuk-tag--green">
                     <?php echo esc_html($category->name); ?>

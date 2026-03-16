@@ -690,6 +690,41 @@ add_action('customize_register', function (\WP_Customize_Manager $wp_customize):
   ]);
 });
 
+// ============================================================
+// Events (Customizer) — order: 6th on homepage
+// ============================================================
+
+$wp_customize->add_setting('gca_events_title', [
+  'default'           => __('Events', 'gca-intranet'),
+  'sanitize_callback' => 'gca_sanitize_home_text',
+  'transport'         => 'refresh',
+]);
+
+$wp_customize->add_control('gca_events_title', [
+  'type'     => 'text',
+  'section'  => $section,
+  'label'    => __('Events: title', 'gca-intranet'),
+  'priority' => 210,
+]);
+
+$wp_customize->add_setting('gca_events_desc', [
+  'default'           => 'Get involved with our events',
+  'sanitize_callback' => 'gca_sanitize_home_desc_40',
+  'transport'         => 'refresh',
+]);
+
+$wp_customize->add_control('gca_events_desc', [
+  'type'        => 'textarea',
+  'section'     => $section,
+  'label'       => __('Events: description', 'gca-intranet'),
+  'description' => __('Text shown under the “Events” heading on the homepage. Max 40 characters.', 'gca-intranet'),
+  'input_attrs' => [
+    'maxlength' => 40,
+    'rows'      => 2,
+  ],
+  'priority'    => 220,
+]);
+
 /**
  * Customizer UI: character counter for Take a look link text
  * + Quick links text counters (48 chars)
@@ -745,6 +780,7 @@ add_action('customize_controls_enqueue_scripts', function (): void {
     addCounter('customize-control-gca_quicklinks_desc', 40);
     addCounter('customize-control-gca_workupdates_desc', 40);
     addCounter('customize-control-gca_blogs_desc', 40);
+    addCounter('customize-control-gca_events_desc', 40);
   }
 
   document.addEventListener('DOMContentLoaded', init);
@@ -916,3 +952,130 @@ if (defined('WP_CLI') && WP_CLI) {
 
   \WP_CLI::add_command('gca homepage', 'GCA_Homepage_CLI_Command');
 }
+
+add_action('acf/input/admin_footer', function() {
+?>
+<script type="text/javascript">
+(function($) {
+    if (typeof acf !== 'undefined') {
+        acf.addAction('ready_field/type=time_picker', function(field) {
+
+            var $input = field.$el.find('input[type="text"]');
+
+            // 1. Ensure readonly
+            $input.attr('readonly', 'readonly').css('cursor', 'pointer');
+
+            // 2. Inject Clear button if missing
+            if (!field.$el.find('.gca-clear-time').length) {
+                $input.after('<a href="#" class="gca-clear-time" style="margin-left:10px; color:#cc0000; text-decoration:none; font-size:12px; cursor:pointer;">Clear</a>');
+            }
+
+            // 3. The "Deep Clear" Logic
+            field.$el.on('click', '.gca-clear-time', function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+
+                // Clear the visible text field
+                $input.val('');
+
+                // Clear ACF's internal hidden input (the one that actually saves to DB)
+                field.$el.find('input[type="hidden"]').val('');
+
+                // Force ACF to recognize the change
+                field.val('');
+
+                // Close the picker if it accidentally stayed open
+                $input.datepicker('hide');
+                $input.blur();
+
+                $(this).hide();
+            });
+
+            // Toggle clear button visibility based on value
+            $input.on('focus change keyup', function() {
+                field.$el.find('.gca-clear-time').toggle(!!$(this).val());
+            }).trigger('change');
+        });
+    }
+})(jQuery);
+</script>
+<?php
+});
+
+/**
+ * Universal Event Date/Time Formatter
+ * @param string $return  Options: 'dates', 'times', 'start_date', 'end_date', 'start_time', 'end_time', 'all'
+ * @param int    $post_id The ID of the post. Defaults to current loop ID.
+ *
+ * @return string         The formatted string based on the request.
+ */
+function gca_get_event_datetime( $return = 'dates', $post_id = null ) {
+    $post_id = $post_id ?: get_the_ID();
+
+    // 1. Retrieve raw data
+    $raw_start_date = get_field('start_date', $post_id);
+    $raw_start_time = get_field('start_time', $post_id);
+    $raw_end_date   = get_field('end_date', $post_id);
+    $raw_end_time   = get_field('end_time', $post_id);
+
+    // Safety: If no start date, return empty unless specifically asking for a time field
+    if ( ! $raw_start_date && in_array($return, ['dates', 'start_date', 'end_date', 'all'])) {
+        return '';
+    }
+
+    // 2. Format Individual Components
+    $f_start_date = $raw_start_date ? date('j F Y', strtotime($raw_start_date)) : '';
+    $f_end_date   = $raw_end_date   ? date('j F Y', strtotime($raw_end_date))   : '';
+    $f_start_time = $raw_start_time ? date('g:i a',  strtotime($raw_start_time)) : '';
+    $f_end_time   = $raw_end_time   ? date('g:i a',  strtotime($raw_end_time))   : '';
+
+    // 3. Process Logic for Ranges
+
+    // Time Range Logic
+    $time_range = '';
+    if ($f_start_time && $f_end_time) {
+        $time_range = "{$f_start_time} to {$f_end_time}";
+    } elseif ($f_start_time) {
+        $time_range = $f_start_time;
+    } elseif ($f_end_time) {
+        $time_range = "Until {$f_end_time}";
+    }
+
+    // Date Range Logic
+    $date_range = $f_start_date;
+    if ($f_end_date && $raw_start_date !== $raw_end_date) {
+        $date_range .= " to {$f_end_date}";
+    }
+
+    // 4. Return the Requested Option
+    switch ( $return ) {
+        case 'start_date': return $f_start_date;
+        case 'end_date':   return $f_end_date;
+        case 'start_time': return $f_start_time;
+        case 'end_time':   return $f_end_time;
+        case 'times':      return $time_range;
+        case 'all':        return $time_range ? "{$date_range} {$time_range}" : $date_range;
+        case 'dates':
+        default:           return $date_range;
+    }
+}
+
+/**
+ * Force hide 'Layout – 1 column' from the dropdown
+ * Hooks in at priority 9999 to override Parent themes.
+ */
+add_filter('theme_page_templates', function($post_templates, $theme, $post, $post_type) {
+
+    // Define the filename we want to kill
+    $target_file = 'template-layout-1col.php';
+
+    // Search the array keys (filenames) for our target
+    foreach ( $post_templates as $file => $name ) {
+        // If the filename matches exactly OR ends with our filename (for subdirectories)
+        if ( $file === $target_file || substr($file, -strlen($target_file)) === $target_file ) {
+            unset($post_templates[$file]);
+        }
+    }
+
+    return $post_templates;
+}, 9999, 4);
