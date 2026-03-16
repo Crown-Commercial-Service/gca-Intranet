@@ -57,6 +57,11 @@ body, p, .govuk-body {
 }
 //Font Overrides END
 
+.govuk-\!-padding-top-1 {
+    padding-top: 7px !important;
+    padding-right: 3px;
+}
+
 .govuk-button:hover {
   background-color: $gca-blue-2;
 }

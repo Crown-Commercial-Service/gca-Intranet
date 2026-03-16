@@ -173,8 +173,14 @@
    - Prevent overflow + stop icon leaking into next component
    ============================================================ */
 
+[data-testid='take-a-look-card'] {
+  height: auto !important;
+}
+
 [data-testid='take-a-look-column'] {
   overflow: hidden; /* safety net */
+  display: flex;
+  flex-direction: column;
 
   .gca-take-a-look,
   .gca-take-a-look__content,

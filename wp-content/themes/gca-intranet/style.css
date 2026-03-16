@@ -94,13 +94,6 @@ Text Domain: gca-intranet
   margin: 0;
 }
 
-.gca-home-hero-title {
-  font-size: clamp(46px, 4vw, 58px);
-  line-height: 1.05;
-  font-weight: 800;
-  margin: 0;
-}
-
 .gca-home-hero-tagline {
   display: flex;
   flex-direction: column;
