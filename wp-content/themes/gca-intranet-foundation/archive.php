@@ -40,7 +40,7 @@ get_template_part('template-parts/breadcrumbs');
                 </h2>
 
                 <p class="govuk-body govuk-!-margin-bottom-1" data-testid="archive-post-date">
-                  <?php echo esc_html(get_the_date('jS F Y')); ?>
+                  <?php echo esc_html(get_the_date('j F Y')); ?>
                 </p>
 
                 <div class="govuk-body" data-testid="archive-post-excerpt">

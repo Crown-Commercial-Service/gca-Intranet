@@ -152,7 +152,7 @@ function gca_section_nav_render(array $nodes, array $active_ids, string $current
 function gca_section_nav_shortcode($atts): string
 {
     $atts = shortcode_atts(
-        ['name' => 'primary'],
+        ['name' => 'primary', 'section' => ''],
         (array) $atts,
         'menu'
     );
@@ -172,9 +172,77 @@ function gca_section_nav_shortcode($atts): string
     $current_path = gca_section_nav_url_path(parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH) ?: '/');
     $active_ids   = gca_section_nav_active_path($tree, $current_path);
 
+    $section_node = null;
+    $section_name = trim($atts['section']);
+
+    if ($section_name !== '') {
+        foreach ($tree as $node) {
+            if (strcasecmp($node['title'], $section_name) === 0) {
+                $section_node = $node;
+                break;
+            }
+        }
+    } else {
+        if (!empty($active_ids)) {
+            $top_level_id = $active_ids[0];
+            foreach ($tree as $node) {
+                if ($node['id'] === $top_level_id) {
+                    $section_node = $node;
+                    break;
+                }
+            }
+        }
+
+        if (!$section_node) {
+            $queried_id = get_queried_object_id();
+            if ($queried_id) {
+                $matched_item = null;
+                foreach ($menu_items as $item) {
+                    if ((int) $item->object_id === $queried_id) {
+                        $matched_item = $item;
+                        break;
+                    }
+                }
+                if ($matched_item) {
+                    $index = array_column($menu_items, null, 'ID');
+                    while ((int) $matched_item->menu_item_parent !== 0) {
+                        $parent_id    = (int) $matched_item->menu_item_parent;
+                        $matched_item = $index[$parent_id] ?? null;
+                        if (!$matched_item) {
+                            break;
+                        }
+                    }
+                    if ($matched_item) {
+                        foreach ($tree as $node) {
+                            if ($node['id'] === (int) $matched_item->ID) {
+                                $section_node = $node;
+                                break;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    $render_nodes = $section_node ? $section_node['children'] : $tree;
+
+    if (empty($render_nodes)) {
+        return '';
+    }
+
     $html  = '<nav class="section-nav" aria-label="Section navigation">';
+
+    if ($section_node) {
+        $html .= '<div class="section-nav__header">';
+        $html .= '<a href="' . esc_url($section_node['url']) . '" class="section-nav__title">';
+        $html .= esc_html($section_node['title']);
+        $html .= '</a>';
+        $html .= '</div>';
+    }
+
     $html .= '<ul class="section-nav__list">';
-    $html .= gca_section_nav_render($tree, $active_ids, $current_path);
+    $html .= gca_section_nav_render($render_nodes, $active_ids, $current_path);
     $html .= '</ul>';
     $html .= '</nav>';
 
