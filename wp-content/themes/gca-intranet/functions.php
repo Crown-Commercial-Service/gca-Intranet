@@ -1062,3 +1062,23 @@ function gca_get_event_datetime( $return = 'dates', $post_id = null ) {
         default:           return $date_range;
     }
 }
+
+/**
+ * Force hide 'Layout – 1 column' from the dropdown
+ * Hooks in at priority 9999 to override Parent themes.
+ */
+add_filter('theme_page_templates', function($post_templates, $theme, $post, $post_type) {
+
+    // Define the filename we want to kill
+    $target_file = 'template-layout-1col.php';
+
+    // Search the array keys (filenames) for our target
+    foreach ( $post_templates as $file => $name ) {
+        // If the filename matches exactly OR ends with our filename (for subdirectories)
+        if ( $file === $target_file || substr($file, -strlen($target_file)) === $target_file ) {
+            unset($post_templates[$file]);
+        }
+    }
+
+    return $post_templates;
+}, 9999, 4);
