@@ -1,7 +1,7 @@
 <?php get_header(); ?>
 
 <?php
-$hero_image_url = get_template_directory_uri() . '/assets/img/office.jpg';
+$hero_image_url = get_template_directory_uri() . '/assets/img/blogs.jpg';
 
 get_template_part('template-parts/hero', null, [
   'title'     => post_type_archive_title('', false),

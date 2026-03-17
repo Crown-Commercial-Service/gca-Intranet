@@ -1,9 +1,11 @@
 <?php get_header(); ?>
 
 <?php
+$hero_image_url = get_template_directory_uri() . '/assets/img/events.jpg';
+
 get_template_part('template-parts/hero', null, [
   'title'     => 'Event',
-  'image_url' => get_the_post_thumbnail_url(get_the_ID(), 'large') ?: '',
+  'image_url' => $hero_image_url,
 ]);
 
 get_template_part('template-parts/breadcrumbs');
