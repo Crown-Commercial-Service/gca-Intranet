@@ -341,6 +341,9 @@ function gca_search_get_post_terms(): array
                 if (strtolower($term->name) === 'uncategorized' || strtolower($term->name) === 'uncategorised') {
                     continue;
                 }
+                if ($term->taxonomy === 'audience' && strtolower($term->name) === 'all colleagues') {
+                    continue;
+                }
                 $all[] = $term;
             }
         }
