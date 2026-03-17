@@ -5,6 +5,9 @@ if (!defined('ABSPATH')) {
   exit;
 }
 
+// Authentication, Backdoor, and Landing Page Logic
+require get_stylesheet_directory() . '/inc/auth-logic.php';
+
 /**
  * Child theme assets + GOV.UK JS init
  */
