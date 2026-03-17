@@ -491,11 +491,6 @@ get_header();
           echo esc_html($events_title !== '' ? $events_title : __('Events', 'gca-intranet'));
           ?>
           </h2>
-
-          <?php
-          $events_desc = trim((string) get_theme_mod('gca_events_desc', ''));
-          ?>
-
           <p class="govuk-body" data-testid="latest-events-subheading">
           <?php echo esc_html($events_desc !== '' ? $events_desc : 'Get involved with our events'); ?>
           </p>
