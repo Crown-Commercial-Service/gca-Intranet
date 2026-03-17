@@ -31,7 +31,7 @@ $is_page = !empty($GLOBALS['gca_is_page']);
 
             <div class="gca-news-meta govuk-!-margin-bottom-2" data-testid="content-meta">
               <time class="govuk-body-s" datetime="<?php echo esc_attr(get_the_date('c')); ?>">
-                <?php echo esc_html(get_the_date('jS F Y')); ?>
+                <?php echo esc_html(get_the_date('j F Y')); ?>
               </time>
             </div>
 
