@@ -1,7 +1,8 @@
-$section-nav-bg:      $gca-cream;
-$section-nav-accent:  $gca-lime;
-$section-nav-divider: white;
-$section-nav-text:    $gca-black;
+$section-nav-bg:           $gca-cream;
+$section-nav-accent:       $gca-lime;
+$section-nav-divider:      white;
+$section-nav-text:         #1E1E1E;
+$section-nav-header-text:  #000000;
 
 .section-nav {
     font-size: govuk-px-to-rem(16);
@@ -25,7 +26,7 @@ $section-nav-text:    $gca-black;
 .section-nav__title {
     display: block;
     font-weight: 700;
-    color: $section-nav-text;
+    color: $section-nav-header-text !important;
     text-decoration: none;
     font-weight: 700;
     font-size: govuk-px-to-rem(19);
@@ -91,7 +92,7 @@ $section-nav-text:    $gca-black;
     display: block;
     flex: 1;
     padding: govuk-spacing(3) govuk-spacing(6);
-    color: $section-nav-text;
+    color: $section-nav-text !important;
     text-decoration: none;
     font-size: govuk-px-to-rem(19);
     font-weight: 400;

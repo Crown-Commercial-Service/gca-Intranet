@@ -73,7 +73,7 @@ get_header();
                     </p>
 
                     <p class="govuk-body-s" data-testid="latest-news-featured-date">
-                      <?php echo esc_html(get_the_date('jS F Y')); ?>
+                      <?php echo esc_html(get_the_date('j F Y')); ?>
                     </p>
                   </div>
                   <?php
@@ -117,7 +117,7 @@ get_header();
                       </p>
 
                       <p class="govuk-body-s" data-testid="latest-news-secondary-date">
-                        <?php echo esc_html(get_the_date('jS F Y')); ?>
+                        <?php echo esc_html(get_the_date('j F Y')); ?>
                       </p>
                     </div>
                   </div>
@@ -352,7 +352,7 @@ get_header();
                       </p>
 
                       <p class="govuk-body-s" data-testid="work-update-date">
-                        <?php echo esc_html(get_the_date('jS F Y')); ?>
+                        <?php echo esc_html(get_the_date('j F Y')); ?>
                       </p>
                     </div>
                   </div>
@@ -446,7 +446,7 @@ get_header();
 
 
                       <p class="govuk-body-s" data-testid="blogs-date">
-                        <?php echo esc_html(get_the_date('jS F Y')); ?>
+                        <?php echo esc_html(get_the_date('j F Y')); ?>
                       </p>
                     </div>
                     <?php

@@ -8,30 +8,6 @@
 get_template_part('template-parts/single/_chrome');
 
 $is_page = !empty($GLOBALS['gca_is_page']);
-
-$post_id   = get_the_ID();
-$ancestors = get_post_ancestors($post_id);
-$page_ids  = array_merge([$post_id], $ancestors);
-
-$menu_name = '';
-foreach (wp_get_nav_menus() as $nav_menu) {
-    $items = wp_get_nav_menu_items($nav_menu->term_id);
-    if (empty($items)) {
-        continue;
-    }
-    foreach ($items as $item) {
-        if ($item->object === 'page' && in_array((int) $item->object_id, $page_ids, true)) {
-            $menu_name = $nav_menu->name;
-            break 2;
-        }
-    }
-}
-
-// Fallback: use top-level ancestor slug
-if ($menu_name === '') {
-    $root_id   = !empty($ancestors) ? end($ancestors) : $post_id;
-    $menu_name = get_post_field('post_name', $root_id);
-}
 ?>
 
 <div class="govuk-width-container govuk-!-padding-top-6 govuk-!-padding-bottom-6" data-testid="page-container">
@@ -42,7 +18,7 @@ if ($menu_name === '') {
 
         <!-- LEFT: Section nav -->
         <div class="govuk-grid-column-one-third" data-testid="col-left-nav">
-          <?php echo do_shortcode('[menu name="' . esc_attr($menu_name) . '"]'); ?>
+          <?php echo do_shortcode('[menu]'); ?>
         </div>
 
         <!-- RIGHT: Main content -->
@@ -55,7 +31,7 @@ if ($menu_name === '') {
 
             <div class="gca-news-meta govuk-!-margin-bottom-2" data-testid="content-meta">
               <time class="govuk-body-s" datetime="<?php echo esc_attr(get_the_date('c')); ?>">
-                <?php echo esc_html(get_the_date('jS F Y')); ?>
+                <?php echo esc_html(get_the_date('j F Y')); ?>
               </time>
             </div>
 
