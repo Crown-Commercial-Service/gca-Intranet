@@ -776,29 +776,28 @@ JS;
 
 /**
  * Admin shortcut: Appearance → Homepage options
- * Sends editors straight to the Customizer section for the homepage blocks.
+ *
+ * Adds a direct link to the Customizer, focused on the
+ * "Homepage options" section.
+ *
+ * This avoids using a redirect (more reliable).
  */
 add_action('admin_menu', function (): void {
+
+  $url = add_query_arg(
+    [
+      'autofocus[section]' => 'gca_homepage_options',
+    ],
+    admin_url('customize.php')
+  );
+
   add_theme_page(
     __('Homepage options', 'gca-intranet'),
     __('Homepage options', 'gca-intranet'),
     'edit_theme_options',
-    'gca-homepage-options',
-    function (): void {
-      $url = add_query_arg(
-        [
-          'autofocus[section]' => 'gca_homepage_options',
-          'return'             => urlencode(admin_url('themes.php?page=gca-homepage-options')),
-        ],
-        admin_url('customize.php')
-      );
-
-      wp_safe_redirect($url);
-      exit;
-    }
+    $url // Direct link instead of slug + redirect
   );
 });
-
 
 /**
  * WP-CLI helpers for homepage component test data
