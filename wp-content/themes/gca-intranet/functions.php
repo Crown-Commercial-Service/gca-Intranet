@@ -776,29 +776,28 @@ JS;
 
 /**
  * Admin shortcut: Appearance → Homepage options
- * Sends editors straight to the Customizer section for the homepage blocks.
+ *
+ * Adds a direct link to the Customizer, focused on the
+ * "Homepage options" section.
+ *
+ * This avoids using a redirect (more reliable).
  */
 add_action('admin_menu', function (): void {
+
+  $url = add_query_arg(
+    [
+      'autofocus[section]' => 'gca_homepage_options',
+    ],
+    admin_url('customize.php')
+  );
+
   add_theme_page(
     __('Homepage options', 'gca-intranet'),
     __('Homepage options', 'gca-intranet'),
     'edit_theme_options',
-    'gca-homepage-options',
-    function (): void {
-      $url = add_query_arg(
-        [
-          'autofocus[section]' => 'gca_homepage_options',
-          'return'             => urlencode(admin_url('themes.php?page=gca-homepage-options')),
-        ],
-        admin_url('customize.php')
-      );
-
-      wp_safe_redirect($url);
-      exit;
-    }
+    $url // Direct link instead of slug + redirect
   );
 });
-
 
 /**
  * WP-CLI helpers for homepage component test data
@@ -1063,3 +1062,22 @@ add_filter('theme_page_templates', function($post_templates, $theme, $post, $pos
 
     return $post_templates;
 }, 9999, 4);
+
+/**
+ * Show ALL Screen Options (meta boxes) by default
+ *
+ * IMPORTANT:
+ * - Only affects users who have not already customised Screen Options
+ * - Existing user preferences (stored in user meta) will override this
+ * - Does NOT add/remove meta boxes — only controls visibility
+ */
+function gca_show_all_screen_options($hidden, $screen) {
+
+    // Target all post edit screens (posts, pages, custom post types)
+    if (isset($screen->base) && $screen->base === 'post') {
+        return []; // Nothing hidden → all boxes visible by default
+    }
+
+    return $hidden;
+}
+add_filter('default_hidden_meta_boxes', 'gca_show_all_screen_options', 10, 2);
