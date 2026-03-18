@@ -115,22 +115,24 @@
       $('#send-test-email').click(function(e) {
          e.preventDefault();
          var emailTo = $('#test-email-to').val();
+         var defaultTestEmailFailedMessage = $('#test-email-failed-message').text();
          if ( emailTo ) {
             $('#ajax-result').show();
             $('.sending-test-email').show();
             $('.test-email-result').hide();
             $('#test-email-success').hide();
             $('#test-email-failed').hide();
+            $('#test-email-failed-message').text(defaultTestEmailFailedMessage);
             $.ajax({
                url: ajaxurl,
+               dataType: 'json',
                data: {
                   'action':'send_test_email',
                   'email_to': emailTo,
                   'nonce': adminPageVars.sendTestEmailNonce
                },
                success:function(data) {
-                  var data = data.slice(0,-1); // remove strange trailing zero in string returned by AJAX call
-                  var response = JSON.parse(data);
+                  var response = data;
                   if ( response.status == 'success' ) {
                      setTimeout( function() {
                         $('.sending-test-email').hide();
@@ -139,6 +141,11 @@
                      }, 1500);
                   }
                   if ( response.status == 'failed' ) {
+                     if ( response.message ) {
+                        $('#test-email-failed-message').text(response.message);
+                     } else {
+                        $('#test-email-failed-message').text(defaultTestEmailFailedMessage);
+                     }
                      setTimeout( function() {
                         $('.sending-test-email').hide();
                         // $('.test-email-result').show();
@@ -148,6 +155,7 @@
                },
                error:function(errorThrown) {
                   console.log(errorThrown);
+                  $('#test-email-failed-message').text(defaultTestEmailFailedMessage);
                   setTimeout( function() {
                      $('.sending-test-email').hide();
                      $('.test-email-result').show();
@@ -450,6 +458,7 @@
       $('.disable-block-widgets').appendTo('.fields-disable-components .disable-smaller-components .asenha-subfields');
       $('.disable-lazy-load').appendTo('.fields-disable-components .disable-smaller-components .asenha-subfields');
       $('.disable-application-passwords').appendTo('.fields-disable-components .disable-smaller-components .asenha-subfields');
+      $('.disable-site-admin-email-verification-screen').appendTo('.fields-disable-components .disable-smaller-components .asenha-subfields');
       $('.disable-plugin-theme-editor').appendTo('.fields-disable-components .disable-smaller-components .asenha-subfields');
 
       // Place fields into "Security" tab
@@ -873,20 +882,6 @@
 
       
       
-      // SMTP Email Delivery => Empty field value on click, so new password can be easily entered
-      var oldSmtpPassValue = '';
-
-      $('input[name="admin_site_enhancements[smtp_password]"]').focusin(function() {
-         oldSmtpPassValue = $(this).val();
-         $(this).val('');
-      });
-
-      $('input[name="admin_site_enhancements[smtp_password]"]').focusout(function() {
-         if ( $(this).val() == '' ) {
-            $(this).val(oldSmtpPassValue);
-         }
-      });
-
       subfieldsToggler( 'view_admin_as_role', 'view-admin-as-role' );
       subfieldsToggler( 'enable_password_protection', 'enable-password-protection' );
 

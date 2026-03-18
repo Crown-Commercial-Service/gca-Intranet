@@ -447,6 +447,11 @@ a.asenha-support-nudge-dismiss:hover,
     gap: 40px;
     display: flex;
     justify-content: space-between;
+    margin-bottom: 40px;
+}
+
+.footer-section.export-import:last-of-type {
+    margin-bottom: 0;
 }
 
 .settings-box {

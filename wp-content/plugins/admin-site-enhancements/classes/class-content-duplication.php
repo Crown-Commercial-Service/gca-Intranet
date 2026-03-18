@@ -120,11 +120,11 @@ class Content_Duplication {
      * @since 1.0.0
      */
     public function duplicate_content() {
+        $original_post_id = intval( sanitize_text_field( $_REQUEST['post'] ) );
         $allow_duplication = false;
-        if ( current_user_can( 'edit_posts' ) ) {
+        if ( current_user_can( 'edit_post', $original_post_id ) ) {
             $allow_duplication = true;
         }
-        $original_post_id = intval( sanitize_text_field( $_REQUEST['post'] ) );
         $nonce = sanitize_text_field( $_REQUEST['nonce'] );
         if ( wp_verify_nonce( $nonce, 'asenha-duplicate-' . $original_post_id ) && $allow_duplication ) {
             $original_post = get_post( $original_post_id );
@@ -211,7 +211,7 @@ class Content_Duplication {
      */
     public function add_duplication_action_link( $actions, $post ) {
         $duplication_link_locations = $this->get_duplication_link_locations();
-        $allow_duplication = $this->is_user_allowed_to_duplicate_content();
+        $allow_duplication = $this->is_user_allowed_to_duplicate_content( $post );
         $post_type = $post->post_type;
         $post_type_is_duplicable = $this->is_post_type_duplicable( $post_type );
         if ( $allow_duplication && $post_type_is_duplicable ) {
@@ -229,9 +229,9 @@ class Content_Duplication {
      * @since 6.3.0
      */
     public function add_admin_bar_duplication_link( WP_Admin_Bar $wp_admin_bar ) {
-        $duplication_link_locations = $this->get_duplication_link_locations();
-        $allow_duplication = $this->is_user_allowed_to_duplicate_content();
         global $pagenow, $post;
+        $duplication_link_locations = $this->get_duplication_link_locations();
+        $allow_duplication = $this->is_user_allowed_to_duplicate_content( $post );
         if ( is_object( $post ) ) {
             if ( property_exists( $post, 'post_type' ) ) {
                 $post_type = $post->post_type;
@@ -288,10 +288,14 @@ class Content_Duplication {
      * 
      * @since 6.9.3
      */
-    public function is_user_allowed_to_duplicate_content() {
+    public function is_user_allowed_to_duplicate_content( $post = null ) {
         $allow_duplication = false;
-        if ( current_user_can( 'edit_posts' ) ) {
-            $allow_duplication = true;
+        if ( is_object( $post ) ) {
+            if ( property_exists( $post, 'ID' ) ) {
+                if ( current_user_can( 'edit_post', $post->ID ) ) {
+                    $allow_duplication = true;
+                }
+            }
         }
         return $allow_duplication;
     }

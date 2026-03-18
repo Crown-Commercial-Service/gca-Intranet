@@ -72,14 +72,21 @@
     box-sizing: border-box;
     display: flex;
     align-items: center;
-    padding: 7px 15px 7px 7px;
+    padding: 3px 15px 3px 7px;
     max-width: 600px;
     width: 600px;
     min-height: 30px;
 }
 
+.parent-menu-item.target-none .menu-item-handle {
+    background: #dddede;
+}
+
 .admin-menu-organizer .title-wrapper {
     display: flex;
+    align-items: center;
+    flex-wrap: nowrap;
+    gap: 4px;
 }
 
 .admin-menu-organizer .menu-item-handle .menu-item-checkbox {
@@ -108,14 +115,16 @@
     color: inherit;
 }
 
-.menu-item-title input[type="text"] {
+.menu-item-title input[type="text"],
+.item-title .title-wrapper input[type="text"] {
     border: 1px solid #dcdcde;
     margin-left: -5px;
     padding: 0 8px 0 4px;
     font-size: 13px;
 }
 
-.menu-item-title input[type="text"]:focus {
+.menu-item-title input[type="text"]:focus,
+.item-title .title-wrapper input[type="text"]:focus {
     border: 1px solid #999;
     box-shadow: none;
     outline: none;
@@ -152,9 +161,10 @@ li[id^="separator"] .menu-item-title {
     display: list-item !important;
     margin-block-start: 0;
     padding: 0;
+    position: relative;
 }
 
-#custom-admin-menu .menu-item-depth-0 .dashicons-menu {
+#custom-admin-menu .parent-menu-item .dashicons-menu {
     padding: 5px 8px;
     cursor: move;
     color: #ddd;
@@ -163,8 +173,7 @@ li[id^="separator"] .menu-item-title {
     color: #1d2327;
 }
 
-
-
-.menu-item[data-custom-menu-item="no"] .remove-menu-item {
-    display: none;
+.submenu-sortable li.menu-item {
+    position: relative;
 }
+
