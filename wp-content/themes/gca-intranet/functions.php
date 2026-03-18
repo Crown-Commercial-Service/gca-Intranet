@@ -1063,3 +1063,22 @@ add_filter('theme_page_templates', function($post_templates, $theme, $post, $pos
 
     return $post_templates;
 }, 9999, 4);
+
+/**
+ * Show ALL Screen Options (meta boxes) by default
+ *
+ * IMPORTANT:
+ * - Only affects users who have not already customised Screen Options
+ * - Existing user preferences (stored in user meta) will override this
+ * - Does NOT add/remove meta boxes — only controls visibility
+ */
+function gca_show_all_screen_options($hidden, $screen) {
+
+    // Target all post edit screens (posts, pages, custom post types)
+    if (isset($screen->base) && $screen->base === 'post') {
+        return []; // Nothing hidden → all boxes visible by default
+    }
+
+    return $hidden;
+}
+add_filter('default_hidden_meta_boxes', 'gca_show_all_screen_options', 10, 2);
