@@ -91,8 +91,9 @@ add_action('wp_enqueue_scripts', function (): void {
 ');
 
     // 3. Custom Navigation Logic (Mobile Menu & Dropdowns)
-    // We attach this as an inline script to the 'gca-theme' handle
-    wp_add_inline_script('gca-theme', '
+    wp_register_script('gca-nav', '', [], false, true);
+    wp_enqueue_script('gca-nav');
+    wp_add_inline_script('gca-nav', '
     document.addEventListener("DOMContentLoaded", function() {
         // Mobile Menu Toggler
         var toggleBtn = document.querySelector(".global-navigation__toggler");
@@ -106,18 +107,39 @@ add_action('wp_enqueue_scripts', function (): void {
             });
         }
 
-        // Mobile Dropdown logic
-        document.querySelectorAll(".dropdown > .dropbtn").forEach(function(button) {
-            button.addEventListener("click", function(e) {
-                if (window.innerWidth < 1024) {
-                    e.preventDefault();
-                    var dropdownContent = this.nextElementSibling;
-                    if (dropdownContent && dropdownContent.classList.contains("dropdown-content")) {
-                        dropdownContent.classList.toggle("open-dropdown");
+        // Tablet dropdown toggle (769px–1023px)
+        // Arrow button click opens/closes sub-menu; hovering a different item closes any open one
+        if (window.innerWidth >= 769 && window.innerWidth < 1024) {
+            var megaItems   = document.querySelectorAll(".nav-list--primary > li.has-mega-menu");
+            var megaToggles = document.querySelectorAll(".nav-list--primary > li.has-mega-menu > .mega-menu-toggle");
+
+            megaToggles.forEach(function(btn) {
+                btn.addEventListener("click", function() {
+                    var parentLi = this.closest("li.has-mega-menu");
+                    var isOpen   = parentLi.classList.contains("is-open");
+
+                    // Close all open items first
+                    megaItems.forEach(function(li) { li.classList.remove("is-open"); });
+
+                    // Open this one if it was not already open
+                    if (!isOpen) {
+                        parentLi.classList.add("is-open");
                     }
-                }
+                });
             });
-        });
+
+            // When hovering a menu item, close any previously clicked-open item
+            megaItems.forEach(function(li) {
+                li.addEventListener("mouseenter", function() {
+                    megaItems.forEach(function(otherLi) {
+                        if (otherLi !== li) {
+                            otherLi.classList.remove("is-open");
+                        }
+                    });
+                });
+            });
+        }
+
     });');
 
     wp_register_script('gca-cookie-banner', '', [], false, true);
