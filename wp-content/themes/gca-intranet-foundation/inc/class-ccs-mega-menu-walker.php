@@ -51,11 +51,6 @@ class CCS_Mega_Menu_Walker extends Walker_Nav_Menu {
         $atts['rel']    = ! empty( $item->xfn )        ? $item->xfn        : '';
         $atts['href']   = ! empty( $item->url )        ? $item->url        : '';
 
-        if ( $has_children && $depth === 0 ) {
-            $atts['aria-expanded'] = 'false'; // Accessibility for dropdowns
-            $atts['aria-haspopup'] = 'true';
-        }
-
         $attributes = '';
         foreach ( $atts as $attr => $value ) {
             if ( ! empty( $value ) ) {
@@ -65,17 +60,24 @@ class CCS_Mega_Menu_Walker extends Walker_Nav_Menu {
         }
 
         $title = apply_filters( 'the_title', $item->title, $item->ID );
-        
+
         $item_output = $args->before;
-        $item_output .= '<a' . $attributes . '>';
-        $item_output .= $args->link_before . $title . $args->link_after;
-        
-        // Append a chevron SVG if it has a dropdown
+
         if ( $has_children && $depth === 0 ) {
-            $item_output .= ' <svg class="nav-chevron" width="12" height="8" viewBox="0 0 12 8" aria-hidden="true" style="margin-left: 8px; vertical-align: middle;"><path fill="currentColor" d="M1.41 0L6 4.58 10.59 0 12 1.41l-6 6-6-6z"/></svg>';
+            $item_output .= '<div class="mega-menu-header">';
+            $item_output .= '<a' . $attributes . '>';
+            $item_output .= $args->link_before . $title . $args->link_after;
+            $item_output .= '</a>';
+            $item_output .= '<button class="mega-menu-toggle" aria-expanded="false" aria-label="Toggle ' . esc_attr( $title ) . ' submenu">';
+            $item_output .= '<svg class="nav-chevron" width="12" height="8" viewBox="0 0 12 8" aria-hidden="true"><path fill="currentColor" d="M1.41 0L6 4.58 10.59 0 12 1.41l-6 6-6-6z"/></svg>';
+            $item_output .= '</button>';
+            $item_output .= '</div>';
+        } else {
+            $item_output .= '<a' . $attributes . '>';
+            $item_output .= $args->link_before . $title . $args->link_after;
+            $item_output .= '</a>';
         }
-        
-        $item_output .= '</a>';
+
         $item_output .= $args->after;
 
         $output .= apply_filters( 'walker_nav_menu_start_el', $item_output, $item, $depth, $args );
