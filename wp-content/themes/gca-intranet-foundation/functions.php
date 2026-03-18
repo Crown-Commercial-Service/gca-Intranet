@@ -91,8 +91,9 @@ add_action('wp_enqueue_scripts', function (): void {
 ');
 
     // 3. Custom Navigation Logic (Mobile Menu & Dropdowns)
-    // We attach this as an inline script to the 'gca-theme' handle
-    wp_add_inline_script('gca-theme', '
+    wp_register_script('gca-nav', '', [], false, true);
+    wp_enqueue_script('gca-nav');
+    wp_add_inline_script('gca-nav', '
     document.addEventListener("DOMContentLoaded", function() {
         // Mobile Menu Toggler
         var toggleBtn = document.querySelector(".global-navigation__toggler");

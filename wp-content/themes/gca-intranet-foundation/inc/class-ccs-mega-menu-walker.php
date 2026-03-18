@@ -62,14 +62,20 @@ class CCS_Mega_Menu_Walker extends Walker_Nav_Menu {
         $title = apply_filters( 'the_title', $item->title, $item->ID );
 
         $item_output = $args->before;
-        $item_output .= '<a' . $attributes . '>';
-        $item_output .= $args->link_before . $title . $args->link_after;
-        $item_output .= '</a>';
 
         if ( $has_children && $depth === 0 ) {
+            $item_output .= '<div class="mega-menu-header">';
+            $item_output .= '<a' . $attributes . '>';
+            $item_output .= $args->link_before . $title . $args->link_after;
+            $item_output .= '</a>';
             $item_output .= '<button class="mega-menu-toggle" aria-expanded="false" aria-label="Toggle ' . esc_attr( $title ) . ' submenu">';
             $item_output .= '<svg class="nav-chevron" width="12" height="8" viewBox="0 0 12 8" aria-hidden="true"><path fill="currentColor" d="M1.41 0L6 4.58 10.59 0 12 1.41l-6 6-6-6z"/></svg>';
             $item_output .= '</button>';
+            $item_output .= '</div>';
+        } else {
+            $item_output .= '<a' . $attributes . '>';
+            $item_output .= $args->link_before . $title . $args->link_after;
+            $item_output .= '</a>';
         }
 
         $item_output .= $args->after;

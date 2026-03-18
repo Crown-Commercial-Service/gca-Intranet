@@ -27,12 +27,12 @@
 }
 
 /* --- Top Level Items --- */
-.nav-list--primary > li {
+.mega-menu-header {
   display: flex;
   align-items: stretch;
 }
 
-.nav-list--primary > li > a {
+.mega-menu-header > a {
   padding: 15px;
   border-bottom: 1px solid var(--gca-border);
   flex: 1;
@@ -52,15 +52,26 @@
   color: var(--gca-text);
 }
 
-.nav-list--primary > li:hover > a,
-.nav-list--primary > li:hover > .mega-menu-toggle {
+.nav-list--primary > li:hover .mega-menu-header > a,
+.nav-list--primary > li:hover .mega-menu-header > .mega-menu-toggle {
   background-color: var(--gca-nav-blue);
 }
 
-/* Active Tab Styling (e.g., The "HR" tab) */
-.nav-list--primary > li.active > a {
+/* Active Tab Styling */
+.nav-list--primary > li.active .mega-menu-header > a {
   background-color: var(--gca-nav-blue);
   font-weight: 700;
+}
+
+.nav-list--primary > li > a {
+  padding: 15px;
+  border-bottom: 1px solid var(--gca-border);
+  display: flex;
+  align-items: center;
+}
+
+.nav-list--primary > li:hover > a {
+  background-color: var(--gca-nav-blue);
 }
 
 /* --- Mega Menu Wrapper (Hidden by default on mobile) --- */
@@ -106,6 +117,12 @@
   border-radius: 5px;
 }
 
+@media (max-width: 769px) {
+  .has-mega-menu{
+    background-color: var(--gca-nav-blue);
+  }
+}
+
 /* --- Desktop Layout Breakpoint --- */
 @media (min-width: 769px) {
   /* 1. Hide the mobile "Menu" button entirely */
@@ -128,9 +145,14 @@
     overflow: hidden;
   }
 
-  .nav-list--primary > li > a {
+  .mega-menu-header > a {
     border-bottom: none;
     padding: 15px 15px 15px 25px;
+  }
+
+  .nav-list--primary > li > a {
+    border-bottom: none;
+    padding: 15px 25px;
   }
 
   .mega-menu-toggle {
@@ -138,12 +160,7 @@
     padding: 0 14px 0 4px;
   }
 
-  .nav-list--primary > li:hover > a,
-  .nav-list--primary > li:hover > .mega-menu-toggle {
-    background-color: var(--gca-nav-blue);
-  }
-
-  .nav-list--primary > li.active > .mega-menu-toggle {
+  .nav-list--primary > li.active .mega-menu-header > .mega-menu-toggle {
     background-color: var(--gca-nav-blue);
   }
 
@@ -209,7 +226,7 @@
 
   /* 5. Style the active state (The light blue "About GCA" in your image) */
   .nav-list--primary > li.active > a {
-    background-color: var(--gca-active-bg, #8ba9fe);
+    background-color: var(--gca-nav-blue);
     font-weight: 700;
   }
 
