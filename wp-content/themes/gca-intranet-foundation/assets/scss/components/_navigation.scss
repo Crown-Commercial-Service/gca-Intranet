@@ -61,7 +61,7 @@
 
     }
 
-    @include govuk-media-query($until: 769) {
+    @include govuk-media-query($until: 768) {
 
         display: none;
         visibility: hidden;

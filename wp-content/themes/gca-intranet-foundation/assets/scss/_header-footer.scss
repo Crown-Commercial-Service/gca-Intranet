@@ -93,15 +93,24 @@ body {
 
 .gca-header-topbar-inner {
     display: flex;
-    flex-direction: column; /* Stack vertically by default (mobile) */
-    align-items: end;
+    flex-direction: row;
+    align-items: center;
+    flex-wrap: wrap;
     gap: 15px;
 }
 
 /* --- Search Bar Styling --- */
+@media (max-width: 768px) {
+    .site-search {
+        flex: 1;
+        min-width: 0;
+    }
+}
+
 .search-input-group {
     display: flex;
     width: 100%;
+    max-width: 24rem;
 }
 
 #site-search {
@@ -342,7 +351,6 @@ body {
     }
 
     .site-search {
-        flex: 0 0 28rem;
         max-width: 28rem;
     }
 
@@ -595,6 +603,8 @@ body {
     font-weight: bold;
     cursor: pointer;
     display: block; /* Show on mobile */
+    position: static; /* Override position: absolute from components/_navigation.scss */
+    flex-shrink: 0;
 }
 
 /* --- Inside your Media Query (@min-width: 768px) --- */
