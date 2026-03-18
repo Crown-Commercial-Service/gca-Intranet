@@ -383,6 +383,21 @@ function gca_search_truncate(string $str, int $length): string
     return rtrim(mb_substr($str, 0, $length - 1)) . '…';
 }
 
+function gca_clean_post_excerpt(int $length = 320): string
+{
+    $content = get_the_content();
+    $content = preg_replace('/<table[\s\S]*?<\/table>/i', '', $content);
+    $content = strip_shortcodes($content);
+    $content = wp_strip_all_tags($content);
+    $content = preg_replace('/(?:https?:\/\/|www\.)\S+/i', '', $content);
+    $content = trim(preg_replace('/\s+/', ' ', $content));
+
+    if (mb_strlen($content) <= $length) {
+        return $content;
+    }
+    return rtrim(mb_substr($content, 0, $length)) . '...';
+}
+
 /**
  * Limit search results to 10 per page.
  */
