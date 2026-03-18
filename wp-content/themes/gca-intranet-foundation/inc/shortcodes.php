@@ -123,18 +123,29 @@ function gca_section_nav_shortcode($atts): string
         return '';
     }
 
-    $children = gca_section_nav_get_page_tree($current_id);
+    // Walk up to the top-level ancestor so all pages in the hierarchy share the same nav.
+    $ancestors = get_post_ancestors($current_id);
+    $root_id   = !empty($ancestors) ? (int) end($ancestors) : $current_id;
+    $root_page = get_post($root_id);
+
+    // Build the set of active IDs (current page + all its ancestors) for highlighting.
+    $active_ids = array_map('intval', $ancestors);
+    $active_ids[] = $current_id;
+
+    $current_url = trailingslashit(get_permalink($current_id));
+
+    $children = gca_section_nav_get_page_tree($root_id);
 
     $html  = '<nav class="section-nav" aria-label="Section navigation">';
     $html .= '<div class="section-nav__header">';
-    $html .= '<a href="' . esc_url(get_permalink($current_id)) . '" class="section-nav__title">';
-    $html .= esc_html($current_page->post_title);
+    $html .= '<a href="' . esc_url(get_permalink($root_id)) . '" class="section-nav__title">';
+    $html .= esc_html($root_page->post_title);
     $html .= '</a>';
     $html .= '</div>';
 
     if (!empty($children)) {
         $html .= '<ul class="section-nav__list">';
-        $html .= gca_section_nav_render($children, [], '');
+        $html .= gca_section_nav_render($children, $active_ids, $current_url);
         $html .= '</ul>';
     }
 
