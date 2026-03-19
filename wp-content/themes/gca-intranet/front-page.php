@@ -63,7 +63,7 @@ get_header();
 
                   <div data-testid="latest-news-featured-content">
                     <h3 class="govuk-heading-m" data-testid="latest-news-featured-title">
-                      <a class="govuk-link govuk-!-text-break-word" data-testid="latest-news-featured-link" href="<?php the_permalink(); ?>">
+                      <a class="govuk-link govuk-!-text-break-word gca-clamp-2" data-testid="latest-news-featured-link" href="<?php the_permalink(); ?>">
                         <?php the_title(); ?>
                       </a>
                     </h3>

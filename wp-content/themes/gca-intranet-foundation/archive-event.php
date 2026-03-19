@@ -42,7 +42,7 @@ get_template_part('template-parts/breadcrumbs');
                 </p>
 
                 <div class="govuk-body govuk-!-margin-bottom-3" data-testid="archive-event-post-excerpt">
-                  <?php the_excerpt(); ?>
+                  <?php echo esc_html(gca_clean_post_excerpt(320)); ?>
                 </div>
 
                 <div class="event-card__tags" data-testid="archive-event-post-tags">

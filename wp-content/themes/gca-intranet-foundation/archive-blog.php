@@ -41,10 +41,7 @@ get_template_part('template-parts/breadcrumbs');
             </h2>
 
             <p data-testid="blog-decs">
-              <?php 
-                $content = strip_tags(get_the_content());
-                echo esc_html(mb_strlen($content) > 320 ? mb_substr($content, 0, 320) . '...' : $content);
-              ?>
+              <?php echo esc_html(gca_clean_post_excerpt(320)); ?>
             </p>
 
             <div class="date_bottom" data-testid="blog-post-date">
