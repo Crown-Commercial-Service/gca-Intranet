@@ -125,8 +125,14 @@ function gca_section_nav_shortcode($atts): string
 
     // Walk up to the top-level ancestor so all pages in the hierarchy share the same nav.
     $ancestors = get_post_ancestors($current_id);
-    $root_id   = !empty($ancestors) ? (int) end($ancestors) : $current_id;
-    $root_page = get_post($root_id);
+    
+    if (count($ancestors) <= 1) {
+        $section_root_id = $current_id;
+    } else {
+        $section_root_id = (int) $ancestors[count($ancestors) - 2];
+    }
+
+    $section_root_page = get_post($section_root_id);
 
     // Build the set of active IDs (current page + all its ancestors) for highlighting.
     $active_ids = array_map('intval', $ancestors);
@@ -134,12 +140,12 @@ function gca_section_nav_shortcode($atts): string
 
     $current_url = trailingslashit(get_permalink($current_id));
 
-    $children = gca_section_nav_get_page_tree($root_id);
+    $children = gca_section_nav_get_page_tree($section_root_id);
 
     $html  = '<nav class="section-nav" aria-label="Section navigation">';
     $html .= '<div class="section-nav__header">';
-    $html .= '<a href="' . esc_url(get_permalink($root_id)) . '" class="section-nav__title">';
-    $html .= esc_html($root_page->post_title);
+    $html .= '<a href="' . esc_url(get_permalink($section_root_id)) . '" class="section-nav__title">';
+    $html .= esc_html($section_root_page->post_title);
     $html .= '</a>';
     $html .= '</div>';
 
