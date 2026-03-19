@@ -70,6 +70,7 @@ $search_id    = 'glossary-search-' . $instance_id;
             <?php endif; ?>
 
             <?php if ($enable_search) : ?>
+            <div id="<?php echo esc_attr($accordion_id); ?>-filter-summary" class="ccs-filters-summary" style="display:none;" aria-live="polite"></div>
             <p class="govuk-body govuk-!-margin-top-4" id="<?php echo esc_attr($accordion_id); ?>-no-results" style="display:none;" aria-live="polite">
                 No results found. Try a different search term.
             </p>
@@ -116,33 +117,187 @@ $search_id    = 'glossary-search-' . $instance_id;
 <?php if ($enable_search) : ?>
 <script>
 (function () {
+    var openByDefault = <?php echo $open_default ? 'true' : 'false'; ?>;
     var input = document.getElementById('<?php echo esc_js($search_id); ?>');
-    if (!input) return;
+    var searchWrap = input ? input.closest('.ccs-accordion-glossary__search-wrap') : null;
+    var searchBtn = searchWrap ? searchWrap.querySelector('.ccs-accordion-glossary__search-btn') : null;
+    if (!input || !searchBtn) return;
 
-    input.addEventListener('input', function () {
-        var query = this.value.trim().toLowerCase();
+    function escapeHtml(str) {
+        return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+    }
+
+    function expandSection(section) {
+        section.classList.add('govuk-accordion__section--expanded');
+        var content = section.querySelector('.govuk-accordion__section-content');
+        if (content) content.removeAttribute('hidden');
+        var btn = section.querySelector('.govuk-accordion__section-button');
+        if (btn) btn.setAttribute('aria-expanded', 'true');
+    }
+
+    function collapseSection(section) {
+        section.classList.remove('govuk-accordion__section--expanded');
+        var content = section.querySelector('.govuk-accordion__section-content');
+        if (content) content.setAttribute('hidden', '');
+        var btn = section.querySelector('.govuk-accordion__section-button');
+        if (btn) btn.setAttribute('aria-expanded', 'false');
+    }
+
+    function preprocessTermBlocks(accordion) {
+        accordion.querySelectorAll('.wysiwyg-content').forEach(function (wysiwyg) {
+            var nodes = Array.from(wysiwyg.childNodes);
+            var hasHr = nodes.some(function (n) { return n.nodeName === 'HR'; });
+            if (!hasHr) return;
+
+            var blocks = [];
+            var current = [];
+            nodes.forEach(function (node) {
+                if (node.nodeName === 'HR') {
+                    if (current.length) { blocks.push(current); current = []; }
+                } else {
+                    current.push(node);
+                }
+            });
+            if (current.length) blocks.push(current);
+
+            // Drop blocks that are only whitespace text nodes or empty elements
+            blocks = blocks.filter(function (blockNodes) {
+                return blockNodes.some(function (n) {
+                    return n.textContent && n.textContent.trim() !== '';
+                });
+            });
+
+            if (blocks.length <= 1) return;
+
+            wysiwyg.innerHTML = '';
+            blocks.forEach(function (blockNodes) {
+                var div = document.createElement('div');
+                div.className = 'ccs-accordion__term-block';
+                blockNodes.forEach(function (n) { div.appendChild(n.cloneNode(true)); });
+                wysiwyg.appendChild(div);
+            });
+        });
+    }
+
+    function resetSections(sections) {
+        sections.forEach(function (section) {
+            section.style.display = '';
+            section.querySelectorAll('.ccs-accordion__term-block').forEach(function (block) {
+                block.style.display = '';
+                block.classList.remove('ccs-accordion__term-block--last-visible');
+            });
+            if (openByDefault) {
+                expandSection(section);
+            } else {
+                collapseSection(section);
+            }
+        });
+    }
+
+    function doSearch() {
+        var rawQuery = input.value.trim();
+        var query = rawQuery.toLowerCase();
         var accordion = document.getElementById('<?php echo esc_js($accordion_id); ?>');
         if (!accordion) return;
 
         var noResults = document.getElementById('<?php echo esc_js($accordion_id); ?>-no-results');
         var showAllBtn = accordion.querySelector('.govuk-accordion__show-all');
-
+        var filterSummary = document.getElementById('<?php echo esc_js($accordion_id); ?>-filter-summary');
         var sections = accordion.querySelectorAll('.govuk-accordion__section');
+
+        var params = new URLSearchParams(window.location.search);
+        if (query) {
+            params.set('termSearch', rawQuery);
+        } else {
+            params.delete('termSearch');
+        }
+        var newUrl = window.location.pathname + (params.toString() ? '?' + params.toString() : '');
+        history.replaceState(null, '', newUrl);
+
+        if (!query) {
+            resetSections(sections);
+            if (noResults) noResults.style.display = 'none';
+            if (showAllBtn) showAllBtn.style.display = '';
+            if (filterSummary) {
+                filterSummary.innerHTML = '';
+                filterSummary.style.display = 'none';
+            }
+            return;
+        }
+
         var visibleCount = 0;
         sections.forEach(function (section) {
-            var btn = section.querySelector('.govuk-accordion__section-button');
-            if (!btn) return;
-            var title = btn.textContent.trim().toLowerCase();
-            var contentEl = section.querySelector('.govuk-accordion__section-content');
-            var content = contentEl ? contentEl.textContent.trim().toLowerCase() : '';
-            var matches = !query || title.indexOf(query) !== -1 || content.indexOf(query) !== -1;
-            section.style.display = matches ? '' : 'none';
-            if (matches) visibleCount++;
+            var titleEl = section.querySelector('.govuk-accordion__section-button');
+            if (!titleEl) return;
+
+            var termBlocks = section.querySelectorAll('.ccs-accordion__term-block');
+
+            if (termBlocks.length > 0) {
+                var sectionMatches = false;
+                var lastVisible = null;
+                termBlocks.forEach(function (block) {
+                    block.classList.remove('ccs-accordion__term-block--last-visible');
+                    var boldEl = block.querySelector('b, strong');
+                    var searchText = boldEl ? boldEl.textContent.trim().toLowerCase() : block.textContent.trim().toLowerCase();
+                    var matches = searchText.indexOf(query) !== -1;
+                    block.style.display = matches ? '' : 'none';
+                    if (matches) { sectionMatches = true; lastVisible = block; }
+                });
+                if (lastVisible) lastVisible.classList.add('ccs-accordion__term-block--last-visible');
+                section.style.display = sectionMatches ? '' : 'none';
+                if (sectionMatches) { visibleCount++; expandSection(section); } else { collapseSection(section); }
+            } else {
+                var contentEl = section.querySelector('.govuk-accordion__section-content');
+                var content = contentEl ? contentEl.textContent.trim().toLowerCase() : '';
+                var title = titleEl.textContent.trim().toLowerCase();
+                var matches = title.indexOf(query) !== -1 || content.indexOf(query) !== -1;
+                section.style.display = matches ? '' : 'none';
+                if (matches) { visibleCount++; expandSection(section); } else { collapseSection(section); }
+            }
         });
 
-        var hasNoResults = query && visibleCount === 0;
+        var hasNoResults = visibleCount === 0;
         if (noResults) noResults.style.display = hasNoResults ? '' : 'none';
         if (showAllBtn) showAllBtn.style.display = hasNoResults ? 'none' : '';
+
+        if (filterSummary) {
+            filterSummary.style.display = '';
+            filterSummary.innerHTML =
+                '<div class="ccs-filters-summary__facets">' +
+                    '<span class="ccs-filters-summary__label">Containing</span>' +
+                    '<ul class="ccs-filters-summary__list">' +
+                        '<li class="ccs-filters-summary__facet">' +
+                            '<button type="button" class="ccs-filters-summary__facet__cancel">' +
+                                escapeHtml(rawQuery) +
+                            '</button>' +
+                        '</li>' +
+                    '</ul>' +
+                '</div>';
+            filterSummary.querySelector('.ccs-filters-summary__facet__cancel').addEventListener('click', function () {
+                input.value = '';
+                doSearch();
+            });
+        }
+    }
+
+    searchBtn.addEventListener('click', doSearch);
+    input.addEventListener('keydown', function (e) {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            doSearch();
+        }
+    });
+
+    window.addEventListener('load', function () {
+        var accordion = document.getElementById('<?php echo esc_js($accordion_id); ?>');
+        if (accordion) preprocessTermBlocks(accordion);
+
+        var params = new URLSearchParams(window.location.search);
+        var term = params.get('termSearch');
+        if (term) {
+            input.value = term;
+            doSearch();
+        }
     });
 }());
 </script>
