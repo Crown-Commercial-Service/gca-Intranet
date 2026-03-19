@@ -29,8 +29,13 @@ $section-nav-header-text:  #000000;
     color: $section-nav-header-text !important;
     text-decoration: none;
     font-weight: 700;
-    font-size: govuk-px-to-rem(19);
+    font-size: govuk-px-to-rem(16);
     line-height: govuk-px-to-rem(20);
+
+    @include govuk-media-query($until: tablet) {
+        font-size: govuk-px-to-rem(14);
+        line-height: govuk-px-to-rem(18);
+    }
     letter-spacing: 0.1px;
 
     &:hover {
@@ -94,9 +99,13 @@ $section-nav-header-text:  #000000;
     padding: govuk-spacing(3) govuk-spacing(6);
     color: $section-nav-text !important;
     text-decoration: none;
-    font-size: govuk-px-to-rem(19);
+    font-size: govuk-px-to-rem(16);
     font-weight: 400;
     line-height: 1.4;
+
+    @include govuk-media-query($until: tablet) {
+        font-size: govuk-px-to-rem(14);
+    }
 
     &:hover {
         text-decoration: underline;
@@ -108,7 +117,7 @@ $section-nav-header-text:  #000000;
     }
 
     &--current {
-        font-size: govuk-px-to-rem(19);
+        font-size: govuk-px-to-rem(16);
         line-height: govuk-px-to-rem(20);
         letter-spacing: 0.1px;
         color: $section-nav-text;
