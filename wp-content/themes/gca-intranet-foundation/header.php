@@ -14,7 +14,7 @@
 <?php wp_body_open(); ?>
 <!-- Google Tag Manager (noscript) -->
 <noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-P9TZ7BPX"
-height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
+height="0" width="0" style="display:none;visibility:hidden" title="Google Tag Manager"></iframe></noscript>
 <!-- End Google Tag Manager (noscript) -->
 <?php get_template_part('template-parts/cookie-banner'); ?>
 
@@ -67,7 +67,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
               <label class="govuk-visually-hidden" for="site-search">Search the intranet</label>
               <div class="search-input-group">
                 <input id="site-search" name="s" type="search" class="govuk-input" placeholder="Search the intranet" autocomplete="off">
-                <button class="govuk-button search-submit" type="submit" aria-label="Search">
+                <button class="govuk-button search-submit" type="submit" aria-label="Search the intranet">
                   <span class="govuk-visually-hidden">Search</span>
                   <svg class="gca-search-icon" width="20" height="20" viewBox="0 0 16 16" aria-hidden="true" focusable="false">
                     <path fill="currentColor" d="M11.742 10.344l3.387 3.387-.998.998-3.387-3.387a6 6 0 1 1 .998-.998zM6.5 11.5a5 5 0 0 0 0-10 5 5 0 0 0 0 10z"></path>

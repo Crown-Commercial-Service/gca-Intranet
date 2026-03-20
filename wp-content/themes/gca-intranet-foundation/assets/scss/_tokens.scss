@@ -11,13 +11,14 @@ $gca-grey: #c8c8c8;
 $gca-light-grey: #e8e8e8;
 $gca-blue: #699aff;
 $gca-blue-2: #8ba9fe; // light blue (note: ends with FE in your branding image)
+$gca-blue-accessible: #1d70b8; // GOV.UK "blue" - WCAG AA contrast on white (4.8:1)
 $gca-black: #000000;
 
 // ======================
 // Semantic theme tokens (use these in components)
 // ======================
 $gca-hero-blue: $gca-blue-2;
-$gca-action-blue: $gca-blue;
+$gca-action-blue: $gca-blue-accessible;
 
 $gca-footer-bg: $gca-cream;
 $gca-accent-lime: $gca-lime;

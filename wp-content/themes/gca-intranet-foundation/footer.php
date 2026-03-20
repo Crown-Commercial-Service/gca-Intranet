@@ -7,8 +7,6 @@
  */
 ?>
 
-</main><!-- #main-content -->
-
 <?php if (is_singular(['page'])) : ?>
   <div class="gca-published-by-wrapper" role="region" aria-label="Page information">
     <div class="govuk-width-container">
