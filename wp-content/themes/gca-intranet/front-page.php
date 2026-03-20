@@ -63,8 +63,11 @@ get_header();
 
                   <div data-testid="latest-news-featured-content">
                     <h3 class="govuk-heading-m" data-testid="latest-news-featured-title">
-                      <a class="govuk-link govuk-!-text-break-word gca-clamp-2" data-testid="latest-news-featured-link" href="<?php the_permalink(); ?>">
-                        <?php the_title(); ?>
+                      <a class="govuk-link govuk-!-text-break-word" data-testid="latest-news-featured-link" href="<?php the_permalink(); ?>">
+                        <?php
+                          $title = get_the_title();
+                          echo esc_html(mb_strlen($title) > 55 ? mb_substr($title, 0, 55) . '...' : $title);
+                        ?>
                       </a>
                     </h3>
 
