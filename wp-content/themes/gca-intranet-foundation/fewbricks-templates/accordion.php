@@ -40,7 +40,7 @@ $search_id    = 'glossary-search-' . $instance_id;
                         aria-label="Search glossary terms"
                         data-accordion-target="<?php echo esc_attr($accordion_id); ?>"
                     >
-                    <button class="ccs-accordion-glossary__search-btn" type="button" aria-label="Search">
+                    <button class="ccs-accordion-glossary__search-btn" type="button" aria-label="Search glossary terms">
                         <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 18 18" aria-hidden="true" focusable="false" fill="currentColor">
                             <path d="M7 0a7 7 0 1 0 4.9 11.9l4.3 4.3 1.4-1.4-4.3-4.3A7 7 0 0 0 7 0zm0 2a5 5 0 1 1 0 10A5 5 0 0 1 7 2z"/>
                         </svg>

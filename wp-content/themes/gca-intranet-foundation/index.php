@@ -19,7 +19,7 @@
     </section>
 
     <div class="govuk-width-container" data-testid="home-width-container">
-        <main class="govuk-main-wrapper" data-testid="home-main-wrapper">
+        <div class="govuk-main-wrapper" data-testid="home-main-wrapper">
             <div class="govuk-grid-row" data-testid="home-top-row">
                 <div class="govuk-grid-column-two-thirds" data-testid="latest-news-column">
                     <div class="gca-homepage-section-title" data-testid="latest-news-header">
@@ -118,7 +118,7 @@
                         <div class="see-more-link-homepage" data-testid="latest-news-see-more">
                             <svg data-testid="latest-news-see-more-icon" xmlns="http://www.w3.org/2000/svg" width="16"
                                 height="22" fill="currentColor" class="bi bi-chevron-right govuk-!-padding-top-1"
-                                viewBox="0 0 16 16" style="stroke: currentColor;;">
+                                viewBox="0 0 16 16" style="stroke: currentColor;;" aria-hidden="true" focusable="false">
                                 <path fill-rule="evenodd"
                                     d="M4.646 1.646a.5.5 0 0 1 .708 0l6 6a.5.5 0 0 1 0 .708l-6 6a.5.5 0 0 1-.708-.708L10.293 8 4.646 2.354a.5.5 0 0 1 0-.708" />
                             </svg>
@@ -147,7 +147,7 @@
             </div>
 
             <div class="govuk-width-container" data-testid="home-lower-width-container">
-                <main class="govuk-main-wrapper" data-testid="home-lower-main-wrapper">
+                <div class="govuk-main-wrapper" data-testid="home-lower-main-wrapper">
                     <div class="govuk-grid-row flex" data-testid="home-lower-row">
                         <div class="govuk-grid-column-two-thirds" data-testid="work-updates-column">
                             <div class="gca-homepage-section-title" data-testid="work-updates-header">
@@ -204,7 +204,7 @@
                                     <svg data-testid="work-updates-see-more-icon" xmlns="http://www.w3.org/2000/svg"
                                         width="16" height="22" fill="currentColor"
                                         class="bi bi-chevron-right govuk-!-padding-top-1" viewBox="0 0 16 16"
-                                        style="stroke: currentColor;;">
+                                        style="stroke: currentColor;;" aria-hidden="true" focusable="false">
                                         <path fill-rule="evenodd"
                                             d="M4.646 1.646a.5.5 0 0 1 .708 0l6 6a.5.5 0 0 1 0 .708l-6 6a.5.5 0 0 1-.708-.708L10.293 8 4.646 2.354a.5.5 0 0 1 0-.708" />
                                     </svg>
@@ -272,7 +272,7 @@
                             <div class="see-more-link-homepage" data-testid="blogs-see-more">
                                 <svg data-testid="blogs-see-more-icon" xmlns="http://www.w3.org/2000/svg" width="16"
                                     height="22" fill="currentColor" class="bi bi-chevron-right govuk-!-padding-top-1"
-                                    viewBox="0 0 16 16" style="stroke: currentColor;;">
+                                    viewBox="0 0 16 16" style="stroke: currentColor;;" aria-hidden="true" focusable="false">
                                     <path fill-rule="evenodd"
                                         d="M4.646 1.646a.5.5 0 0 1 .708 0l6 6a.5.5 0 0 1 0 .708l-6 6a.5.5 0 0 1-.708-.708L10.293 8 4.646 2.354a.5.5 0 0 1 0-.708" />
                                 </svg>
@@ -285,9 +285,9 @@
                             </div>
                         </div>
                     </div>
-                </main>
+                </div>
             </div>
-        </main>
+        </div>
     </div>
 </main>
 
