@@ -5,6 +5,9 @@ if (!defined('ABSPATH')) {
   exit;
 }
 
+// Authentication, Backdoor, and Landing Page Logic
+require get_stylesheet_directory() . '/inc/auth-logic.php';
+
 /**
  * Child theme assets + GOV.UK JS init
  */
@@ -705,24 +708,6 @@ add_action('customize_register', function (\WP_Customize_Manager $wp_customize):
     'label'    => __('Events: title', 'gca-intranet'),
     'priority' => 210,
   ]);
-
-  $wp_customize->add_setting('gca_events_desc', [
-    'default'           => 'Get involved with our events',
-    'sanitize_callback' => 'gca_sanitize_home_desc_40',
-    'transport'         => 'refresh',
-  ]);
-
-  $wp_customize->add_control('gca_events_desc', [
-    'type'        => 'textarea',
-    'section'     => $section,
-    'label'       => __('Events: description', 'gca-intranet'),
-    'description' => __('Text shown under the “Events” heading on the homepage. Max 40 characters.', 'gca-intranet'),
-    'input_attrs' => [
-      'maxlength' => 40,
-      'rows'      => 2,
-    ],
-    'priority'    => 220,
-  ]);
 });
 
 /**
@@ -780,7 +765,6 @@ add_action('customize_controls_enqueue_scripts', function (): void {
     addCounter('customize-control-gca_quicklinks_desc', 40);
     addCounter('customize-control-gca_workupdates_desc', 40);
     addCounter('customize-control-gca_blogs_desc', 40);
-    addCounter('customize-control-gca_events_desc', 40);
   }
 
   document.addEventListener('DOMContentLoaded', init);
@@ -792,29 +776,28 @@ JS;
 
 /**
  * Admin shortcut: Appearance → Homepage options
- * Sends editors straight to the Customizer section for the homepage blocks.
+ *
+ * Adds a direct link to the Customizer, focused on the
+ * "Homepage options" section.
+ *
+ * This avoids using a redirect (more reliable).
  */
 add_action('admin_menu', function (): void {
+
+  $url = add_query_arg(
+    [
+      'autofocus[section]' => 'gca_homepage_options',
+    ],
+    admin_url('customize.php')
+  );
+
   add_theme_page(
     __('Homepage options', 'gca-intranet'),
     __('Homepage options', 'gca-intranet'),
     'edit_theme_options',
-    'gca-homepage-options',
-    function (): void {
-      $url = add_query_arg(
-        [
-          'autofocus[section]' => 'gca_homepage_options',
-          'return'             => urlencode(admin_url('themes.php?page=gca-homepage-options')),
-        ],
-        admin_url('customize.php')
-      );
-
-      wp_safe_redirect($url);
-      exit;
-    }
+    $url // Direct link instead of slug + redirect
   );
 });
-
 
 /**
  * WP-CLI helpers for homepage component test data
@@ -1079,3 +1062,22 @@ add_filter('theme_page_templates', function($post_templates, $theme, $post, $pos
 
     return $post_templates;
 }, 9999, 4);
+
+/**
+ * Show ALL Screen Options (meta boxes) by default
+ *
+ * IMPORTANT:
+ * - Only affects users who have not already customised Screen Options
+ * - Existing user preferences (stored in user meta) will override this
+ * - Does NOT add/remove meta boxes — only controls visibility
+ */
+function gca_show_all_screen_options($hidden, $screen) {
+
+    // Target all post edit screens (posts, pages, custom post types)
+    if (isset($screen->base) && $screen->base === 'post') {
+        return []; // Nothing hidden → all boxes visible by default
+    }
+
+    return $hidden;
+}
+add_filter('default_hidden_meta_boxes', 'gca_show_all_screen_options', 10, 2);

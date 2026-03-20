@@ -159,3 +159,18 @@
         }
     }
 }
+
+.ccs-accordion__term-block {
+    padding: govuk-spacing(4) 0;
+    border-bottom: 1px solid #b1b4b6;
+
+    &:first-child {
+        padding-top: 0;
+    }
+
+    &:last-child,
+    &--last-visible {
+        border-bottom: none;
+        padding-bottom: 0;
+    }
+}

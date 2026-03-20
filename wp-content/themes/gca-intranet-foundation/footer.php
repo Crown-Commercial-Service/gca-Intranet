@@ -7,10 +7,8 @@
  */
 ?>
 
-</main><!-- #main-content -->
-
 <?php if (is_singular(['page'])) : ?>
-  <div class="gca-published-by-wrapper">
+  <div class="gca-published-by-wrapper" role="region" aria-label="Page information">
     <div class="govuk-width-container">
       <?php get_template_part('template-parts/published-by'); ?>
     </div>

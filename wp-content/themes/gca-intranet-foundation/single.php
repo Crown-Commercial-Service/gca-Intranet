@@ -1,9 +1,11 @@
 <?php get_header(); ?>
 
 <?php
+$_thumbnail_id = get_post_thumbnail_id();
 get_template_part('template-parts/hero', null, [
   'title'     => get_the_title(),
   'image_url' => get_the_post_thumbnail_url(get_the_ID(), 'large') ?: '',
+  'image_alt' => $_thumbnail_id ? (string) get_post_meta($_thumbnail_id, '_wp_attachment_image_alt', true) : '',
 ]);
 
 get_template_part('template-parts/breadcrumbs');

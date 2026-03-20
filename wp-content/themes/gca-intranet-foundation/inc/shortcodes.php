@@ -7,85 +7,42 @@ if (!defined('ABSPATH')) {
 
 /**
  * Section Nav Shortcode
- */
-
-function gca_section_nav_resolve_menu(string $menu_name): ?\WP_Term
-{
-    $menu = wp_get_nav_menu_object($menu_name);
-
-    if (!$menu) {
-        $locations = get_nav_menu_locations();
-        if (!empty($locations[$menu_name])) {
-            $menu = wp_get_nav_menu_object((int) $locations[$menu_name]);
-        }
-    }
-
-    return $menu ?: null;
-}
-
-/**
- * @param object[] $menu_items   All items for the menu.
- * @param int      $parent_id   Menu item ID to start from (0 = top level).
+ * Recursively build a tree of child pages for the given parent page ID.
+ *
+ * @param int $parent_id
  * @return array
  */
-function gca_section_nav_build_tree(array $menu_items, int $parent_id): array
+function gca_section_nav_get_page_tree(int $parent_id): array
 {
-    $children = [];
+    $pages = get_pages([
+        'parent'      => $parent_id,
+        'sort_column' => 'menu_order',
+        'post_status' => 'publish',
+    ]);
 
-    foreach ($menu_items as $item) {
-        if ((int) $item->menu_item_parent === $parent_id) {
-            $children[] = $item;
-        }
+    if (empty($pages)) {
+        return [];
     }
 
-    usort($children, static fn ($a, $b) => (int) $a->menu_order - (int) $b->menu_order);
-
     $nodes = [];
-    foreach ($children as $item) {
+    foreach ($pages as $page) {
         $nodes[] = [
-            'id'       => (int) $item->ID,
-            'title'    => $item->title,
-            'url'      => $item->url,
-            'children' => gca_section_nav_build_tree($menu_items, (int) $item->ID),
+            'id'       => $page->ID,
+            'title'    => $page->post_title,
+            'url'      => get_permalink($page->ID),
+            'children' => gca_section_nav_get_page_tree($page->ID),
         ];
     }
 
     return $nodes;
 }
 
-function gca_section_nav_url_path(string $url): string
-{
-    $path = parse_url(trim($url), PHP_URL_PATH);
-    return trailingslashit($path ?: '/');
-}
-
 /**
+ * Render a list of nav nodes as <li> elements.
  *
  * @param array  $nodes
- * @param string $current_path  Path-only, trailingslashed (e.g. /hr/leave-absence/).
- * @return int[]  IDs from the matched node up through its ancestors.
- */
-function gca_section_nav_active_path(array $nodes, string $current_path): array
-{
-    foreach ($nodes as $node) {
-        if (gca_section_nav_url_path($node['url']) === $current_path) {
-            return [(int) $node['id']];
-        }
-
-        $child_path = gca_section_nav_active_path($node['children'], $current_path);
-        if (!empty($child_path)) {
-            return array_merge([(int) $node['id']], $child_path);
-        }
-    }
-
-    return [];
-}
-
-/**
- *
- * @param array $nodes
- * @param int[] $active_ids  IDs of the current item and all its ancestors.
- * @param string $current_url
+ * @param int[]  $active_ids  IDs of the current item and all its ancestors.
+ * @param string $current_url Permalink of the currently viewed page.
  * @return string
  */
 function gca_section_nav_render(array $nodes, array $active_ids, string $current_url): string
@@ -94,7 +51,8 @@ function gca_section_nav_render(array $nodes, array $active_ids, string $current
 
     foreach ($nodes as $node) {
         $has_children = !empty($node['children']);
-        $is_current   = (gca_section_nav_url_path($node['url']) === $current_url);
+        $node_url     = trailingslashit((string) $node['url']);
+        $is_current   = ($node_url === $current_url);
         $is_in_path   = in_array((int) $node['id'], $active_ids, true);
 
         $classes = ['section-nav__item'];
@@ -147,103 +105,56 @@ function gca_section_nav_render(array $nodes, array $active_ids, string $current
 }
 
 /**
- * @param array|string $atts
+ * @param array|string $atts  Unused — kept for shortcode API compatibility.
  */
 function gca_section_nav_shortcode($atts): string
 {
-    $atts = shortcode_atts(
-        ['name' => 'primary', 'section' => ''],
-        (array) $atts,
-        'menu'
-    );
-
-    $menu = gca_section_nav_resolve_menu($atts['name']);
-    if (!$menu) {
-        return '<!-- section_nav: menu not found -->';
-    }
-
-    $menu_items = wp_get_nav_menu_items($menu->term_id);
-    if (empty($menu_items)) {
-        return '<!-- section_nav: menu has no items -->';
-    }
-
-    $tree = gca_section_nav_build_tree($menu_items, 0);
-
-    $current_path = gca_section_nav_url_path(parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH) ?: '/');
-    $active_ids   = gca_section_nav_active_path($tree, $current_path);
-
-    $section_node = null;
-    $section_name = trim($atts['section']);
-
-    if ($section_name !== '') {
-        foreach ($tree as $node) {
-            if (strcasecmp($node['title'], $section_name) === 0) {
-                $section_node = $node;
-                break;
-            }
-        }
-    } else {
-        if (!empty($active_ids)) {
-            $top_level_id = $active_ids[0];
-            foreach ($tree as $node) {
-                if ($node['id'] === $top_level_id) {
-                    $section_node = $node;
-                    break;
-                }
-            }
-        }
-
-        if (!$section_node) {
-            $queried_id = get_queried_object_id();
-            if ($queried_id) {
-                $matched_item = null;
-                foreach ($menu_items as $item) {
-                    if ((int) $item->object_id === $queried_id) {
-                        $matched_item = $item;
-                        break;
-                    }
-                }
-                if ($matched_item) {
-                    $index = array_column($menu_items, null, 'ID');
-                    while ((int) $matched_item->menu_item_parent !== 0) {
-                        $parent_id    = (int) $matched_item->menu_item_parent;
-                        $matched_item = $index[$parent_id] ?? null;
-                        if (!$matched_item) {
-                            break;
-                        }
-                    }
-                    if ($matched_item) {
-                        foreach ($tree as $node) {
-                            if ($node['id'] === (int) $matched_item->ID) {
-                                $section_node = $node;
-                                break;
-                            }
-                        }
-                    }
-                }
-            }
-        }
-    }
-
-    $render_nodes = $section_node ? $section_node['children'] : $tree;
-
-    if (empty($render_nodes)) {
+    if (!is_page_template('template-layout-left-nav.php')) {
         return '';
     }
 
-    $html  = '<nav class="section-nav" aria-label="Section navigation">';
-
-    if ($section_node) {
-        $html .= '<div class="section-nav__header">';
-        $html .= '<a href="' . esc_url($section_node['url']) . '" class="section-nav__title">';
-        $html .= esc_html($section_node['title']);
-        $html .= '</a>';
-        $html .= '</div>';
+    $current_id = get_queried_object_id();
+    if (!$current_id) {
+        return '';
     }
 
-    $html .= '<ul class="section-nav__list">';
-    $html .= gca_section_nav_render($render_nodes, $active_ids, $current_path);
-    $html .= '</ul>';
+    $current_page = get_post($current_id);
+    if (!$current_page || $current_page->post_type !== 'page') {
+        return '';
+    }
+
+    // Walk up to the top-level ancestor so all pages in the hierarchy share the same nav.
+    $ancestors = get_post_ancestors($current_id);
+    
+    if (count($ancestors) <= 1) {
+        $section_root_id = $current_id;
+    } else {
+        $section_root_id = (int) $ancestors[count($ancestors) - 2];
+    }
+
+    $section_root_page = get_post($section_root_id);
+
+    // Build the set of active IDs (current page + all its ancestors) for highlighting.
+    $active_ids = array_map('intval', $ancestors);
+    $active_ids[] = $current_id;
+
+    $current_url = trailingslashit(get_permalink($current_id));
+
+    $children = gca_section_nav_get_page_tree($section_root_id);
+
+    $html  = '<nav class="section-nav" aria-label="Section navigation">';
+    $html .= '<div class="section-nav__header">';
+    $html .= '<a href="' . esc_url(get_permalink($section_root_id)) . '" class="section-nav__title">';
+    $html .= esc_html($section_root_page->post_title);
+    $html .= '</a>';
+    $html .= '</div>';
+
+    if (!empty($children)) {
+        $html .= '<ul class="section-nav__list">';
+        $html .= gca_section_nav_render($children, $active_ids, $current_url);
+        $html .= '</ul>';
+    }
+
     $html .= '</nav>';
 
     return $html;

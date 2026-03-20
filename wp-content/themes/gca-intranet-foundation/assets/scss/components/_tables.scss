@@ -1,49 +1,222 @@
-/*------------------------------------*\
-  #Tables
-\*------------------------------------*/
+.dt-container {
+    font-family: $govuk-font-family;
+    font-size: 19px;
+    line-height: 1.315789;
+    color: #0b0c0c;
+    margin-bottom: govuk-spacing(6);
+}
+
+.dt-layout-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: govuk-spacing(3);
+    margin-bottom: govuk-spacing(3);
+
+    &.dt-layout-table {
+        display: block;
+        margin-bottom: 0;
+    }
+}
+
+.dt-layout-cell {
+    flex: 0 1 auto;
+}
+
+.dt-length {
+    display: flex;
+    align-items: center;
+    gap: govuk-spacing(2);
+
+    label {
+        font-family: $govuk-font-family;
+        font-size: 19px;
+        line-height: 1.315789;
+        color: #0b0c0c;
+    }
+}
+
+.dt-search {
+    display: flex;
+    align-items: center;
+    gap: govuk-spacing(2);
+
+    label {
+        font-family: $govuk-font-family;
+        font-size: 19px;
+        line-height: 1.315789;
+        color: #0b0c0c;
+        font-weight: $govuk-font-weight-bold;
+    }
+}
+
+.dt-input {
+    font-family: $govuk-font-family;
+    font-size: 19px;
+    line-height: 1.315789;
+    color: #0b0c0c;
+    background-color: #ffffff;
+    border: 2px solid #0b0c0c;
+    padding: 5px govuk-spacing(2);
+    appearance: auto;
+    border-radius: 0;
+    box-sizing: border-box;
+
+    &:focus {
+        outline: 3px solid #ffdd00;
+        outline-offset: 0;
+        box-shadow: inset 0 0 0 2px #0b0c0c;
+    }
+}
 
 .tablepress {
     width: 100%;
     border-collapse: collapse;
-    margin-bottom: govuk-spacing(6);
-    font-family: inherit;
+    margin-bottom: 0;
+    font-family: $govuk-font-family;
+    font-size: 19px;
+    line-height: 1.315789;
+    color: #0b0c0c;
 
     thead th {
-        background-color: $gca-blue;
-        color: #ffffff;
-        font-weight: 700;
-        padding: 12px 16px;
+        background-color: $gca-blue-2;
+        color: #0b0c0c;
+        font-weight: $govuk-font-weight-bold;
+        font-size: 19px;
+        padding: govuk-spacing(3) govuk-spacing(4);
         text-align: left;
         border: none;
+        vertical-align: bottom;
+        --dt-column-ordering: #0b0c0c;
+
+        .dt-column-header {
+            display: flex;
+            align-items: center;
+            gap: govuk-spacing(2);
+        }
+
+        .dt-column-title {
+            flex: 1;
+        }
+
+        .dt-column-order {
+            cursor: pointer;
+        }
     }
 
-    tbody tr {
-        &:nth-child(odd) {
-            background-color: #f8f9fa;
+    thead {
+        th.dt-orderable-asc,
+        th.dt-orderable-desc {
+            &:hover {
+                background-color: $gca-blue;
+                color: #0b0c0c;
+            }
         }
 
-        &:nth-child(even) {
-            background-color: #ffffff;
-        }
-
-        &:hover {
-            background-color: rgba($gca-blue, 0.1);
+        th.dt-ordering-asc,
+        th.dt-ordering-desc {
+            background-color: $gca-blue;
+            color: #0b0c0c;
         }
     }
 
-    tbody td {
-        padding: 12px 16px;
-        border-bottom: 1px solid $gca-border-grey;
-        vertical-align: top;
-        color: $gca-black;
+    tbody {
+        tr {
+            &:nth-child(odd) {
+                background-color: #f3f2f1;
+            }
+
+            &:nth-child(even) {
+                background-color: #ffffff;
+            }
+
+            &:hover {
+                background-color: rgba($gca-blue, 0.1);
+            }
+        }
+
+        td {
+            padding: govuk-spacing(3) govuk-spacing(4);
+            border-bottom: 1px solid $gca-border-grey;
+            vertical-align: top;
+            color: #0b0c0c;
+            font-size: 19px;
+        }
     }
 
     tfoot td {
         background-color: $gca-blue-2;
-        color: $gca-black;
-        font-weight: 700;
-        padding: 12px 16px;
+        color: #0b0c0c;
+        font-weight: $govuk-font-weight-bold;
+        padding: govuk-spacing(3) govuk-spacing(4);
         border-top: 2px solid $gca-blue;
+    }
+}
+
+.dt-info {
+    font-family: $govuk-font-family;
+    font-size: 19px;
+    line-height: 1.315789;
+    color: #0b0c0c;
+}
+
+.dt-paging {
+    nav {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 4px;
+    }
+}
+
+.dt-paging-button {
+    font-family: $govuk-font-family;
+    font-size: 19px;
+    line-height: 1.315789;
+    font-weight: 400;
+    min-width: 40px;
+    padding: 5px govuk-spacing(2);
+    text-align: center;
+    background: none;
+    border: none;
+    border-radius: 0;
+    cursor: pointer;
+    color: $gca-action-blue;
+    text-decoration: underline;
+    text-underline-offset: 3px;
+
+    &:hover:not(.disabled):not(.current) {
+        text-decoration: none;
+        background-color: #f3f2f1;
+        color: $gca-action-blue;
+    }
+
+    &:focus {
+        outline: 3px solid #ffdd00;
+        outline-offset: 0;
+        box-shadow: inset 0 0 0 2px #0b0c0c;
+    }
+
+    &.current {
+        font-weight: $govuk-font-weight-bold;
+        color: #0b0c0c;
+        text-decoration: none;
+        background-color: $gca-blue-2;
+        border: 2px solid $gca-blue;
+    }
+
+    &.disabled {
+        color: #505a5f;
+        text-decoration: none;
+        cursor: default;
+        opacity: 1;
+    }
+
+    &.previous,
+    &.next {
+        font-size: 22px;
+        line-height: 1;
     }
 }
 
@@ -58,13 +231,10 @@
 }
 
 .govuk-table__cell--noborder {
-
     border-bottom: 0;
-
 }
 
 .ccs-table--framework-lots {
-
     margin-bottom: 0;
 
     td {
@@ -72,35 +242,24 @@
     }
 
     tr:last-child td {
-
         border: 0;
-
     }
-
 }
 
 .ccs-table--framework-lots .govuk-table__header,
 .ccs-table--framework-lots .govuk-table__cell {
-
     padding-top: govuk-px-to-rem(14);
     padding-bottom: govuk-px-to-rem(14);
-
 }
 
 .govuk-table__cell--width-30 {
-
     width: 30%;
-
 }
 
 .ccs-table--upcoming-agreements {
-
     margin-bottom: govuk-px-to-rem(50);
 
     td {
-
         vertical-align: text-top;
-
     }
-
 }
