@@ -25,7 +25,7 @@ function gca_register_my_taxonomies()
         'show_in_rest' => true
     ));
     
-    register_taxonomy('responsible_team', array('work_update', 'page'), array(
+    register_taxonomy('responsible_team', array('work_update', 'page', 'post'), array(
         'hierarchical' => true,
         'label'        => 'Responsible directorate/team',
         'capabilities' => ['assign_terms' => 'edit_posts', 'edit_terms' => 'manage_categories'],

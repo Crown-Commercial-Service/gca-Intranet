@@ -63,7 +63,7 @@ get_header();
 
                   <div data-testid="latest-news-featured-content">
                     <h3 class="govuk-heading-m" data-testid="latest-news-featured-title">
-                      <a class="govuk-link govuk-!-text-break-word" data-testid="latest-news-featured-link" href="<?php the_permalink(); ?>">
+                      <a class="govuk-link govuk-!-text-break-word gca-clamp-2" data-testid="latest-news-featured-link" href="<?php the_permalink(); ?>">
                         <?php the_title(); ?>
                       </a>
                     </h3>
@@ -73,7 +73,7 @@ get_header();
                     </p>
 
                     <p class="govuk-body-s" data-testid="latest-news-featured-date">
-                      <?php echo esc_html(get_the_date('jS F Y')); ?>
+                      <?php echo esc_html(get_the_date('j F Y')); ?>
                     </p>
                   </div>
                   <?php
@@ -117,7 +117,7 @@ get_header();
                       </p>
 
                       <p class="govuk-body-s" data-testid="latest-news-secondary-date">
-                        <?php echo esc_html(get_the_date('jS F Y')); ?>
+                        <?php echo esc_html(get_the_date('j F Y')); ?>
                       </p>
                     </div>
                   </div>
@@ -352,7 +352,7 @@ get_header();
                       </p>
 
                       <p class="govuk-body-s" data-testid="work-update-date">
-                        <?php echo esc_html(get_the_date('jS F Y')); ?>
+                        <?php echo esc_html(get_the_date('j F Y')); ?>
                       </p>
                     </div>
                   </div>
@@ -446,7 +446,7 @@ get_header();
 
 
                       <p class="govuk-body-s" data-testid="blogs-date">
-                        <?php echo esc_html(get_the_date('jS F Y')); ?>
+                        <?php echo esc_html(get_the_date('j F Y')); ?>
                       </p>
                     </div>
                     <?php
@@ -491,11 +491,6 @@ get_header();
           echo esc_html($events_title !== '' ? $events_title : __('Events', 'gca-intranet'));
           ?>
           </h2>
-
-          <?php
-          $events_desc = trim((string) get_theme_mod('gca_events_desc', ''));
-          ?>
-
           <p class="govuk-body" data-testid="latest-events-subheading">
           <?php echo esc_html($events_desc !== '' ? $events_desc : 'Get involved with our events'); ?>
           </p>

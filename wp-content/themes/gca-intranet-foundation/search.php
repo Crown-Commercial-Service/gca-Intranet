@@ -6,13 +6,12 @@ $search_query = get_search_query();
 $search_url   = get_theme_mod('gca_search_url', home_url('/'));
 $found_posts  = (int) $wp_query->found_posts;
 
-$hero_image_url = get_template_directory_uri() . '/assets/img/office.jpg';
 ?>
 
 <?php
 get_template_part('template-parts/hero', null, [
   'title'     => __('Search the intranet', 'gca-intranet'),
-  'image_url' => $hero_image_url,
+  'image_url' => '',
 ]);
 ?>
 

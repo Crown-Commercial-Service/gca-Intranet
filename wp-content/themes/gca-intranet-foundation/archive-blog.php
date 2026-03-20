@@ -1,7 +1,7 @@
 <?php get_header(); ?>
 
 <?php
-$hero_image_url = get_template_directory_uri() . '/assets/img/office.jpg';
+$hero_image_url = get_template_directory_uri() . '/assets/img/blogs.jpg';
 
 get_template_part('template-parts/hero', null, [
   'title'     => post_type_archive_title('', false),
@@ -41,10 +41,7 @@ get_template_part('template-parts/breadcrumbs');
             </h2>
 
             <p data-testid="blog-decs">
-              <?php 
-                $content = strip_tags(get_the_content());
-                echo esc_html(mb_strlen($content) > 320 ? mb_substr($content, 0, 320) . '...' : $content);
-              ?>
+              <?php echo esc_html(gca_clean_post_excerpt(320)); ?>
             </p>
 
             <div class="date_bottom" data-testid="blog-post-date">
@@ -72,14 +69,14 @@ get_template_part('template-parts/breadcrumbs');
                 'mid_size'  => 2,
                 'prev_text' => sprintf(
                     '<span class="icon">
-                        <svg width="17" height="14" xmlns="http://www.w3.org/2000/svg"><path d="M6.7 0l1.4 1.4-4.3 4.3h13v2H3.9l4.2 4-1.4 1.4L0 6.7z" fill="#007194" fill-rule="evenodd"/></svg>
+                        <svg width="17" height="14" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false"><path d="M6.7 0l1.4 1.4-4.3 4.3h13v2H3.9l4.2 4-1.4 1.4L0 6.7z" fill="#007194" fill-rule="evenodd"/></svg>
                       </span> <span>Previous</span>
                     <span class="govuk-visually-hidden">page</span>'
                 ),
                 'next_text' => sprintf(
                     '<span>Next</span> <span class="govuk-visually-hidden">page</span>
                     <span class="icon">
-                        <svg width="17" height="14" xmlns="http://www.w3.org/2000/svg"><path d="M10.1 0L8.7 1.4 13 5.7H0v2h12.9l-4.2 4 1.4 1.4 6.7-6.4z" fill="#007194" fill-rule="evenodd"/></svg>
+                        <svg width="17" height="14" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false"><path d="M10.1 0L8.7 1.4 13 5.7H0v2h12.9l-4.2 4 1.4 1.4 6.7-6.4z" fill="#007194" fill-rule="evenodd"/></svg>
                     </span>'
                 ),
             ) ); 

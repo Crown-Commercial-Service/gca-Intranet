@@ -91,8 +91,9 @@ add_action('wp_enqueue_scripts', function (): void {
 ');
 
     // 3. Custom Navigation Logic (Mobile Menu & Dropdowns)
-    // We attach this as an inline script to the 'gca-theme' handle
-    wp_add_inline_script('gca-theme', '
+    wp_register_script('gca-nav', '', [], false, true);
+    wp_enqueue_script('gca-nav');
+    wp_add_inline_script('gca-nav', '
     document.addEventListener("DOMContentLoaded", function() {
         // Mobile Menu Toggler
         var toggleBtn = document.querySelector(".global-navigation__toggler");
@@ -106,18 +107,39 @@ add_action('wp_enqueue_scripts', function (): void {
             });
         }
 
-        // Mobile Dropdown logic
-        document.querySelectorAll(".dropdown > .dropbtn").forEach(function(button) {
-            button.addEventListener("click", function(e) {
-                if (window.innerWidth < 1024) {
-                    e.preventDefault();
-                    var dropdownContent = this.nextElementSibling;
-                    if (dropdownContent && dropdownContent.classList.contains("dropdown-content")) {
-                        dropdownContent.classList.toggle("open-dropdown");
+        // Tablet dropdown toggle (769px–1023px)
+        // Arrow button click opens/closes sub-menu; hovering a different item closes any open one
+        if (window.innerWidth >= 769 && window.innerWidth < 1024) {
+            var megaItems   = document.querySelectorAll(".nav-list--primary > li.has-mega-menu");
+            var megaToggles = document.querySelectorAll(".nav-list--primary > li.has-mega-menu > .mega-menu-toggle");
+
+            megaToggles.forEach(function(btn) {
+                btn.addEventListener("click", function() {
+                    var parentLi = this.closest("li.has-mega-menu");
+                    var isOpen   = parentLi.classList.contains("is-open");
+
+                    // Close all open items first
+                    megaItems.forEach(function(li) { li.classList.remove("is-open"); });
+
+                    // Open this one if it was not already open
+                    if (!isOpen) {
+                        parentLi.classList.add("is-open");
                     }
-                }
+                });
             });
-        });
+
+            // When hovering a menu item, close any previously clicked-open item
+            megaItems.forEach(function(li) {
+                li.addEventListener("mouseenter", function() {
+                    megaItems.forEach(function(otherLi) {
+                        if (otherLi !== li) {
+                            otherLi.classList.remove("is-open");
+                        }
+                    });
+                });
+            });
+        }
+
     });');
 
     wp_register_script('gca-cookie-banner', '', [], false, true);
@@ -341,6 +363,9 @@ function gca_search_get_post_terms(): array
                 if (strtolower($term->name) === 'uncategorized' || strtolower($term->name) === 'uncategorised') {
                     continue;
                 }
+                if ($term->taxonomy === 'audience' && strtolower($term->name) === 'all colleagues') {
+                    continue;
+                }
                 $all[] = $term;
             }
         }
@@ -356,6 +381,21 @@ function gca_search_truncate(string $str, int $length): string
         return $str;
     }
     return rtrim(mb_substr($str, 0, $length - 1)) . '…';
+}
+
+function gca_clean_post_excerpt(int $length = 320): string
+{
+    $content = get_the_content();
+    $content = preg_replace('/<table[\s\S]*?<\/table>/i', '', $content);
+    $content = strip_shortcodes($content);
+    $content = wp_strip_all_tags($content);
+    $content = preg_replace('/(?:https?:\/\/|www\.)\S+/i', '', $content);
+    $content = trim(preg_replace('/\s+/', ' ', $content));
+
+    if (mb_strlen($content) <= $length) {
+        return $content;
+    }
+    return rtrim(mb_substr($content, 0, $length)) . '...';
 }
 
 /**

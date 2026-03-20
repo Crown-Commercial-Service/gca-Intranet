@@ -10,6 +10,7 @@
  */
 $title     = $args['title'] ?? '';
 $image_url = $args['image_url'] ?? '';
+$image_alt = $args['image_alt'] ?? '';
 ?>
 
 <section class="gca-hero" aria-label="Page header">
@@ -23,7 +24,13 @@ $image_url = $args['image_url'] ?? '';
 
       <div class="col-12 col-lg-6 text-lg-end">
         <?php if ($image_url) : ?>
-          <img class="gca-hero__image" src="<?php echo esc_url($image_url); ?>" alt="" loading="lazy">
+          <img
+            class="gca-hero__image"
+            src="<?php echo esc_url($image_url); ?>"
+            alt="<?php echo esc_attr($image_alt); ?>"
+            <?php if (!$image_alt) : ?>aria-hidden="true"<?php endif; ?>
+            loading="lazy"
+          >
         <?php endif; ?>
       </div>
     </div>
