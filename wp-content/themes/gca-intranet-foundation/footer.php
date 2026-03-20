@@ -10,6 +10,18 @@
 <?php if (is_singular(['page'])) : ?>
   <div class="gca-published-by-wrapper" role="region" aria-label="Page information">
     <div class="govuk-width-container">
+      <?php
+        $responsible_teams = get_the_terms(get_the_ID(), 'responsible_team');
+        if ($responsible_teams && !is_wp_error($responsible_teams)) :
+      ?>
+        <div class="gca-responsible-team" data-testid="responsible-team">
+          <?php foreach ($responsible_teams as $term) : ?>
+            <span class="tag_label grey govuk-body-s" data-testid="responsible-team-pill">
+              <?php echo esc_html($term->name); ?>
+            </span>
+          <?php endforeach; ?>
+        </div>
+      <?php endif; ?>
       <?php get_template_part('template-parts/published-by'); ?>
     </div>
   </div>
