@@ -183,28 +183,3 @@ function get_kses_with_custom_html_ruleset() {
     return array_merge( $kses_defaults, $custom_html_args );
     // Example usage: wp_kses( $the_html, get_kses_with_custom_html_ruleset() );
 }
-
-/**
- * Return an array (json_decode-d) of imported file
- * 
- * @since 7.8.8
- */
-function asenha_get_import_content(  $name  ) {
-    $file_extension = pathinfo( $_FILES[$name]['name'], PATHINFO_EXTENSION );
-    $file_size = $_FILES[$name]['size'];
-    // Only process JSON file that do not exceed max upload size
-    if ( $file_extension === 'json' && $file_size < wp_max_upload_size() ) {
-        $file_name = sanitize_file_name( $_FILES[$name]['name'] );
-        $temp_file_path = $_FILES[$name]['tmp_name'];
-        if ( is_uploaded_file( $temp_file_path ) ) {
-            $file_contents = file_get_contents( $temp_file_path );
-            $imported_settings = json_decode( $file_contents, true );
-            // vi( $imported_settings );
-            return $imported_settings;
-        } else {
-            return false;
-        }
-    } else {
-        return false;
-    }
-}

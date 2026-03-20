@@ -120,8 +120,6 @@ class Activation {
         if ( ! empty( $wpdb->collate ) ) {
             $charset_collation_sql .= " COLLATE $wpdb->collate";         
         }
-        
-        flush_rewrite_rules();
 
         require_once ABSPATH . '/wp-admin/includes/upgrade.php';
         
@@ -208,6 +206,31 @@ class Activation {
         $common_methods = new Common_Methods;
         add_filter( 'rewrite_rules_array', [ $common_methods, 'disable_embeds_rewrites' ] );
         flush_rewrite_rules( false );
+    }
+
+    /**
+     * Deferred flush for the Disable Embeds module.
+     * Runs on init (late priority) so all CPTs/taxonomies are already registered.
+     *
+     * @since 8.5.1
+     */
+    public function maybe_flush_disable_embeds_rewrite_rules() {
+        $options = get_option( ASENHA_SLUG_U );
+
+        if ( ! is_array( $options ) ) {
+            return;
+        }
+
+        if ( isset( $options['disable_embeds_flush_rewrite_rules_needed'] )
+            && true === $options['disable_embeds_flush_rewrite_rules_needed']
+        ) {
+            $common_methods = new Common_Methods;
+            add_filter( 'rewrite_rules_array', [ $common_methods, 'disable_embeds_rewrites' ] );
+            flush_rewrite_rules( false );
+
+            $options['disable_embeds_flush_rewrite_rules_needed'] = false;
+            update_option( ASENHA_SLUG_U, $options, true );
+        }
     }
 
 }
