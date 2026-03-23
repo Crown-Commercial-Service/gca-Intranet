@@ -1,10 +1,92 @@
 ## Changelog
 
-**Admin and Site Enhancements (ASE) v1.0.0** was released on October 17, 2022. Since then, there have been **84 _major_ releases** (e.g. 1.1.0 ) and **185 _minor_ releases** (e.g. 4.9.1), for a **total of 269 releases**.
+**Admin and Site Enhancements (ASE) v1.0.0** was released on October 17, 2022. Since then, there have been **85 _major_ releases** (e.g. 1.1.0 ) and **188 _minor_ releases** (e.g. 4.9.1), for a **total of 273 releases**.
 
 Each **_major release_** usually corresponds with the addition of one new module/feature. Each module/feature usually is the equivalent of one (or more) single-purpose plugin. Each **_minor release_** usually contain one or more bugfix or improvements to existing modules/features.
 
 [**Upgrade to ASE Pro**](https://www.wpase.com/chnlg-to-web). Lifetime Deal (LTD) available.
+
+### 8.5.1 (2026.03.16) - ASE Free and Pro
+
+* **[IMPROVED in Free and Pro] Utilities >> Email Delivery**: SMTP password is now securely encrypted at rest (in wp_options). Props to Bekee G. for prompting this improvement.
+
+* **[IMPROVED in Pro] Admin Interface >> Admin Menu Organizer**: Implement an option to add custom menu and submenu items. The custom menu item can use custom icon, title, link and capability required, or can be used as a separator or section header in the admin menu with no linking. Props to Kai, Leslie, Ken R., @27pixel, @firstandlast, Jarosław K., Mike D. @oxygen, Jacob N., Ramit I., Bent F. and Yaser for prompting this improvement.
+
+* **[IMPROVED in Pro] Custom Code >> Code Snippets Manager**: add status filter (active vs inactive) in snippets listing page.
+
+* **[IMPROVED in Pro] Utilities >> Maintenance Mode**: allow wildcard use in excluding URLs from maintenance mode. Props to Tony S. for prompting this improvement.
+
+* **[FIXED in Pro] Content Management >> Media Categories**: fix broken CSS in categories tree context menu causing the menu to look squished.
+
+* **[TRANSLATION in Free and Pro]** ASE is now being translated into [38 languages](https://translate.wpase.com/):
+  * **Added new/improved translation** for:
+    * ASE Free: Updated Ukrainian, Portuguese (Brazil), Polish, Dutch, Norwegian, Spanish, Danish.
+    * ASE Pro: Updated Portuguese (Brazil), Polish, Norwegian, Hungarian, Spanish, Catalan.
+
+### 8.5.0 (2026.03.09) - ASE Free and Pro
+
+* **[ADDED in Pro] Content Management >> Post Type Switcher**: Easily switch the post type of one or more posts to a different post type from the classic editor, block editor, quick edit or bulk edit. Props to Bas B. Yalcin and Sarah for suggesting this addition.
+
+* **[IMPROVED in Free and Pro] Disable Components >> Disable Smaller Components**: Added an option to disable [site admin email verification screen](https://make.wordpress.org/core/2019/10/17/wordpress-5-3-admin-email-verification-screen/) that was added since WordPress v5.3.
+
+* **[IMPROVED in Pro] Security >> Email Address Obfuscator**: add an option to use "high-compatibility" mode which should help avoid wrongly-ordered email address when the obfuscator shortcode is used in certain widgets / components in page builders, e.g. Elementor Icon Box. Props to Kim N. and Jay T. for prompting this improvement.
+
+* **[IMPROVED in Pro] Content Management >> Terms Order**: 
+  * Enable term drag and dropp between levels. In other words, drag a parent-level term as the child of another parent and vice versa.
+  * Block editor's taxonomy meta boxes now reflects the custom terms order.
+
+* **[FIXED in Pro] Content Management >> Content Order**: terms from non-hierarchical taxonomies are now properly shown when "Show taxonomy terms" is checked. Props to Christian S. for reporting the issue.
+
+* **[FIXED in Pro] Log In/Out | Register >> Login Page Customizer**: fixed PHP deprecation issue. Props to Bilgi for reporting the issue.
+
+* **[TRANSLATION in Free and Pro]** ASE is now being translated into [38 languages](https://translate.wpase.com/):
+  * **Added new/improved translation** for:
+    * ASE Free: Updated Portuguese (Brazil), Polish, Norwegian, German, French, Dutch (Belgium), Danish, Chinese (Taiwan)
+    * ASE Pro: Updated Czech, Spanish (Spain), Norwegian, Portuguese (Brazil)
+
+### 8.4.2 (2026.03.02) - ASE Free and Pro
+
+* **[FIXED in Free] Content Management >> Content Duplication**: fixed missing 'Duplicate' link in post actions row in the post listing screen since v8.4.1 introduced a security fix for this module. Props to st@n, @ilanaw, @michoscopic, @lineadiconfine, @dannyfoo and @webkatdesign for [reporting](https://wordpress.org/support/topic/duplicate-post-page-7-4-1-bug/) the bug.
+
+* **[IMPROVED in Pro] Security >> Two-Factor Authentication (2FA)**: Grace period notice that urges users with the relevant roles to set up 2FA is now excluded from being hidden by the Hide Admin Notices module. This ensures that those users see it when they log in.
+
+* **[FIXED in Pro] Plugin Activation**: fixed a fatal error that occurs in a certain scenario during plugin activation. Props to Alistair W. for reporting the issue and facilitating the troubleshooting process.
+
+* **[FIXED in Pro] Content Management >> Media Categories**: fixed a PHP warning that occurs in a certain scenario.
+
+* **[FIXED in Pro] Content Management >> Custom Content Types >> Custom Field Groups**: fixed a fatal error that occurs when trying to edit a Bricks template for a taxonomy archive when a custom field group is attached to that taxonomy and no specific taxonomy term has been selected to preview the archive in the builder. Props to David W. for reporting the issue in detail (with error stack trace) and facilitating the troubleshooting process.
+
+* **[FIXED in Pro] Content Management >> Content Order**: Fixed a bug that affects non-hierarchical post types causing duplicating menu_order in pairs of posts, posts occasionally / randomly being nested as child post during drag and dropping, and drag-and-dropping not working reliably when dragging a bit too far to the right hand side in the 'Order' page. Props to Christian S. for reporting the issue in detail, with screen recordings, and facilitating the troubleshooting process further.
+
+* **[FIXED in Pro] Utilities >> File Manager**: fixed a fatal error that occurs in a scenario where mime_content_type() is not available in PHP because magic module is disabled. Props to Bill J. for reporting the issue in detail.
+
+* **[FIXED in Pro] Utilities >> Local User Avatar**: fixed an issue with `get_avatar_url()` override always returning URL for the `thumbnail` size of the avatar and ignoring size parameter. This for example, can break Bricks builder's `{author_avatar:512}` dynamic tag. Props to Martin Ž. for reporting the issue in detail.
+
+* **[TRANSLATION in Free and Pro]** ASE is now being translated into [38 languages](https://translate.wpase.com/):
+  * **Added new/improved translation** for:
+    * ASE Free: Updated Vietnamese, Portuguese (Brazil), Polish, Persian, Norwegian, Arabic.
+    * ASE Pro: Updated Spanish (Spain), Catalan, Hungarian, Vietnamese, Norwegian, Portuguese (Brazil), Danish.
+
+### 8.4.1 (2026.02.23) - ASE Free and Pro
+
+* **[SECURITY FIX in Free] Content Management >> Content Duplication**: fixed "Broken Access Control" vulnerability with CVSS severity "Medium (5.4)"" that could cause "Information Disclosure" as responsiblly disclosed by security researcher Jakub Herman via Pathstack. In practical terms, this for example, can allow a logged-in user with contributor role to duplicate (and then view) password-protected content created by an administrator via the admin bar duplication link of the password-protected post in the frontend.
+
+* **[IMPROVED and FIXED in Pro] Utilities >> Form Builder**: 
+  * **Added bulk export / import for forms** via an "Export / Import Forms" button in the forms listing page, which links to the Form Builder section in ASE settings "Export | Import" section. You can choose to export all forms, or manually select which forms to export.
+  * **Added bulk export / import for style templates** via an "Export / Import Style Templates" button in the forms listing page, which links to the Form Builder section in ASE settings "Export | Import" section. You can choose to export all style templates, or manually select which style templates to export.
+  * **Added bulk export for form entries** via an "Export Entries" button in the forms listing page, which links to the Form Builder section in ASE settings "Export | Import" section. You can choose to export entries from a particular form, and customize what entry data will be exported, set the output format (CSV, Excel or JSON) and set a data range to filter by. Props to Uli L., Richard L. and Dave P. for prompting this improvement.
+  * **Security hardening for the upload field** by removing trust in client-sent constraints and enforcing server-side file policy.
+  * **Stop recording IP address** during form submissions.
+  * **Fixed custom CSS classes not being output** for "Display" field types, e.g. HTML field. Props to Yan for reporting the issue.
+
+* **[FIXED in Free and Pro] Content Management >> Content Order**: fixed layout issue in the content order page caused by CSS being overridden by the MetForm Pro plugin's CSS. Props to @once-master for prompting this fix.
+
+* **[FIXED in Pro] Security >> CAPTCHA Protectino >> ALTCHA**: fixed a JS error in Firefox browser related to `@wordpress/interactivity` when an ALTCHA field is included in a form via the Form Builder module. Props to Yan for reporting the issue.
+
+* **[TRANSLATION in Free and Pro]** ASE is now being translated into [38 languages](https://translate.wpase.com/):
+  * **Added new/improved translation** for:
+    * ASE Free: Updated Serbian, Turkish, Spanish (Spain), Portuguese (Brazil), Polish, Persian, Norwegian, Dutch, Danish, Azerbaijani, Albanian
+    * ASE Pro: Updated Norwegian. Completed Serbian (special props to [Igor E.](https://wordpress.org/support/users/igorel/)).
 
 ### 8.4.0 (2026.02.16) - ASE Free and Pro
 

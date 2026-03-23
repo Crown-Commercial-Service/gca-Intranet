@@ -1,24 +1,24 @@
-# Copyright (C) 2024 WP-Glogin
-# This file is distributed under the GPL3.
+# Copyright (C) 2026 WP-Glogin
+# This file is distributed under the same license as the All-In-One Intranet plugin.
 msgid ""
 msgstr ""
-"Project-Id-Version: All-In-One Intranet 1.8.0\n"
+"Project-Id-Version: All-In-One Intranet 1.8.1\n"
 "Report-Msgid-Bugs-To: https://wordpress.org/support/plugin/all-in-one-intranet\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"POT-Creation-Date: 2024-08-20T12:14:17+00:00\n"
+"POT-Creation-Date: 2026-03-05T02:02:29+00:00\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
-"X-Generator: WP-CLI 2.11.0\n"
+"X-Generator: WP-CLI 2.12.0\n"
 "X-Domain: all-in-one-intranet\n"
 
 #. Plugin Name of the plugin
 #: basic_all_in_one_intranet.php
-#: core/core_all_in_one_intranet.php:469
-#: core/core_all_in_one_intranet.php:477
-#: core/core_all_in_one_intranet.php:497
+#: core/core_all_in_one_intranet.php:488
+#: core/core_all_in_one_intranet.php:496
+#: core/core_all_in_one_intranet.php:516
 msgid "All-In-One Intranet"
 msgstr ""
 
@@ -42,126 +42,127 @@ msgstr ""
 msgid "https://wp-glogin.com/"
 msgstr ""
 
-#: core/core_all_in_one_intranet.php:107
+#: core/core_all_in_one_intranet.php:108
 msgid "You attempted to login to the site, but you do not have any permissions. If you believe you should have access, please contact your administrator."
 msgstr ""
 
 #. translators: %s - name of the site.
-#: core/core_all_in_one_intranet.php:142
+#: core/core_all_in_one_intranet.php:143
+#, php-format
 msgid "You attempted to access the \"%1$s\" sub-site, but you are not currently a member of this site. If you believe you should be able to access \"%1$s\", please contact your network administrator."
 msgstr ""
 
-#: core/core_all_in_one_intranet.php:149
+#: core/core_all_in_one_intranet.php:150
 msgid "You are a member of the following sites:"
 msgstr ""
 
-#: core/core_all_in_one_intranet.php:413
+#: core/core_all_in_one_intranet.php:432
 msgid "Settings"
 msgstr ""
 
-#: core/core_all_in_one_intranet.php:468
-#: core/core_all_in_one_intranet.php:476
+#: core/core_all_in_one_intranet.php:487
+#: core/core_all_in_one_intranet.php:495
 msgid "All-In-One Intranet settings"
 msgstr ""
 
-#: core/core_all_in_one_intranet.php:541
+#: core/core_all_in_one_intranet.php:560
 msgid "Privacy"
 msgstr ""
 
-#: core/core_all_in_one_intranet.php:545
+#: core/core_all_in_one_intranet.php:564
 msgid "Force site to be entirely private"
 msgstr ""
 
-#: core/core_all_in_one_intranet.php:553
+#: core/core_all_in_one_intranet.php:572
 msgid "Require logged-in users to be members of a sub-site to view it"
 msgstr ""
 
-#: core/core_all_in_one_intranet.php:559
+#: core/core_all_in_one_intranet.php:578
 msgid "Note that your media uploads (e.g. photos) will still be accessible to anyone who knows their direct URLs."
 msgstr ""
 
-#: core/core_all_in_one_intranet.php:579
-#: core/core_all_in_one_intranet.php:597
+#: core/core_all_in_one_intranet.php:598
+#: core/core_all_in_one_intranet.php:616
 msgid "Warning:"
 msgstr ""
 
-#: core/core_all_in_one_intranet.php:580
+#: core/core_all_in_one_intranet.php:599
 msgid "Your site is set so that \"Anyone can register\" themselves."
 msgstr ""
 
-#: core/core_all_in_one_intranet.php:582
-#: core/core_all_in_one_intranet.php:606
+#: core/core_all_in_one_intranet.php:601
+#: core/core_all_in_one_intranet.php:625
 msgid "Change settings here."
 msgstr ""
 
-#: core/core_all_in_one_intranet.php:600
+#: core/core_all_in_one_intranet.php:619
 msgid "Your site is set so that \"Anyone can register\" themselves, provided they are members of one of the following domains:"
 msgstr ""
 
-#: core/core_all_in_one_intranet.php:603
+#: core/core_all_in_one_intranet.php:622
 msgid "Warning: Your site is set so that \"Anyone can register\" themselves."
 msgstr ""
 
-#: core/core_all_in_one_intranet.php:624
+#: core/core_all_in_one_intranet.php:643
 msgid "Sub-site Membership"
 msgstr ""
 
-#: core/core_all_in_one_intranet.php:627
+#: core/core_all_in_one_intranet.php:646
 msgid "Users should default to the following role in all sub-sites"
 msgstr ""
 
-#: core/core_all_in_one_intranet.php:631
+#: core/core_all_in_one_intranet.php:650
 msgid "None"
 msgstr ""
 
-#: core/core_all_in_one_intranet.php:635
+#: core/core_all_in_one_intranet.php:654
 msgid "Changing the default role here will not affect existing sub-sites and users."
 msgstr ""
 
-#: core/core_all_in_one_intranet.php:650
+#: core/core_all_in_one_intranet.php:669
 msgid "Login Redirect"
 msgstr ""
 
-#: core/core_all_in_one_intranet.php:653
+#: core/core_all_in_one_intranet.php:672
 msgid "Redirect after login to URL: "
 msgstr ""
 
-#: core/core_all_in_one_intranet.php:660
+#: core/core_all_in_one_intranet.php:679
 msgid "Effective when users login via /wp-login.php directly. Otherwise, they will be taken to the page they were trying to access before being required to login."
 msgstr ""
 
-#: core/core_all_in_one_intranet.php:675
+#: core/core_all_in_one_intranet.php:694
 msgid "Auto Logout"
 msgstr ""
 
-#: core/core_all_in_one_intranet.php:678
+#: core/core_all_in_one_intranet.php:697
 msgid "Auto logout inactive users after "
 msgstr ""
 
-#: core/core_all_in_one_intranet.php:689
+#: core/core_all_in_one_intranet.php:708
 msgid "(leave blank to turn off auto-logout)"
 msgstr ""
 
-#: core/core_all_in_one_intranet.php:707
+#: core/core_all_in_one_intranet.php:726
 msgid "Minutes"
 msgstr ""
 
-#: core/core_all_in_one_intranet.php:708
+#: core/core_all_in_one_intranet.php:727
 msgid "Hours"
 msgstr ""
 
-#: core/core_all_in_one_intranet.php:709
+#: core/core_all_in_one_intranet.php:728
 msgid "Days"
 msgstr ""
 
-#: core/core_all_in_one_intranet.php:776
+#: core/core_all_in_one_intranet.php:795
 msgid "Auto logout time should be blank or a whole number"
 msgstr ""
 
-#: core/core_all_in_one_intranet.php:783
+#: core/core_all_in_one_intranet.php:802
 msgid "Unspecified error"
 msgstr ""
 
-#: core/core_all_in_one_intranet.php:835
+#: core/core_all_in_one_intranet.php:854
 msgid "Settings saved"
 msgstr ""
