@@ -21,12 +21,11 @@ img {
     // change so that images doesn't sit on baseline of text
     vertical-align: middle;
 
-    // Apply the override if the image is inside EITHER .blog OR .work-updates
-    .blog &,
+    // Apply the override if the image is inside EITHER .blogs OR .work-updates
+    .blogs &,
     .work-updates & {
         width: auto;
     }
-
 }
 
 .image-wrapper {
