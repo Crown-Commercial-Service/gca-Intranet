@@ -95,8 +95,6 @@ iframe,
     }
 }
 
-
-
 @media (min-width: 40.0625em) {
   .govuk-grid-column-one-third {
     .blog &,
@@ -111,4 +109,8 @@ iframe,
         width: 85%;
     }
   }
+}
+
+.size-thumbnail {
+    width: 150px;
 }
