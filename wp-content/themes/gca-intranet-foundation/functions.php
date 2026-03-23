@@ -407,6 +407,50 @@ add_action('pre_get_posts', function (WP_Query $query): void {
     }
 });
 
+add_filter('posts_join', function (string $join, WP_Query $query): string {
+    if (!is_admin() && $query->is_main_query() && $query->is_search()) {
+        global $wpdb;
+        $join .= " LEFT JOIN {$wpdb->postmeta} AS acf_search_meta
+                    ON ({$wpdb->posts}.ID = acf_search_meta.post_id) ";
+    }
+    return $join;
+}, 10, 2);
+
+add_filter('posts_search', function (string $search, WP_Query $query): string {
+    if (!is_admin() && $query->is_main_query() && $query->is_search() && !empty($search)) {
+        global $wpdb;
+
+        $term = $query->get('s');
+        if (empty($term)) {
+            return $search;
+        }
+
+        $like = '%' . $wpdb->esc_like($term) . '%';
+
+        $meta_sql = $wpdb->prepare(
+            "(
+                acf_search_meta.meta_value LIKE %s
+                AND (
+                    acf_search_meta.meta_key NOT LIKE '\\_%%'
+                    OR acf_search_meta.meta_key = '_gca_col2_wysiwyg'
+                )
+            )",
+            $like
+        );
+
+        $search = ' AND (' . substr($search, 5) . ' OR ' . $meta_sql . ')';
+    }
+    return $search;
+}, 10, 2);
+
+add_filter('posts_groupby', function (string $groupby, WP_Query $query): string {
+    if (!is_admin() && $query->is_main_query() && $query->is_search()) {
+        global $wpdb;
+        $groupby = "{$wpdb->posts}.ID";
+    }
+    return $groupby;
+}, 10, 2);
+
 ////////// assigning category to page object //////////
 add_action('init', function() {
     register_taxonomy_for_object_type('category', 'page');

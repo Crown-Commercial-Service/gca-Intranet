@@ -51,3 +51,10 @@ add_filter( "radio_buttons_for_taxonomies_no_term_audience", "__return_FALSE" );
 add_filter('tablepress_user_capability', function() {
     return 'publish_posts';
 });
+
+add_filter('pp_capabilities_roles_list', function($roles) {
+    unset($roles['author']);
+    unset($roles['editor']);
+    unset($roles['contributor']);
+    return $roles;
+});
