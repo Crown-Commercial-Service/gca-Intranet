@@ -1,0 +1,53 @@
+.ui-state-highlight {
+    border: 1px dotted red!important;
+    background-color: #F4E449!important;
+}
+#tblSortable tbody tr:hover {
+    cursor: move!important;
+}
+#tblSortable tbody tr a:hover {
+    cursor: hand!important;
+}
+
+.starrr {display:inline-block}
+.starrr i{font-size:16px;padding:0 1px;cursor:pointer;color:#2ea2cc;}
+
+.widefat th {
+    font-weight: bold!important;
+}
+table input {
+    font-size: 13px;
+}
+.widefat thead td, .widefat thead th {
+    border-bottom: 0px!important;
+}
+
+.tcmp-grid {
+    margin-left: auto;
+    margin-right: auto;
+    border-spacing: 10px;
+    max-width: 1120px;
+}
+.tcmp-grid td, .tcmp-grid td p {
+    font-size:16px;
+    vertical-align: top;
+}
+.tcmp-grid td ul {
+    list-style-type: disc;
+    margin-left: 30px!important;
+}
+.tcmp-grid td {
+    padding: 20px!important;
+}
+.tcmp-headline {
+    font-size:40px;
+    font-weight:bold;
+    text-align:center;
+    margin: 10px!important;
+}
+.tcmp-subheadline {
+    font-size:25px!important;
+    font-weight:bold;
+    text-align:left;
+    margin: 0px!important;
+}
