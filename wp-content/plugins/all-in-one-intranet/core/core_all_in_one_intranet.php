@@ -30,6 +30,7 @@ class core_all_in_one_intranet {
 		add_filter( 'robots_txt', [ $this, 'aioi_robots_txt' ], 0, 2 );
 		add_filter( 'option_ping_sites', [ $this, 'aioi_option_ping_sites' ], 0, 1 );
 		add_filter( 'rest_pre_dispatch', [ $this, 'aioi_rest_pre_dispatch' ], 0, 1 );
+		add_filter( 'xmlrpc_enabled', [ $this, 'aioi_xmlrpc_enabled' ] );
 
 		add_filter( 'login_redirect', [ $this, 'aioi_login_redirect' ], 10, 3 );
 
@@ -217,6 +218,24 @@ class core_all_in_one_intranet {
 	}
 
 	/**
+	 * Disable XML-RPC when the site is private.
+	 *
+	 * @param bool $enabled Whether XML-RPC is enabled.
+	 *
+	 * @return bool
+	 */
+	public function aioi_xmlrpc_enabled( $enabled ) {
+
+		$options = $this->get_option_aioi();
+
+		if ( $options['aioi_privatesite'] ) {
+			return false;
+		}
+
+		return $enabled;
+	}
+
+	/**
 	 * Redirect on login event.
 	 *
 	 * @param string  $redirect_to
@@ -256,7 +275,7 @@ class core_all_in_one_intranet {
 
 	/**
 	 * AUTO-LOGOUT.
-	 * Check whether user should be auto-logged out this time.
+	 * Check whether the user should be auto-logged out this time.
 	 */
 	public function aioi_check_activity() {
 

@@ -161,6 +161,7 @@ class Settings_Sections_Fields {
         $field_id = 'enable_duplication';
         $field_slug = 'enable-duplication';
         $field_title = __( 'Content Duplication', 'admin-site-enhancements' );
+        $field_description = __( 'Enable one-click duplication of pages, posts and public post types. The corresponding taxonomy terms and post meta will also be duplicated.', 'admin-site-enhancements' );
         add_settings_field(
             $field_id,
             $field_title,
@@ -173,7 +174,7 @@ class Settings_Sections_Fields {
                 'field_slug'             => $field_slug,
                 'field_title'            => $field_title,
                 'field_name'             => ASENHA_SLUG_U . '[' . $field_id . ']',
-                'field_description'      => __( 'Enable one-click duplication of pages, posts and custom posts. The corresponding taxonomy terms and post meta will also be duplicated.', 'admin-site-enhancements' ),
+                'field_description'      => $field_description,
                 'field_options_wrapper'  => true,
                 'field_options_moreless' => true,
                 'class'                  => 'asenha-toggle content-management ' . $field_slug,
@@ -2457,6 +2458,22 @@ class Settings_Sections_Fields {
                 'class'       => 'asenha-checkbox asenha-hide-th disable-components ' . $field_slug,
             )
         );
+        $field_id = 'disable_site_admin_email_verification_screen';
+        $field_slug = 'disable-site-admin-email-verification-screen';
+        add_settings_field(
+            $field_id,
+            '',
+            [$render_field, 'render_checkbox_plain'],
+            ASENHA_SLUG,
+            'main-section',
+            array(
+                'option_name' => ASENHA_SLUG_U,
+                'field_id'    => $field_id,
+                'field_name'  => ASENHA_SLUG_U . '[' . $field_id . ']',
+                'field_label' => __( 'Disable <strong>site admin email verification screen</strong> that was added since WordPress v5.3.', 'admin-site-enhancements' ),
+                'class'       => 'asenha-checkbox asenha-hide-th disable-components ' . $field_slug,
+            )
+        );
         $field_id = 'disable_plugin_theme_editor';
         $field_slug = 'disable-plugin-theme-editor';
         $is_wpconfig_writeable = $wp_config->wpconfig_file( 'writeability' );
@@ -3213,6 +3230,12 @@ class Settings_Sections_Fields {
         );
         $field_id = 'smtp_password';
         $field_slug = 'smtp-password';
+        $smtp_authentication_enabled = !isset( $options['smtp_authentication'] ) || 'enable' === $options['smtp_authentication'];
+        $smtp_password_status = ( new Email_Delivery() )->get_smtp_password_status( ( isset( $options['smtp_password'] ) ? $options['smtp_password'] : '' ) );
+        $smtp_password_description = __( 'Leave blank to keep the current password.', 'admin-site-enhancements' );
+        if ( $smtp_authentication_enabled && Email_Delivery::SMTP_PASSWORD_STATUS_ENCRYPTED_INVALID === $smtp_password_status ) {
+            $smtp_password_description = __( 'Enter and save a new password to restore SMTP authentication.', 'admin-site-enhancements' );
+        }
         add_settings_field(
             $field_id,
             __( '<span class="field-sublabel sublabel-wide">Password</span>', 'admin-site-enhancements' ),
@@ -3226,10 +3249,27 @@ class Settings_Sections_Fields {
                 'field_type'        => '',
                 'field_prefix'      => '',
                 'field_suffix'      => '',
-                'field_description' => '',
-                'class'             => 'asenha-text with-prefix-suffix wide utilities ' . $field_slug,
+                'field_placeholder' => '',
+                'field_description' => $smtp_password_description,
+                'hide_stored_value' => true,
+                'class'             => 'asenha-text with-prefix-suffix with-description wide utilities ' . $field_slug,
             )
         );
+        if ( $smtp_authentication_enabled && Email_Delivery::SMTP_PASSWORD_STATUS_ENCRYPTED_INVALID === $smtp_password_status ) {
+            $field_id = 'smtp_password_notice';
+            $field_slug = 'smtp-password-notice';
+            add_settings_field(
+                $field_id,
+                '',
+                [$render_field, 'render_custom_html'],
+                ASENHA_SLUG,
+                'main-section',
+                array(
+                    'html'  => '<div class="notice notice-warning inline"><p>' . esc_html( __( 'The stored SMTP password can no longer be decrypted. Please enter it again above and save changes.', 'admin-site-enhancements' ) ) . '</p></div>',
+                    'class' => 'asenha-html wide utilities ' . $field_slug,
+                )
+            );
+        }
         $field_id = 'smtp_bypass_ssl_verification';
         $field_slug = 'smtp-bypass-ssl-verification';
         add_settings_field(
@@ -3302,7 +3342,7 @@ class Settings_Sections_Fields {
                 'field_description' => '<div id="ajax-result" class="ajax-result-div" style="display:none;">
 				<div class="sending-test-email"><img src="' . ASENHA_URL . 'assets/img/oval.svg" id="sending-test-email-spinner" class="spinner-img">' . __( 'Sending test email...', 'admin-site-enhancements' ) . '</div>
 				<div id="test-email-success" class="test-email-success" style="display:none;"><span class="dashicons dashicons-yes"></span> <span>' . __( 'Test email was successfully processed</span>.<br />Please check the destination email\'s inbox to verify successful delivery.', 'admin-site-enhancements' ) . '</div>
-				<div id="test-email-failed" class="test-email-failed" style="display:none;"><span class="dashicons dashicons-no-alt"></span> <span>' . __( 'Oops, something went wrong</span>.<br />Please double check your settings and the destination email address.', 'admin-site-enhancements' ) . '</div></div>',
+				<div id="test-email-failed" class="test-email-failed" style="display:none;"><span class="dashicons dashicons-no-alt"></span> <span id="test-email-failed-message">' . __( 'Oops, something went wrong. Please double check your settings and the destination email address.', 'admin-site-enhancements' ) . '</span></div></div>',
                 'class'             => 'asenha-description utilities ' . $field_slug,
             )
         );

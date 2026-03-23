@@ -322,6 +322,9 @@ class Hide_Admin_Notices {
                     position: absolute !important;
                     visibility: hidden !important;
                 }
+
+                <?php 
+            ?>
             </style>
             <?php 
         }

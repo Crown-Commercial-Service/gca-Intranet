@@ -25,11 +25,13 @@ class Settings_Sanitization {
             $active_plugin_slugs
         ;
         $roles = $wp_roles->get_names();
+        $existing_options = get_option( ASENHA_SLUG_U, array() );
         $options_extra = get_option( ASENHA_SLUG_U . '_extra', array() );
         // if ( false === $options_extra ) {
         // 	add_option( ASENHA_SLUG_U . '_extra', array(), true );
         // }
         $common_methods = new Common_Methods();
+        $email_delivery = new Email_Delivery();
         // Content Duplication
         if ( !isset( $options['enable_duplication'] ) ) {
             $options['enable_duplication'] = false;
@@ -546,6 +548,9 @@ class Settings_Sanitization {
             $options['disable_embeds'] = false;
         }
         $options['disable_embeds'] = ( 'on' == $options['disable_embeds'] ? true : false );
+        if ( !isset( $options['disable_embeds_flush_rewrite_rules_needed'] ) ) {
+            $options['disable_embeds_flush_rewrite_rules_needed'] = false;
+        }
         // Disable Auto Updates
         if ( !isset( $options['disable_all_updates'] ) ) {
             $options['disable_all_updates'] = false;
@@ -609,6 +614,10 @@ class Settings_Sanitization {
             $options['disable_application_passwords'] = false;
         }
         $options['disable_application_passwords'] = ( 'on' == $options['disable_application_passwords'] ? true : false );
+        if ( !isset( $options['disable_site_admin_email_verification_screen'] ) ) {
+            $options['disable_site_admin_email_verification_screen'] = false;
+        }
+        $options['disable_site_admin_email_verification_screen'] = ( 'on' == $options['disable_site_admin_email_verification_screen'] ? true : false );
         if ( !isset( $options['disable_plugin_theme_editor'] ) ) {
             $options['disable_plugin_theme_editor'] = false;
         }
@@ -651,14 +660,6 @@ class Settings_Sanitization {
             $options['obfuscate_email_address'] = false;
         }
         $options['obfuscate_email_address'] = ( 'on' == $options['obfuscate_email_address'] ? true : false );
-        if ( !isset( $options['obfuscate_email_address_in_content'] ) ) {
-            $options['obfuscate_email_address_in_content'] = false;
-        }
-        $options['obfuscate_email_address_in_content'] = ( 'on' == $options['obfuscate_email_address_in_content'] ? true : false );
-        if ( !isset( $options['obfuscate_email_address_visitor_only'] ) ) {
-            $options['obfuscate_email_address_visitor_only'] = false;
-        }
-        $options['obfuscate_email_address_visitor_only'] = ( 'on' == $options['obfuscate_email_address_visitor_only'] ? true : false );
         // Disable XML-RPC
         if ( !isset( $options['disable_xmlrpc'] ) ) {
             $options['disable_xmlrpc'] = false;
@@ -748,10 +749,20 @@ class Settings_Sanitization {
             $options['smtp_username'] = '';
         }
         $options['smtp_username'] = ( !empty( $options['smtp_username'] ) ? sanitize_text_field( $options['smtp_username'] ) : '' );
-        if ( !isset( $options['smtp_password'] ) ) {
-            $options['smtp_password'] = '';
+        $existing_smtp_password = ( isset( $existing_options['smtp_password'] ) ? $existing_options['smtp_password'] : '' );
+        $submitted_smtp_password = ( isset( $options['smtp_password'] ) ? (string) $options['smtp_password'] : '' );
+        if ( !empty( $submitted_smtp_password ) ) {
+            $encrypted_smtp_password = \asenha_encrypt_smtp_password_compat( $email_delivery, $submitted_smtp_password );
+            $options['smtp_password'] = ( !empty( $encrypted_smtp_password ) ? $encrypted_smtp_password : $existing_smtp_password );
+        } else {
+            $existing_smtp_password_status = \asenha_get_smtp_password_status_compat( $existing_smtp_password );
+            if ( 'legacy_plaintext' === $existing_smtp_password_status ) {
+                $encrypted_smtp_password = \asenha_encrypt_smtp_password_compat( $email_delivery, $existing_smtp_password );
+                $options['smtp_password'] = ( !empty( $encrypted_smtp_password ) ? $encrypted_smtp_password : $existing_smtp_password );
+            } else {
+                $options['smtp_password'] = $existing_smtp_password;
+            }
         }
-        $options['smtp_password'] = ( !empty( $options['smtp_password'] ) ? $options['smtp_password'] : '' );
         if ( !isset( $options['smtp_default_from_name'] ) ) {
             $options['smtp_default_from_name'] = '';
         }
