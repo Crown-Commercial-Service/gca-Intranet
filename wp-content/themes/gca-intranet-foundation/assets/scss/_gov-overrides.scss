@@ -94,3 +94,23 @@ iframe,
         background: #fff;
     }
 }
+
+@media (min-width: 40.0625em) {
+  .govuk-grid-column-one-third {
+    .blog &,
+    .work-updates & {
+        width: 15%;
+    }
+  }
+
+  .govuk-grid-column-two-thirds {
+    .blog &,
+    .work-updates & {
+        width: 85%;
+    }
+  }
+}
+
+.size-thumbnail {
+    width: 150px;
+}
