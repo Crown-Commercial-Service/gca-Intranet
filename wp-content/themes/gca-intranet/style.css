@@ -54,8 +54,8 @@ Text Domain: gca-intranet
 .gca-home-hero {
   position: relative;
   overflow: hidden;
-  padding: 0;
-  background: #95B4F9;
+  padding: 56px 0;
+  background: #95b4f9;
 }
 
 .gca-home-hero::after {
@@ -177,14 +177,30 @@ Text Domain: gca-intranet
 
 .gca-hero-banner {
   position: relative;
-  background: #95B4F9;
-  padding: 75px 0;
+  background: #95b4f9;
+  height: 170px;
+  display: flex;
+  align-items: center;
+  padding: 0;
   overflow: hidden;
+}
+
+/* Top blue bar */
+.gca-hero-banner::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  height: 8px;
+  width: 100%;
+  background: #699aff;
+  z-index: 3;
 }
 
 .gca-hero-banner__inner {
   position: relative;
   z-index: 2;
+  max-width: 60%;
 }
 
 .gca-hero-banner__title {
@@ -192,16 +208,17 @@ Text Domain: gca-intranet
   font-weight: 700;
   font-size: clamp(2.25rem, 3vw, 3.25rem);
   line-height: 1.1;
-  max-width: 40rem;
+  max-width: 28ch;
 }
 
+/* Image */
 .gca-hero-banner__media {
   position: absolute;
   right: 0;
   top: 50%;
   transform: translateY(-50%);
-  width: min(720px, 52vw);
-  height: 280px;
+  width: min(600px, 43vw);
+  height: 170px;
   overflow: hidden;
   border-radius: 9999px 0 0 9999px;
   z-index: 1;
@@ -214,6 +231,20 @@ Text Domain: gca-intranet
   display: block;
 }
 
+/* =========================
+   Laptop (13" etc)
+   ========================= */
+@media (max-width: 1400px) {
+  .gca-hero-banner__media {
+    width: 40vw;
+  }
+
+  .gca-hero-banner__inner {
+    max-width: 65%;
+  }
+}
+
+/* Breadcrumbs */
 .gca-breadcrumbs-bar {
   background: #e9edc2;
   padding: 10px 0;
@@ -234,27 +265,29 @@ Text Domain: gca-intranet
   color: #000;
 }
 
-.gca-breadcrumbs-bar .govuk-width-container,
-.gca-breadcrumbs-bar .container-xxl,
-.gca-breadcrumbs-bar .container {
-  background: transparent !important;
-}
-
+/* =========================
+   Tablet / Mobile
+   ========================= */
 @media (max-width: 991px) {
   .gca-hero-banner {
+    height: auto;
     padding: 48px 0;
+    display: block;
   }
 
   .gca-hero-banner__media {
     position: static;
     transform: none;
     width: 100%;
-    height: 220px;
+    height: 200px;
     margin-top: 16px;
-    border-radius: 24px;
+    border-radius: 16px;
+  }
+
+  .gca-hero-banner__inner {
+    max-width: 100%;
   }
 }
-
 /* =========================================================
    Single (News) layout helpers
    ========================================================= */
@@ -406,7 +439,6 @@ body.single-news .gca-taxonomy-tags .govuk-tag::after {
   margin-top: 10px;
 }
 
-
 /* =========================================================
    GI-101: Quick links
    ========================================================= */
@@ -449,7 +481,7 @@ body.single-news .gca-taxonomy-tags .govuk-tag::after {
   top: 0;
   height: 100%;
   width: 6px;
-  background: #95B4F9;
+  background: #95b4f9;
   border-top-left-radius: 6px;
   border-bottom-left-radius: 6px;
 }
