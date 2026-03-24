@@ -1,5 +1,8 @@
-.event_cta_button{
-    background-color: $gca-lime;
+.event_cta_button {
+    display: inline-flex;
+    align-items: center;
+    background-color: $gca-lime-secondary;
+    color: $gca-black !important;
     border-radius: 6px;
 }
 
