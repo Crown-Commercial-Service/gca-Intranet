@@ -97,15 +97,15 @@ iframe,
 
 @media (min-width: 40.0625em) {
   .govuk-grid-column-one-third {
-    .blog &,
-    .work-updates & {
+    .blogs-container &,
+    .work-updates-container & {
         width: 15%;
     }
   }
 
   .govuk-grid-column-two-thirds {
-    .blog &,
-    .work-updates & {
+    .blogs-container &,
+    .work-updates-container & {
         width: 85%;
     }
   }
