@@ -17,9 +17,9 @@
 .profile_img_wrapper {
     padding-right: 40px;
 
-    // Apply the override if the element is inside EITHER .blogs OR .work-updates
-    .blogs &,
-    .work-updates & {
+    // Apply the override if the element is inside EITHER .blogs-container OR .work-updates-container
+    .blogs-container &,
+    .work-updates-container & {
         text-align: center;
         padding-right: 0;
     }
