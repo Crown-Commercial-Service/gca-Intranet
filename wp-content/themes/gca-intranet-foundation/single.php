@@ -12,7 +12,7 @@ get_template_part('template-parts/breadcrumbs');
 ?>
 
 <div class="govuk-width-container" data-testid="single-container">
-  <main class="govuk-main-wrapper" id="main-content" data-testid="single-main">
+  <main class="govuk-main-wrapper" id="main-content" tabindex="-1" data-testid="single-main">
     <div class="govuk-grid-row" data-testid="single-row">
       <div class="govuk-grid-column-two-thirds" data-testid="single-col">
         <?php if (have_posts()) : while (have_posts()) : the_post(); ?>

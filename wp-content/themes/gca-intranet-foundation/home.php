@@ -10,7 +10,7 @@ get_template_part('template-parts/breadcrumbs');
 ?>
 
 <div class="govuk-width-container" data-testid="home-container">
-  <main class="govuk-main-wrapper" id="main-content" data-testid="home-main">
+  <main class="govuk-main-wrapper" id="main-content" tabindex="-1" data-testid="home-main">
     <div class="govuk-grid-row" data-testid="home-row">
       <div class="govuk-grid-column-two-thirds" data-testid="home-col">
 
