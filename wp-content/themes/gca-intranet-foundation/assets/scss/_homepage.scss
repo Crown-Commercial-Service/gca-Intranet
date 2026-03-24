@@ -2,9 +2,6 @@
    Homepage components
    ============================================================ */
 
-[data-testid="home-width-container"] {
-  max-width: 1280px;
-}
 
 .gca-featured-news {
   border: 1px solid $gca-border-mid;
@@ -45,6 +42,7 @@
 
   @include govuk-media-query($from: tablet) {
     padding: 0;
+    padding-right: govuk-spacing(3);
   }
 
   img {
@@ -104,12 +102,6 @@
 
   p {
     margin-top: 8px;
-  }
-}
-
-.gca-left-line {
-  @include govuk-media-query($from: tablet) {
-    border-left: 1px solid #c8c8c8;
   }
 }
 
@@ -185,122 +177,31 @@
   }
 }
 
-// Increase gap between section columns
-[data-testid="take-a-look-column"],
-[data-testid="blogs-column"] {
-  @include govuk-media-query($from: tablet) {
-    padding-left: govuk-spacing(6);
-  }
-}
-
-/* ============================================================
-   GI-100: Homepage-only "Take a look"
-   - Single card only (kills inner panel)
-   - Text smaller (19px)
-   - Icon background transparent
-   - Prevent overflow + stop icon leaking into next component
-   ============================================================ */
-
-[data-testid='take-a-look-card'] {
-  height: auto !important;
-}
-
-[data-testid='take-a-look-column'] {
-  overflow: hidden; /* safety net */
+.gca-take-a-look__link {
   display: flex;
+  justify-content: space-between;
   flex-direction: column;
-
-  .gca-take-a-look,
-  .gca-take-a-look__content,
-  .gca-take-a-look__link {
-    max-width: 100%;
-    box-sizing: border-box;
-  }
-
-  /* Kill the “second panel” if a wrapper exists */
-  .gca-take-a-look__content {
-    background: transparent !important;
-    box-shadow: none !important;
-    padding: 0 !important;
-    margin: 0 !important;
-    border-radius: 0 !important;
-  }
-
-  /* Make the link be the one true card */
-  .gca-take-a-look__link {
-    position: relative;
-    display: block;
-    width: 100%;
-    margin: 0;
-
-    padding: 34px 84px 34px 32px; /* room for icon on right */
-    min-height: 180px;
-
-    border-radius: 6px;
-    text-decoration: none;
-
-    background: #e9efc6;
-    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.12);
-
-    overflow: hidden; /* stops any “leak” */
-  }
-
-  /* Paragraph/text */
-  .gca-take-a-look__text {
-    margin: 0;
-    max-width: 100%;
-    overflow-wrap: anywhere;
-    word-break: break-word;
-
-    font-size: 19px;
-    line-height: 1.4;
-    color: #0b0c0c;
-  }
-
-  /* Icon inside the card */
-  .gca-take-a-look__icon {
-    position: absolute;
-    right: 16px; /* CHANGED: pull icon left into the card */
-    bottom: 16px; /* CHANGED: pull icon up into the card */
-
-    width: 64px;
-    height: 64px;
-
-    display: flex;
-    align-items: center;
-    justify-content: center;
-
-    border-radius: 999px;
-
-    /* IMPORTANT: transparent background (no halo) */
-    background: none !important;
-    box-shadow: none !important;
-
-    /* ensure nothing else can force top/left */
-    top: auto;
-    left: auto;
-
-    /* this is decorative */
-    pointer-events: none;
-
-    &::before,
-    &::after {
-      display: none !important;
-      content: none !important;
-    }
-  }
-
-  .gca-take-a-look__icon svg {
-    width: 36px;
-    height: 36px;
-    display: block;
-  }
+  align-items: flex-end;
+  flex-wrap: wrap;
+  padding: govuk-spacing(6);
+  border-radius: 6px;
+  background: #e9efc6;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.12);
 }
 
-/* Take a look: keep icon inside card (front end + customiser) */
-[data-testid='take-a-look-column'] .gca-take-a-look__icon {
-  right: 6px !important;
-  bottom: 6px !important;
+.gca-right-line {
+  position: relative;
+}
+.gca-right-line::after {
+  @include govuk-media-query($from: tablet) {
+    content: "";
+    position: absolute;
+    right: 0px; 
+    top: 80px;      
+    bottom: 105px;
+    width: 1px;
+    background-color: #ccc;
+  }
 }
 
 .gca-events {

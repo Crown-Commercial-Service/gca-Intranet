@@ -76,21 +76,3 @@
         align-items: center;
     }
 }
-
-[data-testid='news-post-title'],
-[data-testid='home-post-title'],
-[data-testid='blog-post-title'],
-[data-testid='work-update-post-title'],
-[data-testid='archive-event-post-title'],
-[data-testid='archive-post-title'],
-[data-testid='latest-news-featured-title'],
-[data-testid='latest-news-secondary-title'],
-[data-testid='work-update-title'],
-[data-testid='blogs-title'],
-[data-testid='search-result-title'],
-[data-testid='three-col-category-card-title'] {
-    display: -webkit-box;
-    -webkit-line-clamp: 2;
-    -webkit-box-orient: vertical;
-    overflow: hidden;
-}
