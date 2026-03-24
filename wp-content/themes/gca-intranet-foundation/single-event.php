@@ -14,7 +14,7 @@ get_template_part('template-parts/breadcrumbs');
 
 
 <div class="govuk-width-container" data-testid="event-container">
-    <main class="govuk-main-wrapper" id="main-content" data-testid="event-main">
+    <main class="govuk-main-wrapper" id="main-content" tabindex="-1" data-testid="event-main">
         <?php if (have_posts()) : while (have_posts()) : the_post(); ?>
 
 

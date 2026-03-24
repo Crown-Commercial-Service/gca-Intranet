@@ -12,7 +12,7 @@ get_template_part('template-parts/breadcrumbs');
 ?>
 
 <div class="govuk-width-container">
-  <main class="govuk-main-wrapper" id="main-content">
+  <main class="govuk-main-wrapper" id="main-content" tabindex="-1">
     <div class="govuk-grid-row">
       <div class="govuk-grid-column-two-thirds">
         <?php

@@ -1,6 +1,6 @@
 <?php get_header(); ?>
 
-<main id="main-content" role="main" data-testid="home-main">
+<main id="main-content" role="main" tabindex="-1" data-testid="home-main">
     <section class="gca-home-hero" aria-label="Homepage hero" data-testid="home-hero">
         <div class="container-xxl" data-testid="home-hero-container">
             <div class="gca-home-hero-inner" data-testid="home-hero-inner">

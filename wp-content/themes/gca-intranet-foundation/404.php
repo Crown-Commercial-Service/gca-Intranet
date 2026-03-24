@@ -1,6 +1,6 @@
 <?php get_header(); ?>
 <div class="govuk-width-container">
-<main class="govuk-main-wrapper govuk-main-wrapper--l" id="main-content" role="main">
+<main class="govuk-main-wrapper govuk-main-wrapper--l" id="main-content" role="main" tabindex="-1">
 <div class="govuk-grid-row">
 <div class="govuk-grid-column-two-thirds">
 <h1 class="govuk-heading-l">Page not found</h1>
