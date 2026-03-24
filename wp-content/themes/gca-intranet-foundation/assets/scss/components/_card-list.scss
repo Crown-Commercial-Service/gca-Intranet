@@ -31,6 +31,7 @@
 
 
 .card-list__item {
+    display: flex;
 
     @include govuk-media-query($from: tablet) {
 
@@ -179,6 +180,7 @@
     padding: govuk-px-to-rem(30) govuk-px-to-rem(25) govuk-px-to-rem(30) govuk-px-to-rem(25);
     position: relative;
     overflow: auto;
+    flex: 1;
 
     > p {
         margin-bottom: 0;
