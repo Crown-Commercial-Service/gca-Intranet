@@ -134,8 +134,8 @@ get_header();
 
           <div class="see-more-link-homepage" data-testid="latest-news-see-more">
             <svg data-testid="latest-news-see-more-icon" xmlns="http://www.w3.org/2000/svg" width="16" height="22"
-              fill="currentColor" class="bi bi-chevron-right govuk-!-padding-top-1"
-              viewBox="0 0 16 16" style="stroke: currentColor;" aria-hidden="true" focusable="false">
+              fill="currentColor" class="bi bi-chevron-right"
+              viewBox="0 0 16 16" style="stroke: currentColor; padding-top: 9px;" aria-hidden="true" focusable="false">
               <path fill-rule="evenodd"
                 d="M4.646 1.646a.5.5 0 0 1 .708 0l6 6a.5.5 0 0 1 0 .708l-6 6a.5.5 0 0 1-.708-.708L10.293 8 4.646 2.354a.5.5 0 0 1 0-.708" />
             </svg>
@@ -291,7 +291,7 @@ get_header();
       <div class="govuk-grid-row flex" data-testid="home-lower-row">
 
         <!-- Work updates -->
-        <div class="govuk-grid-column-two-thirds" data-testid="work-updates-column">
+        <div class="govuk-grid-column-two-thirds govuk-!-padding-0" data-testid="work-updates-column">
           <div class="gca-homepage-section-title" data-testid="work-updates-header">
             <h2 class="govuk-heading-m gca-clamp-2" data-testid="work-updates-heading">
               <?php
@@ -368,8 +368,8 @@ get_header();
 
             <div class="see-more-link-homepage" data-testid="work-updates-see-more">
               <svg data-testid="work-updates-see-more-icon" xmlns="http://www.w3.org/2000/svg" width="16" height="22"
-                fill="currentColor" class="bi bi-chevron-right govuk-!-padding-top-1" viewBox="0 0 16 16"
-                style="stroke: currentColor;;" aria-hidden="true" focusable="false">
+                fill="currentColor" class="bi bi-chevron-right" viewBox="0 0 16 16"
+                style="stroke: currentColor; padding-top: 9px;" aria-hidden="true" focusable="false">
                 <path fill-rule="evenodd"
                   d="M4.646 1.646a.5.5 0 0 1 .708 0l6 6a.5.5 0 0 1 0 .708l-6 6a.5.5 0 0 1-.708-.708L10.293 8 4.646 2.354a.5.5 0 0 1 0-.708" />
               </svg>
@@ -407,7 +407,7 @@ get_header();
           </div>
 
           <div class="govuk-grid-row" data-testid="blogs-section">
-            <div class="govuk-grid-column-full gca-work-update-card gca-blogs-card" data-testid="blogs-card">
+            <div class="govuk-grid-column-full gca-work-update-card gca-left-line" data-testid="blogs-card">
               <div class="govuk-grid-row gca-work-updates" data-testid="blogs-row">
                 <?php
                 $blogs = new WP_Query(['post_type' => 'blog', 'posts_per_page' => 1]);
@@ -463,8 +463,8 @@ get_header();
 
           <div class="see-more-link-homepage" data-testid="blogs-see-more">
             <svg data-testid="blogs-see-more-icon" xmlns="http://www.w3.org/2000/svg" width="16" height="22"
-              fill="currentColor" class="bi bi-chevron-right govuk-!-padding-top-1" viewBox="0 0 16 16"
-              style="stroke: currentColor;;" aria-hidden="true" focusable="false">
+              fill="currentColor" class="bi bi-chevron-right" viewBox="0 0 16 16"
+              style="stroke: currentColor; padding-top: 9px;" aria-hidden="true" focusable="false">
               <path fill-rule="evenodd"
                 d="M4.646 1.646a.5.5 0 0 1 .708 0l6 6a.5.5 0 0 1 0 .708l-6 6a.5.5 0 0 1-.708-.708L10.293 8 4.646 2.354a.5.5 0 0 1 0-.708" />
             </svg>
@@ -565,8 +565,8 @@ get_header();
 
         <div class="see-more-link-homepage" data-testid="events-see-more">
           <svg data-testid="events-see-more-icon" xmlns="http://www.w3.org/2000/svg" width="16" height="22"
-            fill="currentColor" class="bi bi-chevron-right govuk-!-padding-top-1" viewBox="0 0 16 16"
-            style="stroke: currentColor;;">
+            fill="currentColor" class="bi bi-chevron-right" viewBox="0 0 16 16"
+            style="stroke: currentColor; padding-top: 9px;">
             <path fill-rule="evenodd"
               d="M4.646 1.646a.5.5 0 0 1 .708 0l6 6a.5.5 0 0 1 0 .708l-6 6a.5.5 0 0 1-.708-.708L10.293 8 4.646 2.354a.5.5 0 0 1 0-.708" />
           </svg>
