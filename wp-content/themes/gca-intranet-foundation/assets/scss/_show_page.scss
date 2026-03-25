@@ -2,8 +2,13 @@
     display: inline-flex;
     align-items: center;
     background-color: $gca-lime-secondary;
-    color: $gca-black !important;
     border-radius: 6px;
+}
+
+main.govuk-main-wrapper {
+    a.event_cta_button {
+        color: $gca-black !important;
+    }
 }
 
 .tax-meta {
