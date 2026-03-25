@@ -206,7 +206,7 @@ Text Domain: gca-intranet
 .gca-hero-banner__title {
   margin: 0;
   font-weight: 700;
-  font-size: clamp(2.25rem, 3vw, 3.25rem);
+  font-size: govuk-px-to-rem(48);
   line-height: 1.1;
   max-width: 28ch;
 }
