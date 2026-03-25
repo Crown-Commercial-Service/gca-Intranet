@@ -219,10 +219,6 @@ Text Domain: gca-intranet
   padding: 10px 0;
 }
 
-.gca-breadcrumbs {
-  font-size: 0.95rem;
-}
-
 .gca-breadcrumbs a,
 .gca-breadcrumbs a:visited,
 .gca-breadcrumbs a:hover,
@@ -293,11 +289,6 @@ Text Domain: gca-intranet
 .gca-richtext ol {
   margin-bottom: 1rem;
   padding-left: 1.25rem;
-}
-
-.gca-richtext img {
-  max-width: 100%;
-  height: auto;
 }
 
 .govuk-breadcrumbs {

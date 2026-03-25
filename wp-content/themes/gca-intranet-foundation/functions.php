@@ -242,7 +242,7 @@ function gca_get_breadcrumb_items(): array
 
     if (is_single()) {
         $post_type = get_post_type();
-        
+
         $items[] = [
             'label' => get_post_type_object($post_type)->labels->name,
             'url'   => get_post_type_archive_link($post_type)
@@ -821,4 +821,68 @@ add_filter('get_the_archive_title', function ($title) {
         $title = single_term_title('', false);
     }
     return $title;
+});
+
+/**
+ * 1. Modify the Toolbar: Remove 'Headings' and Add 'Formats'
+ */
+add_filter('mce_buttons', function($buttons) {
+    // Remove the default 'formatselect' (the Heading dropdown)
+    if (($key = array_search('formatselect', $buttons)) !== false) {
+        unset($buttons[$key]);
+    }
+
+    // Add 'styleselect' (the Formats dropdown) to the front of the toolbar
+    array_unshift($buttons, 'styleselect');
+
+    return $buttons;
+});
+
+/**
+ * 2. Define the Single Unified List
+ */
+add_filter('tiny_mce_before_init', function($init_array) {
+
+    $style_formats = [
+        // Standard Structure
+        ['title' => 'Heading 1', 'block' => 'h1'],
+        ['title' => 'Heading 2', 'block' => 'h2'],
+        ['title' => 'Heading 3', 'block' => 'h3'],
+
+        // GDS Custom Styles
+        [
+            'title'   => 'Paragraph',
+            'block'   => 'p',
+            'classes' => 'govuk-body'
+        ],
+        [
+            'title'   => 'Paragraph Small',
+            'block'   => 'p',
+            'classes' => 'govuk-body-s'
+        ],
+        [
+            'title'   => 'Paragraph Extra Small',
+            'block'   => 'p',
+            'classes' => 'govuk-body-xs'
+        ],
+    ];
+
+    $init_array['style_formats'] = json_encode($style_formats);
+
+    return $init_array;
+});
+
+/**
+ * Inject TinyMCE UI overrides into the WordPress Admin head
+ */
+add_action('admin_head', function() {
+    ?>
+    <style>
+        /* Tinymce UI overrides */
+        .mce-menu-item.mce-menu-item-preview.mce-active .mce-text,
+        .mce-menu-item.mce-menu-item-preview.mce-active .mce-ico {
+            color: inherit !important;
+        }
+    </style>
+    <?php
 });
