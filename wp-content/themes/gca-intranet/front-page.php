@@ -119,7 +119,7 @@ get_header();
                         <?php echo esc_html(wp_trim_words(get_the_excerpt(), 12, '...')); ?>
                       </p>
 
-                      <p class="govuk-body-s" data-testid="latest-news-secondary-date">
+                      <p class="govuk-body-xs" data-testid="latest-news-secondary-date">
                         <?php echo esc_html(get_the_date('j F Y')); ?>
                       </p>
                     </div>
@@ -357,7 +357,7 @@ get_header();
                         ?>
                       </p>
 
-                      <p class="govuk-body-s" data-testid="work-update-date">
+                      <p class="govuk-body-xs" data-testid="work-update-date">
                         <?php echo esc_html(get_the_date('j F Y')); ?>
                       </p>
                     </div>
