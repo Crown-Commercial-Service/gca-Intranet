@@ -23,7 +23,7 @@ get_template_part('template-parts/breadcrumbs');
             </h1>
 
 
-            <div class="govuk-!-margin-bottom-5 govuk-!-margin-top-5" data-testid="event-tax">
+            <div class="tax-meta" data-testid="event-tax">
                 <?php
                 $categories = get_the_category();
                 $locations = get_the_terms(get_the_ID(), 'event_location');
@@ -36,7 +36,7 @@ get_template_part('template-parts/breadcrumbs');
 
 
                 if ($locations) : ?>
-                    <span class="govuk-body-s tag_label grey">
+                    <span class="govuk-body tag_label grey">
                         <?php echo esc_html($locations[0]->name); ?>
                     </span>
                 <?php endif; ?>
@@ -51,7 +51,7 @@ get_template_part('template-parts/breadcrumbs');
                 </p>
 
                 <?php if ($time_string = gca_get_event_datetime('times')) : ?>
-                    <p class="govuk-body govuk-!-margin-left-5" data-testid="events-time">
+                    <p class="govuk-body" data-testid="events-time">
                         <strong class="govuk-!-font-weight-bold">Time:</strong>
                         <?php echo esc_html($time_string); ?>
                     </p>
@@ -62,7 +62,7 @@ get_template_part('template-parts/breadcrumbs');
                     $cta_url   = get_field('secondary_cta_destination');
 
                     if ($cta_label && $cta_url) : ?>
-                    <div class="govuk-!-margin-left-5 govuk-!-margin-bottom-0">
+                    <div class="govuk-!-margin-bottom-0">
                         <a href="<?php echo esc_url($cta_url); ?>"
                             class="govuk-button event_cta_button govuk-!-margin-bottom-0" data-module="govuk-button" data-testid="event-cta-button">
                                 <?php echo esc_html($cta_label); ?>
