@@ -54,7 +54,7 @@ Text Domain: gca-intranet
 .gca-home-hero {
   position: relative;
   overflow: hidden;
-  padding: 56px 0;
+  padding: 0;
   background: #95b4f9;
 }
 
