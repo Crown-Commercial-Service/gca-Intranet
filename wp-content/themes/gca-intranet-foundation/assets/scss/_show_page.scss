@@ -1,12 +1,28 @@
-.event_cta_button{
-    background-color: $gca-lime;
+.event_cta_button {
+    display: inline-flex;
+    align-items: center;
+    background-color: $gca-lime-secondary;
     border-radius: 6px;
+}
+
+main.govuk-main-wrapper {
+    a.event_cta_button {
+        color: $gca-black !important;
+    }
+}
+
+.tax-meta {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 15px;
 }
 
 .event-details {
     display: flex;
     align-items: center; 
     flex-wrap: wrap;
+    gap: 15px;
 }
 
 .event-details .govuk-body {
@@ -16,6 +32,13 @@
 
 .profile_img_wrapper {
     padding-right: 40px;
+
+    // Apply the override if the element is inside EITHER .blogs-container OR .work-updates-container
+    .blogs-container &,
+    .work-updates-container & {
+        text-align: center;
+        padding-right: 0;
+    }
     
     img {
         border-radius: 50%;

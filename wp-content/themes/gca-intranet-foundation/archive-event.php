@@ -12,7 +12,7 @@ get_template_part('template-parts/breadcrumbs');
 ?>
 
 <div class="govuk-width-container" data-testid="archive-event-container">
-  <main class="govuk-main-wrapper" id="main-content" data-testid="archive-event-main">
+  <main class="govuk-main-wrapper" id="main-content" tabindex="-1" data-testid="archive-event-main">
     <div class="govuk-grid-row" data-testid="archive-event-row">
       <div class="govuk-grid-column-full" data-testid="archive-event-col">
 
