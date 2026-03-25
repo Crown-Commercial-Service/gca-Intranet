@@ -17,6 +17,7 @@
   padding: 0;
   display: flex;
   flex-direction: column; /* Mobile first */
+  justify-content: space-between;
 }
 
 .nav-list--primary a {

@@ -97,6 +97,10 @@ body {
     align-items: center;
     flex-wrap: wrap;
     gap: 15px;
+
+    .utility-nav {
+        flex: 0 0 100%;
+    }
 }
 
 /* --- Search Bar Styling --- */
@@ -142,6 +146,11 @@ body {
         justify-content: flex-end;
         align-items: center;
         gap: 30px;
+
+        .utility-nav {
+            flex: 0 0 100%;
+            text-align: right;
+        }
     }
 
     #site-search {
@@ -377,7 +386,7 @@ body {
   .gca-header-logo-col {
       position: absolute;
       left: 5px;
-      top: 35px;
+      top: 10px;
       transform: translateX(calc(-100% - var(--gca-logo-gap)));
       height: 100px;
       display: flex;
