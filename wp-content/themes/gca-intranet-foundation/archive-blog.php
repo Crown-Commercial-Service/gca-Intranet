@@ -44,6 +44,10 @@ get_template_part('template-parts/breadcrumbs');
               <?php echo esc_html(gca_clean_post_excerpt(320)); ?>
             </p>
 
+            <p class="govuk-body-s">
+              By <?php echo esc_html(get_the_author()); ?>
+            </p>
+            
             <div class="date_bottom" data-testid="blog-post-date">
               <span class="govuk-!-margin-right-2">
                 <?php echo esc_html(get_the_date('j F Y')); ?>
