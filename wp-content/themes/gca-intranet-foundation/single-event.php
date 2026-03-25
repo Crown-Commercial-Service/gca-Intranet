@@ -23,7 +23,7 @@ get_template_part('template-parts/breadcrumbs');
             </h1>
 
 
-            <div class="event-meta" data-testid="event-tax">
+            <div class="tax-meta" data-testid="event-tax">
                 <?php
                 $categories = get_the_category();
                 $locations = get_the_terms(get_the_ID(), 'event_location');
