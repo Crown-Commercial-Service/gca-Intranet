@@ -98,9 +98,6 @@ body {
     flex-wrap: wrap;
     gap: 15px;
 
-    .utility-nav {
-        flex: 0 0 100%;
-    }
 }
 
 /* --- Search Bar Styling --- */
@@ -146,11 +143,6 @@ body {
         justify-content: flex-end;
         align-items: center;
         gap: 30px;
-
-        .utility-nav {
-            flex: 0 0 100%;
-            text-align: right;
-        }
     }
 
     #site-search {
