@@ -6,10 +6,18 @@
     border-radius: 6px;
 }
 
+.event-meta {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 15px;
+}
+
 .event-details {
     display: flex;
     align-items: center; 
     flex-wrap: wrap;
+    gap: 15px;
 }
 
 .event-details .govuk-body {
