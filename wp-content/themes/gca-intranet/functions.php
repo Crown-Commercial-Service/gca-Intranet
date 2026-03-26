@@ -1009,8 +1009,8 @@ function gca_get_event_datetime( $return = 'dates', $post_id = null ) {
     // 2. Format Individual Components
     $f_start_date = $raw_start_date ? date('j F Y', strtotime($raw_start_date)) : '';
     $f_end_date   = $raw_end_date   ? date('j F Y', strtotime($raw_end_date))   : '';
-    $f_start_time = $raw_start_time ? date('g:i a',  strtotime($raw_start_time)) : '';
-    $f_end_time   = $raw_end_time   ? date('g:i a',  strtotime($raw_end_time))   : '';
+    $f_start_time = $raw_start_time ? date('g:ia',  strtotime($raw_start_time)) : '';
+    $f_end_time   = $raw_end_time   ? date('g:ia',  strtotime($raw_end_time))   : '';
 
     // 3. Process Logic for Ranges
 
