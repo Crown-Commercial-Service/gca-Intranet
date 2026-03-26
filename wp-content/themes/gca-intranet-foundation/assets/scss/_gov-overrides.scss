@@ -1,6 +1,15 @@
-//Font Overrides
-* {
-    font-family: "Source Sans Pro", arial, sans-serif !important;
+// 1. Apply font to everything EXCEPT the admin bar and known icon classes
+*:not(#wpadminbar):not(#wpadminbar *):not(.dashicons):not([class*="dashicons-"]):not(.ab-icon) {
+    font-family: 'Source Sans Pro', arial, sans-serif !important;
+}
+
+// 2. A "Safety Reset" to force icons back to their original font
+// This fixes the 'Box with an X' issue by ensuring icons stay icons
+#wpadminbar .ab-icon,
+#wpadminbar .ab-item::before,
+.dashicons,
+[class*="dashicons-"] {
+    font-family: dashicons !important;
 }
 
 html, 
@@ -141,8 +150,20 @@ main .see-more-link-homepage a {
     font-size: 16px !important;
 }
 
+// Target links specifically when they are inside your H2s
+main.govuk-main-wrapper h2 a,
+main.govuk-main-wrapper h2.govuk-heading-l a {
+    font-size: 24px !important;
+}
+
 .govuk-breadcrumbs__list-item {
     margin-bottom: 0;
     padding-top: 4px;
-    top: -5px;
+    top: -2px;
+}
+@media (min-width: 40.0625em) {
+    .govuk-main-wrapper {
+        padding-top: 30px;
+        padding-bottom: 20px;
+    }
 }
