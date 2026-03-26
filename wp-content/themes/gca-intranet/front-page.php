@@ -22,7 +22,7 @@ get_header();
 </section>
 
 <div class="govuk-width-container" data-testid="home-width-container">
-  <main class="govuk-main-wrapper" data-testid="home-main-wrapper">
+  <main class="govuk-main-wrapper" id="main-content" tabindex="-1" data-testid="home-main-wrapper">
 
     <div class="govuk-grid-row" data-testid="home-top-row">
 
