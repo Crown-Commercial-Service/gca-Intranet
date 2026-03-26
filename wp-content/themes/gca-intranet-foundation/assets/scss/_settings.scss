@@ -348,6 +348,7 @@ main.govuk-main-wrapper {
     p.govuk-body-xs {
         font-size: 14px !important;
     }
+
     a, .govuk-link {
         // Only apply these styles if the link is NOT inside the WordPress Admin Bar
         &:link {
@@ -368,6 +369,35 @@ main.govuk-main-wrapper {
 
         &:focus {
             color: $color-active-focus !important;
+        }
+    }
+}
+
+.gca-richtext {
+    p, ul li, ol li {
+        font-size: 19px !important;
+    }
+}
+/* 1. Use the correct container class from your markup */
+main.gca-single {
+    /* 2. Target the link class directly for maximum precision */
+    .subpage-card__link:link, 
+    .subpage-card__link:visited {
+        color: #0b0c0c !important; // GOV.UK Blue
+        text-decoration: none;
+        font-weight: 700; // Common for heading links
+
+        &:hover {
+            color: #003078 !important; // GOV.UK Dark Blue
+            text-decoration: underline; 
+        }
+
+        /* 3. Ensure the GOV.UK focus state still works */
+        &:focus {
+            color: #0b0c0c !important; 
+            background-color: #ffdd00 !important; 
+            box-shadow: 0 -2px #ffdd00, 0 4px #0b0c0c !important;
+            outline: 3px solid transparent;
         }
     }
 }
