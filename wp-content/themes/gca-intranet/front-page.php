@@ -62,14 +62,14 @@ get_header();
                   <?php endif; ?>
 
                   <div data-testid="latest-news-featured-content">
-                    <h3 class="govuk-heading-m" data-testid="latest-news-featured-title">
+                    <h2 class="govuk-heading-m" data-testid="latest-news-featured-title">
                       <a class="govuk-link govuk-!-text-break-word" data-testid="latest-news-featured-link" href="<?php the_permalink(); ?>">
                         <?php
                           $title = get_the_title();
                           echo esc_html(mb_strlen($title) > 55 ? mb_substr($title, 0, 55) . '...' : $title);
                         ?>
                       </a>
-                    </h3>
+                    </h2>
 
                     <p class="govuk-body-s" data-testid="latest-news-featured-excerpt">
                       <?php echo esc_html(wp_trim_words(get_the_excerpt(), 32, '...')); ?>
@@ -451,7 +451,7 @@ get_header();
                       </p>
 
 
-                      <p class="govuk-body-s" data-testid="blogs-date">
+                      <p class="govuk-body-xs" data-testid="blogs-date">
                         <?php echo esc_html(get_the_date('j F Y')); ?>
                       </p>
                     </div>
