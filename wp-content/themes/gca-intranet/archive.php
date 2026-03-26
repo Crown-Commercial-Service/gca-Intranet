@@ -1,6 +1,6 @@
 <?php get_header(); ?>
 
-<main class="govuk-main-wrapper">
+<main class="govuk-main-wrapper" id="main-content" tabindex="-1">
     <div class="govuk-width-container">
         <h1 class="govuk-heading-l">All for one, one for all</h1>
         
