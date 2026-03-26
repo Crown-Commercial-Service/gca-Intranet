@@ -97,6 +97,7 @@ body {
     align-items: center;
     flex-wrap: wrap;
     gap: 15px;
+
 }
 
 /* --- Search Bar Styling --- */
@@ -126,6 +127,7 @@ body {
     background-color: #528bf8;
     border-radius: 0 5px 5px 0;
     margin-bottom: 0 !important;
+    color: #0b0c0c;
 }
 
 /* --- Media Queries (Tablet and Up) --- */
@@ -374,7 +376,7 @@ body {
   .gca-header-logo-col {
       position: absolute;
       left: 5px;
-      top: 35px;
+      top: 10px;
       transform: translateX(calc(-100% - var(--gca-logo-gap)));
       height: 100px;
       display: flex;
@@ -594,6 +596,34 @@ body {
     }
 }
 
+@media (max-width: 767.98px) {
+    .gca-header-topbar-inner {
+        display: grid;
+        grid-template-columns: 1fr auto;
+        grid-template-rows: auto auto;
+        align-items: center;
+        row-gap: 10px;
+        column-gap: 15px;
+    }
+
+    .utility-nav {
+        grid-column: 1;
+        grid-row: 1;
+    }
+
+    .global-navigation__toggler {
+        grid-column: 2;
+        grid-row: 1;
+        justify-self: end;
+    }
+
+    .site-search {
+        grid-column: 1 / -1;
+        grid-row: 2;
+        max-width: 100%;
+    }
+}
+
 /* --- Mobile Default --- */
 .global-navigation__toggler {
     background: none;
@@ -625,5 +655,5 @@ body {
 .utility-nav-list a {
     text-decoration: underline;
     color: #505a5f;
-    font-size: 16px;
+    font-size: 14px;
 }

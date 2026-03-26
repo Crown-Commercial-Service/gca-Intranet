@@ -324,6 +324,7 @@ class Settings_Fields_Render {
         $field_suffix = $args['field_suffix'];
         $field_description = $args['field_description'];
         $field_option_value = ( isset( $options[$args['field_id']] ) ? $options[$args['field_id']] : '' );
+        $hide_stored_value = ( isset( $args['hide_stored_value'] ) ? (bool) $args['hide_stored_value'] : false );
         if ( !empty( $field_prefix ) && !empty( $field_suffix ) ) {
             $field_classname = ' with-prefix with-suffix';
         } elseif ( !empty( $field_prefix ) && empty( $field_suffix ) ) {
@@ -333,7 +334,10 @@ class Settings_Fields_Render {
         } else {
             $field_classname = '';
         }
-        $placeholder = '';
+        if ( $hide_stored_value ) {
+            $field_option_value = '';
+        }
+        $placeholder = ( isset( $args['field_placeholder'] ) ? $args['field_placeholder'] : '' );
         echo wp_kses_post( $field_prefix ) . '<input type="password" id="' . esc_attr( $field_name ) . '" class="asenha-subfield-password' . esc_attr( $field_classname ) . '" name="' . esc_attr( $field_name ) . '" placeholder="' . esc_attr( $placeholder ) . '" size="24" autocomplete="off" value="' . esc_attr( $field_option_value ) . '">' . wp_kses_post( $field_suffix );
         echo '<label for="' . esc_attr( $field_name ) . '" class="asenha-subfield-checkbox-label">' . esc_html( $field_description ) . '</label>';
     }
@@ -679,6 +683,15 @@ class Settings_Fields_Render {
         $common_methods = new Common_Methods();
         $options_extra = get_option( ASENHA_SLUG_U . '_extra', array() );
         $options = ( isset( $options_extra['admin_menu'] ) ? $options_extra['admin_menu'] : array() );
+        // Get list of deleted built-in separators
+        $deleted_separators = ( isset( $options['custom_menu_deleted_separators'] ) ? $options['custom_menu_deleted_separators'] : '' );
+        $deleted_separators_array = array();
+        if ( is_string( $deleted_separators ) && !empty( $deleted_separators ) ) {
+            $deleted_separators_array = json_decode( stripslashes( $deleted_separators ), true );
+            if ( !is_array( $deleted_separators_array ) ) {
+                $deleted_separators_array = array();
+            }
+        }
         // Set menu items to be excluded from title renaming. These are from WordPress core.
         $renaming_not_allowed = array(
             'menu-dashboard',
@@ -710,6 +723,10 @@ class Settings_Fields_Render {
             // Render sortables with data in custom menu order
             foreach ( $custom_menu as $custom_menu_item ) {
                 foreach ( $menu as $menu_key => $menu_info ) {
+                    // Skip if this is a deleted built-in separator
+                    if ( in_array( $menu_info[2], $deleted_separators_array ) ) {
+                        continue;
+                    }
                     if ( false !== strpos( $menu_info[4], 'wp-menu-separator' ) ) {
                         $menu_item_title = $menu_info[2];
                         $menu_item_id = $menu_info[2];
@@ -722,14 +739,16 @@ class Settings_Fields_Render {
                         $menu_item_id_transformed = $common_methods->transform_menu_item_id( $menu_item_id );
                         $is_custom_menu = 'no';
                         ?>
-						<li id="<?php 
+					<li id="<?php 
                         echo esc_attr( $menu_item_id );
                         ?>" class="menu-item parent-menu-item menu-item-depth-0" data-custom-menu-item="<?php 
                         echo esc_attr( $is_custom_menu );
+                        ?>" data-menu-slug="<?php 
+                        echo esc_attr( $menu_info[2] );
                         ?>">
-							<div class="menu-item-bar">
-								<div class="menu-item-handle">
-									<span class="dashicons dashicons-menu"></span>
+						<div class="menu-item-bar">
+							<div class="menu-item-handle">
+								<span class="dashicons dashicons-menu"></span>
 									<div class="item-title">
 										<div class="title-wrapper">
 											<span class="menu-item-title">
@@ -828,8 +847,25 @@ class Settings_Fields_Render {
 							</div><!-- end of .menu-item-bar -->
 							<?php 
                         $i = 1;
+                        // Add delete icon for separators (built-in and custom)
+                        if ( strpos( $menu_info[2], 'separator' ) !== false ) {
+                            ?>
+								<div class="remove-menu-item"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24"><path fill="#bbbbbb" d="M24 2.4L21.6 0L12 9.6L2.4 0L0 2.4L9.6 12L0 21.6L2.4 24l9.6-9.6l9.6 9.6l2.4-2.4l-9.6-9.6z"/></svg></div>
+							<?php 
+                        }
+                        // Add delete icon for saved custom menu items (not separators)
+                        if ( $is_custom_menu === 'yes' && strpos( $menu_info[2], 'separator' ) === false ) {
+                            ?>
+								<div class="remove-custom-menu-item-saved" data-menu-item-id="<?php 
+                            echo esc_attr( $menu_info[2] );
+                            ?>">
+									<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24">
+										<path fill="#bbbbbb" d="M24 2.4L21.6 0L12 9.6L2.4 0L0 2.4L9.6 12L0 21.6L2.4 24l9.6-9.6l9.6 9.6l2.4-2.4l-9.6-9.6z"/>
+									</svg>
+								</div>
+								<?php 
+                        }
                         ?>
-							<div class="remove-menu-item"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24"><path fill="#bbbbbb" d="M24 2.4L21.6 0L12 9.6L2.4 0L0 2.4L9.6 12L0 21.6L2.4 24l9.6-9.6l9.6 9.6l2.4-2.4l-9.6-9.6z"/></svg></div>
 						</li>
 						<?php 
                         $menu_key_in_use[] = $menu_key;
@@ -839,6 +875,10 @@ class Settings_Fields_Render {
             // Render the rest of the current menu towards the end of the sortables
             foreach ( $menu as $menu_key => $menu_info ) {
                 if ( !in_array( $menu_key, $menu_key_in_use ) ) {
+                    // Skip if this is a deleted built-in separator
+                    if ( in_array( $menu_info[2], $deleted_separators_array ) ) {
+                        continue;
+                    }
                     if ( false !== strpos( $menu_info[4], 'wp-menu-separator' ) ) {
                         $menu_item_id = $menu_info[2];
                     } else {
@@ -853,7 +893,7 @@ class Settings_Fields_Render {
                         $menu_item_id_transformed = $common_methods->transform_menu_item_id( $menu_item_id );
                         $is_custom_menu = 'no';
                         ?>
-						<li id="<?php 
+					<li id="<?php 
                         echo esc_attr( $menu_item_id );
                         ?>" class="menu-item parent-menu-item menu-item-depth-0" data-custom-menu-item="<?php 
                         echo esc_attr( $is_custom_menu );
@@ -916,8 +956,25 @@ class Settings_Fields_Render {
 							</div><!-- end of .menu-item-bar -->
 							<?php 
                         $i = 1;
+                        // Add delete icon for separators (built-in and custom)
+                        if ( strpos( $menu_info[2], 'separator' ) !== false ) {
+                            ?>
+								<div class="remove-menu-item"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24"><path fill="#bbbbbb" d="M24 2.4L21.6 0L12 9.6L2.4 0L0 2.4L9.6 12L0 21.6L2.4 24l9.6-9.6l9.6 9.6l2.4-2.4l-9.6-9.6z"/></svg></div>
+							<?php 
+                        }
+                        // Add delete icon for saved custom menu items (not separators)
+                        if ( $is_custom_menu === 'yes' && strpos( $menu_info[2], 'separator' ) === false ) {
+                            ?>
+								<div class="remove-custom-menu-item-saved" data-menu-item-id="<?php 
+                            echo esc_attr( $menu_info[2] );
+                            ?>">
+									<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24">
+										<path fill="#bbbbbb" d="M24 2.4L21.6 0L12 9.6L2.4 0L0 2.4L9.6 12L0 21.6L2.4 24l9.6-9.6l9.6 9.6l2.4-2.4l-9.6-9.6z"/>
+									</svg>
+								</div>
+								<?php 
+                        }
                         ?>
-							<div class="remove-menu-item"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24"><path fill="#bbbbbb" d="M24 2.4L21.6 0L12 9.6L2.4 0L0 2.4L9.6 12L0 21.6L2.4 24l9.6-9.6l9.6 9.6l2.4-2.4l-9.6-9.6z"/></svg></div>
 						</li><!-- end of .menu-item -->
 						<?php 
                     }
@@ -927,6 +984,10 @@ class Settings_Fields_Render {
             // No custom menu order has been saved yet
             // Render sortables with existing items in the admin menu
             foreach ( $menu as $menu_key => $menu_info ) {
+                // Skip if this is a deleted built-in separator
+                if ( in_array( $menu_info[2], $deleted_separators_array ) ) {
+                    continue;
+                }
                 if ( false !== strpos( $menu_info[4], 'wp-menu-separator' ) ) {
                     $menu_item_id = $menu_info[2];
                 } else {
@@ -939,10 +1000,12 @@ class Settings_Fields_Render {
                 $menu_item_title = $common_methods->strip_html_tags_and_content( $menu_item_title );
                 $is_custom_menu = 'no';
                 ?>
-				<li id="<?php 
+			<li id="<?php 
                 echo esc_attr( $menu_item_id );
                 ?>" class="menu-item parent-menu-item menu-item-depth-0" data-custom-menu-item="<?php 
                 echo esc_attr( $is_custom_menu );
+                ?>" data-menu-slug="<?php 
+                echo esc_attr( $menu_info[2] );
                 ?>">
 					<div class="menu-item-bar">
 						<div class="menu-item-handle">
@@ -1006,8 +1069,25 @@ class Settings_Fields_Render {
 					</div><!-- end of .menu-item-bar -->
 				<?php 
                 $i = 1;
+                // Add delete icon for separators (built-in and custom)
+                if ( strpos( $menu_info[2], 'separator' ) !== false ) {
+                    ?>
+						<div class="remove-menu-item"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24"><path fill="#bbbbbb" d="M24 2.4L21.6 0L12 9.6L2.4 0L0 2.4L9.6 12L0 21.6L2.4 24l9.6-9.6l9.6 9.6l2.4-2.4l-9.6-9.6z"/></svg></div>
+					<?php 
+                }
+                // Add delete icon for saved custom menu items (not separators)
+                if ( $is_custom_menu === 'yes' && strpos( $menu_info[2], 'separator' ) === false ) {
+                    ?>
+						<div class="remove-custom-menu-item-saved" data-menu-item-id="<?php 
+                    echo esc_attr( $menu_info[2] );
+                    ?>">
+							<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24">
+								<path fill="#bbbbbb" d="M24 2.4L21.6 0L12 9.6L2.4 0L0 2.4L9.6 12L0 21.6L2.4 24l9.6-9.6l9.6 9.6l2.4-2.4l-9.6-9.6z"/>
+							</svg>
+						</div>
+						<?php 
+                }
                 ?>
-					<div class="remove-menu-item"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24"><path fill="#bbbbbb" d="M24 2.4L21.6 0L12 9.6L2.4 0L0 2.4L9.6 12L0 21.6L2.4 24l9.6-9.6l9.6 9.6l2.4-2.4l-9.6-9.6z"/></svg></div>
 				</li>
 				<?php 
             }

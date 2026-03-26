@@ -12,7 +12,7 @@ get_template_part('template-parts/breadcrumbs');
 ?>
 
 <div class="govuk-width-container" data-testid="work-update-container">
-  <main class="govuk-main-wrapper" id="main-content" data-testid="work-update-main">
+  <main class="govuk-main-wrapper" id="main-content" tabindex="-1" data-testid="work-update-main">
 
     <?php if (have_posts()) : ?>
 
@@ -42,6 +42,10 @@ get_template_part('template-parts/breadcrumbs');
 
             <p data-testid="work-update-decs">
               <?php echo esc_html(gca_clean_post_excerpt(320)); ?>
+            </p>
+
+            <p class="govuk-body">
+              By <?php echo esc_html(get_the_author()); ?>
             </p>
 
             <p class="date_bottom" data-testid="work-update-post-date">

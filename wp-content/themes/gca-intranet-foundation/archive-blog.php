@@ -12,7 +12,7 @@ get_template_part('template-parts/breadcrumbs');
 ?>
 
 <div class="govuk-width-container" data-testid="blog-container">
-  <main class="govuk-main-wrapper" id="main-content" data-testid="blog-main">
+  <main class="govuk-main-wrapper" id="main-content" tabindex="-1" data-testid="blog-main">
 
     <?php if (have_posts()) : ?>
 
@@ -44,6 +44,10 @@ get_template_part('template-parts/breadcrumbs');
               <?php echo esc_html(gca_clean_post_excerpt(320)); ?>
             </p>
 
+            <p class="govuk-body">
+              By <?php echo esc_html(get_the_author()); ?>
+            </p>
+            
             <div class="date_bottom" data-testid="blog-post-date">
               <span class="govuk-!-margin-right-2">
                 <?php echo esc_html(get_the_date('j F Y')); ?>

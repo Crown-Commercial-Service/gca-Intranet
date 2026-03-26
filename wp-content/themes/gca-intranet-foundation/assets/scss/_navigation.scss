@@ -17,6 +17,7 @@
   padding: 0;
   display: flex;
   flex-direction: column; /* Mobile first */
+  justify-content: space-between;
 }
 
 .nav-list--primary a {
@@ -24,6 +25,7 @@
   color: var(--gca-text);
   font-weight: 400;
   display: block;
+  font-size: 16px;
 }
 
 /* --- Top Level Items --- */

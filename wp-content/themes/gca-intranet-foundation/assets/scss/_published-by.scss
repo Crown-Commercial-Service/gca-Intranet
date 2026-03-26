@@ -1,3 +1,10 @@
+.gca-responsible-team {
+  display: flex;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  gap: govuk-spacing(2);
+}
+
 .gca-published-by-wrapper {
   margin-top: auto;
   width: 100%;

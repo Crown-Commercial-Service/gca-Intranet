@@ -12,7 +12,7 @@ get_template_part('template-parts/breadcrumbs');
 ?>
 
 <div class="govuk-width-container" data-testid="news-container">
-  <main class="govuk-main-wrapper" id="main-content" data-testid="news-main">
+  <main class="govuk-main-wrapper" id="main-content" tabindex="-1" data-testid="news-main">
 
     <?php if (have_posts()) : ?>
 

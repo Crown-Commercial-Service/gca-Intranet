@@ -18,7 +18,7 @@ get_template_part('template-parts/hero', null, [
 <?php get_template_part('template-parts/breadcrumbs'); ?>
 
 <div class="govuk-width-container" data-testid="search-container">
-  <main class="govuk-main-wrapper" id="main-content" data-testid="search-main">
+  <main class="govuk-main-wrapper" id="main-content" tabindex="-1" data-testid="search-main">
     <div class="govuk-grid-row" data-testid="search-row">
       <div class="govuk-grid-column-full" data-testid="search-col">
 
