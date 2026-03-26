@@ -13,7 +13,7 @@ $govuk-global-styles: true;
 $govuk-font-family: "Source Sans Pro", "HelveticaNeue", "Helvetica Neue", "Arial", "Helvetica", sans-serif;
 $govuk-font-family-tabular: "Source Sans Pro", "HelveticaNeue", "Helvetica Neue", "Arial", "Helvetica", sans-serif;
 
-$govuk-page-width: 1280px;
+$govuk-page-width: 1200px;
 
 // Add extra styles here, or re-organise the Sass files in whichever way makes most sense to you
 // Named colours
@@ -308,3 +308,96 @@ $govuk-spacing-responsive-scale: (
 );
 
 $gca-global-radius: 5px;
+
+// GDS Link Colors
+$color-link: #1d70b8;
+$color-visited: #4c2c92;
+$color-hover: #003078;
+$color-active-focus: #0b0c0c;
+
+// Apply to standard links and GDS links
+main.govuk-main-wrapper {
+    h1.govuk-heading-xl {
+      font-size: 48px !important;
+    }
+
+    h1, h2, h3 {
+        font-weight: 700 !important;
+    }
+
+    h1, h1.govuk-heading-l {
+        font-size: 36px !important;
+    }
+
+    h2, h2.govuk-heading-l {
+        font-size: 24px !important;
+    }
+
+    h3, h3.govuk-heading-l {
+        font-size: 19px !important;
+    }
+
+    p, a {
+        font-size: 19px !important;
+    }
+
+    p.govuk-body-s {
+        font-size: 16px !important;
+    }
+
+    p.govuk-body-xs {
+        font-size: 14px !important;
+    }
+
+    a, .govuk-link {
+        // Only apply these styles if the link is NOT inside the WordPress Admin Bar
+        &:link {
+            color: $color-link !important;
+        }
+
+        &:visited {
+            color: $color-visited !important;
+        }
+
+        &:hover {
+            color: $color-hover !important;
+        }
+
+        &:active {
+            color: $color-active-focus !important;
+        }
+
+        &:focus {
+            color: $color-active-focus !important;
+        }
+    }
+}
+
+.gca-richtext {
+    p, ul li, ol li {
+        font-size: 19px !important;
+    }
+}
+/* 1. Use the correct container class from your markup */
+main.gca-single {
+    /* 2. Target the link class directly for maximum precision */
+    .subpage-card__link:link, 
+    .subpage-card__link:visited {
+        color: #0b0c0c !important; // GOV.UK Blue
+        text-decoration: none;
+        font-weight: 700; // Common for heading links
+
+        &:hover {
+            color: #003078 !important; // GOV.UK Dark Blue
+            text-decoration: underline; 
+        }
+
+        /* 3. Ensure the GOV.UK focus state still works */
+        &:focus {
+            color: #0b0c0c !important; 
+            background-color: #ffdd00 !important; 
+            box-shadow: 0 -2px #ffdd00, 0 4px #0b0c0c !important;
+            outline: 3px solid transparent;
+        }
+    }
+}

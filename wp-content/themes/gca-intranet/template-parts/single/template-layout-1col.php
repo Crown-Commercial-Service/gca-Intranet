@@ -11,7 +11,7 @@ get_template_part('template-parts/single/_chrome');
       $post_type = get_post_type();
   ?>
 
-    <main class="gca-single gca-single--1col">
+    <main class="gca-single gca-single--1col" id="main-content" tabindex="-1">
       <?php 
         /**
          * This looks for template-parts/content-event.php, content-page.php, etc.

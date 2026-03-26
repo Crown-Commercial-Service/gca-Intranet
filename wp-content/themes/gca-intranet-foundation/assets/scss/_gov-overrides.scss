@@ -1,4 +1,17 @@
-//Font Overrides
+// 1. Apply font to everything EXCEPT the admin bar and known icon classes
+*:not(#wpadminbar):not(#wpadminbar *):not(.dashicons):not([class*="dashicons-"]):not(.ab-icon) {
+    font-family: 'Source Sans Pro', arial, sans-serif !important;
+}
+
+// 2. A "Safety Reset" to force icons back to their original font
+// This fixes the 'Box with an X' issue by ensuring icons stay icons
+#wpadminbar .ab-icon,
+#wpadminbar .ab-item::before,
+.dashicons,
+[class*="dashicons-"] {
+    font-family: dashicons !important;
+}
+
 html, 
 body {
   font-family: 'Source Sans Pro', arial, sans-serif !important;
@@ -63,7 +76,7 @@ body, p, .govuk-body {
 }
 
 .govuk-button:hover {
-  background-color: $gca-blue-2;
+  background-color: $gca-lime;
 }
 
 .govuk-button {
@@ -92,5 +105,65 @@ iframe,
         margin-bottom: 20px;
         padding: 20px; // Gives the card some internal breathing room
         background: #fff;
+    }
+}
+
+@media (min-width: 40.0625em) {
+  .govuk-grid-column-one-third {
+    .blogs-container &,
+    .work-updates-container & {
+        width: 15%;
+    }
+  }
+
+  .govuk-grid-column-two-thirds {
+    .blogs-container &,
+    .work-updates-container & {
+        width: 85%;
+    }
+  }
+}
+
+.size-thumbnail {
+    width: 150px;
+}
+
+.size-full {
+    max-width: 100%;
+    height: auto; // Maintains aspect ratio
+    display: block; // Prevents the 'baseline' gap at the bottom
+}
+
+// Medium and Large sizes (standard WP defaults)
+.size-medium {
+    max-width: 300px;
+    height: auto;
+}
+
+.size-large {
+    max-width: 1024px;
+    height: auto;
+}
+
+/* theme overrides */
+main .see-more-link-homepage a {
+    font-size: 16px !important;
+}
+
+// Target links specifically when they are inside your H2s
+main.govuk-main-wrapper h2 a,
+main.govuk-main-wrapper h2.govuk-heading-l a {
+    font-size: 24px !important;
+}
+
+.govuk-breadcrumbs__list-item {
+    margin-bottom: 0;
+    padding-top: 4px;
+    top: -2px;
+}
+@media (min-width: 40.0625em) {
+    .govuk-main-wrapper {
+        padding-top: 30px;
+        padding-bottom: 20px;
     }
 }

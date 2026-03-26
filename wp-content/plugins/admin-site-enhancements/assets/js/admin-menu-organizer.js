@@ -24,7 +24,7 @@
             data: menu_data,
             success:function(data) {
                $('.asenha-saving-changes').hide();
-               $('.asenha-changes-saved').fadeIn(400).delay(2500).fadeOut(400);
+               
             },
             error:function(errorThrown) {
                console.log(errorThrown);

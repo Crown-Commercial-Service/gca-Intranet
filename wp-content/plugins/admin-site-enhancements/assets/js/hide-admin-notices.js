@@ -44,7 +44,7 @@
 			// TotalPress Custom post types - https://wordpress.org/plugins/custom-post-types/
 
 			// Reposition notices with the following selectors. Excluding 'notice-system'.
-			$('#wpbody-content > .wrap > .notice:not(#plugin-activated-successfully,.system-notice,.updated,.hidden,.inline,.wcml-notice,.asenha-media-replacement-notice),'
+			var noticesToMove = $('#wpbody-content > .wrap > .notice:not(#plugin-activated-successfully,.system-notice,.updated,.hidden,.inline,.wcml-notice,.asenha-media-replacement-notice),'
 			+ '#wpbody-content > .wrap > .notice-error,'
 			+ '#wpbody-content > .wrap > .error:not(.hidden),'
 			+ '#wpbody-content > .wrap > .notice-info,'
@@ -252,7 +252,11 @@
 			+ '#wpbody-content > .wrap .dokan-dashboard .notice-updated,'
 			+ '#wpbody-content > .wrap .dokan-dashboard .updated:not(.inline),'
 			+ '#wpbody-content > .wrap .dokan-dashboard .update-nag'
-			).not(':hidden').detach()
+			);
+
+			
+
+			noticesToMove.not(':hidden').detach()
 			.appendTo(noticesPanel)
 			.show();
 

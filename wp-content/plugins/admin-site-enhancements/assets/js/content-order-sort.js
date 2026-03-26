@@ -4,12 +4,23 @@
    $(document).ready( function() {
       var itemList = $('#item-list'), // Container of item list
           maxLevel = 6,
+          dragAxis = false,
+          dragTabSize = 20,
+          hierarchicalValue = ( typeof contentOrderSort.hierarchical !== 'undefined' ) ? contentOrderSort.hierarchical : contentOrderSort.hirarchical,
+          isHierarchical = ( String( hierarchicalValue ) === 'true' ),
+          disableParentChange = ! isHierarchical,
+          isSavingOrder = false,
           sort_started = {}, // For data related to the dragged element when dragging started
           sort_finished = {}; // For data related to the dragged element when dragging has finished
 
       // console.log(contentOrderSort); // Data passed from PHP via wp_localize_script
-      if (contentOrderSort.hierarchical == 'false') {
+      if ( ! isHierarchical ) {
+         // Non-hierarchical lists should only support top-level reordering.
          maxLevel = 1;
+         // Locking drag to vertical axis prevents right-drift from triggering invalid nest attempts.
+         dragAxis = 'y';
+         // Keep placeholder-based drop valid even when pointer drifts right.
+         dragTabSize = 9999;
       }
 
       // Make item list into nested sortable
@@ -21,7 +32,7 @@
          // Disable nesting if set to true
          protectRoot: false,
          // Disable moving sub-item to a different parent or up the nested structure
-         disableParentChange: false,
+         disableParentChange: disableParentChange,
          isTree: true,
          // Forces the placeholder to have a size.
          forcePlaceholderSize: true,
@@ -29,6 +40,8 @@
          // Allows for a helper element to be used for dragging display.
          // If set to "clone", then the element will be cloned and the clone will be dragged.
          helper: 'clone',
+         // Use vertical-only dragging for non-hierarchical post types.
+         axis: dragAxis,
          listType: 'ul',
          items: 'li',
          toleranceElement: '> div', // Direct children of the li element
@@ -44,11 +57,15 @@
          // Whether the sortable items should revert to their new positions using a smooth animation.
          // If set as a number, it's in miliseconds
          revert: 250,
-         // How far right or left (in pixels) the item has to travel 
+         // How far right or left (in pixels) the item has to travel
          // in order to be nested or to be sent outside its current list. Default: 20
-         tabSize: 20, 
+         tabSize: dragTabSize,
          // This event is triggered when sorting starts.
          start: function (event, ui) {
+            if ( isSavingOrder ) {
+               return false;
+            }
+
             // console.log('ui.item -- start');
             // console.log(ui.item);
             sort_started.item = ui.item; // The jQuery object representing the current dragged element.
@@ -118,6 +135,8 @@
 
             
             // console.log('dataArgs: ' + cleanStringify(dataArgs));
+
+            isSavingOrder = true;
             
             // AJAX call to update menu_order for items in the list
             $.ajax({
@@ -133,6 +152,9 @@
                },
                error: function(errorThrown) {
                   console.log(errorThrown);
+               },
+               complete: function() {
+                  isSavingOrder = false;
                }
             });
          }

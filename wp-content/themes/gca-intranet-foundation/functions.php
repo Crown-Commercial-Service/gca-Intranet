@@ -242,7 +242,7 @@ function gca_get_breadcrumb_items(): array
 
     if (is_single()) {
         $post_type = get_post_type();
-        
+
         $items[] = [
             'label' => get_post_type_object($post_type)->labels->name,
             'url'   => get_post_type_archive_link($post_type)
@@ -399,13 +399,63 @@ function gca_clean_post_excerpt(int $length = 320): string
 }
 
 /**
- * Limit search results to 10 per page.
+ * Limit search results to 10 per page and exclude news post type.
  */
 add_action('pre_get_posts', function (WP_Query $query): void {
     if (!is_admin() && $query->is_main_query() && $query->is_search()) {
         $query->set('posts_per_page', 10);
+
+        $post_types = array_values(array_diff(
+            array_keys(get_post_types(['public' => true, 'exclude_from_search' => false])),
+            ['news']
+        ));
+        $query->set('post_type', $post_types);
     }
 });
+
+add_filter('posts_join', function (string $join, WP_Query $query): string {
+    if (!is_admin() && $query->is_main_query() && $query->is_search()) {
+        global $wpdb;
+        $join .= " LEFT JOIN {$wpdb->postmeta} AS acf_search_meta
+                    ON ({$wpdb->posts}.ID = acf_search_meta.post_id) ";
+    }
+    return $join;
+}, 10, 2);
+
+add_filter('posts_search', function (string $search, WP_Query $query): string {
+    if (!is_admin() && $query->is_main_query() && $query->is_search() && !empty($search)) {
+        global $wpdb;
+
+        $term = $query->get('s');
+        if (empty($term)) {
+            return $search;
+        }
+
+        $like = '%' . $wpdb->esc_like($term) . '%';
+
+        $meta_sql = $wpdb->prepare(
+            "(
+                acf_search_meta.meta_value LIKE %s
+                AND (
+                    acf_search_meta.meta_key NOT LIKE '\\_%%'
+                    OR acf_search_meta.meta_key = '_gca_col2_wysiwyg'
+                )
+            )",
+            $like
+        );
+
+        $search = ' AND (' . substr($search, 5) . ' OR ' . $meta_sql . ')';
+    }
+    return $search;
+}, 10, 2);
+
+add_filter('posts_groupby', function (string $groupby, WP_Query $query): string {
+    if (!is_admin() && $query->is_main_query() && $query->is_search()) {
+        global $wpdb;
+        $groupby = "{$wpdb->posts}.ID";
+    }
+    return $groupby;
+}, 10, 2);
 
 ////////// assigning category to page object //////////
 add_action('init', function() {
@@ -771,4 +821,68 @@ add_filter('get_the_archive_title', function ($title) {
         $title = single_term_title('', false);
     }
     return $title;
+});
+
+/**
+ * 1. Modify the Toolbar: Remove 'Headings' and Add 'Formats'
+ */
+add_filter('mce_buttons', function($buttons) {
+    // Remove the default 'formatselect' (the Heading dropdown)
+    if (($key = array_search('formatselect', $buttons)) !== false) {
+        unset($buttons[$key]);
+    }
+
+    // Add 'styleselect' (the Formats dropdown) to the front of the toolbar
+    array_unshift($buttons, 'styleselect');
+
+    return $buttons;
+});
+
+/**
+ * 2. Define the Single Unified List
+ */
+add_filter('tiny_mce_before_init', function($init_array) {
+
+    $style_formats = [
+        // Standard Structure
+        ['title' => 'Heading 1', 'block' => 'h1'],
+        ['title' => 'Heading 2', 'block' => 'h2'],
+        ['title' => 'Heading 3', 'block' => 'h3'],
+
+        // GDS Custom Styles
+        [
+            'title'   => 'Paragraph',
+            'block'   => 'p',
+            'classes' => 'govuk-body'
+        ],
+        [
+            'title'   => 'Paragraph Small',
+            'block'   => 'p',
+            'classes' => 'govuk-body-s'
+        ],
+        [
+            'title'   => 'Paragraph Extra Small',
+            'block'   => 'p',
+            'classes' => 'govuk-body-xs'
+        ],
+    ];
+
+    $init_array['style_formats'] = json_encode($style_formats);
+
+    return $init_array;
+});
+
+/**
+ * Inject TinyMCE UI overrides into the WordPress Admin head
+ */
+add_action('admin_head', function() {
+    ?>
+    <style>
+        /* Tinymce UI overrides */
+        .mce-menu-item.mce-menu-item-preview.mce-active .mce-text,
+        .mce-menu-item.mce-menu-item-preview.mce-active .mce-ico {
+            color: inherit !important;
+        }
+    </style>
+    <?php
 });
