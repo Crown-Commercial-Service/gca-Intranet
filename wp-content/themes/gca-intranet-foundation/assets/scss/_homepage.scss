@@ -30,7 +30,7 @@
 .gca-equal-height-row {
   display: flex;
   flex-wrap: wrap;
-  margin-bottom: govuk-spacing(8);
+  margin-bottom: 0px;
   min-height: 120px; 
   height: auto;
 }
@@ -206,8 +206,8 @@
 
 .gca-events {
   background-image: url('/wp-content/themes/gca-intranet-foundation/assets/img/calendar.png');
-  background-size: 45px;
-  background-position: 15px 15px;
+  background-size: 30px;
+  background-position: 12px 19px;
   background-repeat: no-repeat;
   width: 100%;
   height: 100px;
@@ -227,19 +227,22 @@
       margin-bottom: 0px;
     }
   }
+
+  h3.govuk-heading-s {
+    padding-top: 15px;
+  }
   
   @include govuk-media-query($from: tablet) {
     padding-top: govuk-spacing(5);
     height: auto;
-    min-height: 200px;
   }
 
   p {
     padding-top: govuk-spacing(3);
-    padding-left: 50px;
+    padding-left: 30px;
     
     @include govuk-media-query($from: tablet) {
-      padding-top: govuk-spacing(1);
+      padding-top: 0;
     }
   }
   
@@ -254,7 +257,7 @@
   margin-bottom: 0;
   
   @include govuk-media-query($from: tablet) {
-    margin-bottom: 50px;
+    margin-bottom: 7px;
   }
 }
 
