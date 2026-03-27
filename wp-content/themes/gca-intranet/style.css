@@ -657,10 +657,6 @@ nav.navigation.pagination {
   color: #0b0c0c;
 }
 
-/* =========================================================
-   Homepage: equal-height cards + line-clamp truncation
-   ========================================================= */
-
 .gca-equal-height-row {
   display: flex;
   flex-wrap: wrap;
