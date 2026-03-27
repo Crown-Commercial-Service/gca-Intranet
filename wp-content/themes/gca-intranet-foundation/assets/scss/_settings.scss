@@ -374,14 +374,37 @@ main.govuk-main-wrapper {
 }
 
 .gca-richtext {
-    p, ul li, ol li {
+    // Combine p, ul li, and ol li since they share the font-size
+    p,
+    ul li,
+    ol li {
         font-size: 19px !important;
+        line-height: 1.31578; // Applied to all for a consistent vertical rhythm
+
+        // Restore the crisp rendering for all body text
+        -webkit-font-smoothing: antialiased;
+        -moz-osx-font-smoothing: grayscale;
+    }
+
+    // Paragraph-specific spacing
+    p {
+        margin-bottom: 20px;
+    }
+
+    // List-specific spacing (optional but recommended)
+    ul, ol {
+        margin-bottom: 20px;
+
+        li {
+            margin-bottom: 5px; // Adds a tiny gap between bullet points
+        }
     }
 }
+
 /* 1. Use the correct container class from your markup */
 main.gca-single {
     /* 2. Target the link class directly for maximum precision */
-    .subpage-card__link:link, 
+    .subpage-card__link:link,
     .subpage-card__link:visited {
         color: #0b0c0c !important; // GOV.UK Blue
         text-decoration: none;
@@ -389,13 +412,13 @@ main.gca-single {
 
         &:hover {
             color: #003078 !important; // GOV.UK Dark Blue
-            text-decoration: underline; 
+            text-decoration: underline;
         }
 
         /* 3. Ensure the GOV.UK focus state still works */
         &:focus {
-            color: #0b0c0c !important; 
-            background-color: #ffdd00 !important; 
+            color: #0b0c0c !important;
+            background-color: #ffdd00 !important;
             box-shadow: 0 -2px #ffdd00, 0 4px #0b0c0c !important;
             outline: 3px solid transparent;
         }
