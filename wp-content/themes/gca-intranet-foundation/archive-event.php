@@ -52,7 +52,7 @@ get_template_part('template-parts/breadcrumbs');
                     $visible_i = 0;
                     foreach ($event_categories as $cat) :
                       if (strtolower($cat->name) === 'uncategorized' || strtolower($cat->name) === 'uncategorised') continue; ?>
-                      <span class="tag_label <?php echo $visible_i === 0 ? 'grey' : 'green'; ?> govuk-body-s" data-testid="archive-event-post-category">
+                      <span class="tag_label <?php echo $visible_i === 0 ? 'green' : 'grey'; ?> govuk-body-s" data-testid="archive-event-post-category">
                         <?php echo esc_html($cat->name); ?>
                       </span>
                       <?php $visible_i++;
