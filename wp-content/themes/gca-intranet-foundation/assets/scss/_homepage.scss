@@ -128,12 +128,12 @@
     margin-top: govuk-spacing(3);
     margin-bottom: govuk-spacing(2);
     overflow-wrap: break-word;
-    word-break: break-all;
+    word-break: break-word;
   }
 
   p, a {
     overflow-wrap: break-word;
-    word-break: break-all;
+    word-break: break-word;
   }
 
   img {
