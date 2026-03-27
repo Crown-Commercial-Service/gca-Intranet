@@ -687,7 +687,8 @@ nav.navigation.pagination {
 [data-testid='latest-news-featured-title'],
 [data-testid='latest-news-secondary-title'],
 [data-testid='work-update-title'],
-[data-testid='blogs-title'] {
+[data-testid='blogs-title'],
+[data-testid='events-title'] {
   display: -webkit-box;
   -webkit-box-orient: vertical;
   overflow: hidden;
