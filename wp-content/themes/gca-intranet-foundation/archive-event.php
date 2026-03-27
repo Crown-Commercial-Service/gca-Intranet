@@ -24,6 +24,7 @@ get_template_part('template-parts/breadcrumbs');
                 class="event-card"
                 data-testid="archive-event-post"
                 data-post-id="<?php echo esc_attr((string) get_the_ID()); ?>"
+                style="padding-bottom:0;"
               >
                 <h2 class="govuk-heading-m govuk-!-margin-bottom-2" data-testid="archive-event-post-title">
                   <a
@@ -52,9 +53,11 @@ get_template_part('template-parts/breadcrumbs');
                     $visible_i = 0;
                     foreach ($event_categories as $cat) :
                       if (strtolower($cat->name) === 'uncategorized' || strtolower($cat->name) === 'uncategorised') continue; ?>
-                      <span class="tag_label <?php echo $visible_i === 0 ? 'green' : 'grey'; ?> govuk-body-s" data-testid="archive-event-post-category">
+                      
+                      <span class="tag_label <?php echo $visible_i === 0 ? '' : 'grey'; ?> govuk-body-s" data-testid="archive-event-post-category">
                         <?php echo esc_html($cat->name); ?>
                       </span>
+
                       <?php $visible_i++;
                     endforeach;
                   endif; ?>
@@ -63,9 +66,11 @@ get_template_part('template-parts/breadcrumbs');
                   $event_locations = get_the_terms(get_the_ID(), 'event_location');
                   if ($event_locations && !is_wp_error($event_locations)) :
                     foreach ($event_locations as $location) : ?>
-                      <span class="tag_label govuk-body-s" data-testid="archive-event-post-location">
+                      
+                      <span class="tag_label grey govuk-body-s" data-testid="archive-event-post-location">
                         <?php echo esc_html($location->name); ?>
                       </span>
+
                     <?php endforeach;
                   endif; ?>
                 </div>

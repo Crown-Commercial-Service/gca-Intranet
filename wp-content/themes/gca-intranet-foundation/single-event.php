@@ -29,14 +29,14 @@ get_template_part('template-parts/breadcrumbs');
                 $locations = get_the_terms(get_the_ID(), 'event_location');
 
                 if ($categories && $categories[0]->name !== 'Uncategorized') : ?>
-                    <span class="govuk-body tag_label">
+                    <span class="govuk-body tag_label" style="font-size:16px;">
                         <?php echo esc_html($categories[0]->name); ?>
                     </span>
                 <?php endif;
 
 
                 if ($locations) : ?>
-                    <span class="govuk-body tag_label grey">
+                    <span class="govuk-body tag_label grey" style="font-size:16px;">
                         <?php echo esc_html($locations[0]->name); ?>
                     </span>
                 <?php endif; ?>
