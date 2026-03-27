@@ -20,16 +20,16 @@ get_template_part('template-parts/breadcrumbs');
         <article class="work-update-box" data-testid="work-update-post">
 
           <div class="work_update_profile_img" >
-            <?php 
-              $custome_author_img = get_field('image'); 
-              
-              if ($custome_author_img) : 
-                  echo wp_get_attachment_image($custome_author_img, 'thumbnail', false, ['class' => 'avatar']); 
-              else : 
+            <?php
+              $custome_author_img = get_field('image');
+
+              if ($custome_author_img) :
+                  echo wp_get_attachment_image($custome_author_img, 'thumbnail', false, ['class' => 'avatar']);
+              else :
                   if ($avatar = get_avatar(get_the_author_meta('ID'))) :
                       echo $avatar;
                   endif;
-              endif; 
+              endif;
             ?>
           </div>
 
@@ -48,25 +48,28 @@ get_template_part('template-parts/breadcrumbs');
               By <?php echo esc_html(get_the_author()); ?>
             </p>
 
-            <p class="date_bottom" data-testid="work-update-post-date">
-              <?php echo esc_html(get_the_date('j F Y')); ?>
+            <p class="date_bottom" style="margin: 0;" data-testid="work-update-post-date">
 
-              <?php 
+              <span class="govuk-!-margin-right-2" style="font-size: initial;">
+                <?php echo esc_html(get_the_date('j F Y')); ?>
+              </span>
+
+              <?php
               $terms = get_the_terms(get_the_ID(), 'label');
 
-              if ($terms && !is_wp_error($terms)) : 
+              if ($terms && !is_wp_error($terms)) :
                 $term = array_shift($terms); ?>
                 <span class="govuk-body-s tag_label green">
                     <?php echo esc_html($term->name); ?>
                 </span>
               <?endif; ?>
 
-              <?php 
+              <?php
               $teams = get_the_terms(get_the_ID(), 'responsible_team');
 
-              if ($teams && !is_wp_error($teams)) : 
+              if ($teams && !is_wp_error($teams)) :
                 $team = array_shift($teams); ?>
-                <span class="govuk-body-s tag_label grey">
+                <span class="govuk-body-s tag_label grey" style="margin:0;">
                     <?php echo esc_html($team->name); ?>
                 </span>
               <?php endif; ?>
@@ -78,7 +81,7 @@ get_template_part('template-parts/breadcrumbs');
       <?php endwhile; ?>
 
         <div class="govuk-!-margin-top-8 govuk-!-margin-bottom-8" data-testid="work-update-pagination">
-          <?php 
+          <?php
             the_posts_pagination( array(
                 'mid_size'  => 2,
                 'prev_text' => sprintf(
@@ -93,7 +96,7 @@ get_template_part('template-parts/breadcrumbs');
                         <svg width="17" height="14" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false"><path d="M10.1 0L8.7 1.4 13 5.7H0v2h12.9l-4.2 4 1.4 1.4 6.7-6.4z" fill="#007194" fill-rule="evenodd"/></svg>
                     </span>'
                 ),
-            ) ); 
+            ) );
           ?>
         </div>
 

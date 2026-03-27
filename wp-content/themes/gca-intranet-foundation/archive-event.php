@@ -24,6 +24,7 @@ get_template_part('template-parts/breadcrumbs');
                 class="event-card"
                 data-testid="archive-event-post"
                 data-post-id="<?php echo esc_attr((string) get_the_ID()); ?>"
+                style="padding-bottom:0;"
               >
                 <h2 class="govuk-heading-m govuk-!-margin-bottom-2" data-testid="archive-event-post-title">
                   <a
