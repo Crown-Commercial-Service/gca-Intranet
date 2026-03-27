@@ -6,20 +6,6 @@
   background: #95B4F9; /* base hero blue */
 }
 
-/* Big curved shape (like the design) */
-.gca-home-hero::after {
-  content: '';
-  position: absolute;
-  top: 50%;
-  left: 60%;
-  width: 1900px; /* bigger circle = smoother curve */
-  height: 1000px;
-  transform: translateY(-50%);
-  border-radius: 9999px;
-  background: #7f9fff; /* darker curve blue */
-  z-index: 0;
-}
-
 /* Ensure hero content sits above curve */
 .gca-home-hero .container-xxl,
 .gca-home-hero-inner {
@@ -68,13 +54,6 @@
 @media (max-width: 991.98px) {
   .gca-home-hero {
     padding: 40px 0;
-  }
-
-  .gca-home-hero::after {
-    right: -640px;
-    width: 980px;
-    height: 980px;
-    opacity: 0.85;
   }
 
   .gca-home-hero-inner {

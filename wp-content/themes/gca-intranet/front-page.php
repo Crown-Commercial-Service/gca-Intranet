@@ -13,10 +13,10 @@ get_header();
         <h1 class="govuk-body gca-home-hero-title" data-testid="home-hero-title">GCA Intranet</h1>
       </div>
 
-      <div class="gca-home-hero-tagline" aria-hidden="true" data-testid="home-hero-tagline">
-        <span class="gca-home-hero-tagline-rule" data-testid="home-hero-tagline-rule"></span>
-        <span class="gca-home-hero-tagline-text" data-testid="home-hero-tagline-text">value for the nation</span>
-      </div>
+    </div>
+
+    <div class="gca-home-hero__media" data-testid="home-hero-media" aria-hidden="true">
+      <img src="<?php echo esc_url(get_theme_root_uri() . '/gca-intranet-foundation/assets/img/hero.png'); ?>" alt="">
     </div>
   </div>
 </section>
@@ -64,10 +64,7 @@ get_header();
                   <div data-testid="latest-news-featured-content">
                     <h2 class="govuk-heading-m" data-testid="latest-news-featured-title">
                       <a class="govuk-link govuk-!-text-break-word" data-testid="latest-news-featured-link" href="<?php the_permalink(); ?>">
-                        <?php
-                          $title = get_the_title();
-                          echo esc_html(mb_strlen($title) > 55 ? mb_substr($title, 0, 55) . '...' : $title);
-                        ?>
+                        <?php echo esc_html(get_the_title()); ?>
                       </a>
                     </h2>
 
@@ -342,19 +339,12 @@ get_header();
                     <div class="govuk-grid-column-two-thirds" data-testid="work-update-content">
                       <h3 class="govuk-heading-s" data-testid="work-update-title">
                         <a class="govuk-link govuk-!-text-break-word" href="<?php the_permalink(); ?>" data-testid="work-update-link">
-                          <?php
-                            $title = get_the_title();
-                            echo esc_html(mb_strlen($title) > 27 ? mb_substr($title, 0, 27) . '...' : $title);
-                          ?>
+                          <?php echo esc_html(get_the_title()); ?>
                         </a>
                       </h3>
 
                       <p class="govuk-body-s" data-testid="work-update-author">
-                        By
-                        <?php
-                          $author_name = get_the_author();
-                          echo esc_html(mb_strlen($author_name) > 20 ? mb_substr($author_name, 0, 20) . '...' : $author_name);
-                        ?>
+                        By <?php echo esc_html(get_the_author()); ?>
                       </p>
 
                       <p class="govuk-body-xs" data-testid="work-update-date">
@@ -435,19 +425,12 @@ get_header();
                     <div class="govuk-grid-column-two-thirds" data-testid="blogs-content">
                       <h3 class="govuk-heading-s" data-testid="blogs-title">
                         <a class="govuk-link govuk-!-text-break-word" data-testid="blogs-link" href="<?php the_permalink(); ?>">
-                          <?php
-                            $title = get_the_title();
-                            echo esc_html(mb_strlen($title) > 30 ? mb_substr($title, 0, 30) . '...' : $title);
-                          ?>
+                          <?php echo esc_html(get_the_title()); ?>
                         </a>
                       </h3>
 
                       <p class="govuk-body-s" data-testid="blogs-author">
-                        By
-                        <?php
-                          $author_name = get_the_author();
-                          echo esc_html(mb_strlen($author_name) > 20 ? mb_substr($author_name, 0, 20) . '...' : $author_name);
-                        ?>
+                        By <?php echo esc_html(get_the_author()); ?>
                       </p>
 
 

@@ -38,7 +38,7 @@ get_template_part('template-parts/breadcrumbs');
             </p>
 
             <div class="date_bottom" data-testid="news-post-meta">
-              <span class="govuk-body-s govuk-!-margin-right-2">
+              <span class="govuk-body-s govuk-!-margin-right-2" style="margin:0">
                 <?php echo esc_html(get_the_date('j F Y')); ?>
               </span>
 
@@ -46,7 +46,7 @@ get_template_part('template-parts/breadcrumbs');
               $categories = get_the_category();
 
               if ($categories && $categories[0]->name !== 'Uncategorized') : ?>
-                  <span class="govuk-body-s tag_label green" data-testid="archive-news-post-category">
+                  <span class="govuk-body-s tag_label green" style="margin:0" data-testid="archive-news-post-category">
                       <?php echo esc_html($categories[0]->name); ?>
                   </span>
               <?php endif;
@@ -55,7 +55,7 @@ get_template_part('template-parts/breadcrumbs');
 
               if ($terms && !is_wp_error($terms)) : 
                 $term = array_shift($terms); ?>
-                <span class="govuk-body-s tag_label grey" data-testid="archive-news-post-label">
+                <span class="govuk-body-s tag_label grey" style="margin:0;" data-testid="archive-news-post-label">
                     <?php echo esc_html($term->name); ?>
                 </span>
               <?php endif; ?>
