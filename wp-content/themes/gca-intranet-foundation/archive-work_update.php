@@ -59,7 +59,7 @@ get_template_part('template-parts/breadcrumbs');
 
               if ($terms && !is_wp_error($terms)) :
                 $term = array_shift($terms); ?>
-                <span class="govuk-body-s tag_label green">
+                <span class="govuk-body-s tag_label green" style="margin:0;">
                     <?php echo esc_html($term->name); ?>
                 </span>
               <?endif; ?>
