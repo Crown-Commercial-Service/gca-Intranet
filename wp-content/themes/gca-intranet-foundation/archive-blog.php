@@ -49,7 +49,7 @@ get_template_part('template-parts/breadcrumbs');
             </p>
             
             <div class="date_bottom" data-testid="blog-post-date">
-              <span class="govuk-!-margin-right-2">
+              <span class="govuk-!-margin-right-2" style="margin:0;">
                 <?php echo esc_html(get_the_date('j F Y')); ?>
               </span>
               <?php 
@@ -57,7 +57,7 @@ get_template_part('template-parts/breadcrumbs');
 
               if ($terms && !is_wp_error($terms)) : 
                 $term = array_shift($terms); ?>
-                <span class="govuk-body-s tag_label location">
+                <span class="govuk-body-s tag_label location" style="margin:0;">
                     <?php echo esc_html($term->name); ?>
                 </span>
               <?php endif; ?>
