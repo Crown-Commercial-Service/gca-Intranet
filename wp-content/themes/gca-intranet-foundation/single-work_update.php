@@ -48,7 +48,7 @@ get_template_part('template-parts/breadcrumbs');
 
                     
                     <div class="govuk-!-margin-bottom-5 govuk-!-margin-top-5" data-testid="work-update-date">
-                        <span class="govuk-body-s govuk-!-margin-right-3">
+                        <span class="govuk-body-s govuk-!-margin-right-3" style="margin:0;">
                             <?php echo esc_html(get_the_date('j F Y')); ?>
                         </span>
                         <?php
@@ -56,14 +56,14 @@ get_template_part('template-parts/breadcrumbs');
                         $responsible_teams = get_the_terms(get_the_ID(), 'responsible_team');
 
                         if ($terms && !is_wp_error($terms)) : $term = array_shift($terms); ?>
-                            <span class="govuk-body-s tag_label" data-testid="work-update-tax">
+                            <span class="govuk-body-s tag_label" data-testid="work-update-tax" style="margin:0;">
                                 <?php echo esc_html($term->name); ?>
                             </span>
                         <?php endif; ?>
                         
                         <?php
                         if ($responsible_teams && !is_wp_error($responsible_teams)) : $responsible_team = array_shift($responsible_teams); ?>
-                            <span class="govuk-body-s tag_label grey" data-testid="work-update-team">
+                            <span class="govuk-body-s tag_label grey" data-testid="work-update-team" style="margin:0;">
                                 <?php echo esc_html($responsible_team->name); ?>
                             </span>
                         <?php endif; ?>
