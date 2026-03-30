@@ -46,8 +46,8 @@ get_template_part('template-parts/hero', null, [
             >
             <button class="govuk-button search-submit" type="submit" aria-label="<?php esc_attr_e('Search', 'gca-intranet'); ?>">
               <span class="govuk-visually-hidden"><?php esc_html_e('Search', 'gca-intranet'); ?></span>
-              <svg class="gca-search-icon" width="20" height="20" viewBox="0 0 16 16" aria-hidden="true" focusable="false">
-                <path fill="currentColor" d="M11.742 10.344l3.387 3.387-.998.998-3.387-3.387a6 6 0 1 1 .998-.998zM6.5 11.5a5 5 0 0 0 0-10 5 5 0 0 0 0 10z"></path>
+              <svg class="gca-search-icon" width="22" height="22" viewBox="0 0 22 22" fill="none" aria-hidden="true" focusable="false" xmlns="http://www.w3.org/2000/svg">
+                <path d="M19.25 19.25L15.2625 15.2625M17.4167 10.0833C17.4167 14.1334 14.1334 17.4167 10.0833 17.4167C6.03325 17.4167 2.75 14.1334 2.75 10.0833C2.75 6.03325 6.03325 2.75 10.0833 2.75C14.1334 2.75 17.4167 6.03325 17.4167 10.0833Z" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
               </svg>
             </button>
           </div>
