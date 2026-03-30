@@ -69,7 +69,7 @@ get_header();
                     </h2>
 
                     <p class="govuk-body-s" data-testid="latest-news-featured-excerpt">
-                      <?php echo esc_html(wp_trim_words(get_the_excerpt(), 32, '...')); ?>
+                      <?php echo esc_html(get_the_excerpt()); ?>
                     </p>
 
                     <p class="govuk-body-s" data-testid="latest-news-featured-date">
