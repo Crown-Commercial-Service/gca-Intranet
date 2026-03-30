@@ -21,7 +21,10 @@ FROM wordpress:6.9.4-php8.2-apache
 COPY docker/php.ini /usr/local/etc/php/conf.d/custom-php.ini
 
 # 1. Install system dependencies (zip for WP-CLI/GDS)
-RUN apt-get update && apt-get install -y libzip-dev unzip && docker-php-ext-install zip
+RUN apt-get update && apt-get install -y libzip-dev unzip && docker-php-ext-install zip \
+  && docker-php-ext-install zip \
+  && pecl install redis \
+  && docker-php-ext-enable redis
 
 # 2. Install WP-CLI into the image
 ARG WP_CLI_VERSION=2.12.0
