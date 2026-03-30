@@ -398,6 +398,22 @@ function gca_clean_post_excerpt(int $length = 320): string
     return rtrim(mb_substr($content, 0, $length)) . '...';
 }
 
+add_action('pre_get_posts', function (WP_Query $query): void {
+    if (!is_admin() && $query->is_main_query() && $query->is_post_type_archive('event')) {
+        $query->set('meta_key', 'start_date');
+        $query->set('orderby', 'meta_value');
+        $query->set('order', 'ASC');
+        $query->set('meta_query', [
+            [
+                'key'     => 'start_date',
+                'value'   => date('Ymd'),
+                'compare' => '>=',
+                'type'    => 'DATE',
+            ],
+        ]);
+    }
+});
+
 /**
  * Limit search results to 10 per page and exclude news post type.
  */
