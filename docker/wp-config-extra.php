@@ -22,6 +22,15 @@ if (($xfp && stripos($xfp, 'https') === 0) || $xfport === '443') {
 }
 
 /**
+ * Redis object cache
+ */
+if (getenv('REDIS_HOST') && !defined('WP_REDIS_HOST')) {
+    define('WP_REDIS_HOST', getenv('REDIS_HOST'));
+    define('WP_REDIS_PORT', 6379);
+}
+
+
+/**
  * WordPress memory limits
  * - WP_MEMORY_LIMIT: frontend
  * - WP_MAX_MEMORY_LIMIT: wp-admin (imports, updates, etc.)
