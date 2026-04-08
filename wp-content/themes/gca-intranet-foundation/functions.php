@@ -1010,6 +1010,7 @@ add_action('add_meta_boxes', function (): void {
     );
 });
 
+if (!function_exists('gca_render_col2_metabox')):
 function gca_render_col2_metabox(\WP_Post $post): void
 {
     wp_nonce_field('gca_save_layout_col2', 'gca_layout_col2_nonce');
@@ -1033,6 +1034,7 @@ function gca_render_col2_metabox(\WP_Post $post): void
         'gca-intranet'
     ) . '</p>';
 }
+endif;
 
 add_action('save_post', function (int $post_id): void {
     if (defined('DOING_AUTOSAVE') && DOING_AUTOSAVE) return;
@@ -1860,6 +1862,7 @@ add_action('acf/input/admin_footer', function() {
  *
  * @return string         The formatted string based on the request.
  */
+if (!function_exists('gca_get_event_datetime')):
 function gca_get_event_datetime( $return = 'dates', $post_id = null ) {
     $post_id = $post_id ?: get_the_ID();
 
@@ -1910,6 +1913,7 @@ function gca_get_event_datetime( $return = 'dates', $post_id = null ) {
         default:           return $date_range;
     }
 }
+endif;
 
 /**
  * Force hide 'Layout – 1 column' from the dropdown
@@ -1936,6 +1940,7 @@ add_filter('theme_page_templates', function($post_templates, $theme, $post, $pos
  * - Existing user preferences (stored in user meta) will override this
  * - Does NOT add/remove meta boxes — only controls visibility
  */
+if (!function_exists('gca_show_all_screen_options')):
 function gca_show_all_screen_options($hidden, $screen) {
 
     // Target all post edit screens (posts, pages, custom post types)
@@ -1945,4 +1950,5 @@ function gca_show_all_screen_options($hidden, $screen) {
 
     return $hidden;
 }
+endif;
 add_filter('default_hidden_meta_boxes', 'gca_show_all_screen_options', 10, 2);
