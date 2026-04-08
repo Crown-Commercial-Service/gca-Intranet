@@ -2,18 +2,16 @@
 
 <main id="main-content" role="main" tabindex="-1" data-testid="home-main">
     <section class="gca-home-hero" aria-label="Homepage hero" data-testid="home-hero">
-        <div class="container-xxl" data-testid="home-hero-container">
+        <div class="govuk-width-container" data-testid="home-hero-container">
             <div class="gca-home-hero-inner" data-testid="home-hero-inner">
                 <div class="gca-home-hero-content" data-testid="home-hero-content">
                     <p class="gca-home-hero-kicker mb-2" data-testid="home-hero-kicker">Welcome to our</p>
                     <h1 class="gca-home-hero-title mb-0" data-testid="home-hero-title">GCA Intranet</h1>
                 </div>
+            </div>
 
-                <div class="gca-home-hero-tagline" aria-hidden="true" data-testid="home-hero-tagline">
-                    <span class="gca-home-hero-tagline-rule" data-testid="home-hero-tagline-rule"></span>
-                    <span class="gca-home-hero-tagline-text" data-testid="home-hero-tagline-text">value for the
-                        nation</span>
-                </div>
+            <div class="gca-home-hero__media" data-testid="home-hero-media" aria-hidden="true">
+                <img src="<?php echo esc_url(get_theme_root_uri() . '/gca-intranet-foundation/assets/img/hero.png'); ?>" alt="">
             </div>
         </div>
     </section>

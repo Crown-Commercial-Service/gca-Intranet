@@ -73,8 +73,20 @@ add_action('wp_enqueue_scripts', function (): void {
         $css_ver
     );
 
+    // 1b. Parent stylesheet overrides
+    $root_css_rel = '/style.css';
+    $root_css_abs = get_template_directory() . $root_css_rel;
+    $root_css_ver = file_exists($root_css_abs) ? (string) filemtime($root_css_abs) : '1.0.0';
+
+    wp_enqueue_style(
+        'gca-theme-overrides',
+        get_template_directory_uri() . $root_css_rel,
+        ['gca-theme'],
+        $root_css_ver
+    );
+
     // 2. Cookie banner inline CSS (avoids a separate build step)
-    wp_add_inline_style('gca-theme', '
+    wp_add_inline_style('gca-theme-overrides', '
 .gca-cookie-banner{box-sizing:border-box;width:100%;padding:20px 0}
 @media print{.gca-cookie-banner{display:none!important}}
 .gca-cookie-banner__inner{padding-left:15px;padding-right:15px;max-width:960px;margin:0 auto}

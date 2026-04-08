@@ -1,28 +1,17 @@
-
 .gca-home-hero {
   position: relative;
-  overflow: hidden;
-  padding: 32px 0;
-  background: #95B4F9; /* base hero blue */
-}
-
-/* Ensure hero content sits above curve */
-.gca-home-hero .container-xxl,
-.gca-home-hero-inner {
-  position: relative;
-  z-index: 1;
-}
-
-.gca-home-hero-inner {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  gap: 56px;
-  min-height: 170px; /* gives more “banner” feel */
+  overflow: hidden;
+  height: 170px;
+  padding: 0;
+  background: #95b4f9;
 }
 
-.gca-home-hero-content {
-  max-width: 640px;
+.gca-home-hero-inner {
+  position: relative;
+  z-index: 2;
+  max-width: 60%;
 }
 
 .gca-home-hero-kicker {
@@ -33,46 +22,56 @@
 .gca-home-hero-title {
   font-size: clamp(45px, 4vw, 58px);
   line-height: 1.05;
-  font-weight: 800;
+  font-weight: 400;
   margin: 0;
 }
 
-/* Tagline block on right */
-.gca-home-hero-tagline {
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  font-size: 30px; /* slightly smaller */
-  line-height: 1.1;
-  font-weight: 500;
-  white-space: nowrap;
-  color: #111;
+.gca-home-hero__media {
+  position: absolute;
+  right: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  width: min(600px, 43vw);
+  height: 170px;
+  overflow: hidden;
+  border-radius: 9999px 0 0 9999px;
+  z-index: 1;
 }
 
+.gca-home-hero__media img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
 
-/* Mobile stack */
-@media (max-width: 991.98px) {
-  .gca-home-hero {
-    padding: 40px 0;
+@media (max-width: 1400px) {
+  .gca-home-hero__media {
+    width: 40vw;
   }
 
   .gca-home-hero-inner {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 18px;
-    min-height: auto;
-  }
-
-  .gca-home-hero-tagline {
-    font-size: 26px;
-    padding-right: 0;
-  }
-
-  .gca-home-hero-tagline-rule {
-    width: 220px;
+    max-width: 65%;
   }
 }
 
-// .gca-home-hero, .gca-hero-banner {
-//   padding: 40px 0 !important;
-// }
+@media (max-width: 991px) {
+  .gca-home-hero {
+    height: auto;
+    padding: 48px 0;
+    display: block;
+  }
+
+  .gca-home-hero__media {
+    position: static;
+    transform: none;
+    width: 100%;
+    height: 200px;
+    margin-top: 16px;
+    border-radius: 16px;
+  }
+
+  .gca-home-hero-inner {
+    max-width: 100%;
+  }
+}

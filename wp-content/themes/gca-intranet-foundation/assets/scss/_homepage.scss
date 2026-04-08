@@ -236,6 +236,8 @@
     padding-top: 15px;
   }
 
+  padding-bottom: 45px;
+
   @include govuk-media-query($from: tablet) {
     padding-top: govuk-spacing(5);
     height: auto;
@@ -283,5 +285,114 @@
     position: absolute;
     bottom: 10px;
     gap: 15px;
+}
+
+[data-testid='home-main-wrapper'] a.govuk-link:link,
+[data-testid='home-main-wrapper'] a.govuk-link:visited,
+[data-testid='home-main-wrapper'] a.govuk-link:hover,
+[data-testid='home-main-wrapper'] a.govuk-link:active {
+    color: #1d70b8;
+}
+
+.gca-quick-links {
+    margin-top: 24px;
+
+    .gca-homepage-section-title {
+        margin-bottom: 12px;
+
+        + .gca-quick-links__list {
+            margin-top: 20px;
+        }
+    }
+}
+
+.gca-quick-links__list {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.gca-quick-links__item {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    text-decoration: none;
+    background: #fff;
+    border: 1px solid #b1b4b6;
+    border-radius: 6px;
+    padding: 16px 16px 16px 20px;
+    box-shadow: 0 2px 0 rgba(0, 0, 0, 0.08);
+
+    &::before {
+        content: '';
+        position: absolute;
+        left: 0;
+        top: 0;
+        height: 100%;
+        width: 6px;
+        background: #95b4f9;
+        border-top-left-radius: 6px;
+        border-bottom-left-radius: 6px;
+    }
+
+    &:hover {
+        background: #f3f2f1;
+        text-decoration: none;
+    }
+
+    &:focus {
+        outline: none;
+    }
+
+    &:focus-visible {
+        outline: 3px solid #ffdd00;
+        outline-offset: 2px;
+    }
+
+    &:visited,
+    &:visited .gca-quick-links__text {
+        color: #1d70b8;
+    }
+}
+
+.gca-quick-links__text {
+    font-weight: 700;
+    color: #1d70b8;
+    display: block;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: calc(100% - 34px);
+}
+
+.gca-quick-links__chevron {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    margin-left: 12px;
+    color: #0b0c0c;
+    flex: 0 0 auto;
+}
+
+[data-testid='latest-news-featured-title'],
+[data-testid='latest-news-secondary-title'],
+[data-testid='work-update-title'],
+[data-testid='blogs-title'],
+[data-testid='events-title'] {
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    -webkit-line-clamp: 2;
+    line-clamp: 2;
+    color: #1d70b8;
+}
+
+[data-testid='latest-news-featured-excerpt'] {
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    -webkit-line-clamp: 4;
+    line-clamp: 4;
 }
 

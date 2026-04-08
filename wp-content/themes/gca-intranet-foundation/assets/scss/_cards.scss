@@ -1,6 +1,66 @@
 .gca-card {
-  background: #fff;
-  border: 1px solid $gca-border-mid;
-  border-bottom: 0.375rem solid $gca-accent-lime;
-  border-radius: $border-radius;
+    background: #fff;
+    border: 1px solid $gca-border-mid;
+    border-bottom: 0.375rem solid $gca-accent-lime;
+    border-radius: $border-radius;
+}
+
+.gca-three-col-category {
+    .govuk-grid-column-one-third {
+        display: flex;
+    }
+
+    .gca-threecol-card {
+        position: relative;
+        width: 100%;
+        flex: 1 1 auto;
+        background: #fff;
+        border: 1px solid #c8c8c8;
+        border-left: 6px solid #9caf27;
+        border-radius: 4px;
+        padding: 20px 52px 18px 20px;
+        box-shadow: 0 6px 12px rgba(0, 0, 0, 0.12);
+
+        &:hover {
+            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.14);
+        }
+    }
+
+    .gca-threecol-card__title {
+        margin: 0 0 10px 0;
+    }
+
+    .gca-threecol-card__link {
+        display: block;
+        text-decoration: none;
+        color: #0b0c0c;
+        position: relative;
+        padding-right: 28px;
+
+        &:visited { color: #0b0c0c; }
+
+        &:hover,
+        &:focus {
+            color: #0b0c0c;
+            text-decoration: underline;
+        }
+    }
+
+    .gca-threecol-card__chevron {
+        position: absolute;
+        right: 7px;
+        top: 50%;
+        transform: translateY(-50%);
+        font-size: 38px;
+        line-height: 1;
+        color: #0b0c0c;
+    }
+
+    .gca-threecol-card__excerpt {
+        margin: 0;
+    }
+
+    .govuk-pagination {
+        margin-top: 10px;
+    }
 }

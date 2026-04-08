@@ -33,14 +33,51 @@ main.govuk-main-wrapper {
 .profile_img_wrapper {
     padding-right: 40px;
 
-    // Apply the override if the element is inside EITHER .blogs-container OR .work-updates-container
     .blogs-container &,
     .work-updates-container & {
         text-align: center;
         padding-right: 0;
     }
-    
+
     img {
         border-radius: 50%;
     }
+}
+
+.gca-featured-media {
+    margin: 0;
+}
+
+.gca-featured-media__img {
+    width: 100%;
+    height: auto;
+    display: block;
+    border-radius: 8px;
+}
+
+.gca-news-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    align-items: center;
+}
+
+.gca-single h1.govuk-heading-l {
+    font-weight: 400;
+}
+
+.gca-clamp-2 {
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    line-height: 1.25;
+    max-height: calc(1.25em * 2);
+}
+
+.gca-single--2col .govuk-grid-row::after {
+    content: '';
+    display: block;
+    clear: both;
 }

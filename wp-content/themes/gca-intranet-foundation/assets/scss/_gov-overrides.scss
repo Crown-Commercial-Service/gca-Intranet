@@ -167,3 +167,11 @@ main.govuk-main-wrapper h2.govuk-heading-l a {
         padding-bottom: 20px;
     }
 }
+
+@media (min-width: 1024px) {
+    .govuk-width-container {
+        width: 100%;
+        max-width: 1200px;
+        min-width: 600px;
+    }
+}

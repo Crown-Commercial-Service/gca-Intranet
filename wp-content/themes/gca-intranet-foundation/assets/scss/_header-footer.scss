@@ -2,6 +2,12 @@
    HEADER + FOOTER (Responsive Layout)
    ========================================================================== */
 
+@media (min-width: 992px) and (max-width: 1599.98px) {
+    #primaryNav .navbar-nav {
+        padding-left: clamp(10.5rem, 18vw, 16rem) !important;
+    }
+}
+
 /* --------------------------------------------------------------------------
    1. Global Layout (Sticky Footer)
    -------------------------------------------------------------------------- */
