@@ -9,6 +9,9 @@ require_once get_template_directory() . '/inc/class-ccs-mega-menu-walker.php';
 require_once get_template_directory() . '/inc/shortcodes.php';
 require get_template_directory() . '/inc/auth-logic.php';
 
+// Feature flag registrations
+require get_template_directory() . '/inc/features.php';
+
 /**
  * Theme setup
  */
