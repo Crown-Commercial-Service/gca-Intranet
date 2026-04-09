@@ -8,8 +8,6 @@ if (!defined('ABSPATH')) {
 // Authentication, Backdoor, and Landing Page Logic
 require get_stylesheet_directory() . '/inc/auth-logic.php';
 
-// Feature flag registrations
-require get_stylesheet_directory() . '/inc/features.php';
 
 /**
  * Child theme assets + GOV.UK JS init
