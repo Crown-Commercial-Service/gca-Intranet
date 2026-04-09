@@ -44,3 +44,13 @@ main.govuk-main-wrapper {
         border-radius: 50%;
     }
 }
+
+.blogs-container,
+.work-updates-container {
+    @media (max-width: 1024px) {
+        .govuk-grid-column-one-third,
+        .govuk-grid-column-two-thirds {
+            width: 100%;
+        }
+    }
+}
