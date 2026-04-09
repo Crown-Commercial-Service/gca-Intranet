@@ -10,37 +10,35 @@ $cards   = $row['cards_cards_cards'] ?? [];
     <div class="govuk-grid-row ccs-grid-row--loose">
         <div class="govuk-grid-column-full">
 
-```
-        <?php if ($heading) : ?>
-            <h2 class="govuk-heading-l intro__heading">
-                <?php echo esc_html($heading); ?>
-            </h2>
-        <?php endif; ?>
+            <?php if ($heading) : ?>
+                <h2 class="govuk-heading-l intro__heading">
+                    <?php echo esc_html($heading); ?>
+                </h2>
+            <?php endif; ?>
 
-        <?php if (!empty($cards)) : ?>
-            <ul class="card-list govuk-!-margin-top-6 card-list--two-on-large">
-                <?php foreach ($cards as $card) : ?>
-                    <li class="card-list__item">
-                        <div class="card-list__item__wrapper">
-                            
-                            <h4 class="govuk-heading-m">
-                                <?php echo esc_html($card['cards_title']); ?>
-                            </h4>
+            <?php if (!empty($cards)) : ?>
+                <ul class="card-list govuk-!-margin-top-6 card-list--two-on-large">
+                    <?php foreach ($cards as $card) : ?>
+                        <li class="card-list__item">
+                            <div class="card-list__item__wrapper">
+                                
+                                <h4 class="govuk-heading-m">
+                                    <?php echo esc_html($card['cards_title']); ?>
+                                </h4>
 
-                            <div class="wysiwyg-content govuk-body">
-                                <?php 
-                                echo apply_filters('the_content', $card['cards_content']); 
-                                ?>
+                                <div class="wysiwyg-content govuk-body">
+                                    <?php 
+                                    // Using apply_filters to handle the WYSIWYG content
+                                    echo apply_filters('the_content', $card['cards_content']); 
+                                    ?>
+                                </div>
+
                             </div>
+                        </li>
+                    <?php endforeach; ?>
+                </ul>
+            <?php endif; ?>
 
-                        </div>
-                    </li>
-                <?php endforeach; ?>
-            </ul>
-        <?php endif; ?>
-
+        </div>
     </div>
-</div>
-```
-
 </div>
