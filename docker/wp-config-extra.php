@@ -8,6 +8,9 @@ if (getenv('WP_HOME') && !defined('WP_HOME')) {
 if (getenv('WP_SITEURL') && !defined('WP_SITEURL')) {
     define('WP_SITEURL', getenv('WP_SITEURL'));
 }
+if (getenv('WP_ENVIRONMENT_TYPE') && !defined('WP_ENVIRONMENT_TYPE')) {
+    define('WP_ENVIRONMENT_TYPE', getenv('WP_ENVIRONMENT_TYPE'));
+}
 
 /**
  * Respect HTTPS when behind a reverse proxy / load balancer
