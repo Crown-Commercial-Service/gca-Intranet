@@ -12,9 +12,11 @@ get_header();
         <p class="govuk-body gca-home-hero-kicker" data-testid="home-hero-kicker">Welcome to our</p>
         <h1 class="govuk-body gca-home-hero-title" data-testid="home-hero-title">GCA Intranet</h1>
       </div>
+
     </div>
+
     <div class="gca-home-hero__media" data-testid="home-hero-media" aria-hidden="true">
-      <img src="<?php echo esc_url(get_template_directory_uri() . '/assets/img/hero.png'); ?>" alt="">
+      <img src="<?php echo esc_url(get_theme_root_uri() . '/gca-intranet-foundation/assets/img/hero.png'); ?>" alt="">
     </div>
   </div>
 </section>
