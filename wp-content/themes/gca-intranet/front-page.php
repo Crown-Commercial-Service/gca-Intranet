@@ -106,11 +106,11 @@ get_header();
                     </div>
 
                     <div class="govuk-grid-column-two-third gca-flex-box-news" data-testid="latest-news-secondary-content">
-                      <h3 class="govuk-heading-s govuk-!-margin-bottom-1" data-testid="latest-news-secondary-title">
+                      <h4 class="govuk-heading-s govuk-!-margin-bottom-1" data-testid="latest-news-secondary-title">
                         <a class="govuk-link govuk-!-text-break-word" data-testid="latest-news-secondary-link" href="<?php the_permalink(); ?>">
                           <?php the_title(); ?>
                         </a>
-                      </h3>
+                      </h4>
 
                       <p class="govuk-body-s" data-testid="latest-news-secondary-excerpt">
                         <?php echo esc_html(wp_trim_words(get_the_excerpt(), 12, '...')); ?>
