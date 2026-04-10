@@ -26,6 +26,7 @@ class component_takealook extends project_brick
             'instructions' => 'Short description shown below the heading (max 40 characters).',
             'maxlength'    => 40,
             'rows'         => 2,
+            'new_lines'    => '',
         ] ) );
 
         $this->add_field( new acf_fields\text( 'Card link text', 'link_text', '202604100012a', [
