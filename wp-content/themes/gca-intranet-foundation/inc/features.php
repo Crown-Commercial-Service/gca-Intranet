@@ -6,6 +6,46 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
+// Provide a safe in-theme fallback when the feature-flags plugin is inactive.
+if (!function_exists('gca_register_feature_flag')) {
+    $GLOBALS['gca_theme_feature_flags'] = $GLOBALS['gca_theme_feature_flags'] ?? [];
+
+    function gca_register_feature_flag(string $id, array $args = []): void
+    {
+        $id = sanitize_key($id);
+
+        if ($id === '') {
+            return;
+        }
+
+        $GLOBALS['gca_theme_feature_flags'][$id] = wp_parse_args($args, [
+            'label'       => ucwords(str_replace(['-', '_'], ' ', $id)),
+            'description' => '',
+            'default'     => false,
+            'tags'        => [],
+        ]);
+    }
+}
+
+if (!function_exists('gca_flag_enabled')) {
+    function gca_flag_enabled(string $id): bool
+    {
+        $id = sanitize_key($id);
+
+        if ($id === '') {
+            return false;
+        }
+
+        $flags = $GLOBALS['gca_theme_feature_flags'] ?? [];
+
+        if (!isset($flags[$id])) {
+            return false;
+        }
+
+        return (bool) ($flags[$id]['default'] ?? false);
+    }
+}
+
 /**
  * Feature flag registrations.
  *
