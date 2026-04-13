@@ -440,6 +440,12 @@ body.single-news .gca-taxonomy-tags .govuk-tag::after {
   gap: 16px;
 }
 
+@media (max-width: 640px) {
+  .gca-quick-links__list {
+    margin-bottom: 20px;
+  }
+}
+
 .gca-quick-links__item {
   position: relative;
   display: flex;
@@ -537,6 +543,12 @@ body.single-news .gca-taxonomy-tags .govuk-tag::after {
   border-radius: 24px;
   padding: 20px;
   margin-bottom: 22px;
+}
+
+@media (max-width: 640px) {
+  .news-card {
+    flex-direction: column;
+  }
 }
 
 .news-card > div:last-child,
