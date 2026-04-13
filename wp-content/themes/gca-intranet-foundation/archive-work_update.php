@@ -62,7 +62,7 @@ get_template_part('template-parts/breadcrumbs');
                 <span class="govuk-body-s tag_label green" style="margin:0;">
                     <?php echo esc_html($term->name); ?>
                 </span>
-              <?endif; ?>
+              <?php endif; ?>
 
               <?php
               $teams = get_the_terms(get_the_ID(), 'responsible_team');
