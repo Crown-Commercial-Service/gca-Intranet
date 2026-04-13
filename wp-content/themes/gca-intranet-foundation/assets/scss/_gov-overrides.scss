@@ -1,6 +1,6 @@
 // 1. Apply font to everything EXCEPT the admin bar and known icon classes
-*:not(#wpadminbar):not(#wpadminbar *):not(.dashicons):not([class*="dashicons-"]):not(.ab-icon) {
-    font-family: 'Source Sans Pro', arial, sans-serif !important;
+*:not(#wpadminbar):not(#wpadminbar *):not(.dashicons):not([class*='dashicons-']):not(.ab-icon) {
+  font-family: 'Source Sans Pro', arial, sans-serif !important;
 }
 
 // 2. A "Safety Reset" to force icons back to their original font
@@ -8,21 +8,21 @@
 #wpadminbar .ab-icon,
 #wpadminbar .ab-item::before,
 .dashicons,
-[class*="dashicons-"] {
-    font-family: dashicons !important;
+[class*='dashicons-'] {
+  font-family: dashicons !important;
 }
 
-html, 
+html,
 body {
   font-family: 'Source Sans Pro', arial, sans-serif !important;
 }
 
 // Target all GDS Typography classes at once
-[class*="govuk-heading-"],
-[class*="govuk-body"],
-[class*="govuk-label"],
-[class*="govuk-hint"],
-[class*="govuk-error-message"],
+[class*='govuk-heading-'],
+[class*='govuk-body'],
+[class*='govuk-label'],
+[class*='govuk-hint'],
+[class*='govuk-error-message'],
 .govuk-link,
 .govuk-footer__link,
 .govuk-header__link,
@@ -32,17 +32,18 @@ body {
 }
 
 // Ensure all standard elements inherit it correctly
-input, 
-select, 
-textarea, 
+input,
+select,
+textarea,
 button {
   font-family: 'Source Sans Pro', arial, sans-serif !important;
 }
 
 // Map standard bold/regular to your specific font files
-b, strong, 
+b,
+strong,
 .govuk-font-weight-bold,
-[class*="govuk-heading-"] {
+[class*='govuk-heading-'] {
   font-weight: 700 !important; // Triggers SourceSansPro-Bold.ttf.woff2
 }
 
@@ -50,14 +51,17 @@ b, strong,
   font-weight: 600 !important; // Triggers SourceSansPro-Semibold.ttf.woff2
 }
 
-body, p, .govuk-body {
+body,
+p,
+.govuk-body {
   font-weight: 400 !important; // Triggers SourceSansPro-Regular.ttf.woff2
 }
 
 // Map standard bold/regular to your specific font files
-b, strong, 
+b,
+strong,
 .govuk-font-weight-bold,
-[class*="govuk-heading-"] {
+[class*='govuk-heading-'] {
   font-weight: 700 !important; // Triggers SourceSansPro-Bold.ttf.woff2
 }
 
@@ -65,14 +69,16 @@ b, strong,
   font-weight: 600 !important; // Triggers SourceSansPro-Semibold.ttf.woff2
 }
 
-body, p, .govuk-body {
+body,
+p,
+.govuk-body {
   font-weight: 400 !important; // Triggers SourceSansPro-Regular.ttf.woff2
 }
 //Font Overrides END
 
 .govuk-\!-padding-top-1 {
-    padding-top: 7px !important;
-    padding-right: 3px;
+  padding-top: 7px !important;
+  padding-right: 3px;
 }
 
 .govuk-button:hover {
@@ -83,87 +89,95 @@ body, p, .govuk-body {
   box-shadow: none;
 }
 
-img, 
-video, 
-iframe, 
+img,
+video,
+iframe,
 .responsive-video {
-    border-radius: #{$gca-global-radius};
+  border-radius: #{$gca-global-radius};
 }
 
 .gca-radius-bordered {
-    // Target images, videos, and cards inside this wrapper
-    img, 
-    iframe, 
-    .responsive-video,
-    .card-list__item__wrapper {
-        border-radius: 5px;
-        overflow: hidden; // Keeps corners clipped
-    }
+  // Target images, videos, and cards inside this wrapper
+  img,
+  iframe,
+  .responsive-video,
+  .card-list__item__wrapper {
+    border-radius: 5px;
+    overflow: hidden; // Keeps corners clipped
+  }
 
-    // Optional: Add some spacing if multiple bordered items are stacked
-    .card-list__item__wrapper {
-        margin-bottom: 20px;
-        padding: 20px; // Gives the card some internal breathing room
-        background: #fff;
-    }
+  // Optional: Add some spacing if multiple bordered items are stacked
+  .card-list__item__wrapper {
+    margin-bottom: 20px;
+    padding: 20px; // Gives the card some internal breathing room
+    background: #fff;
+  }
 }
 
 @media (min-width: 40.0625em) {
   .govuk-grid-column-one-third {
     .blogs-container &,
     .work-updates-container & {
-        width: 15%;
+      width: 15%;
     }
   }
 
   .govuk-grid-column-two-thirds {
     .blogs-container &,
     .work-updates-container & {
-        width: 85%;
+      width: 85%;
     }
   }
 }
 
 .size-thumbnail {
-    width: 150px;
+  width: 150px;
 }
 
 .size-full {
-    max-width: 100%;
-    height: auto; // Maintains aspect ratio
-    display: block; // Prevents the 'baseline' gap at the bottom
+  max-width: 100%;
+  height: auto; // Maintains aspect ratio
+  display: block; // Prevents the 'baseline' gap at the bottom
 }
 
 // Medium and Large sizes (standard WP defaults)
 .size-medium {
-    max-width: 300px;
-    height: auto;
+  max-width: 300px;
+  height: auto;
 }
 
 .size-large {
-    max-width: 1024px;
-    height: auto;
+  max-width: 1024px;
+  height: auto;
 }
 
 /* theme overrides */
 main .see-more-link-homepage a {
-    font-size: 16px !important;
+  font-size: 16px !important;
 }
 
 // Target links specifically when they are inside your H2s
 main.govuk-main-wrapper h2 a,
 main.govuk-main-wrapper h2.govuk-heading-l a {
-    font-size: 24px !important;
+  font-size: 24px !important;
 }
 
 .govuk-breadcrumbs__list-item {
-    margin-bottom: 0;
-    padding-top: 4px;
-    top: -2px;
+  margin-bottom: 0;
+  padding-top: 4px;
+  top: -2px;
 }
 @media (min-width: 40.0625em) {
-    .govuk-main-wrapper {
-        padding-top: 30px;
-        padding-bottom: 20px;
-    }
+  .govuk-main-wrapper {
+    padding-top: 30px;
+    padding-bottom: 20px;
+  }
+}
+// GI-380: Prevent long unbroken titles from overflowing layout
+main.govuk-main-wrapper {
+  h1,
+  h1.govuk-heading-l {
+    overflow-wrap: anywhere;
+    word-break: break-word;
+  }
 }
