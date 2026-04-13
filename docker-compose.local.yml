@@ -27,10 +27,14 @@ services:
       # Passed through so wp-config-extra.php can define WP_HOME / WP_SITEURL
       WP_HOME: ${WP_HOME}
       WP_SITEURL: ${WP_SITEURL}
+      REDIS_HOST: ${REDIS_HOST}
     volumes:
       - ./wp-content:/var/www/html/wp-content
     restart: unless-stopped
 
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
   # Run this as a one-off initializer:
   #   docker compose --env-file .env run --rm init
   #
