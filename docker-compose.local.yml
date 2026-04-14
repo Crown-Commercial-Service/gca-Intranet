@@ -27,7 +27,6 @@ services:
       # Passed through so wp-config-extra.php can define WP_HOME / WP_SITEURL
       WP_HOME: ${WP_HOME}
       WP_SITEURL: ${WP_SITEURL}
-      WP_ENVIRONMENT_TYPE: ${WP_ENVIRONMENT_TYPE:-development}
     volumes:
       - ./wp-content:/var/www/html/wp-content
     restart: unless-stopped
