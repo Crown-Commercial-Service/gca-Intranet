@@ -10,7 +10,8 @@ if (!defined('ABSPATH')) {
 // Google Profile Picture Sync
 //
 // On every Google SSO login, downloads the user's Google profile picture,
-// stores it in the media library, and uses it as their WordPress avatar.
+// stores it directly in a custom uploads subdirectory (not the media library),
+// and uses it as their WordPress avatar.
 // -----------------------------------------------------------------------------
 
 gca_register_feature_flag('google-profile-picture', [
@@ -32,14 +33,19 @@ add_action('gal_user_loggedin', function (WP_User $user, object $userinfo): void
     // Strip Google's sizing parameters to get the full-resolution image.
     $picture_url = preg_replace('/=s\d+-c$/', '', $userinfo->picture);
 
-    // Only re-download if the source URL has changed since last login.
-    if (get_user_meta($user->ID, 'google_profile_picture_url', true) === $picture_url) {
+    $upload_dir  = wp_upload_dir();
+    $profile_dir = $upload_dir['basedir'] . '/google-profile-pictures';
+    $dest        = $profile_dir . '/user-' . $user->ID . '.jpg';
+
+    // Only re-download if the source URL has changed and the local file already exists.
+    if (
+        get_user_meta($user->ID, 'google_profile_picture_url', true) === $picture_url
+        && file_exists($dest)
+    ) {
         return;
     }
 
     require_once ABSPATH . 'wp-admin/includes/file.php';
-    require_once ABSPATH . 'wp-admin/includes/media.php';
-    require_once ABSPATH . 'wp-admin/includes/image.php';
 
     $tmp = download_url($picture_url);
 
@@ -47,22 +53,28 @@ add_action('gal_user_loggedin', function (WP_User $user, object $userinfo): void
         return;
     }
 
-    $attachment_id = media_handle_sideload(
-        ['name' => 'google-profile-' . $user->ID . '.jpg', 'tmp_name' => $tmp],
-        0,
-        null,
-        ['post_author' => $user->ID]
-    );
+    if (!file_exists($profile_dir)) {
+        wp_mkdir_p($profile_dir);
+        // Prevent directory listing.
+        file_put_contents($profile_dir . '/index.php', '<?php // Silence is golden.');
+    }
 
-    if (is_wp_error($attachment_id)) {
-        if (file_exists($tmp)) {
-            @unlink($tmp);
-        }
+    if (file_exists($dest)) {
+        @unlink($dest);
+    }
+
+    // copy()+unlink() works across filesystem boundaries (e.g. /tmp → uploads).
+    $copied = copy($tmp, $dest);
+    @unlink($tmp);
+
+    if (!$copied) {
         return;
     }
 
+    $local_url = $upload_dir['baseurl'] . '/google-profile-pictures/user-' . $user->ID . '.jpg';
+
     update_user_meta($user->ID, 'google_profile_picture_url', $picture_url);
-    update_user_meta($user->ID, 'google_profile_picture_id', $attachment_id);
+    update_user_meta($user->ID, 'google_profile_picture_local_url', $local_url);
 }, 10, 2);
 
 add_filter('get_avatar_url', function (string $url, mixed $id_or_email, array $args): string {
@@ -86,11 +98,11 @@ add_filter('get_avatar_url', function (string $url, mixed $id_or_email, array $a
         return $url;
     }
 
-    $attachment_id = get_user_meta($user->ID, 'google_profile_picture_id', true);
+    $local_url = get_user_meta($user->ID, 'google_profile_picture_local_url', true);
 
-    if (!$attachment_id) {
+    if (!$local_url) {
         return $url;
     }
 
-    return wp_get_attachment_image_url($attachment_id, 'thumbnail') ?: $url;
+    return $local_url;
 }, 10, 3);
