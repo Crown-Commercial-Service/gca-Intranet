@@ -105,15 +105,54 @@ class GCA_Cron_Manager {
         $timestamp = (int) ($_POST['cron_timestamp'] ?? 0);
         $key       = sanitize_text_field($_POST['cron_key'] ?? '');
 
+        $log_id = 0;
+
         if ($hook && $timestamp) {
             $crons = _get_cron_array();
             $event = $crons[$timestamp][$hook][$key] ?? null;
             if ($event) {
+                // Insert a placeholder row first so handle_run_completed (fired
+                // inside do_action_ref_array) can locate the row via set_run_log_id.
+                if (class_exists('GCA_Cron_Logger')) {
+                    $log_id = GCA_Cron_Logger::insert([
+                        'hook'         => $hook,
+                        'triggered_by' => 'manual',
+                    ]);
+                    GCA_Cron_Logger::set_run_log_id($hook, $log_id);
+                }
+
+                ob_start();
+                $start = microtime(true);
+
                 do_action_ref_array($hook, $event['args']);
+
+                $duration_ms = (int) round((microtime(true) - $start) * 1000);
+                $output      = ob_get_clean();
+
+                // Update the row with timing. Only overwrite output if the ob
+                // buffer captured something — cooperative hooks (e.g. gca_sync_workday_users)
+                // use error_log() and have already written their output via
+                // handle_run_completed; don't clobber that with an empty string.
+                if ($log_id && class_exists('GCA_Cron_Logger')) {
+                    global $wpdb;
+                    $update = ['duration_ms' => $duration_ms];
+                    $format = ['%d'];
+                    if ('' !== $output) {
+                        $update['output'] = $output;
+                        $format[]         = '%s';
+                    }
+                    $wpdb->update(
+                        $wpdb->prefix . 'gca_cron_log',
+                        $update,
+                        ['id' => $log_id],
+                        $format,
+                        ['%d']
+                    );
+                }
             }
         }
 
-        self::redirect(['run' => '1']);
+        self::redirect(array_filter(['run' => '1', 'log_id' => $log_id ?: null, 'log_hook' => $log_id ? $hook : null]));
     }
 
     public static function handle_edit(): void {
@@ -169,7 +208,6 @@ class GCA_Cron_Manager {
             'created'          => ['success', 'Cron job created.'],
             'deleted'          => ['success', 'Cron job deleted.'],
             'updated'          => ['success', 'Cron job updated.'],
-            'run'              => ['success', 'Cron job triggered manually.'],
             'empty_hook'       => ['error',   'Hook name cannot be empty.'],
             'invalid_schedule' => ['error',   'Invalid schedule selected.'],
             'invalid_edit'     => ['error',   'Invalid edit request.'],
@@ -184,6 +222,24 @@ class GCA_Cron_Manager {
                     esc_html($text)
                 );
             }
+        }
+
+        // "Run Now" notice — shown separately so we can include a Logs link.
+        if (!empty($_GET['run'])) {
+            $log_id   = (int) ($_GET['log_id'] ?? 0);
+            $log_hook = sanitize_text_field(wp_unslash($_GET['log_hook'] ?? ''));
+            $msg      = 'Cron job triggered manually.';
+            if ($log_id && $log_hook) {
+                $logs_url = add_query_arg(
+                    ['page' => self::MENU_SLUG, 'action' => 'logs', 'hook' => rawurlencode($log_hook)],
+                    admin_url('tools.php')
+                );
+                $msg .= ' <a href="' . esc_url($logs_url) . '">View log &rarr;</a>';
+            }
+            printf(
+                '<div class="notice notice-success is-dismissible"><p><strong>%s</strong></p></div>',
+                wp_kses($msg, ['a' => ['href' => []]])
+            );
         }
     }
 
@@ -201,6 +257,7 @@ class GCA_Cron_Manager {
         match ($action) {
             'add'  => self::render_add_page(),
             'edit' => self::render_edit_page(),
+            'logs' => self::render_logs_page(),
             default => self::render_list_page(),
         };
     }
@@ -230,8 +287,9 @@ class GCA_Cron_Manager {
         $total_recurring = count(array_filter($all_events, static fn($e) => (bool) $e['schedule']));
         $total_one_time = $total - $total_recurring;
 
-        $events = self::filter_events($all_events, $filter_type, $filter_status, $search);
-        $events = self::sort_events($events, $orderby, $order, $schedules);
+        $events    = self::filter_events($all_events, $filter_type, $filter_status, $search);
+        $events    = self::sort_events($events, $orderby, $order, $schedules);
+        $last_runs = class_exists('GCA_Cron_Logger') ? GCA_Cron_Logger::get_all_recent(1) : [];
 
         // Helpers — capture $orderby / $order in closures.
         $sort_url = static function (string $col) use ($orderby, $order): string {
@@ -339,6 +397,7 @@ class GCA_Cron_Manager {
                                 </a>
                             </th>
                             <th scope="col" class="column-args">Arguments</th>
+                            <th scope="col" class="column-last-run">Last Run</th>
                             <th scope="col" class="column-actions">Actions</th>
                         </tr>
                     </thead>
@@ -363,6 +422,14 @@ class GCA_Cron_Manager {
                                 'timestamp' => $event['timestamp'],
                                 'key'       => $event['key'],
                             ], admin_url('tools.php'));
+
+                            $logs_url = add_query_arg([
+                                'page'   => self::MENU_SLUG,
+                                'action' => 'logs',
+                                'hook'   => rawurlencode($event['hook']),
+                            ], admin_url('tools.php'));
+
+                            $last_run = $last_runs[$event['hook']][0] ?? null;
                         ?>
                         <tr>
                             <td class="column-hook">
@@ -385,6 +452,16 @@ class GCA_Cron_Manager {
                                     <em>None</em>
                                 <?php else : ?>
                                     <code class="gca-args"><?php echo esc_html(wp_json_encode($event['args'], JSON_PRETTY_PRINT)); ?></code>
+                                <?php endif; ?>
+                            </td>
+                            <td class="column-last-run">
+                                <?php if ($last_run) : ?>
+                                    <span class="gca-run-dot gca-run-<?php echo esc_attr($last_run['status']); ?>"></span>
+                                    <a href="<?php echo esc_url($logs_url); ?>">
+                                        <?php echo esc_html(human_time_diff(strtotime($last_run['ran_at']), time())); ?> ago
+                                    </a>
+                                <?php else : ?>
+                                    <a href="<?php echo esc_url($logs_url); ?>" style="color:#8c8f94">Never</a>
                                 <?php endif; ?>
                             </td>
                             <td class="column-actions">
@@ -733,15 +810,182 @@ class GCA_Cron_Manager {
         exit;
     }
 
+    // -------------------------------------------------------------------------
+    // Logs page
+    // -------------------------------------------------------------------------
+
+    private static function render_logs_page(): void {
+        $hook     = sanitize_text_field(wp_unslash($_GET['hook'] ?? ''));
+        $back_url = admin_url('tools.php?page=' . self::MENU_SLUG);
+
+        if (!class_exists('GCA_Cron_Logger')) {
+            echo '<div class="wrap"><p>Logger not available.</p></div>';
+            return;
+        }
+
+        $per_page   = 25;
+        $log_page   = max(1, (int) ($_GET['log_page'] ?? 1));
+        $offset     = ($log_page - 1) * $per_page;
+        $total      = $hook ? GCA_Cron_Logger::count($hook) : 0;
+        $runs       = $hook ? GCA_Cron_Logger::get_recent($hook, $per_page, $offset) : [];
+        $total_pages = $hook ? (int) ceil($total / $per_page) : 0;
+        ?>
+        <div class="wrap">
+            <h1>
+                Cron Logs
+                <?php if ($hook) : ?>
+                    <span style="font-weight:normal;font-size:16px;color:#50575e"> &mdash; <?php echo esc_html($hook); ?></span>
+                <?php endif; ?>
+            </h1>
+            <a href="<?php echo esc_url($back_url); ?>">&larr; Back to Cron Jobs</a>
+            <hr class="wp-header-end">
+
+            <?php self::render_styles(); ?>
+
+            <?php if (!$hook) : ?>
+                <p>No hook specified. <a href="<?php echo esc_url($back_url); ?>">Return to Cron Jobs</a> and click the Logs button for a specific job.</p>
+            <?php elseif (empty($runs)) : ?>
+                <p>No runs recorded yet for <strong><?php echo esc_html($hook); ?></strong>.</p>
+            <?php else : ?>
+                <p style="color:#50575e"><?php echo (int) $total; ?> run(s) recorded &mdash; showing <?php echo (int) $per_page; ?> per page.</p>
+
+                <table class="widefat striped gca-log-table">
+                    <thead>
+                        <tr>
+                            <th>Date / Time</th>
+                            <th>Triggered By</th>
+                            <th>Duration</th>
+                            <th>Status</th>
+                            <th>Stats</th>
+                            <th>Output</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <?php foreach ($runs as $run) :
+                            $ran_at_abs  = wp_date('d M Y H:i:s', strtotime($run['ran_at']));
+                            $ran_at_rel  = human_time_diff(strtotime($run['ran_at']), time()) . ' ago';
+                            $duration    = $run['duration_ms'] >= 1000
+                                ? round($run['duration_ms'] / 1000, 2) . 's'
+                                : $run['duration_ms'] . 'ms';
+                            $stats       = $run['stats'] ? json_decode($run['stats'], true) : null;
+                            $is_manual   = 'manual' === $run['triggered_by'];
+                        ?>
+                        <tr>
+                            <td>
+                                <span title="<?php echo esc_attr($ran_at_abs); ?>">
+                                    <?php echo esc_html($ran_at_rel); ?>
+                                </span>
+                                <br><small class="gca-date-abs"><?php echo esc_html($ran_at_abs); ?></small>
+                            </td>
+                            <td>
+                                <span class="gca-trigger-badge gca-trigger-<?php echo $is_manual ? 'manual' : 'schedule'; ?>">
+                                    <?php echo $is_manual ? 'Manual' : 'Scheduled'; ?>
+                                </span>
+                            </td>
+                            <td><?php echo esc_html($duration); ?></td>
+                            <td>
+                                <span class="gca-run-dot gca-run-<?php echo esc_attr($run['status']); ?>"></span>
+                                <?php echo esc_html(ucfirst($run['status'])); ?>
+                            </td>
+                            <td class="gca-log-stats">
+                                <?php if ($stats) : ?>
+                                    <?php foreach ($stats as $k => $v) : ?>
+                                        <span class="gca-stat-item"><?php echo esc_html(ucfirst($k)); ?>: <strong><?php echo (int) $v; ?></strong></span>
+                                    <?php endforeach; ?>
+                                <?php else : ?>
+                                    <em style="color:#8c8f94">—</em>
+                                <?php endif; ?>
+                            </td>
+                            <td>
+                                <?php if (!empty($run['output'])) : ?>
+                                    <details>
+                                        <summary>Show output</summary>
+                                        <pre class="gca-log-output"><?php echo esc_html($run['output']); ?></pre>
+                                    </details>
+                                <?php else : ?>
+                                    <em style="color:#8c8f94">No output</em>
+                                <?php endif; ?>
+                            </td>
+                        </tr>
+                        <?php endforeach; ?>
+                    </tbody>
+                </table>
+
+                <?php if ($total_pages > 1) :
+                    $page_url = static function (int $p) use ($hook): string {
+                        return add_query_arg([
+                            'page'     => GCA_Cron_Manager::MENU_SLUG,
+                            'action'   => 'logs',
+                            'hook'     => rawurlencode($hook),
+                            'log_page' => $p,
+                        ], admin_url('tools.php'));
+                    };
+                ?>
+                <div class="tablenav bottom">
+                    <div class="tablenav-pages">
+                        <?php if ($log_page > 1) : ?>
+                            <a href="<?php echo esc_url($page_url($log_page - 1)); ?>" class="button">&laquo; Previous</a>
+                        <?php endif; ?>
+                        <span style="margin:0 8px">Page <?php echo (int) $log_page; ?> of <?php echo (int) $total_pages; ?></span>
+                        <?php if ($log_page < $total_pages) : ?>
+                            <a href="<?php echo esc_url($page_url($log_page + 1)); ?>" class="button">Next &raquo;</a>
+                        <?php endif; ?>
+                    </div>
+                </div>
+                <?php endif; ?>
+            <?php endif; ?>
+        </div>
+        <?php
+    }
+
     private static function render_styles(): void {
         ?>
         <style>
-            .gca-cron-table .column-hook       { width: 28%; }
-            .gca-cron-table .column-next-run   { width: 20%; }
-            .gca-cron-table .column-recurrence { width: 14%; }
-            .gca-cron-table .column-args       { width: 22%; }
+            .gca-cron-table .column-hook       { width: 24%; }
+            .gca-cron-table .column-next-run   { width: 18%; }
+            .gca-cron-table .column-recurrence { width: 12%; }
+            .gca-cron-table .column-args       { width: 18%; }
+            .gca-cron-table .column-last-run   { width: 12%; }
             .gca-cron-table .column-actions    { width: 16%; white-space: nowrap; }
             .gca-cron-table .column-actions .button { margin-right: 4px; }
+
+            /* Status dot */
+            .gca-run-dot {
+                display: inline-block;
+                width: 8px; height: 8px;
+                border-radius: 50%;
+                margin-right: 4px;
+                vertical-align: middle;
+            }
+            .gca-run-success { background: #00a32a; }
+            .gca-run-error   { background: #d63638; }
+
+            /* Trigger badge */
+            .gca-trigger-badge {
+                display: inline-block;
+                font-size: 11px;
+                font-weight: 600;
+                padding: 1px 7px;
+                border-radius: 3px;
+            }
+            .gca-trigger-manual   { background: #dde3e8; color: #1d2327; }
+            .gca-trigger-schedule { background: #e6f0e6; color: #1e4620; }
+
+            /* Logs table */
+            .gca-log-table { margin-top: 12px; }
+            .gca-log-output {
+                margin: 8px 0 0;
+                padding: 8px;
+                background: #f6f7f7;
+                border: 1px solid #dcdcde;
+                border-radius: 3px;
+                font-size: 12px;
+                max-height: 300px;
+                overflow-y: auto;
+                white-space: pre-wrap;
+                word-break: break-all;
+            }
+            .gca-log-stats .gca-stat-item { display: inline-block; margin-right: 8px; font-size: 12px; }
 
             .gca-overdue-badge {
                 display: inline-block;

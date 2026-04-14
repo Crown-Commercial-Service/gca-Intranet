@@ -21,11 +21,16 @@ gca_register_feature_flag('cron-manager', [
 ]);
 
 add_action('init', function (): void {
-    if (!is_admin()) {
+    if (!gca_flag_enabled('cron-manager')) {
         return;
     }
 
-    if (!gca_flag_enabled('cron-manager')) {
+    // Logger must run outside is_admin() so it can detect scheduled cron runs,
+    // which fire via wp-cron.php — not within the admin context.
+    require_once get_template_directory() . '/inc/class-gca-cron-logger.php';
+    GCA_Cron_Logger::init();
+
+    if (!is_admin()) {
         return;
     }
 
