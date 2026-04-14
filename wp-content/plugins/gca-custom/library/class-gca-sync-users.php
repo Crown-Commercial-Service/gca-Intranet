@@ -123,21 +123,31 @@ class GCA_Sync_Users {
     // -------------------------------------------------------------------------
 
     public static function run(): void {
+        $log_lines = [];
+
         try {
-            $stats = self::sync( function ( string $message ) {
+            $stats = self::sync( function ( string $message ) use ( &$log_lines ) {
+                $log_lines[] = $message;
                 error_log( '[GCA Workday Sync] ' . $message );
             } );
 
-            error_log( sprintf(
-                '[GCA Workday Sync] Complete. Created: %d, Updated: %d, Deleted: %d, Skipped: %d, Errors: %d.',
+            $summary = sprintf(
+                'Complete. Created: %d, Updated: %d, Deleted: %d, Skipped: %d, Errors: %d.',
                 $stats['created'],
                 $stats['updated'],
                 $stats['deleted'],
                 $stats['skipped'],
                 $stats['errors']
-            ) );
+            );
+            $log_lines[] = $summary;
+            error_log( '[GCA Workday Sync] ' . $summary );
+
+            do_action( 'gca_cron_run_completed', self::CRON_HOOK, $stats, $log_lines );
         } catch ( Exception $e ) {
+            $log_lines[] = 'Error: ' . $e->getMessage();
             error_log( '[GCA Workday Sync] Error: ' . $e->getMessage() );
+
+            do_action( 'gca_cron_run_completed', self::CRON_HOOK, null, $log_lines );
         }
     }
 
