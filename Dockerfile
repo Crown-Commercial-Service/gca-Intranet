@@ -47,6 +47,9 @@ RUN chmod +x /usr/local/bin/wp-init.sh
 
 # Add the custom WordPress config bridge
 COPY docker/wp-config-extra.php /opt/wp-config-extra.php
+
+# WP-CLI global config (path + url so `wp` works without flags)
+COPY wp-cli.yml /var/www/html/wp-cli.yml
 ENV WORDPRESS_CONFIG_EXTRA="require '/opt/wp-config-extra.php';"
 
 # Add the main startup init script

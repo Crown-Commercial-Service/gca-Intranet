@@ -13,3 +13,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 include('library/custom-post-types.php');
 include('library/custom-post-taxonomies.php');
 include('library/direct-admin-access.php');
+include('library/class-gca-workday-api.php');
+include('library/class-gca-sync-users.php');
+
+GCA_Sync_Users::init();
