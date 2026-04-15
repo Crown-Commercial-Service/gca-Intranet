@@ -18,5 +18,5 @@ gca_register_feature_flag('purge-events', [
     'label'       => 'Purge Events',
     'description' => 'Permanently delete events more than one month after their end date (or start date if no end date is set). Schedule via Tools → Cron Jobs using the hook name `gca_purge_events`, or run manually with `wp gca purge-events`.',
     'default'     => false,
-    'tags'        => ['cron', 'events'],
+    'tags'        => ['cron', 'events', 'wp-cli'],
 ]);
