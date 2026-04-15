@@ -15,5 +15,8 @@ include('library/custom-post-taxonomies.php');
 include('library/direct-admin-access.php');
 include('library/class-gca-workday-api.php');
 include('library/class-gca-sync-users.php');
+include('library/class-gca-purge-events.php');
 
 GCA_Sync_Users::init();
+
+GCA_Purge_Events::init();
