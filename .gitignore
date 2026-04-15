@@ -41,4 +41,3 @@ wp-content/upgrade/
 wp-content/cache/
 
 local.db.latest.sql
-docker-compose.local.yml

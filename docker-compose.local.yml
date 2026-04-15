@@ -1,6 +1,8 @@
 services:
   db:
     image: mysql:8.0
+    ports:
+      - '3307:3306'
     environment:
       MYSQL_DATABASE: ${DB_NAME}
       MYSQL_USER: ${DB_USER}
@@ -25,6 +27,7 @@ services:
       # Passed through so wp-config-extra.php can define WP_HOME / WP_SITEURL
       WP_HOME: ${WP_HOME}
       WP_SITEURL: ${WP_SITEURL}
+      WP_ENVIRONMENT_TYPE: ${WP_ENVIRONMENT_TYPE:-development}
 
       # Workday staff sync (gca_sync_workday_users cron / wp gca sync-users)
       WORKDAY_TOKEN_ENDPOINT: ${WORKDAY_TOKEN_ENDPOINT}
@@ -36,8 +39,7 @@ services:
       WORKDAY_STAFF_API_PARAMS: ${WORKDAY_STAFF_API_PARAMS}
       WORKDAY_API_SUBSCRIPTION_KEY: ${WORKDAY_API_SUBSCRIPTION_KEY}
     volumes:
-      # EFS-like: persist only wp-content (uploads, plugins, languages, etc.)
-      - wp_content:/var/www/html/wp-content
+      - ./wp-content:/var/www/html/wp-content
     restart: unless-stopped
 
   # Run this as a one-off initializer:
@@ -66,11 +68,24 @@ services:
       WP_HOME: ${WP_HOME}
       WP_SITEURL: ${WP_SITEURL}
     volumes:
-      - wp_content:/var/www/html/wp-content
+      - wp-content:/var/www/html/wp-content
     working_dir: /var/www/html
     command: ['/bin/sh', '-lc', '/usr/local/bin/wp-init.sh']
     restart: 'no'
 
+  theme-builder:
+    image: node:20-alpine
+    # Point directly to your specific theme folder inside the container
+    working_dir: /app/wp-content/themes/gca-intranet-foundation
+    volumes:
+      # Mount the exact same folder we mounted for WordPress!
+      - ./wp-content:/app/wp-content
+    # The command it runs before shutting down
+    command: sh -c "npm install && npm run build"
+    # This profile ensures it DOES NOT run every time you start your site
+    profiles:
+      - setup
+
 volumes:
   db_data:
-  wp_content:
+  wp-content:

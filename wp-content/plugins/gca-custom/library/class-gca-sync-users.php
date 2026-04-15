@@ -1,0 +1,391 @@
+<?php
+
+if ( ! defined( 'ABSPATH' ) ) {
+    exit;
+}
+
+/**
+ * Syncs WordPress users with the Workday staff list API.
+ *
+ * Registers the WordPress cron hook `gca_sync_workday_users` so it can be
+ * scheduled via the Cron Jobs admin page (Tools → Cron Jobs). To schedule it,
+ * enter `gca_sync_workday_users` as the hook name.
+ *
+ * Also registers the WP-CLI command `wp gca sync-users` for manual runs.
+ *
+ * Sync behaviour:
+ *  - API user exists, WP user exists  → update WP user details and meta.
+ *  - API user exists, WP user missing → create WP user (role: subscriber).
+ *  - WP user missing from API         → delete, UNLESS:
+ *                                         • ENABLE_DELETE is false (deletion
+ *                                           is currently disabled), OR
+ *                                         • the user's login is in
+ *                                           PROTECTED_LOGINS, OR
+ *                                         • the user has the administrator role.
+ *
+ * API record shape (relevant fields):
+ *   EmployeeKey  – unique integer identifier for each staff member
+ *   EmployeeName – full name, e.g. "Natalie Cadwallader"
+ *   Email        – work email, e.g. "natalie.cadwallader@gca.gov.uk"
+ *   Manager      – manager's full name
+ *   ManagerEmail – manager's email address
+ *   JobTitle     – e.g. "Procurement Practitioner - Procurement Management"
+ *   Team         – e.g. "Procurement Liverpool (Natalie Kenyon)"
+ *   Directorate  – e.g. "Commercial & Procurement Operations"
+ *
+ * WordPress user mapping (both derived from the email prefix, i.e. the part
+ * before "@", e.g. "natalie.cadwallader" from "natalie.cadwallader@gca.gov.uk"):
+ *   user_login    = email prefix as-is, e.g. "natalie.cadwallader"
+ *   user_nicename = email prefix with dots replaced by hyphens,
+ *                   e.g. "natalie-cadwallader"
+ *   user_email    = Email
+ *   display_name  = EmployeeName
+ *
+ * User meta mapping:
+ *   employee_key  = EmployeeKey
+ *   job_title     = JobTitle
+ *   team          = Team (with trailing "(Manager Name)" stripped)
+ *   directorate   = Directorate
+ *   manager       = Manager
+ *   manager_email = ManagerEmail
+ *   workday_item_id = ItemInternalId (internal Workday record ID)
+ */
+class GCA_Sync_Users {
+
+    const CRON_HOOK           = 'gca_sync_workday_users';
+    const WORKDAY_ID_META_KEY = 'workday_item_id';
+    const EMPLOYEE_KEY_META   = 'employee_key';
+
+    /**
+     * Whether the sync is allowed to delete WordPress users that are absent
+     * from the API. Set to true only when you are ready to enable purging.
+     */
+    const ENABLE_DELETE = false;
+
+    /**
+     * WordPress user logins that will never be deleted during a sync,
+     * regardless of whether they appear in the API response.
+     *
+     * @var string[]
+     */
+    const PROTECTED_LOGINS = [
+        'admin',
+    ];
+
+    // -------------------------------------------------------------------------
+    // Bootstrap
+    // -------------------------------------------------------------------------
+
+    public static function init(): void {
+        add_action( self::CRON_HOOK, [ __CLASS__, 'run' ] );
+
+        if ( defined( 'WP_CLI' ) && WP_CLI ) {
+            WP_CLI::add_command( 'gca sync-users', [ __CLASS__, 'cli_command' ] );
+        }
+    }
+
+    // -------------------------------------------------------------------------
+    // WP-CLI entry point
+    // -------------------------------------------------------------------------
+
+    /**
+     * Sync WordPress users with the Workday staff list API.
+     *
+     * ## EXAMPLES
+     *
+     *     wp gca sync-users
+     *
+     * @when after_wp_load
+     */
+    public static function cli_command( array $args, array $assoc_args ): void {
+        WP_CLI::log( 'Starting Workday user sync…' );
+
+        try {
+            $stats = self::sync( function ( string $message ) {
+                WP_CLI::log( $message );
+            } );
+
+            WP_CLI::success( sprintf(
+                'Sync complete. Created: %d, Updated: %d, Deleted: %d, Skipped: %d, Errors: %d.',
+                $stats['created'],
+                $stats['updated'],
+                $stats['deleted'],
+                $stats['skipped'],
+                $stats['errors']
+            ) );
+        } catch ( Exception $e ) {
+            WP_CLI::error( 'Sync failed: ' . $e->getMessage() );
+        }
+    }
+
+    // -------------------------------------------------------------------------
+    // Cron entry point
+    // -------------------------------------------------------------------------
+
+    public static function run(): void {
+        $log_lines = [];
+
+        try {
+            $stats = self::sync( function ( string $message ) use ( &$log_lines ) {
+                $log_lines[] = $message;
+                error_log( '[GCA Workday Sync] ' . $message );
+            } );
+
+            $summary = sprintf(
+                'Complete. Created: %d, Updated: %d, Deleted: %d, Skipped: %d, Errors: %d.',
+                $stats['created'],
+                $stats['updated'],
+                $stats['deleted'],
+                $stats['skipped'],
+                $stats['errors']
+            );
+            $log_lines[] = $summary;
+            error_log( '[GCA Workday Sync] ' . $summary );
+
+            do_action( 'gca_cron_run_completed', self::CRON_HOOK, $stats, $log_lines );
+        } catch ( Exception $e ) {
+            $log_lines[] = 'Error: ' . $e->getMessage();
+            error_log( '[GCA Workday Sync] Error: ' . $e->getMessage() );
+
+            do_action( 'gca_cron_run_completed', self::CRON_HOOK, null, $log_lines );
+        }
+    }
+
+    // -------------------------------------------------------------------------
+    // Core sync logic
+    // -------------------------------------------------------------------------
+
+    /**
+     * @param callable|null $logger Receives log message strings.
+     * @return array{created:int, updated:int, deleted:int, skipped:int, errors:int}
+     */
+    private static function sync( ?callable $logger = null ): array {
+        $log = $logger ?? static function ( string $message ): void {
+            error_log( '[GCA Workday Sync] ' . $message );
+        };
+
+        $stats = [
+            'created' => 0,
+            'updated' => 0,
+            'deleted' => 0,
+            'skipped' => 0,
+            'errors'  => 0,
+        ];
+
+        $api   = new GCA_Workday_API();
+        $staff = $api->get_staff();
+
+        $log( sprintf( 'Fetched %d staff records from API.', count( $staff ) ) );
+
+        // Build a lookup of API users indexed by normalised email address.
+        $api_users = [];
+        foreach ( $staff as $record ) {
+            $email = strtolower( trim( $record['Email'] ?? '' ) );
+            if ( '' !== $email ) {
+                $api_users[ $email ] = $record;
+            }
+        }
+
+        // --- Upsert: create or update each API user in WordPress ---
+        foreach ( $api_users as $email => $record ) {
+            $wp_user = get_user_by( 'email', $email );
+
+            if ( $wp_user ) {
+                $data       = self::build_update_data( $record );
+                $user_login = $data['user_login'];
+                $nicename   = self::derive_nicename( $user_login );
+
+                // Remove user_login and user_nicename from the wp_update_user
+                // payload — WordPress runs uniqueness checks on both fields that
+                // append a '-2' suffix on repeated runs. We force-write them
+                // directly below instead.
+                unset( $data['user_login'], $data['user_nicename'] );
+                $data['ID'] = $wp_user->ID;
+                $result     = wp_update_user( $data );
+
+                if ( is_wp_error( $result ) ) {
+                    $log( sprintf( 'Failed to update user %s: %s', $email, $result->get_error_message() ) );
+                    $stats['errors']++;
+                } else {
+                    // Force user_login and user_nicename to the correct values,
+                    // bypassing WordPress's uniqueness suffix logic.
+                    global $wpdb;
+                    $wpdb->update(
+                        $wpdb->users,
+                        [
+                            'user_login'    => $user_login,
+                            'user_nicename' => $nicename,
+                        ],
+                        [ 'ID' => $wp_user->ID ],
+                        [ '%s', '%s' ],
+                        [ '%d' ]
+                    );
+
+                    self::save_user_meta( $wp_user->ID, $record );
+                    $stats['updated']++;
+                }
+            } else {
+                $data  = self::build_insert_data( $record );
+                $login = $data['user_login'];
+
+                // If the derived login is already taken by another user, append a counter.
+                if ( username_exists( $login ) ) {
+                    $i = 2;
+                    while ( username_exists( $login . $i ) ) {
+                        $i++;
+                    }
+                    $data['user_login'] = $login . $i;
+                }
+
+                $data['user_pass'] = wp_generate_password( 24, true, true );
+                $data['role']      = 'subscriber';
+                $result            = wp_insert_user( $data );
+
+                if ( is_wp_error( $result ) ) {
+                    $log( sprintf( 'Failed to create user %s: %s', $email, $result->get_error_message() ) );
+                    $stats['errors']++;
+                } else {
+                    self::save_user_meta( $result, $record );
+                    $log( sprintf( 'Created user: %s', $email ) );
+                    $stats['created']++;
+                }
+            }
+        }
+
+        // --- Purge: remove WP users absent from the API ---
+        if ( ! self::ENABLE_DELETE ) {
+            $log( 'Deletion is disabled (ENABLE_DELETE = false). Skipping purge step.' );
+            return $stats;
+        }
+
+        $wp_users = get_users( [ 'fields' => [ 'ID', 'user_email', 'user_login' ] ] );
+
+        foreach ( $wp_users as $wp_user ) {
+            $email = strtolower( $wp_user->user_email );
+
+            if ( isset( $api_users[ $email ] ) ) {
+                continue; // Present in API — already handled above.
+            }
+
+            // Preserve users whose login is in the protected list.
+            if ( in_array( $wp_user->user_login, self::PROTECTED_LOGINS, true ) ) {
+                $stats['skipped']++;
+                continue;
+            }
+
+            // Preserve administrators.
+            $user_obj = get_userdata( $wp_user->ID );
+            if ( $user_obj && in_array( 'administrator', (array) $user_obj->roles, true ) ) {
+                $stats['skipped']++;
+                continue;
+            }
+
+            // Reassign content to the first administrator before deletion.
+            $admins      = get_users( [ 'role' => 'administrator', 'number' => 1, 'fields' => 'ID' ] );
+            $reassign_to = $admins[0] ?? null;
+
+            wp_delete_user( $wp_user->ID, $reassign_to );
+            $log( sprintf( 'Deleted user: %s', $email ) );
+            $stats['deleted']++;
+        }
+
+        return $stats;
+    }
+
+    // -------------------------------------------------------------------------
+    // Helpers
+    // -------------------------------------------------------------------------
+
+    /**
+     * Data for wp_insert_user (new users).
+     *
+     * Sets user_nicename via derive_nicename() — dots in the email prefix are
+     * replaced with hyphens, e.g. "natalie.cadwallader" → "natalie-cadwallader".
+     *
+     * @param array<string, string> $record
+     * @return array<string, string>
+     */
+    private static function build_insert_data( array $record ): array {
+        $data   = self::build_common_fields( $record );
+        $prefix = $data['user_login']; // already lowercased email prefix
+
+        $data['user_nicename'] = self::derive_nicename( $prefix );
+        return $data;
+    }
+
+    /**
+     * Data for wp_update_user (existing users).
+     * The caller re-derives user_nicename from the email prefix on every sync
+     * so any stale slug (e.g. with a WordPress-appended "-2" suffix) is corrected.
+     *
+     * @param array<string, string> $record
+     * @return array<string, string>
+     */
+    private static function build_update_data( array $record ): array {
+        return self::build_common_fields( $record );
+    }
+
+    /**
+     * Fields shared by both insert and update.
+     *
+     * Mapping:
+     *   user_login   = email prefix (part before "@"), e.g. "natalie.cadwallader"
+     *   user_email   = Email
+     *   display_name = EmployeeName
+     *
+     * @param array<string, string> $record
+     * @return array<string, string>
+     */
+    private static function build_common_fields( array $record ): array {
+        $email      = trim( $record['Email'] ?? '' );
+        $name       = trim( $record['EmployeeName'] ?? '' );
+        $name_parts = explode( ' ', $name, 2 );
+        $prefix     = strtolower( (string) strstr( $email, '@', true ) );
+
+        return [
+            'user_login'   => $prefix,
+            'user_email'   => $email,
+            'display_name' => $name,
+            'first_name'   => $name_parts[0] ?? '',
+            'last_name'    => $name_parts[1] ?? '',
+        ];
+    }
+
+    /**
+     * Derives user_nicename from the email prefix.
+     *
+     * Dots are replaced with hyphens so the slug is URL-safe.
+     * e.g. "natalie.cadwallader" → "natalie-cadwallader"
+     */
+    private static function derive_nicename( string $prefix ): string {
+        return str_replace( '.', '-', $prefix );
+    }
+
+    /**
+     * Persist Workday-sourced fields as user meta.
+     *
+     * Team is stored with any trailing "(Manager Name)" suffix stripped, e.g.
+     * "Procurement Liverpool (Natalie Kenyon)" becomes "Procurement Liverpool".
+     *
+     * @param array<string, string|int> $record
+     */
+    private static function save_user_meta( int $user_id, array $record ): void {
+        $team = trim( (string) ( $record['Team'] ?? '' ) );
+        // Strip trailing "(anything)" — the manager name appended by Workday.
+        $team = trim( preg_replace( '/\s*\([^)]*\)\s*$/', '', $team ) );
+
+        $meta = [
+            self::WORKDAY_ID_META_KEY => $record['ItemInternalId'] ?? '',
+            self::EMPLOYEE_KEY_META   => $record['EmployeeKey']    ?? '',
+            'job_title'               => $record['JobTitle']       ?? '',
+            'team'                    => $team,
+            'directorate'             => $record['Directorate']    ?? '',
+            'manager'                 => $record['Manager']        ?? '',
+            'manager_email'           => $record['ManagerEmail']   ?? '',
+        ];
+
+        foreach ( $meta as $key => $value ) {
+            update_user_meta( $user_id, $key, $value );
+        }
+    }
+}
