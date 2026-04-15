@@ -1704,6 +1704,14 @@ add_action('acf/input/admin_footer', function() {
 <?php
 });
 
+if (!function_exists('gca_format_event_time')):
+function gca_format_event_time( $raw_time ) {
+    if ( ! $raw_time ) return '';
+    $ts = strtotime( $raw_time );
+    return date( 'i', $ts ) === '00' ? date( 'ga', $ts ) : date( 'g:ia', $ts );
+}
+endif;
+
 if (!function_exists('gca_get_event_datetime')):
 function gca_get_event_datetime( $return = 'dates', $post_id = null ) {
     $post_id = $post_id ?: get_the_ID();
@@ -1719,8 +1727,8 @@ function gca_get_event_datetime( $return = 'dates', $post_id = null ) {
 
     $f_start_date = $raw_start_date ? date('j F Y', strtotime($raw_start_date)) : '';
     $f_end_date   = $raw_end_date   ? date('j F Y', strtotime($raw_end_date))   : '';
-    $f_start_time = $raw_start_time ? date('g:ia',  strtotime($raw_start_time)) : '';
-    $f_end_time   = $raw_end_time   ? date('g:ia',  strtotime($raw_end_time))   : '';
+    $f_start_time = gca_format_event_time( $raw_start_time );
+    $f_end_time   = gca_format_event_time( $raw_end_time );
 
     $time_range = '';
     if ($f_start_time && $f_end_time) {
