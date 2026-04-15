@@ -203,6 +203,15 @@ add_action('wp_body_open', function (): void {
 | `gca_register_feature_flag($id, $args)` | Register a flag (call before any `is_enabled` check) |
 | `gca_flag_enabled($id)` | Returns `true` if the flag is enabled, `false` otherwise |
 
+### Feature inventory
+
+Each feature file lives in `wp-content/themes/gca-intranet-foundation/inc/features/`.
+
+| Flag ID | Label | Description | Cron job |
+|---|---|---|---|
+| `environment-banner` | Environment Banner | Shows a yellow banner at the top of every page indicating the current environment. Never shown in production. | — |
+| `cron-manager` | Cron Manager | Admin interface (Tools → Cron Jobs) to view, create, edit, delete, and manually run WordPress cron jobs. | — |
+
 ---
 
 ## Theme development notes
