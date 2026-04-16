@@ -22,11 +22,11 @@ class GCA_Cron_Manager {
 
     public static function init(): void {
         add_action('admin_menu', [__CLASS__, 'add_admin_page']);
-        add_action('admin_post_gca_cron_create',  [__CLASS__, 'handle_create']);
-        add_action('admin_post_gca_cron_delete',  [__CLASS__, 'handle_delete']);
-        add_action('admin_post_gca_cron_run_now', [__CLASS__, 'handle_run_now']);
-        add_action('admin_post_gca_cron_edit',    [__CLASS__, 'handle_edit']);
-        add_action('admin_notices',               [__CLASS__, 'show_notices']);
+        add_action('admin_post_gca_cron_create',          [__CLASS__, 'handle_create']);
+        add_action('admin_post_gca_cron_delete',          [__CLASS__, 'handle_delete']);
+        add_action('admin_post_gca_cron_run_now',         [__CLASS__, 'handle_run_now']);
+        add_action('admin_post_gca_cron_edit',            [__CLASS__, 'handle_edit']);
+        add_action('admin_notices',                       [__CLASS__, 'show_notices']);
     }
 
     public static function add_admin_page(): void {
@@ -111,8 +111,6 @@ class GCA_Cron_Manager {
             $crons = _get_cron_array();
             $event = $crons[$timestamp][$hook][$key] ?? null;
             if ($event) {
-                // Insert a placeholder row first so handle_run_completed (fired
-                // inside do_action_ref_array) can locate the row via set_run_log_id.
                 if (class_exists('GCA_Cron_Logger')) {
                     $log_id = GCA_Cron_Logger::insert([
                         'hook'         => $hook,
@@ -121,24 +119,60 @@ class GCA_Cron_Manager {
                     GCA_Cron_Logger::set_run_log_id($hook, $log_id);
                 }
 
-                ob_start();
+                // Send the redirect response to the browser immediately so the
+                // admin page is not blocked. On PHP-FPM, fastcgi_finish_request()
+                // closes the HTTP connection while the PHP process keeps running.
+                $redirect_url = add_query_arg(
+                    array_filter(array_merge(['page' => self::MENU_SLUG], [
+                        'run'      => '1',
+                        'log_id'   => $log_id ?: null,
+                        'log_hook' => $log_id ? $hook : null,
+                    ])),
+                    admin_url('tools.php')
+                );
+
+                // Prevent PHP from aborting when the browser closes the
+                // connection after following the redirect.
+                ignore_user_abort(true);
+
+                if (!headers_sent()) {
+                    header('Location: ' . $redirect_url, true, 302);
+                    header('Connection: close');
+                    header('Content-Length: 0');
+                }
+                if (ob_get_level() > 0) {
+                    ob_end_clean();
+                }
+                flush();
+                if (function_exists('fastcgi_finish_request')) {
+                    fastcgi_finish_request();
+                }
+
                 $start = microtime(true);
-
-                do_action_ref_array($hook, $event['args']);
-
+                ob_start();
+                try {
+                    do_action_ref_array($hook, $event['args']);
+                    $failed = false;
+                } catch (Throwable $e) {
+                    error_log('[GCA Cron] Uncaught error running ' . $hook . ': ' . $e->getMessage());
+                    $failed = true;
+                }
                 $duration_ms = (int) round((microtime(true) - $start) * 1000);
                 $output      = ob_get_clean();
 
-                // Update the row with timing. Only overwrite output if the ob
-                // buffer captured something — cooperative hooks (e.g. gca_sync_workday_users)
-                // use error_log() and have already written their output via
-                // handle_run_completed; don't clobber that with an empty string.
                 if ($log_id && class_exists('GCA_Cron_Logger')) {
                     global $wpdb;
                     $update = ['duration_ms' => $duration_ms];
                     $format = ['%d'];
+                    // Only overwrite output if the ob buffer captured something —
+                    // cooperative hooks (e.g. gca_sync_workday_users) write their
+                    // output via gca_cron_run_completed → handle_run_completed.
                     if ('' !== $output) {
                         $update['output'] = $output;
+                        $format[]         = '%s';
+                    }
+                    if ($failed) {
+                        $update['status'] = 'error';
                         $format[]         = '%s';
                     }
                     $wpdb->update(
@@ -149,6 +183,8 @@ class GCA_Cron_Manager {
                         ['%d']
                     );
                 }
+
+                exit;
             }
         }
 
@@ -228,7 +264,7 @@ class GCA_Cron_Manager {
         if (!empty($_GET['run'])) {
             $log_id   = (int) ($_GET['log_id'] ?? 0);
             $log_hook = sanitize_text_field(wp_unslash($_GET['log_hook'] ?? ''));
-            $msg      = 'Cron job triggered manually.';
+            $msg      = 'Cron job dispatched &mdash; it is now running in the background.';
             if ($log_id && $log_hook) {
                 $logs_url = add_query_arg(
                     ['page' => self::MENU_SLUG, 'action' => 'logs', 'hook' => rawurlencode($log_hook)],
@@ -396,7 +432,6 @@ class GCA_Cron_Manager {
                                     <span>Recurrence</span><span class="sorting-indicators"><span class="sorting-indicator asc" aria-hidden="true"></span><span class="sorting-indicator desc" aria-hidden="true"></span></span>
                                 </a>
                             </th>
-                            <th scope="col" class="column-args">Arguments</th>
                             <th scope="col" class="column-last-run">Last Run</th>
                             <th scope="col" class="column-actions">Actions</th>
                         </tr>
@@ -447,16 +482,12 @@ class GCA_Cron_Manager {
                             <td class="column-recurrence">
                                 <?php echo esc_html($schedule_label); ?>
                             </td>
-                            <td class="column-args">
-                                <?php if (empty($event['args'])) : ?>
-                                    <em>None</em>
-                                <?php else : ?>
-                                    <code class="gca-args"><?php echo esc_html(wp_json_encode($event['args'], JSON_PRETTY_PRINT)); ?></code>
-                                <?php endif; ?>
-                            </td>
                             <td class="column-last-run">
                                 <?php if ($last_run) : ?>
-                                    <span class="gca-run-dot gca-run-<?php echo esc_attr($last_run['status']); ?>"></span>
+                                    <span class="gca-status-badge gca-status-<?php echo esc_attr($last_run['status']); ?>">
+                                        <?php echo esc_html(ucfirst($last_run['status'])); ?>
+                                    </span>
+                                    <br>
                                     <a href="<?php echo esc_url($logs_url); ?>">
                                         <?php echo esc_html(human_time_diff(strtotime($last_run['ran_at']), time())); ?> ago
                                     </a>
@@ -941,12 +972,11 @@ class GCA_Cron_Manager {
     private static function render_styles(): void {
         ?>
         <style>
-            .gca-cron-table .column-hook       { width: 24%; }
-            .gca-cron-table .column-next-run   { width: 18%; }
-            .gca-cron-table .column-recurrence { width: 12%; }
-            .gca-cron-table .column-args       { width: 18%; }
-            .gca-cron-table .column-last-run   { width: 12%; }
-            .gca-cron-table .column-actions    { width: 16%; white-space: nowrap; }
+            .gca-cron-table .column-hook       { width: 28%; }
+            .gca-cron-table .column-next-run   { width: 22%; }
+            .gca-cron-table .column-recurrence { width: 14%; }
+            .gca-cron-table .column-last-run   { width: 18%; }
+            .gca-cron-table .column-actions    { width: 18%; white-space: nowrap; }
             .gca-cron-table .column-actions .button { margin-right: 4px; }
 
             /* Status dot */
@@ -959,6 +989,18 @@ class GCA_Cron_Manager {
             }
             .gca-run-success { background: #00a32a; }
             .gca-run-error   { background: #d63638; }
+
+            /* Last-run status badge */
+            .gca-status-badge {
+                display: inline-block;
+                font-size: 11px;
+                font-weight: 600;
+                padding: 1px 7px;
+                border-radius: 3px;
+                margin-bottom: 2px;
+            }
+            .gca-status-success { background: #e6f0e6; color: #1e4620; }
+            .gca-status-error   { background: #fde8e8; color: #8a1414; }
 
             /* Trigger badge */
             .gca-trigger-badge {
