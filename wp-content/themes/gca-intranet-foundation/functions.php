@@ -1727,8 +1727,15 @@ function gca_get_event_datetime( $return = 'dates', $post_id = null ) {
 
     $f_start_date = $raw_start_date ? date('j F Y', strtotime($raw_start_date)) : '';
     $f_end_date   = $raw_end_date   ? date('j F Y', strtotime($raw_end_date))   : '';
-    $f_start_time = gca_format_event_time( $raw_start_time );
-    $f_end_time   = gca_format_event_time( $raw_end_time );
+
+    // For spans: if either time has minutes, both must use the full g:ia format for consistency.
+    // e.g. "9:01pm to 10:00pm" not "9:01pm to 10pm"
+    $start_has_mins  = $raw_start_time && date( 'i', strtotime($raw_start_time) ) !== '00';
+    $end_has_mins    = $raw_end_time   && date( 'i', strtotime($raw_end_time) )   !== '00';
+    $use_full_format = $start_has_mins || $end_has_mins;
+
+    $f_start_time = $raw_start_time ? ( $use_full_format ? date('g:ia', strtotime($raw_start_time)) : gca_format_event_time($raw_start_time) ) : '';
+    $f_end_time   = $raw_end_time   ? ( $use_full_format ? date('g:ia', strtotime($raw_end_time))   : gca_format_event_time($raw_end_time) )   : '';
 
     $time_range = '';
     if ($f_start_time && $f_end_time) {
