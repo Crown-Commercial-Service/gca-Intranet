@@ -213,6 +213,7 @@ Each feature file lives in `wp-content/themes/gca-intranet-foundation/inc/featur
 | `cron-manager` | Cron Manager | Admin interface (Tools → Cron Jobs) to view, create, edit, delete, and manually run WordPress cron jobs. | — |
 | `workday-user-sync` | Workday User Sync | Syncs WordPress users with the Workday staff list API. Schedule via Tools → Cron Jobs or run manually with `wp gca sync-users`. | `gca_sync_workday_users` |
 | `google-profile-picture` | Google Profile Picture Sync | Downloads the user's Google profile picture on each SSO login and uses it as their avatar across the site. | — |
+| `author-selector` | Author Selector | Replaces the default WordPress author meta box on `blog` and `work_update` posts with a searchable Select2 dropdown. Each option shows the user's profile image (Google SSO photo → Gravatar → WP default). All users are pre-loaded as inline JSON — no AJAX required. | — |
 
 ---
 

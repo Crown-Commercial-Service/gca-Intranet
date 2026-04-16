@@ -26,7 +26,11 @@ add_action('init', function (): void {
     }
 });
 
-GCA_Author_Selector::init();
+add_action('init', function (): void {
+    if (function_exists('gca_flag_enabled') && gca_flag_enabled('author-selector')) {
+        GCA_Author_Selector::init();
+    }
+});
 
 // ---------------------------------------------------------------------------
 // Helper: author image HTML
