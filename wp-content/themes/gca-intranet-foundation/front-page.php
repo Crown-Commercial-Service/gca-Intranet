@@ -16,7 +16,7 @@ get_header();
     </div>
 
     <div class="gca-home-hero__media" data-testid="home-hero-media" aria-hidden="true">
-      <img src="<?php echo esc_url(get_theme_root_uri() . '/gca-intranet-foundation/assets/img/hero.png'); ?>" alt="">
+      <img src="<?php echo esc_url(gca_get_banner_url('gca_banner_homepage', 'hero.png')); ?>" alt="">
     </div>
   </div>
 </section>
@@ -268,7 +268,7 @@ get_header();
                           height="22"
                           fill="currentColor"
                           viewBox="0 0 16 16"
-                          style="stroke: currentColor;;"
+                          style="stroke: currentColor;"
                           aria-hidden="true"
                           focusable="false">
                           <path fill-rule="evenodd"

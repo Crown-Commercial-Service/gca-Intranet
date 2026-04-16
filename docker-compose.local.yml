@@ -28,6 +28,16 @@ services:
       WP_HOME: ${WP_HOME}
       WP_SITEURL: ${WP_SITEURL}
       WP_ENVIRONMENT_TYPE: ${WP_ENVIRONMENT_TYPE:-development}
+
+      # Workday staff sync (gca_sync_workday_users cron / wp gca sync-users)
+      WORKDAY_TOKEN_ENDPOINT: ${WORKDAY_TOKEN_ENDPOINT}
+      WORKDAY_CLIENT_ID: ${WORKDAY_CLIENT_ID}
+      WORKDAY_CLIENT_SECRET: ${WORKDAY_CLIENT_SECRET}
+      WORKDAY_SCOPE: ${WORKDAY_SCOPE}
+      WORKDAY_API_BASE_URL: ${WORKDAY_API_BASE_URL}
+      WORKDAY_STAFF_RESOURCE: ${WORKDAY_STAFF_RESOURCE}
+      WORKDAY_STAFF_API_PARAMS: ${WORKDAY_STAFF_API_PARAMS}
+      WORKDAY_API_SUBSCRIPTION_KEY: ${WORKDAY_API_SUBSCRIPTION_KEY}
     volumes:
       - ./wp-content:/var/www/html/wp-content
     restart: unless-stopped
