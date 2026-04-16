@@ -36,14 +36,7 @@ $count = max( 1, $count );
                 <div class="govuk-grid-column-one-half gca-work-update-card" data-testid="work-update-card">
                     <div class="govuk-grid-row gca-work-updates" data-testid="work-update-row">
                         <div class="govuk-grid-column-one-third" data-testid="work-update-avatar">
-                            <?php
-                            $custom_author_img = get_field( 'image' );
-                            if ( $custom_author_img ) :
-                                echo wp_get_attachment_image( $custom_author_img, 'thumbnail', false, [ 'class' => 'avatar' ] );
-                            elseif ( $avatar = get_avatar( get_the_author_meta( 'ID' ) ) ) :
-                                echo $avatar;
-                            endif;
-                            ?>
+                            <?php echo gca_get_author_image_html( get_the_ID(), (int) get_the_author_meta( 'ID' ) ); ?>
                         </div>
                         <div class="govuk-grid-column-two-thirds" data-testid="work-update-content">
                             <h3 class="govuk-heading-s" data-testid="work-update-title">

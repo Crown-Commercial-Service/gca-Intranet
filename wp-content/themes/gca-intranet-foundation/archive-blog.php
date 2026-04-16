@@ -1,7 +1,7 @@
 <?php get_header(); ?>
 
 <?php
-$hero_image_url = get_template_directory_uri() . '/assets/img/blogs.jpg';
+$hero_image_url = gca_get_banner_url('gca_banner_blogs', 'blogs.jpg');
 
 get_template_part('template-parts/hero', null, [
   'title'     => post_type_archive_title('', false),
@@ -45,7 +45,7 @@ get_template_part('template-parts/breadcrumbs');
             <?php endif; ?>
           </div>
 
-          <!-- GOV ACCORDION (FIXED) -->
+          <!-- GOV ACCORDION -->
           <div 
             class="govuk-accordion gca-filter-card" 
             data-module="govuk-accordion"

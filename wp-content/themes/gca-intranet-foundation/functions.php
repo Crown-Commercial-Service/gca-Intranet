@@ -770,7 +770,37 @@ add_action('admin_init', function (): void {
         'sanitize_callback' => 'sanitize_text_field',
         'default'           => '1.0',
     ]);
+
+    foreach (['gca_banner_homepage', 'gca_banner_news', 'gca_banner_blogs', 'gca_banner_events', 'gca_banner_work_updates'] as $key) {
+        register_setting('gca_global_settings', $key, [
+            'sanitize_callback' => 'absint',
+            'default'           => 0,
+        ]);
+    }
 });
+
+add_action('admin_enqueue_scripts', function (string $hook): void {
+    if ($hook !== 'toplevel_page_gca-global-settings') {
+        return;
+    }
+    wp_enqueue_media();
+});
+
+/**
+ * Returns the banner image URL for a given option key, falling back to a
+ * bundled theme image when no upload has been saved.
+ */
+function gca_get_banner_url(string $option_key, string $fallback_filename): string
+{
+    $attachment_id = (int) get_option($option_key, 0);
+    if ($attachment_id > 0) {
+        $url = wp_get_attachment_image_url($attachment_id, 'full');
+        if ($url) {
+            return $url;
+        }
+    }
+    return get_template_directory_uri() . '/assets/img/' . $fallback_filename;
+}
 
 function gca_global_settings_page(): void
 {
@@ -848,6 +878,81 @@ function gca_global_settings_page(): void
             </td>
           </tr>
         </table>
+
+        <h2><?php esc_html_e('Banner images', 'gca-intranet'); ?></h2>
+        <p class="description"><?php esc_html_e('Images displayed in the hero banner on listing pages and the homepage. Leave blank to use the default theme image.', 'gca-intranet'); ?></p>
+
+        <?php
+        $banner_fields = [
+            'gca_banner_homepage'     => __('Homepage', 'gca-intranet'),
+            'gca_banner_news'         => __('News', 'gca-intranet'),
+            'gca_banner_blogs'        => __('Blogs', 'gca-intranet'),
+            'gca_banner_events'       => __('Events', 'gca-intranet'),
+            'gca_banner_work_updates' => __('Work updates', 'gca-intranet'),
+        ];
+        ?>
+        <table class="form-table" role="presentation">
+          <?php foreach ($banner_fields as $option_key => $label) :
+            $attachment_id  = (int) get_option($option_key, 0);
+            $preview_url    = $attachment_id > 0 ? wp_get_attachment_image_url($attachment_id, 'medium') : '';
+            $field_id       = esc_attr($option_key);
+          ?>
+          <tr>
+            <th scope="row">
+              <label for="<?php echo $field_id; ?>"><?php echo esc_html($label); ?></label>
+            </th>
+            <td>
+              <input
+                type="hidden"
+                id="<?php echo $field_id; ?>"
+                name="<?php echo $field_id; ?>"
+                value="<?php echo esc_attr($attachment_id ?: ''); ?>"
+                class="gca-banner-input"
+              >
+              <div class="gca-banner-preview" style="margin-bottom:8px;">
+                <?php if ($preview_url) : ?>
+                  <img src="<?php echo esc_url($preview_url); ?>" alt="" style="max-width:300px;max-height:100px;display:block;object-fit:cover;border-radius:4px;">
+                <?php endif; ?>
+              </div>
+              <button type="button" class="button gca-banner-select" data-target="<?php echo $field_id; ?>"><?php esc_html_e('Select image', 'gca-intranet'); ?></button>
+              <button type="button" class="button gca-banner-remove" data-target="<?php echo $field_id; ?>"<?php echo $attachment_id ? '' : ' style="display:none"'; ?>><?php esc_html_e('Remove', 'gca-intranet'); ?></button>
+            </td>
+          </tr>
+          <?php endforeach; ?>
+        </table>
+
+        <script>
+        (function ($) {
+          $('.gca-banner-select').on('click', function () {
+            var targetId  = $(this).data('target');
+            var $input    = $('#' + targetId);
+            var $preview  = $input.siblings('.gca-banner-preview');
+            var $remove   = $input.siblings('.gca-banner-remove');
+            var frame = wp.media({
+              title:    '<?php echo esc_js(__('Select banner image', 'gca-intranet')); ?>',
+              button:   { text: '<?php echo esc_js(__('Use this image', 'gca-intranet')); ?>' },
+              multiple: false,
+              library:  { type: 'image' }
+            });
+            frame.on('select', function () {
+              var attachment = frame.state().get('selection').first().toJSON();
+              $input.val(attachment.id);
+              var src = attachment.sizes && attachment.sizes.medium ? attachment.sizes.medium.url : attachment.url;
+              $preview.html('<img src="' + src + '" alt="" style="max-width:300px;max-height:100px;display:block;object-fit:cover;border-radius:4px;">');
+              $remove.show();
+            });
+            frame.open();
+          });
+
+          $('.gca-banner-remove').on('click', function () {
+            var targetId = $(this).data('target');
+            var $input   = $('#' + targetId);
+            $input.val('');
+            $input.siblings('.gca-banner-preview').empty();
+            $(this).hide();
+          });
+        }(jQuery));
+        </script>
 
         <?php submit_button(); ?>
       </form>
@@ -1700,6 +1805,14 @@ add_action('acf/input/admin_footer', function() {
 <?php
 });
 
+if (!function_exists('gca_format_event_time')):
+function gca_format_event_time( $raw_time ) {
+    if ( ! $raw_time ) return '';
+    $ts = strtotime( $raw_time );
+    return date( 'i', $ts ) === '00' ? date( 'ga', $ts ) : date( 'g:ia', $ts );
+}
+endif;
+
 if (!function_exists('gca_get_event_datetime')):
 function gca_get_event_datetime( $return = 'dates', $post_id = null ) {
     $post_id = $post_id ?: get_the_ID();
@@ -1715,8 +1828,15 @@ function gca_get_event_datetime( $return = 'dates', $post_id = null ) {
 
     $f_start_date = $raw_start_date ? date('j F Y', strtotime($raw_start_date)) : '';
     $f_end_date   = $raw_end_date   ? date('j F Y', strtotime($raw_end_date))   : '';
-    $f_start_time = $raw_start_time ? date('g:ia',  strtotime($raw_start_time)) : '';
-    $f_end_time   = $raw_end_time   ? date('g:ia',  strtotime($raw_end_time))   : '';
+
+    // For spans: if either time has minutes, both must use the full g:ia format for consistency.
+    // e.g. "9:01pm to 10:00pm" not "9:01pm to 10pm"
+    $start_has_mins  = $raw_start_time && date( 'i', strtotime($raw_start_time) ) !== '00';
+    $end_has_mins    = $raw_end_time   && date( 'i', strtotime($raw_end_time) )   !== '00';
+    $use_full_format = $start_has_mins || $end_has_mins;
+
+    $f_start_time = $raw_start_time ? ( $use_full_format ? date('g:ia', strtotime($raw_start_time)) : gca_format_event_time($raw_start_time) ) : '';
+    $f_end_time   = $raw_end_time   ? ( $use_full_format ? date('g:ia', strtotime($raw_end_time))   : gca_format_event_time($raw_end_time) )   : '';
 
     $time_range = '';
     if ($f_start_time && $f_end_time) {
