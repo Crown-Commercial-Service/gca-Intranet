@@ -1,7 +1,7 @@
 <?php get_header(); ?>
 
 <?php
-$hero_image_url = get_template_directory_uri() . '/assets/img/blogs.jpg';
+$hero_image_url = gca_get_banner_url('gca_banner_blogs', 'blogs.jpg');
 
 get_template_part('template-parts/hero', null, [
   'title'     => post_type_archive_title('', false),
@@ -20,17 +20,7 @@ get_template_part('template-parts/breadcrumbs');
         <article class="blog-box" data-testid="blog-post">
 
           <div class="blog_profile_img" >
-            <?php 
-              $custome_author_img = get_field('image'); 
-              
-              if ($custome_author_img) : 
-                  echo wp_get_attachment_image($custome_author_img, 'thumbnail', false, ['class' => 'avatar']); 
-              else : 
-                  if ($avatar = get_avatar(get_the_author_meta('ID'))) :
-                      echo $avatar;
-                  endif;
-              endif; 
-            ?>
+            <?php echo gca_get_author_image_html( get_the_ID(), (int) get_the_author_meta( 'ID' ) ); ?>
           </div>
 
           <div>

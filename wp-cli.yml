@@ -1,0 +1,2 @@
+path: /var/www/html
+url: '%env(WP_HOME)%'
