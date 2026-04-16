@@ -1771,7 +1771,6 @@ if (defined('WP_CLI') && WP_CLI) {
 
     \WP_CLI::add_command('gca homepage', 'GCA_Homepage_CLI_Command');
 }
-
 add_action('acf/input/admin_footer', function() {
 ?>
 <script type="text/javascript">
@@ -1808,7 +1807,6 @@ add_action('acf/input/admin_footer', function() {
 </script>
 <?php
 });
-
 if (!function_exists('gca_format_event_time')):
 function gca_format_event_time( $raw_time ) {
     if ( ! $raw_time ) return '';
@@ -1833,8 +1831,6 @@ function gca_get_event_datetime( $return = 'dates', $post_id = null ) {
     $f_start_date = $raw_start_date ? date('j F Y', strtotime($raw_start_date)) : '';
     $f_end_date   = $raw_end_date   ? date('j F Y', strtotime($raw_end_date))   : '';
 
-    // For spans: if either time has minutes, both must use the full g:ia format for consistency.
-    // e.g. "9:01pm to 10:00pm" not "9:01pm to 10pm"
     $start_has_mins  = $raw_start_time && date( 'i', strtotime($raw_start_time) ) !== '00';
     $end_has_mins    = $raw_end_time   && date( 'i', strtotime($raw_end_time) )   !== '00';
     $use_full_format = $start_has_mins || $end_has_mins;
@@ -1872,8 +1868,8 @@ endif;
 add_filter('theme_page_templates', function($post_templates, $theme, $post, $post_type) {
     $target_file = 'template-layout-1col.php';
 
-    foreach ( $post_templates as $file => $name ) {
-        if ( $file === $target_file || substr($file, -strlen($target_file)) === $target_file ) {
+    foreach ($post_templates as $file => $name) {
+        if ($file === $target_file || substr($file, -strlen($target_file)) === $target_file) {
             unset($post_templates[$file]);
         }
     }
@@ -1881,13 +1877,79 @@ add_filter('theme_page_templates', function($post_templates, $theme, $post, $pos
     return $post_templates;
 }, 9999, 4);
 
-if (!function_exists('gca_show_all_screen_options')):
+/**
+ * Show all screen options in editor
+ */
+if (!function_exists('gca_show_all_screen_options')) :
 function gca_show_all_screen_options($hidden, $screen) {
     if (isset($screen->base) && $screen->base === 'post') {
         return [];
     }
-
     return $hidden;
 }
 endif;
+
 add_filter('default_hidden_meta_boxes', 'gca_show_all_screen_options', 10, 2);
+
+/**
+ * Get display author (last real editor fallback to post author)
+ */
+if (!function_exists('gca_get_display_author')) :
+function gca_get_display_author($post_id = null) {
+    $post_id = $post_id ?: get_the_ID();
+
+    // Try last editor first
+    $editor_id = get_post_meta($post_id, 'last_real_editor', true);
+
+    if (!empty($editor_id)) {
+        $name = get_the_author_meta('display_name', $editor_id);
+        if (!empty($name)) {
+            return $name;
+        }
+    }
+
+    // Fallback to original author
+    $author_id = get_post_field('post_author', $post_id);
+    return get_the_author_meta('display_name', $author_id);
+}
+endif;
+
+/**
+ * Track last real editor (FINAL FIX - runs last)
+ */
+function gca_track_last_editor($post_id) {
+
+    // Skip autosave/revision
+    if (wp_is_post_revision($post_id) || wp_is_post_autosave($post_id)) {
+        return;
+    }
+
+    if (!is_numeric($post_id)) {
+        return;
+    }
+
+    $user_id = get_current_user_id();
+
+    if ($user_id) {
+        update_post_meta($post_id, 'last_real_editor', $user_id);
+    }
+}
+
+/**
+ * Hook VERY LATE so nothing overwrites it
+ */
+
+// Standard save (run late)
+add_action('save_post', 'gca_track_last_editor', 999);
+
+// Blog CPT (run late)
+add_action('save_post_blog', 'gca_track_last_editor', 999);
+
+// ACF save (run EVEN LATER)
+add_action('acf/save_post', function ($post_id) {
+
+    if (is_numeric($post_id)) {
+        gca_track_last_editor((int) $post_id);
+    }
+
+}, 999);

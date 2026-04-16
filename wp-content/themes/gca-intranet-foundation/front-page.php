@@ -428,7 +428,7 @@ get_header();
                       </h3>
 
                       <p class="govuk-body-s" data-testid="blogs-author">
-                        By <?php echo esc_html(get_the_author()); ?>
+                       By <?php echo esc_html(gca_get_display_author()); ?>
                       </p>
 
 

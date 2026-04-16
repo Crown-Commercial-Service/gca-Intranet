@@ -35,7 +35,7 @@ get_template_part('template-parts/breadcrumbs');
             </p>
 
             <p class="govuk-body">
-              By <?php echo esc_html(get_the_author()); ?>
+              By <?php echo esc_html(gca_get_display_author()); ?>
             </p>
             
             <div class="date_bottom" data-testid="blog-post-date">

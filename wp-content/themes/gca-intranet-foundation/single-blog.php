@@ -32,9 +32,15 @@ get_template_part('template-parts/breadcrumbs');
 
                 <div data-testid="blog-detials">
 
-                    <span>
-                        By <?php echo esc_html(get_the_author()); ?>
-                    </span>
+                <?php
+                $author = function_exists('gca_get_display_author')
+                    ? gca_get_display_author(get_the_ID())
+                    : get_the_author();
+                ?>
+
+                <span>
+                    By <?php echo esc_html($author); ?>
+                </span>
 
                     
                     <div class="govuk-!-margin-bottom-5 govuk-!-margin-top-5" data-testid="blog-date">

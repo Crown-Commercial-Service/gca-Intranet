@@ -41,7 +41,7 @@ $count = max( 1, $count );
                                 </a>
                             </h3>
                             <p class="govuk-body-s" data-testid="blogs-author">
-                                By <?php echo esc_html( get_the_author() ); ?>
+                                By <?php echo esc_html( gca_get_display_author() ); ?>
                             </p>
                             <p class="govuk-body-xs" data-testid="blogs-date">
                                 <?php echo esc_html( get_the_date( 'j F Y' ) ); ?>
