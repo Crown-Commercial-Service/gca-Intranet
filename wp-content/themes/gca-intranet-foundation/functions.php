@@ -206,31 +206,27 @@ add_action('wp_enqueue_scripts', function (): void {
 })();
 ');
 
-    // GOV.UK Frontend JS
-    if (is_singular()) {
-        $govuk_js_rel = '/assets/scripts/all.js';
-        $govuk_js_abs = get_template_directory() . $govuk_js_rel;
-        $govuk_js_ver = file_exists($govuk_js_abs) ? (string) filemtime($govuk_js_abs) : '1.0.0';
+// GOV.UK Frontend JS (load everywhere)
+$govuk_js_rel = '/assets/scripts/all.js';
+$govuk_js_abs = get_template_directory() . $govuk_js_rel;
+$govuk_js_ver = file_exists($govuk_js_abs) ? (string) filemtime($govuk_js_abs) : '1.0.0';
 
-        wp_enqueue_script(
-            'gca-govuk-frontend',
-            get_template_directory_uri() . $govuk_js_rel,
-            [],
-            $govuk_js_ver,
-            true
-        );
+wp_enqueue_script(
+    'gca-govuk-frontend',
+    get_template_directory_uri() . $govuk_js_rel,
+    [],
+    $govuk_js_ver,
+    true
+);
 
-        wp_add_inline_script(
-            'gca-govuk-frontend',
-            'document.addEventListener("DOMContentLoaded", function() {
-                if (window.GOVUKFrontend && typeof window.GOVUKFrontend.initAll === "function") {
-                    window.GOVUKFrontend.initAll();
-                    document.documentElement.classList.add("js-enabled");
-                }
-            });',
-            'after'
-        );
-    }
+wp_add_inline_script(
+    'gca-govuk-frontend',
+    'if (window.GOVUKFrontend && typeof window.GOVUKFrontend.initAll === "function") {
+        window.GOVUKFrontend.initAll();
+        document.documentElement.classList.add("js-enabled");
+    }',
+    'after'
+);
 
 });
 
@@ -1891,3 +1887,28 @@ function gca_show_all_screen_options($hidden, $screen) {
 }
 endif;
 add_filter('default_hidden_meta_boxes', 'gca_show_all_screen_options', 10, 2);
+
+add_action('pre_get_posts', function($query) {
+
+    // Only frontend main query
+    if (is_admin() || !$query->is_main_query()) return;
+
+    // Only blog archive (adjust if needed)
+    if (!is_post_type_archive('blog')) return;
+
+    // If no filters, do nothing
+    if (empty($_GET['label'])) return;
+
+    $selected_terms = (array) $_GET['label'];
+
+    $tax_query = [
+        [
+            'taxonomy' => 'label',
+            'field'    => 'slug',
+            'terms'    => $selected_terms,
+        ]
+    ];
+
+    $query->set('tax_query', $tax_query);
+
+});
