@@ -16,4 +16,8 @@ include('library/direct-admin-access.php');
 include('library/class-gca-workday-api.php');
 include('library/class-gca-sync-users.php');
 
-GCA_Sync_Users::init();
+add_action('init', function (): void {
+    if (function_exists('gca_flag_enabled') && gca_flag_enabled('workday-user-sync')) {
+        GCA_Sync_Users::init();
+    }
+});
