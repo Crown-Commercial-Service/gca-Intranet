@@ -1,6 +1,35 @@
 // =============================================================================
-// Staff Profile Card
+// Staff Profile Card  +  Staff Search Results
 // Follows GOV.UK Frontend conventions and the GCA token system.
+// =============================================================================
+
+// -----------------------------------------------------------------------------
+// Staff search results — inline detail row (avatar + text side by side)
+// -----------------------------------------------------------------------------
+
+.gca-staff-result__detail {
+  display: flex;
+  align-items: center;
+  gap: govuk-spacing(3);
+}
+
+.gca-staff-result__avatar {
+  flex-shrink: 0;
+}
+
+.gca-staff-result__avatar-img {
+  display: block;
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 1px solid $gca-border-grey;
+}
+
+.gca-staff-result__body {
+  min-width: 0;
+}
+
 // =============================================================================
 
 .gca-profile-card {
