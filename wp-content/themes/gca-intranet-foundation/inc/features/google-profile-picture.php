@@ -12,11 +12,15 @@ if (!defined('ABSPATH')) {
 // On every Google SSO login, downloads the user's Google profile picture,
 // stores it directly in a custom uploads subdirectory (not the media library),
 // and uses it as their WordPress avatar.
+//
+// Generated letter-avatars (Google's default when a user has no real photo) are
+// detected via GD colour analysis and discarded — only genuine photographs are
+// stored. See GCA_Sync_Profile_Pictures::is_letter_avatar() for the algorithm.
 // -----------------------------------------------------------------------------
 
 gca_register_feature_flag('google-profile-picture', [
     'label'       => 'Google Profile Picture Sync',
-    'description' => 'Downloads the user\'s Google profile picture on each SSO login and uses it as their avatar across the site.',
+    'description' => 'Downloads the user\'s Google profile picture on each SSO login and uses it as their avatar across the site. Generated letter-avatars are automatically filtered out using GD colour analysis. Run `wp gca sync-profile-pictures` to retroactively clean up any letter-avatars stored before this check was added.',
     'default'     => false,
     'tags'        => ['users', 'sso'],
 ]);
@@ -37,11 +41,10 @@ add_action('gal_user_loggedin', function (WP_User $user, object $userinfo): void
     $profile_dir = $upload_dir['basedir'] . '/google-profile-pictures';
     $dest        = $profile_dir . '/user-' . $user->ID . '.jpg';
 
-    // Only re-download if the source URL has changed and the local file already exists.
-    if (
-        get_user_meta($user->ID, 'google_profile_picture_url', true) === $picture_url
-        && file_exists($dest)
-    ) {
+    // Skip if we've already evaluated this exact Google picture URL.
+    // This covers both real photos (local file present) and confirmed letter avatars
+    // (URL stored but no local file, so the site falls back to the default avatar).
+    if (get_user_meta($user->ID, 'google_profile_picture_url', true) === $picture_url) {
         return;
     }
 
@@ -68,6 +71,15 @@ add_action('gal_user_loggedin', function (WP_User $user, object $userinfo): void
     @unlink($tmp);
 
     if (!$copied) {
+        return;
+    }
+
+    // Discard generated letter-avatars. Store the URL regardless so we don't
+    // re-download on every subsequent login; just don't set the local URL,
+    // which makes the get_avatar_url filter fall back to the WordPress default.
+    if (GCA_Sync_Profile_Pictures::is_letter_avatar($dest)) {
+        @unlink($dest);
+        update_user_meta($user->ID, 'google_profile_picture_url', $picture_url);
         return;
     }
 
