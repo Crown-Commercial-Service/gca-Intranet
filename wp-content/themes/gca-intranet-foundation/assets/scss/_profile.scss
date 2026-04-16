@@ -1,0 +1,87 @@
+// =============================================================================
+// Staff Profile Card
+// Follows GOV.UK Frontend conventions and the GCA token system.
+// =============================================================================
+
+.gca-profile-card {
+  background: #ffffff;
+  border: 1px solid $gca-border-mid;
+  border-radius: $border-radius;
+  padding: govuk-spacing(6);
+
+  @include govuk-media-query($from: tablet) {
+    padding: govuk-spacing(7);
+  }
+}
+
+.gca-profile-card__inner {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: govuk-spacing(4);
+
+  @include govuk-media-query($from: tablet) {
+    flex-direction: row;
+    align-items: center;
+    gap: govuk-spacing(5);
+  }
+}
+
+// ---- Avatar ----------------------------------------------------------------
+
+.gca-profile-card__avatar {
+  flex-shrink: 0;
+}
+
+.gca-profile-card__avatar-img {
+  display: block;
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid $gca-border-grey;
+
+  @include govuk-media-query($from: tablet) {
+    width: 96px;
+    height: 96px;
+  }
+}
+
+// ---- Body ------------------------------------------------------------------
+
+.gca-profile-card__body {
+  flex: 1 1 0;
+  min-width: 0;
+}
+
+.gca-profile-card__name {
+  margin-bottom: govuk-spacing(1);
+}
+
+.gca-profile-card__role {
+  color: govuk-colour("dark-grey");
+  margin-bottom: govuk-spacing(3);
+}
+
+// ---- Contact list ----------------------------------------------------------
+
+.gca-profile-card__contact {
+  display: flex;
+  flex-wrap: wrap;
+  gap: govuk-spacing(1) govuk-spacing(4);
+  margin-bottom: 0;
+}
+
+.gca-profile-card__contact-item {
+  display: flex;
+  align-items: center;
+  gap: govuk-spacing(1);
+}
+
+.gca-profile-card__icon {
+  flex-shrink: 0;
+  color: govuk-colour("dark-grey");
+  vertical-align: middle;
+  position: relative;
+  top: -1px;
+}
