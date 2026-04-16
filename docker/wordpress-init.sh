@@ -14,4 +14,10 @@ fi
 
 chown -R www-data:www-data /var/www/html/wp-content 2>/dev/null || true
 
+# Remove any stale object-cache.php from the EFS volume.
+# This file is created by the Redis Object Cache plugin when enabled, but since
+# the plugin is not yet fully configured the stale drop-in causes a fatal
+# "Error establishing a Redis connection" on every page load.
+rm -f /var/www/html/wp-content/object-cache.php
+
 exec docker-entrypoint.sh "$@"
