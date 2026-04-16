@@ -215,9 +215,9 @@ class GCA_Cron_Logger {
 
         // Manual runs: handle_run_now() owns the ob buffer and row insertion.
         // Preserve any log_id already set, just record start time.
-        if (
+        if ( // phpcs:ignore WordPress.Security.NonceVerification
             isset($_POST['action']) &&
-            'gca_cron_run_now' === $_POST['action'] // phpcs:ignore WordPress.Security.NonceVerification
+            'gca_cron_run_now' === $_POST['action']
         ) {
             self::$run_state[$hook]['start'] = microtime(true);
             return;
@@ -238,11 +238,12 @@ class GCA_Cron_Logger {
             return;
         }
 
-        // Manual runs: handle_run_now() handles insertion and ob cleanup.
-        if (
-            isset($_POST['action']) &&
-            'gca_cron_run_now' === $_POST['action'] // phpcs:ignore WordPress.Security.NonceVerification
-        ) {
+        // Manual runs: handle_run_now_bg() handles insertion and ob cleanup.
+        if (in_array( // phpcs:ignore WordPress.Security.NonceVerification
+            $_POST['action'] ?? '',
+            ['gca_cron_run_now', 'gca_cron_run_now_bg'],
+            true
+        )) {
             return;
         }
 
@@ -280,14 +281,15 @@ class GCA_Cron_Logger {
 
         $stats_json = $stats ? wp_json_encode($stats) : null;
         $output     = implode("\n", $log_lines);
+        $status     = null === $stats ? 'error' : 'success';
 
         if ($log_id) {
-            // Update the row already inserted by after_scheduled_run / handle_run_now.
+            // Update the row already inserted by after_scheduled_run / handle_run_now_bg.
             $wpdb->update(
                 $table,
-                ['stats' => $stats_json, 'output' => $output],
+                ['stats' => $stats_json, 'output' => $output, 'status' => $status],
                 ['id' => $log_id],
-                ['%s', '%s'],
+                ['%s', '%s', '%s'],
                 ['%d']
             );
         }
