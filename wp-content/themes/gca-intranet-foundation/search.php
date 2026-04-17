@@ -5,7 +5,6 @@ global $wp_query;
 $search_query = get_search_query();
 $search_url   = get_theme_mod('gca_search_url', home_url('/'));
 $found_posts  = (int) $wp_query->found_posts;
-
 ?>
 
 <?php
@@ -19,21 +18,24 @@ get_template_part('template-parts/hero', null, [
 
 <div class="govuk-width-container" data-testid="search-container">
   <main class="govuk-main-wrapper" id="main-content" tabindex="-1" data-testid="search-main">
+
     <div class="govuk-grid-row" data-testid="search-row">
-      <div class="govuk-grid-column-full" data-testid="search-col">
 
-        <h1 class="govuk-heading-l govuk-!-margin-bottom-4" data-testid="search-heading">
-          Search results for <span class="gca-search-query">&ldquo;<?php echo esc_html($search_query); ?>&rdquo;</span>
-        </h1>
+      <!-- LEFT COLUMN (SEARCH + FILTERS) -->
+      <div class="govuk-grid-column-one-quarter">
 
+        <!-- SEARCH BOX -->
         <form
-          class="gca-search-results-form govuk-!-margin-bottom-4"
+          class="gca-search-results-form govuk-!-margin-bottom-6"
           role="search"
           action="<?php echo esc_url($search_url); ?>"
           method="get"
           data-testid="search-results-form"
         >
-          <label class="govuk-visually-hidden" for="search-results-input"><?php esc_html_e('Search the intranet', 'gca-intranet'); ?></label>
+          <label class="govuk-visually-hidden" for="search-results-input">
+            <?php esc_html_e('Search the intranet', 'gca-intranet'); ?>
+          </label>
+
           <div class="search-input-group">
             <input
               id="search-results-input"
@@ -44,14 +46,39 @@ get_template_part('template-parts/hero', null, [
               value="<?php echo esc_attr($search_query); ?>"
               autocomplete="off"
             >
-            <button class="govuk-button search-submit" type="submit" aria-label="<?php esc_attr_e('Search', 'gca-intranet'); ?>">
-              <span class="govuk-visually-hidden"><?php esc_html_e('Search', 'gca-intranet'); ?></span>
-              <svg class="gca-search-icon" width="22" height="22" viewBox="0 0 22 22" fill="none" aria-hidden="true" focusable="false" xmlns="http://www.w3.org/2000/svg">
-                <path d="M19.25 19.25L15.2625 15.2625M17.4167 10.0833C17.4167 14.1334 14.1334 17.4167 10.0833 17.4167C6.03325 17.4167 2.75 14.1334 2.75 10.0833C2.75 6.03325 6.03325 2.75 10.0833 2.75C14.1334 2.75 17.4167 6.03325 17.4167 10.0833Z" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
-              </svg>
+
+            <button class="govuk-button search-submit" type="submit">
+              <span class="govuk-visually-hidden">Search</span>
             </button>
           </div>
         </form>
+
+        <!-- FILTERS -->
+        <?php
+        get_template_part(
+          'template-parts/components/filter-panel',
+          null,
+          [
+            'include_taxonomies' => [
+              'content_type',
+              'label',
+              'category',
+              'audience'
+              // removed: event_location, responsible_team
+            ]
+          ]
+        );
+        ?>
+
+      </div>
+
+      <!-- RIGHT COLUMN (RESULTS) -->
+      <div class="govuk-grid-column-three-quarters">
+
+        <h1 class="govuk-heading-l govuk-!-margin-bottom-4" data-testid="search-heading">
+          Search results for 
+          <span class="gca-search-query">&ldquo;<?php echo esc_html($search_query); ?>&rdquo;</span>
+        </h1>
 
         <?php if (have_posts()) : ?>
 
@@ -63,6 +90,7 @@ get_template_part('template-parts/hero', null, [
             <?php
             $result_index = 0;
             $total_results = $wp_query->post_count;
+
             while (have_posts()) : the_post();
               $result_index++;
 
@@ -80,11 +108,16 @@ get_template_part('template-parts/hero', null, [
                 data-post-id="<?php echo esc_attr((string) get_the_ID()); ?>"
               >
                 <h2 class="govuk-heading-m govuk-!-margin-bottom-2" data-testid="search-result-title">
-                  <span class="gca-search-result__type"><?php echo esc_html($content_type); ?> - </span><a
+                  <span class="gca-search-result__type">
+                    <?php echo esc_html($content_type); ?> -
+                  </span>
+                  <a
                     class="govuk-link"
                     href="<?php the_permalink(); ?>"
                     data-testid="search-result-link"
-                  ><?php echo esc_html($title); ?></a>
+                  >
+                    <?php echo esc_html($title); ?>
+                  </a>
                 </h2>
 
                 <?php if ($excerpt) : ?>
@@ -97,7 +130,9 @@ get_template_part('template-parts/hero', null, [
                   <div class="gca-search-result__terms" data-testid="search-result-terms">
                     <?php foreach ($terms as $term) : ?>
                       <?php $pill_class = ($term->taxonomy === 'category') ? 'tag_label' : 'tag_label grey'; ?>
-                      <span class="<?php echo esc_attr($pill_class); ?>"><?php echo esc_html($term->name); ?></span>
+                      <span class="<?php echo esc_attr($pill_class); ?>">
+                        <?php echo esc_html($term->name); ?>
+                      </span>
                     <?php endforeach; ?>
                   </div>
                 <?php endif; ?>
@@ -111,13 +146,24 @@ get_template_part('template-parts/hero', null, [
             <?php endwhile; ?>
           </div>
 
+          <!-- PAGINATION -->
           <div class="govuk-!-margin-top-6" data-testid="search-pagination">
             <?php
-            the_posts_pagination([
-              'prev_text' => __('&larr; Previous', 'gca-intranet'),
-              'next_text' => __('Next &rarr;', 'gca-intranet'),
-              'end_size'  => 1,
-              'mid_size'  => 3,
+            $pagination_args = [];
+
+            foreach ($_GET as $key => $value) {
+              $pagination_args[$key] = is_array($value)
+                ? array_map('sanitize_text_field', $value)
+                : sanitize_text_field($value);
+            }
+
+            echo paginate_links([
+              'total'     => $wp_query->max_num_pages,
+              'current'   => max(1, get_query_var('paged')),
+              'mid_size'  => 2,
+              'prev_text' => __('Previous', 'gca-intranet'),
+              'next_text' => __('Next', 'gca-intranet'),
+              'add_args'  => $pagination_args,
             ]);
             ?>
           </div>
@@ -125,13 +171,15 @@ get_template_part('template-parts/hero', null, [
         <?php else : ?>
 
           <p class="govuk-body" data-testid="search-no-results">
-            No results found for &ldquo;<?php echo esc_html($search_query); ?>&rdquo;. Try a different search term.
+            No results found for &ldquo;<?php echo esc_html($search_query); ?>&rdquo;.
           </p>
 
         <?php endif; ?>
 
       </div>
+
     </div>
+
   </main>
 </div>
 
