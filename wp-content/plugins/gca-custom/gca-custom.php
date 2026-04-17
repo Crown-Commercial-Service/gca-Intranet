@@ -20,6 +20,7 @@ include('library/class-gca-workday-api.php');
 include('library/class-gca-sync-users.php');
 include('library/class-gca-purge-events.php');
 include('library/class-gca-author-selector.php');
+include('library/class-gca-sync-profile-pictures.php');
 
 add_action('init', function (): void {
     if (function_exists('gca_flag_enabled') && gca_flag_enabled('workday-user-sync')) {
@@ -36,6 +37,12 @@ add_action('init', function (): void {
 add_action('init', function (): void {
     if (function_exists('gca_flag_enabled') && gca_flag_enabled('author-selector')) {
         GCA_Author_Selector::init();
+    }
+});
+
+add_action('init', function (): void {
+    if (function_exists('gca_flag_enabled') && gca_flag_enabled('google-profile-picture')) {
+        GCA_Sync_Profile_Pictures::init();
     }
 });
 
