@@ -1881,6 +1881,24 @@ add_filter('theme_page_templates', function($post_templates, $theme, $post, $pos
     return $post_templates;
 }, 9999, 4);
 
+/**
+ * Returns an inline SVG string for the given directorate-contact icon type.
+ * Available types: email, phone, teams, chat, link, document.
+ */
+if (!function_exists('dc_get_icon_svg')):
+function dc_get_icon_svg(string $type): string {
+    $icons = [
+        'email'    => '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M20 4H4C2.9 4 2 4.9 2 6v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4-8 5-8-5V6l8 5 8-5v2z"/></svg>',
+        'phone'    => '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M6.62 10.79a15.053 15.053 0 0 0 6.59 6.59l2.2-2.2c.27-.27.67-.36 1.02-.24 1.12.37 2.33.57 3.57.57.55 0 1 .45 1 1V20c0 .55-.45 1-1 1-9.39 0-17-7.61-17-17 0-.55.45-1 1-1h3.5c.55 0 1 .45 1 1 0 1.25.2 2.45.57 3.57.11.35.03.74-.25 1.02l-2.2 2.2z"/></svg>',
+        'teams'    => '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M19.5 7h-1A2.5 2.5 0 0 0 16 9.5V16a2 2 0 0 0 2 2h1.5a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2zM14 6.5A2.5 2.5 0 1 1 11.5 4 2.5 2.5 0 0 1 14 6.5zm-1 2H8a2 2 0 0 0-2 2v6a3 3 0 0 0 3 3h4a3 3 0 0 0 3-3v-6a2 2 0 0 0-2-2zm5-4.5a2 2 0 1 1-2-2 2 2 0 0 1 2 2z"/></svg>',
+        'chat'     => '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M20 2H4C2.9 2 2 2.9 2 4v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm-2 12H6v-2h12v2zm0-3H6V9h12v2zm0-3H6V6h12v2z"/></svg>',
+        'link'     => '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M3.9 12c0-1.71 1.39-3.1 3.1-3.1h4V7H7c-2.76 0-5 2.24-5 5s2.24 5 5 5h4v-1.9H7c-1.71 0-3.1-1.39-3.1-3.1zM8 13h8v-2H8v2zm9-6h-4v1.9h4c1.71 0 3.1 1.39 3.1 3.1s-1.39 3.1-3.1 3.1h-4V17h4c2.76 0 5-2.24 5-5s-2.24-5-5-5z"/></svg>',
+        'document' => '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M14 2H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z"/></svg>',
+    ];
+    return $icons[$type] ?? $icons['link'];
+}
+endif;
+
 if (!function_exists('gca_show_all_screen_options')):
 function gca_show_all_screen_options($hidden, $screen) {
     if (isset($screen->base) && $screen->base === 'post') {
