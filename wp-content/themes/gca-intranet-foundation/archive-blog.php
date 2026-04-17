@@ -20,109 +20,15 @@ get_template_part('template-parts/breadcrumbs');
       <div class="govuk-grid-column-one-quarter">
 
         <?php
-        $selected_labels = isset($_GET['label'])
-          ? array_map('sanitize_text_field', (array) $_GET['label'])
-          : [];
-
-        $filter_terms = get_terms([
-          'taxonomy'   => 'label',
-          'hide_empty' => true,
-        ]);
-
-        $view_all_checked = empty($selected_labels) ? 'checked' : '';
+        get_template_part(
+          'template-parts/components/filter-panel',
+          null,
+          [
+            'post_type' => 'blog',
+            'include_taxonomies' => ['label']
+          ]
+        );
         ?>
-
-        <form method="get" class="gca-filters">
-
-          <!-- HEADER -->
-          <div class="gca-filters__header">
-            <h2 class="govuk-heading-m">Apply filters</h2>
-
-            <?php if (!empty($selected_labels)) : ?>
-              <a href="<?php echo esc_url(get_post_type_archive_link('blog')); ?>" class="govuk-link govuk-body-s">
-                Clear filters
-              </a>
-            <?php endif; ?>
-          </div>
-
-          <!-- ACCORDION -->
-          <div 
-            class="govuk-accordion gca-filter-card" 
-            data-module="govuk-accordion"
-            data-show-all-sections="false"
-            data-show-all-text="false"
-            id="filters-accordion"
-          >
-
-            <div class="govuk-accordion__section govuk-accordion__section--expanded">
-
-              <div class="govuk-accordion__section-header">
-                <h3 class="govuk-accordion__section-heading">
-                  <button
-                    type="button"
-                    class="govuk-accordion__section-button gca-filter-card__title"
-                    id="filter-heading-type"
-                  >
-                    Type of article
-                  </button>
-                </h3>
-              </div>
-
-              <div
-                id="filter-content-type"
-                class="govuk-accordion__section-content gca-filter-card__content"
-                aria-labelledby="filter-heading-type"
-              >
-
-                <div class="govuk-checkboxes" data-module="govuk-checkboxes">
-
-                  <!-- VIEW ALL -->
-                  <div class="govuk-checkboxes__item govuk-checkboxes__item--small">
-                    <input
-                      class="govuk-checkboxes__input govuk-checkboxes__input--small"
-                      id="view-all"
-                      type="checkbox"
-                      <?php echo $view_all_checked; ?>
-                      onclick="window.location.href='<?php echo esc_url(get_post_type_archive_link('blog')); ?>'"
-                    >
-                    <label class="govuk-label govuk-checkboxes__label" for="view-all">
-                      View all
-                    </label>
-                  </div>
-
-                  <!-- TERMS -->
-                  <?php foreach ($filter_terms as $term) : ?>
-                    <?php $checked = in_array($term->slug, $selected_labels) ? 'checked' : ''; ?>
-
-                    <div class="govuk-checkboxes__item govuk-checkboxes__item--small">
-                      <input
-                        class="govuk-checkboxes__input govuk-checkboxes__input--small"
-                        id="term-<?php echo esc_attr($term->slug); ?>"
-                        name="label[]"
-                        type="checkbox"
-                        value="<?php echo esc_attr($term->slug); ?>"
-                        <?php echo $checked; ?>
-                        onchange="this.form.submit();"
-                      >
-                      <label
-                        class="govuk-label govuk-checkboxes__label"
-                        for="term-<?php echo esc_attr($term->slug); ?>"
-                      >
-                        <?php echo esc_html($term->name); ?>
-                      </label>
-                    </div>
-
-                  <?php endforeach; ?>
-
-                </div>
-
-              </div>
-
-            </div>
-
-          </div>
-
-        </form>
 
       </div>
 
@@ -184,13 +90,25 @@ get_template_part('template-parts/breadcrumbs');
             </article>
           <?php endwhile; ?>
 
+          <!-- PAGINATION WITH FILTER PERSISTENCE -->
           <div class="govuk-!-margin-top-8 govuk-!-margin-bottom-8">
-            <?php 
-              the_posts_pagination([
-                'mid_size'  => 2,
-                'prev_text' => '<span>Previous</span>',
-                'next_text' => '<span>Next</span>',
-              ]); 
+            <?php
+            $pagination_args = [];
+
+            foreach ($_GET as $key => $value) {
+              $pagination_args[$key] = is_array($value)
+                ? array_map('sanitize_text_field', $value)
+                : sanitize_text_field($value);
+            }
+
+            echo paginate_links([
+              'total'     => $wp_query->max_num_pages,
+              'current'   => max(1, get_query_var('paged')),
+              'mid_size'  => 2,
+              'prev_text' => '<span>Previous</span>',
+              'next_text' => '<span>Next</span>',
+              'add_args'  => $pagination_args,
+            ]);
             ?>
           </div>
 

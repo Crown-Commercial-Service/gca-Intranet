@@ -44,7 +44,7 @@ BLOG / CARD STYLES
 }
 
 /* =========================
-FILTERS (SPACING ONLY FIXED)
+FILTERS
 ========================= */
 
 .gca-filters {
@@ -52,112 +52,119 @@ FILTERS (SPACING ONLY FIXED)
     display: flex;
     justify-content: space-between;
     align-items: baseline;
-    margin-bottom: 12px; /* tighter */
+    margin-bottom: 12px;
   }
 
+  /* FILTER CARD */
   .gca-filter-card {
     background: #f3f2f1;
     border-radius: 15px;
-    padding: 19px 44px 44px 19px;
+    padding: 16px;
+  }
 
-    /* HEADER */
-    .govuk-accordion__section-header {
-      margin-bottom: 4px; /* tighter */
-    }
+  /* Remove GOVUK spacing issues */
+  .govuk-accordion__section {
+    margin-bottom: 0;
+  }
 
-    .govuk-accordion__section-button {
-      font-size: 19px;
-      font-weight: 700;
-      line-height: 1.3;
-      padding: 0;
-      margin: 0;
-    }
+  .govuk-accordion__section-header {
+    margin-bottom: 6px;
+  }
 
-    /* HIDE TOGGLE */
-    .govuk-accordion__section-toggle {
-      display: inline-flex;
+  /* Title */
+  .govuk-accordion__section-button {
+    font-size: 19px;
+    font-weight: 700;
+    line-height: 1.3;
+    padding: 0;
+    margin: 0;
+  }
+
+  /* Hide / Show toggle */
+  .govuk-accordion__section-toggle {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    margin: 4px 0 8px;
+    font-size: 16px;
+    color: #1d70b8;
+  }
+
+  .govuk-accordion__icon {
+    top: 2px;
+  }
+
+  /* CONTENT PANEL */
+  .gca-filter-card__content {
+    background: #ffffff;
+    border-radius: 12px;
+    overflow: hidden;
+    margin-top: 8px;
+    padding: 0;
+  }
+
+  /* Kill GOVUK default padding */
+  .govuk-accordion__section-content {
+    padding: 0;
+  }
+
+  /* =========================
+  CHECKBOX LIST
+  ========================= */
+
+  .govuk-checkboxes {
+    margin: 0;
+
+    &__item {
+      display: flex;
       align-items: center;
-      gap: 6px;
-      margin-top: 2px;
-      margin-bottom: 8px; /* tighter */
-      font-size: 16px;
-      color: #1d70b8;
+      height: 50px;
+      padding: 0 14px;
+      border-bottom: 1px solid #d8d8d8;
+
+      &:last-child {
+        border-bottom: none;
+      }
+
+      &:hover {
+        background: #f8f8f8;
+      }
     }
 
-    /* FIX ICON */
-    .govuk-accordion__icon {
-      top: 2px;
+    &__label {
+      position: static;
+      padding-left: 0;
+      margin-left: 44px;
+      margin-bottom: 0;
+      font-weight: 500;
+      font-size: 19px;
+      line-height: 1.2;
+      display: flex;
+      align-items: center;
     }
 
-    /* WHITE PANEL */
-    .gca-filter-card__content {
-      background: #ffffff;
-      border-radius: 12px;
-      overflow: hidden;
-      margin-top: 6px; /* pulls it closer to "Hide" */
+    /* Checkbox positioning */
+    &__input--small {
+      position: absolute;
+      left: 16px;
     }
 
-    /* =========================
-    CHECKBOX LIST (SPACING ONLY)
-    ========================= */
+    &__input--small + .govuk-checkboxes__label::before {
+      width: 24px;
+      height: 24px;
+      border-radius: 6px;
+      left: 16px;
+      top: 50%;
+      transform: translateY(-50%);
+    }
 
-    .govuk-checkboxes {
-      margin: 0;
-
-      &__item {
-        display: flex;
-        align-items: center;
-        height: 50px; /* slightly tighter than 56 */
-        padding: 0 14px; /* reduced horizontal padding */
-        border-bottom: 1px solid #d8d8d8;
-
-        &:last-child {
-          border-bottom: none;
-        }
-
-        &:hover {
-          background: #f8f8f8;
-        }
-      }
-
-      &__label {
-        position: static;
-        padding-left: 0;
-        margin-left: 44px;
-        margin-bottom: 0;
-        font-weight: 500;
-        font-size: 19px;
-        line-height: 1.2;
-
-        display: flex;
-        align-items: center;
-      }
-
-      /* CHECKBOX — UNCHANGED */
-      &__input--small {
-        position: absolute;
-        left: 16px;
-      }
-
-      &__input--small + .govuk-checkboxes__label::before {
-        width: 24px;
-        height: 24px;
-        border-radius: 6px;
-
-        left: 16px;
-        top: 50%;
-        transform: translateY(-50%);
-      }
-
-      &__input--small:checked + .govuk-checkboxes__label::after {
-        width: 6px;
-        height: 12px;
-        border-width: 0 3px 3px 0;
-
-        left: 24px;
-        top: 50%;
-        transform: translateY(-50%) rotate(45deg);
-      }
+    &__input--small:checked + .govuk-checkboxes__label::after {
+      width: 6px;
+      height: 12px;
+      border-width: 0 3px 3px 0;
+      left: 25px;
+      top: 50%;
+      transform: translateY(-50%) rotate(45deg);
     }
   }
 }
@@ -173,15 +180,69 @@ OVERRIDES
 .govuk-frontend-supported .govuk-accordion__section-button {
   border-top: 0;
 }
+
 .govuk-checkboxes__item {
-  margin-bottom: 0px;
+  margin-bottom: 0;
 }
-.gca-filters .gca-filter-card .gca-filter-card__content {
-  padding-bottom: 0px;
-}
+
 .govuk-frontend-supported .govuk-accordion__section-toggle-text {
   font-size: 19px;
 }
+
 .govuk-frontend-supported .govuk-accordion {
-  border-bottom: 0px;
+  border-bottom: 0;
+}
+
+.js-enabled .govuk-accordion__section-header {
+  padding-bottom: 0;
+}
+
+.govuk-frontend-supported .govuk-accordion__section--expanded .govuk-accordion__section-button {
+  padding-bottom: 0;
+}
+
+/* =========================
+INDENTATION (HIERARCHY)
+========================= */
+
+.gca-filter-indent-1 {
+  margin-left: 20px;
+}
+.gca-filter-indent-2 {
+  margin-left: 40px;
+}
+.gca-filter-indent-3 {
+  margin-left: 60px;
+}
+
+/* =========================
+MOBILE FIXES (IMPORTANT FIX)
+========================= */
+
+@media (max-width: 640px) {
+  .gca-filter-card {
+    padding: 12px;
+    border-radius: 12px;
+  }
+
+  /* Force CLOSED on mobile (this is the key fix) */
+  .gca-filter-card .govuk-accordion__section--expanded .gca-filter-card__content {
+    display: none;
+  }
+
+  /* Tighter header */
+  .govuk-accordion__section-header {
+    padding: 0;
+    margin-bottom: 4px;
+  }
+}
+
+/* =========================
+DESKTOP FIX (force open)
+========================= */
+
+@media (min-width: 641px) {
+  .gca-filter-card .gca-filter-card__content {
+    display: block !important;
+  }
 }
