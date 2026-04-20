@@ -50,7 +50,7 @@ get_template_part('template-parts/breadcrumbs');
                 </h2>
 
                 <p data-testid="work-update-decs">
-                  <?php echo esc_html(gca_clean_post_excerpt(320)); ?>
+                  <?php echo esc_html(gca_clean_post_excerpt(140)); ?>
                 </p>
 
                 <p class="govuk-body">

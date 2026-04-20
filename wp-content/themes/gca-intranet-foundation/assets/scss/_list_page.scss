@@ -246,3 +246,76 @@ DESKTOP FIX (force open)
     display: block !important;
   }
 }
+
+/* FILTER CARD BASE */
+.gca-filter-card {
+  background: #f3f2f1; // GOVUK light grey
+  border-radius: 16px;
+  padding: 20px;
+  margin-bottom: 16px;
+}
+
+/* SORT CARD SPECIFIC */
+.gca-filter-card fieldset {
+  margin: 0;
+}
+
+/* SORT TITLE */
+.gca-filter-card .govuk-fieldset__heading {
+  font-size: 19px;
+  font-weight: 700;
+  margin-bottom: 16px;
+}
+
+/* =========================
+SORT (RADIOS) — FIXED PROPERLY
+========================= */
+
+/* Container */
+.gca-filter-card .govuk-radios {
+  background: #ffffff;
+  border-radius: 12px;
+  padding: 4px 0px 0px 16px;
+  overflow: hidden;
+  margin: 0;
+}
+
+/* Each row */
+.gca-filter-card .govuk-radios__item {
+  position: relative; /* 👈 important */
+  display: flex;
+  align-items: center;
+  height: 50px;
+  padding: 0 14px;
+  margin: 0;
+  border-bottom: 1px solid #d8d8d8;
+}
+
+.gca-filter-card .govuk-radios__item:last-child {
+  border-bottom: none;
+}
+
+/* Hover */
+.gca-filter-card .govuk-radios__item:hover {
+  background: #f8f8f8;
+}
+
+/* Label */
+.gca-filter-card .govuk-radios__label {
+  position: static;
+  margin-left: 24px;
+  padding-left: 0;
+  font-size: 19px;
+  font-weight: 500;
+  line-height: 1.2;
+  display: flex;
+  align-items: center;
+}
+
+/* Radio input positioning (same system as checkboxes) */
+.gca-filter-card .govuk-radios__input {
+  position: absolute;
+  left: 16px;
+  top: 50%;
+  transform: translateY(-50%); /* 👈 THIS is the key fix */
+}

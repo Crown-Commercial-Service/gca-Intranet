@@ -1887,28 +1887,60 @@ function gca_show_all_screen_options($hidden, $screen) {
 }
 endif;
 add_filter('default_hidden_meta_boxes', 'gca_show_all_screen_options', 10, 2);
-
-add_action('pre_get_posts', function($query) {
+add_action('pre_get_posts', function ($query) {
 
     // Only frontend main query
-    if (is_admin() || !$query->is_main_query()) return;
+    if (is_admin() || !$query->is_main_query()) {
+        return;
+    }
 
-    // Only blog archive (adjust if needed)
-    if (!is_post_type_archive('blog')) return;
+    if (!is_post_type_archive(['blog', 'news', 'work_update'])) {
+        return;
+    }
 
-    // If no filters, do nothing
-    if (empty($_GET['label'])) return;
+    /**
+     * -------------------------
+     * FILTERING (labels)
+     * -------------------------
+     */
+    if (!empty($_GET['label'])) {
 
-    $selected_terms = (array) $_GET['label'];
+        $selected_terms = array_map('sanitize_text_field', (array) $_GET['label']);
 
-    $tax_query = [
-        [
-            'taxonomy' => 'label',
-            'field'    => 'slug',
-            'terms'    => $selected_terms,
-        ]
+        $tax_query = [
+            [
+                'taxonomy' => 'label',
+                'field'    => 'slug',
+                'terms'    => $selected_terms,
+            ]
+        ];
+
+        $query->set('tax_query', $tax_query);
+    }
+
+    /**
+     * -------------------------
+     * SORTING
+     * -------------------------
+     */
+    $sort = isset($_GET['sort']) ? sanitize_text_field($_GET['sort']) : 'newest';
+
+    $sort_map = [
+        'newest' => [
+            'orderby' => 'date',
+            'order'   => 'DESC',
+        ],
+        'oldest' => [
+            'orderby' => 'date',
+            'order'   => 'ASC',
+        ],
     ];
 
-    $query->set('tax_query', $tax_query);
+    if (!array_key_exists($sort, $sort_map)) {
+        $sort = 'newest';
+    }
+
+    $query->set('orderby', $sort_map[$sort]['orderby']);
+    $query->set('order', $sort_map[$sort]['order']);
 
 });

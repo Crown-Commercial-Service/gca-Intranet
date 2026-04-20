@@ -54,7 +54,7 @@ get_template_part('template-parts/breadcrumbs');
                 </h2>
 
                 <p data-testid="news-desc">
-                  <?php echo esc_html(gca_clean_post_excerpt(320)); ?>
+                  <?php echo esc_html(gca_clean_post_excerpt(140)); ?>
                 </p>
 
                 <div class="date_bottom" data-testid="news-post-meta">

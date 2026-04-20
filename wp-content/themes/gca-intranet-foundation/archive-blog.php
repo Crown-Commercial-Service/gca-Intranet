@@ -12,13 +12,12 @@ get_template_part('template-parts/breadcrumbs');
 ?>
 
 <div class="govuk-width-container" data-testid="blog-container">
-  <main class="govuk-main-wrapper" id="main-content" tabindex="-1">
+  <main class="govuk-main-wrapper" id="main-content" tabindex="-1" data-testid="blog-main">
 
     <div class="govuk-grid-row">
 
       <!-- FILTERS -->
       <div class="govuk-grid-column-one-quarter">
-
         <?php
         get_template_part(
           'template-parts/components/filter-panel',
@@ -29,40 +28,28 @@ get_template_part('template-parts/breadcrumbs');
           ]
         );
         ?>
-
       </div>
 
       <!-- RESULTS -->
       <div class="govuk-grid-column-three-quarters">
 
-        <!-- SORT CONTROL -->
-        <?php get_template_part('template-parts/components/sort-control'); ?>
-
         <?php if (have_posts()) : ?>
 
           <?php while (have_posts()) : the_post(); ?>
-            <article class="blog-box">
+            <article class="blog-box" data-testid="blog-post">
 
               <div class="blog_profile_img">
-                <?php 
-                  $custome_author_img = get_field('image'); 
-                  
-                  if ($custome_author_img) : 
-                      echo wp_get_attachment_image($custome_author_img, 'thumbnail', false, ['class' => 'avatar']); 
-                  else : 
-                      echo get_avatar(get_the_author_meta('ID'));
-                  endif; 
-                ?>
+                <?php echo gca_get_author_image_html(get_the_ID(), (int) get_the_author_meta('ID')); ?>
               </div>
 
               <div>
-                <h2 class="govuk-heading-m govuk-!-margin-bottom-2">
-                  <a class="govuk-link" href="<?php the_permalink(); ?>">
+                <h2 class="govuk-heading-m govuk-!-margin-bottom-2" data-testid="blog-post-title">
+                  <a class="govuk-link" href="<?php the_permalink(); ?>" data-testid="blog-post-link">
                     <?php the_title(); ?>
                   </a>
                 </h2>
 
-                <p>
+                <p data-testid="blog-desc">
                   <?php echo esc_html(gca_clean_post_excerpt(140)); ?>
                 </p>
 
@@ -70,18 +57,18 @@ get_template_part('template-parts/breadcrumbs');
                   By <?php echo esc_html(get_the_author()); ?>
                 </p>
                 
-                <div class="date_bottom">
-                  <span>
+                <div class="date_bottom" data-testid="blog-post-date">
+                  <span class="govuk-!-margin-right-2" style="margin:0;">
                     <?php echo esc_html(get_the_date('j F Y')); ?>
                   </span>
 
                   <?php 
-                  $post_terms = get_the_terms(get_the_ID(), 'label');
+                  $terms = get_the_terms(get_the_ID(), 'label');
 
-                  if ($post_terms && !is_wp_error($post_terms)) : 
-                    $term = array_shift($post_terms); ?>
-                    <span class="govuk-body-s tag_label location">
-                        <?php echo esc_html($term->name); ?>
+                  if ($terms && !is_wp_error($terms)) : 
+                    $term = array_shift($terms); ?>
+                    <span class="govuk-body-s tag_label location" style="margin:0;">
+                      <?php echo esc_html($term->name); ?>
                     </span>
                   <?php endif; ?>
                 </div>
@@ -90,30 +77,29 @@ get_template_part('template-parts/breadcrumbs');
             </article>
           <?php endwhile; ?>
 
-          <!-- PAGINATION WITH FILTER PERSISTENCE -->
-          <div class="govuk-!-margin-top-8 govuk-!-margin-bottom-8">
-            <?php
-            $pagination_args = [];
-
-            foreach ($_GET as $key => $value) {
-              $pagination_args[$key] = is_array($value)
-                ? array_map('sanitize_text_field', $value)
-                : sanitize_text_field($value);
-            }
-
-            echo paginate_links([
-              'total'     => $wp_query->max_num_pages,
-              'current'   => max(1, get_query_var('paged')),
-              'mid_size'  => 2,
-              'prev_text' => '<span>Previous</span>',
-              'next_text' => '<span>Next</span>',
-              'add_args'  => $pagination_args,
-            ]);
+          <!-- PAGINATION -->
+          <div class="govuk-!-margin-top-8 govuk-!-margin-bottom-8" data-testid="blog-pagination">
+            <?php 
+              the_posts_pagination([
+                'mid_size'  => 2,
+                'prev_text' => sprintf(
+                  '<span class="icon">
+                    <svg width="17" height="14" xmlns="http://www.w3.org/2000/svg"><path d="M6.7 0l1.4 1.4-4.3 4.3h13v2H3.9l4.2 4-1.4 1.4L0 6.7z" fill="#007194"/></svg>
+                  </span> <span>Previous</span>
+                  <span class="govuk-visually-hidden">page</span>'
+                ),
+                'next_text' => sprintf(
+                  '<span>Next</span> <span class="govuk-visually-hidden">page</span>
+                  <span class="icon">
+                    <svg width="17" height="14" xmlns="http://www.w3.org/2000/svg"><path d="M10.1 0L8.7 1.4 13 5.7H0v2h12.9l-4.2 4 1.4 1.4 6.7-6.4z" fill="#007194"/></svg>
+                  </span>'
+                ),
+              ]); 
             ?>
           </div>
 
         <?php else : ?>
-          <p class="govuk-body">No Blog found.</p>
+          <p class="govuk-body" data-testid="blog-no-posts">No Blog found.</p>
         <?php endif; ?>
 
       </div>

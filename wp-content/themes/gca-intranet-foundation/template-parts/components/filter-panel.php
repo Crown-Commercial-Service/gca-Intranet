@@ -55,6 +55,13 @@ $is_work_update_selected = in_array('work_update', $selected_post_types);
 $clear_url = is_search()
   ? home_url('/?s=' . urlencode(get_search_query()))
   : get_post_type_archive_link($post_type);
+
+/**
+ * SORT VALUE
+ */
+$current_sort = isset($_GET['sort'])
+  ? sanitize_text_field($_GET['sort'])
+  : 'newest';
 ?>
 
 <form method="get" class="gca-filters" data-testid="filters-form">
@@ -77,6 +84,53 @@ $clear_url = is_search()
         Clear filters
       </a>
     <?php endif; ?>
+  </div>
+
+  <!-- SORT (NEW) -->
+  <div class="gca-filter-card" data-testid="filter-sort">
+
+    <fieldset class="govuk-fieldset">
+      <legend class="govuk-fieldset__legend govuk-fieldset__legend--s">
+        <h3 class="govuk-fieldset__heading">
+          Sort by
+        </h3>
+      </legend>
+
+      <div class="govuk-radios govuk-radios--small" data-module="govuk-radios">
+
+        <div class="govuk-radios__item">
+          <input
+            class="govuk-radios__input"
+            id="sort-newest"
+            name="sort"
+            type="radio"
+            value="newest"
+            <?php checked($current_sort, 'newest'); ?>
+            onchange="this.form.submit();"
+          >
+          <label class="govuk-label govuk-radios__label" for="sort-newest">
+            Newest First
+          </label>
+        </div>
+
+        <div class="govuk-radios__item">
+          <input
+            class="govuk-radios__input"
+            id="sort-oldest"
+            name="sort"
+            type="radio"
+            value="oldest"
+            <?php checked($current_sort, 'oldest'); ?>
+            onchange="this.form.submit();"
+          >
+          <label class="govuk-label govuk-radios__label" for="sort-oldest">
+            Oldest First
+          </label>
+        </div>
+
+      </div>
+    </fieldset>
+
   </div>
 
   <?php foreach ($taxonomy_order as $tax_name) :
@@ -121,12 +175,6 @@ $clear_url = is_search()
     $section_id = 'filter-' . esc_attr($taxonomy->name);
     $heading_id = $section_id . '-heading';
     $content_id = $section_id . '-content';
-
-    /**
-     * Expansion logic
-     * Always collapsed by default (CSS will open on desktop)
-     */
-    $is_expanded = false;
   ?>
 
     <div 
@@ -135,7 +183,7 @@ $clear_url = is_search()
       data-testid="filter-group-<?php echo esc_attr($taxonomy->name); ?>"
     >
 
-        <div class="govuk-accordion__section govuk-accordion__section--expanded">
+      <div class="govuk-accordion__section govuk-accordion__section--expanded">
 
         <!-- Header -->
         <div class="govuk-accordion__section-header">
@@ -146,7 +194,6 @@ $clear_url = is_search()
               id="<?php echo $heading_id; ?>"
               aria-controls="<?php echo $content_id; ?>"
               aria-expanded="true"
-              data-testid="filter-toggle-<?php echo esc_attr($taxonomy->name); ?>"
             >
               <?php echo esc_html($display_label); ?>
             </button>
@@ -158,10 +205,9 @@ $clear_url = is_search()
           id="<?php echo $content_id; ?>"
           class="govuk-accordion__section-content gca-filter-card__content"
           aria-labelledby="<?php echo $heading_id; ?>"
-          data-testid="filter-content-<?php echo esc_attr($taxonomy->name); ?>"
         >
 
-          <fieldset class="govuk-fieldset" aria-describedby="filters-heading">
+          <fieldset class="govuk-fieldset">
             <legend class="govuk-visually-hidden">
               <?php echo esc_html($display_label); ?>
             </legend>
@@ -176,12 +222,8 @@ $clear_url = is_search()
                   type="checkbox"
                   <?php echo $view_all_checked; ?>
                   onclick="window.location.href='<?php echo esc_url($clear_url); ?>'"
-                  data-testid="filter-<?php echo esc_attr($taxonomy->name); ?>-all"
                 >
-                <label 
-                  class="govuk-label govuk-checkboxes__label"
-                  for="<?php echo $section_id; ?>-all"
-                >
+                <label class="govuk-label govuk-checkboxes__label" for="<?php echo $section_id; ?>-all">
                   View all
                 </label>
               </div>
