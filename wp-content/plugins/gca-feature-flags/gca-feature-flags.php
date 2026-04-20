@@ -543,8 +543,10 @@ class GCA_Feature_Flags {
  * @param string $id   Unique slug, e.g. 'new-homepage-layout'
  * @param array  $args Optional. label, description, default.
  */
-function gca_register_feature_flag( $id, $args = array() ) {
-	GCA_Feature_Flags::register( $id, $args );
+if ( ! function_exists( 'gca_register_feature_flag' ) ) {
+	function gca_register_feature_flag( $id, $args = array() ) {
+		GCA_Feature_Flags::register( $id, $args );
+	}
 }
 
 /**
@@ -553,8 +555,10 @@ function gca_register_feature_flag( $id, $args = array() ) {
  * @param string $id Flag slug.
  * @return bool
  */
-function gca_flag_enabled( $id ) {
-	return GCA_Feature_Flags::is_enabled( $id );
+if ( ! function_exists( 'gca_flag_enabled' ) ) {
+	function gca_flag_enabled( $id ) {
+		return GCA_Feature_Flags::is_enabled( $id );
+	}
 }
 
 GCA_Feature_Flags::init();
