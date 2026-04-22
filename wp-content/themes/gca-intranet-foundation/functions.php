@@ -206,6 +206,239 @@ add_action('wp_enqueue_scripts', function (): void {
 })();
 ');
 
+    wp_register_script('gca-search-autocomplete', '', [], false, true);
+    wp_enqueue_script('gca-search-autocomplete');
+    wp_add_inline_script(
+        'gca-search-autocomplete',
+        'window.gcaSearchAutocomplete = ' . wp_json_encode([
+            'ajaxUrl'       => admin_url('admin-ajax.php'),
+            'minChars'      => 3,
+            'maxResults'    => 5,
+            'loadingText'   => __('Searching...', 'gca-intranet'),
+            'noResultsText' => __('No suggestions found', 'gca-intranet'),
+        ]) . ';',
+        'before'
+    );
+    wp_add_inline_script('gca-search-autocomplete', <<<'JS'
+document.addEventListener("DOMContentLoaded", function () {
+    var config = window.gcaSearchAutocomplete || {};
+    var forms = document.querySelectorAll("[data-autocomplete='header-search']");
+
+    forms.forEach(function (form, formIndex) {
+        var input = form.querySelector("input[name='s']");
+        var panel = form.querySelector(".gca-search-autocomplete");
+
+        if (!input || !panel) {
+            return;
+        }
+
+        var listId = panel.id || ("gca-search-autocomplete-" + formIndex);
+        var abortController = null;
+        var debounceTimer = null;
+        var activeIndex = -1;
+        var suggestions = [];
+
+        panel.id = listId;
+        panel.setAttribute("role", "listbox");
+        input.setAttribute("aria-controls", listId);
+
+        function escapeHtml(value) {
+            return String(value).replace(/[&<>"']/g, function (char) {
+                return {
+                    "&": "&amp;",
+                    "<": "&lt;",
+                    ">": "&gt;",
+                    "\"": "&quot;",
+                    "'": "&#039;"
+                }[char];
+            });
+        }
+
+        function closePanel() {
+            activeIndex = -1;
+            suggestions = [];
+            input.removeAttribute("aria-activedescendant");
+            input.setAttribute("aria-expanded", "false");
+            panel.hidden = true;
+            panel.innerHTML = "";
+        }
+
+        function setActive(index) {
+            var options = panel.querySelectorAll(".gca-search-autocomplete__option");
+
+            options.forEach(function (option, optionIndex) {
+                var isActive = optionIndex === index;
+                option.classList.toggle("is-active", isActive);
+                option.setAttribute("aria-selected", isActive ? "true" : "false");
+
+                if (isActive) {
+                    input.setAttribute("aria-activedescendant", option.id);
+                }
+            });
+
+            if (index < 0 || !options[index]) {
+                input.removeAttribute("aria-activedescendant");
+            }
+        }
+
+        function renderStatus(message) {
+            activeIndex = -1;
+            suggestions = [];
+            input.removeAttribute("aria-activedescendant");
+            input.setAttribute("aria-expanded", "true");
+            panel.hidden = false;
+            panel.innerHTML = "<div class=\"gca-search-autocomplete__status\">" + escapeHtml(message) + "</div>";
+        }
+
+        function renderSuggestions(items) {
+            if (!items.length) {
+                renderStatus(config.noResultsText || "No suggestions found");
+                return;
+            }
+
+            suggestions = items;
+            activeIndex = -1;
+            input.removeAttribute("aria-activedescendant");
+            input.setAttribute("aria-expanded", "true");
+            panel.hidden = false;
+
+            var html = "<ul class=\"gca-search-autocomplete__list\">";
+            items.forEach(function (item, index) {
+                var optionId = listId + "-option-" + index;
+                var mediaHtml = item.image
+                    ? "<span class=\"gca-search-autocomplete__option-media\"><img src=\"" + escapeHtml(item.image) + "\" alt=\"\" class=\"gca-search-autocomplete__option-avatar\" loading=\"lazy\" decoding=\"async\"></span>"
+                    : "";
+                var bodyClass = item.image
+                    ? "gca-search-autocomplete__option-body has-avatar"
+                    : "gca-search-autocomplete__option-body";
+                html += "<li class=\"gca-search-autocomplete__item\">" +
+                    "<a href=\"" + escapeHtml(item.url) + "\" id=\"" + optionId + "\" class=\"gca-search-autocomplete__option\" role=\"option\" aria-selected=\"false\" data-index=\"" + index + "\">" +
+                    mediaHtml +
+                    "<span class=\"" + bodyClass + "\">" +
+                    "<span class=\"gca-search-autocomplete__option-title\">" + escapeHtml(item.title) + "</span>" +
+                    (item.meta ? "<span class=\"gca-search-autocomplete__option-meta\">" + escapeHtml(item.meta) + "</span>" : "") +
+                    "</span>" +
+                    "</a>" +
+                    "</li>";
+            });
+            html += "</ul>";
+            panel.innerHTML = html;
+        }
+
+        function fetchSuggestions(term) {
+            if (abortController) {
+                abortController.abort();
+            }
+
+            abortController = new AbortController();
+            renderStatus(config.loadingText || "Searching...");
+
+            var params = new URLSearchParams({
+                action: "gca_search_autocomplete",
+                term: term
+            });
+
+            fetch(config.ajaxUrl + "?" + params.toString(), {
+                method: "GET",
+                credentials: "same-origin",
+                signal: abortController.signal
+            })
+                .then(function (response) {
+                    if (!response.ok) {
+                        throw new Error("Request failed");
+                    }
+
+                    return response.json();
+                })
+                .then(function (payload) {
+                    var items = payload && payload.success && payload.data && payload.data.items
+                        ? payload.data.items
+                        : [];
+
+                    renderSuggestions(items);
+                })
+                .catch(function (error) {
+                    if (error && error.name === "AbortError") {
+                        return;
+                    }
+
+                    closePanel();
+                });
+        }
+
+        input.addEventListener("input", function () {
+            var value = input.value.trim();
+
+            if (value.length < (config.minChars || 3)) {
+                if (abortController) {
+                    abortController.abort();
+                }
+
+                window.clearTimeout(debounceTimer);
+                closePanel();
+                return;
+            }
+
+            window.clearTimeout(debounceTimer);
+            debounceTimer = window.setTimeout(function () {
+                fetchSuggestions(value);
+            }, 180);
+        });
+
+        input.addEventListener("keydown", function (event) {
+            if (panel.hidden || !suggestions.length) {
+                return;
+            }
+
+            if (event.key === "ArrowDown") {
+                event.preventDefault();
+                activeIndex = (activeIndex + 1) % suggestions.length;
+                setActive(activeIndex);
+                return;
+            }
+
+            if (event.key === "ArrowUp") {
+                event.preventDefault();
+                activeIndex = (activeIndex - 1 + suggestions.length) % suggestions.length;
+                setActive(activeIndex);
+                return;
+            }
+
+            if (event.key === "Enter" && activeIndex >= 0 && suggestions[activeIndex]) {
+                event.preventDefault();
+                window.location.href = suggestions[activeIndex].url;
+                return;
+            }
+
+            if (event.key === "Escape") {
+                closePanel();
+            }
+        });
+
+        panel.addEventListener("mousedown", function (event) {
+            if (!event.target.closest(".gca-search-autocomplete__option")) {
+                event.preventDefault();
+            }
+        });
+
+        form.addEventListener("focusout", function () {
+            window.setTimeout(function () {
+                if (!form.contains(document.activeElement)) {
+                    closePanel();
+                }
+            }, 120);
+        });
+
+        document.addEventListener("click", function (event) {
+            if (!form.contains(event.target)) {
+                closePanel();
+            }
+        });
+    });
+});
+JS
+    );
+
     // GOV.UK Frontend JS
     if (is_singular()) {
         $govuk_js_rel = '/assets/scripts/all.js';
@@ -423,6 +656,204 @@ function gca_search_truncate(string $str, int $length): string
     }
     return rtrim(mb_substr($str, 0, $length - 1)) . '…';
 }
+
+/**
+ * Build a compact autocomplete result set for the header search.
+ *
+ * @return array<int, array{title:string,meta:string,url:string,image?:string}>
+ */
+function gca_get_search_autocomplete_items(string $term, int $limit = 5): array
+{
+    $term = trim($term);
+    if (mb_strlen($term) < 3) {
+        return [];
+    }
+
+    $limit   = max(1, $limit);
+    $results = [];
+    $q_lower = mb_strtolower($term);
+
+    $score_text = static function (string $text) use ($q_lower): int {
+        $text = mb_strtolower(trim($text));
+        if ($text === '') {
+            return 0;
+        }
+        if ($text === $q_lower) {
+            return 100;
+        }
+        if (str_starts_with($text, $q_lower)) {
+            return 75;
+        }
+        if (str_contains($text, $q_lower)) {
+            return 50;
+        }
+
+        return 0;
+    };
+
+    if (
+        function_exists('gca_flag_enabled')
+        && gca_flag_enabled('staff-profiles')
+        && function_exists('gca_search_staff')
+    ) {
+        foreach (gca_search_staff($term, $limit) as $result) {
+            $role_line = trim(implode(' | ', array_filter([
+                (string) ($result->job_title ?? ''),
+                (string) ($result->team ?? ''),
+            ])));
+
+            $results[] = [
+                'title'    => (string) $result->display_name,
+                'meta'     => $role_line !== ''
+                    ? sprintf(__('Staff profile - %s', 'gca-intranet'), $role_line)
+                    : __('Staff profile', 'gca-intranet'),
+                'url'      => (string) $result->profile_url,
+                'image'    => (string) ($result->avatar_url ?? ''),
+                'score'    => max(
+                    $score_text((string) $result->display_name),
+                    $score_text((string) ($result->job_title ?? '')) > 0 ? 20 : 0,
+                    $score_text((string) ($result->team ?? '')) > 0 ? 10 : 0,
+                    10
+                ),
+                'sort_key' => (string) $result->display_name,
+            ];
+        }
+    }
+
+    $post_types = array_values(array_diff(
+        array_keys(get_post_types(['public' => true, 'exclude_from_search' => false])),
+        ['news']
+    ));
+
+    $posts = get_posts([
+        's'                   => $term,
+        'post_type'           => $post_types,
+        'post_status'         => 'publish',
+        'posts_per_page'      => max(10, $limit),
+        'orderby'             => 'relevance',
+        'order'               => 'DESC',
+        'suppress_filters'    => false,
+        'ignore_sticky_posts' => true,
+    ]);
+
+    foreach ($posts as $post) {
+        $title = get_the_title($post);
+        if ($title === '') {
+            continue;
+        }
+
+        $post_type = get_post_type($post);
+        $meta      = __('Content', 'gca-intranet');
+
+        if ($post_type === 'page') {
+            $meta = __('Page', 'gca-intranet');
+            $ct_terms = get_the_terms($post->ID, 'content_type');
+            if (!empty($ct_terms) && !is_wp_error($ct_terms)) {
+                $meta = $ct_terms[0]->name;
+            }
+        } else {
+            $post_type_object = get_post_type_object((string) $post_type);
+            if ($post_type_object) {
+                $meta = $post_type_object->labels->singular_name;
+            }
+        }
+
+        $results[] = [
+            'title'    => $title,
+            'meta'     => $meta,
+            'url'      => (string) get_permalink($post),
+            'score'    => max($score_text($title), 10),
+            'sort_key' => $title,
+        ];
+    }
+
+    usort($results, static function (array $a, array $b): int {
+        if ($b['score'] !== $a['score']) {
+            return $b['score'] <=> $a['score'];
+        }
+
+        return strcasecmp($a['sort_key'], $b['sort_key']);
+    });
+
+    $results = array_values(array_reduce($results, static function (array $carry, array $item): array {
+        $key = mb_strtolower($item['title']) . '|' . untrailingslashit($item['url']);
+        if (!isset($carry[$key])) {
+            $carry[$key] = $item;
+        }
+
+        return $carry;
+    }, []));
+
+    return array_map(static function (array $item): array {
+        return [
+            'title' => $item['title'],
+            'meta'  => $item['meta'],
+            'url'   => $item['url'],
+            'image' => $item['image'] ?? '',
+        ];
+    }, array_slice($results, 0, $limit));
+}
+
+/**
+ * Highlight search terms within a plain-text excerpt.
+ */
+function gca_highlight_search_excerpt(string $text, string $query): string
+{
+    $text  = wp_strip_all_tags($text);
+    $query = trim($query);
+
+    if ($text === '' || $query === '') {
+        return esc_html($text);
+    }
+
+    $parts = preg_split('/\s+/', $query) ?: [];
+    $parts = array_values(array_unique(array_filter(array_map('trim', $parts))));
+
+    if ($parts === []) {
+        return esc_html($text);
+    }
+
+    usort($parts, static fn (string $a, string $b): int => mb_strlen($b) <=> mb_strlen($a));
+
+    $pattern = '/(' . implode('|', array_map(static fn (string $part): string => preg_quote($part, '/'), $parts)) . ')/iu';
+    $segments = preg_split($pattern, $text, -1, PREG_SPLIT_DELIM_CAPTURE);
+
+    if ($segments === false) {
+        return esc_html($text);
+    }
+
+    $html = '';
+
+    foreach ($segments as $segment) {
+        if ($segment === '') {
+            continue;
+        }
+
+        if (preg_match($pattern, $segment) === 1) {
+            $html .= '<strong>' . esc_html($segment) . '</strong>';
+            continue;
+        }
+
+        $html .= esc_html($segment);
+    }
+
+    return $html;
+}
+
+/**
+ * AJAX endpoint for header search autocomplete.
+ */
+function gca_ajax_search_autocomplete(): void
+{
+    $term = isset($_GET['term']) ? sanitize_text_field(wp_unslash((string) $_GET['term'])) : '';
+
+    wp_send_json_success([
+        'items' => gca_get_search_autocomplete_items($term, 5),
+    ]);
+}
+
+add_action('wp_ajax_gca_search_autocomplete', 'gca_ajax_search_autocomplete');
+add_action('wp_ajax_nopriv_gca_search_autocomplete', 'gca_ajax_search_autocomplete');
 
 function gca_clean_post_excerpt(int $length = 320): string
 {
