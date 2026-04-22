@@ -213,8 +213,17 @@ Each feature file lives in `wp-content/themes/gca-intranet-foundation/inc/featur
 | `cron-manager` | Cron Manager | Admin interface (Tools → Cron Jobs) to view, create, edit, delete, and manually run WordPress cron jobs. | — |
 | `workday-user-sync` | Workday User Sync | Syncs WordPress users with the Workday staff list API. Schedule via Tools → Cron Jobs or run manually with `wp gca sync-users`. | `gca_sync_workday_users` |
 | `google-profile-picture` | Google Profile Picture Sync | Downloads the user's Google profile picture on each SSO login and uses it as their avatar across the site. Generated letter-avatars (Google's default when no real photo is set) are automatically discarded using GD colour analysis — only genuine photographs are stored. Run `wp gca sync-profile-pictures` to retroactively clean up any letter-avatars stored before this check was added. Requires `GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET` in `.env`. | — |
-| `purge-events` | Purge Events | Permanently deletes event posts more than one month after their end date (or start date if no end date is set). Schedule via Tools → Cron Jobs or run manually with `wp gca purge-events`. | `gca_purge_events` |
+| `purge-events` | Purge Events | Archives event posts more than one month after their end date (or start date if no end date is set) by moving them to the `gca_archived` post status. Archived events are hidden from the frontend but remain recoverable in the admin. Schedule via Tools → Cron Jobs or run manually with `wp gca purge-events`. | `gca_purge_events` |
 | `author-selector` | Author Selector | Replaces the default WordPress author meta box on `blog` and `work_update` posts with a searchable Select2 dropdown. Each option shows the user's profile image (Google SSO photo → Gravatar → WP default). All users are pre-loaded as inline JSON — no AJAX required. | — |
+
+### Purge Events — implementation notes
+
+The `purge-events` feature archives rather than hard-deletes old event posts. Key details:
+
+- **Custom post status** — `register_archived_status()` registers `gca_archived` on the WordPress `init` hook with `public: false` and `exclude_from_search: true`, so archived events are invisible on the frontend but visible in the admin under a separate **Archived** status filter.
+- **Archive instead of delete** — `wp_delete_post( $post_id, true )` has been replaced with `wp_update_post( ['ID' => $post_id, 'post_status' => 'gca_archived'] )`, making the operation fully reversible.
+- **No double-processing** — the query that selects events to evaluate is scoped to `['publish', 'private', 'draft']`, so events already in `gca_archived` are naturally excluded from subsequent cron runs.
+- **Stats & logs** — all log messages and the stats array use `archived` (was `deleted`) to reflect the new behaviour.
 
 ---
 
