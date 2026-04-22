@@ -53,6 +53,63 @@ add_action('init', function (): void {
 });
 
 /**
+ * Build a normalized staff profile payload from wp_usermeta-backed fields.
+ *
+ * @return array<string, mixed>|null
+ */
+function gca_get_staff_profile_data(WP_User $user): ?array
+{
+    $job_title  = trim((string) get_user_meta($user->ID, 'job_title', true));
+    $team       = trim((string) get_user_meta($user->ID, 'team', true));
+    $avatar_url = trim((string) get_user_meta($user->ID, 'google_profile_picture_local_url', true));
+
+    if ($avatar_url === '') {
+        $avatar_url = get_avatar_url($user->ID, ['size' => 120]);
+    }
+
+    return [
+        'user'         => $user,
+        'display_name' => $user->display_name ?: $user->user_login,
+        'email'        => $user->user_email,
+        'job_title'    => $job_title,
+        'team'         => $team,
+        'avatar_url'   => $avatar_url,
+        'profile_url'  => home_url('/profile/' . rawurlencode($user->user_login) . '/'),
+    ];
+}
+
+/**
+ * Resolve a staff user from the /profile/<username> segment.
+ *
+ * Supports both user_login (preferred) and legacy user_nicename URLs.
+ */
+function gca_get_staff_user_by_profile_slug(string $slug): ?WP_User
+{
+    $slug = sanitize_user(rawurldecode(wp_unslash($slug)), false);
+    if ($slug === '') {
+        return null;
+    }
+
+    $candidates = [];
+
+    $by_login = get_user_by('login', $slug);
+    if ($by_login instanceof WP_User) {
+        $candidates[] = $by_login;
+    }
+
+    $by_slug = get_user_by('slug', $slug);
+    if ($by_slug instanceof WP_User && $by_slug->ID !== ($by_login->ID ?? 0)) {
+        $candidates[] = $by_slug;
+    }
+
+    foreach ($candidates as $candidate) {
+        return $candidate;
+    }
+
+    return null;
+}
+
+/**
  * Search users by display name, job title, or team.
  *
  * @param  string $query  Raw search term.
@@ -116,20 +173,18 @@ function gca_search_staff(string $query, int $limit = 5): array
             continue;
         }
 
-        $avatar_url = (string) get_user_meta($user->ID, 'google_profile_picture_local_url', true);
-        if (empty($avatar_url)) {
-            $avatar_url = get_avatar_url($user->ID, ['size' => 64]);
+        $profile = gca_get_staff_profile_data($user);
+        if ($profile === null) {
+            continue;
         }
 
-        $results[] = (object) [
-            'user'         => $user,
-            'display_name' => $user->display_name ?: $user->user_login,
-            'email'        => $user->user_email,
-            'job_title'    => (string) get_user_meta($user->ID, 'job_title', true),
-            'team'         => (string) get_user_meta($user->ID, 'team', true),
-            'avatar_url'   => $avatar_url,
-            'profile_url'  => home_url('/profile/' . $user->user_nicename . '/'),
-        ];
+        $profile['avatar_url'] = get_avatar_url($user->ID, ['size' => 64]);
+        $google_avatar_url     = trim((string) get_user_meta($user->ID, 'google_profile_picture_local_url', true));
+        if ($google_avatar_url !== '') {
+            $profile['avatar_url'] = $google_avatar_url;
+        }
+
+        $results[] = (object) $profile;
     }
 
     return $results;
