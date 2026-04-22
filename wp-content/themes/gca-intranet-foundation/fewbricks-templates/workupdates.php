@@ -1,38 +1,42 @@
 <?php
 /**
  * Fewbricks Template: Work Updates
- * Fields: workupdates_workupdates_title, _description, _count, _see_more_text, _see_more_url
+ * Fields: workupdates_workupdates_title, _description, _count, _selected_posts, _see_more_text, _see_more_url
  */
 $title         = $row['workupdates_workupdates_title']         ?? 'Work updates';
 $description   = $row['workupdates_workupdates_description']   ?? 'Highlights from across the organisation.';
 $count         = (int) ( $row['workupdates_workupdates_count']         ?? 2 );
+$selected_posts = $row['workupdates_workupdates_selected_posts']       ?? [];
 $see_more_text = $row['workupdates_workupdates_see_more_text'] ?? 'More work updates';
 $see_more_url  = $row['workupdates_workupdates_see_more_url']  ?? '/work_update/';
 
-$count = max( 1, $count );
+$count        = max( 1, $count );
+$title        = trim((string) $title);
+$description  = trim((string) $description);
+$has_header   = ($title !== '' || $description !== '');
+$work_updates = gca_get_selected_or_latest_posts( 'work_update', is_array( $selected_posts ) ? $selected_posts : [], $count );
 ?>
 
 <div class="govuk-grid-column-two-thirds gca-right-line" data-testid="work-updates-column">
-    <div class="gca-homepage-section-title" data-testid="work-updates-header">
-        <h2 class="govuk-heading-m gca-clamp-2" data-testid="work-updates-heading">
-            <?php echo esc_html( $title ); ?>
-        </h2>
-        <p class="govuk-body" data-testid="work-updates-subheading">
-            <?php echo esc_html( $description ); ?>
-        </p>
-    </div>
+    <?php if ( $has_header ) : ?>
+        <div class="gca-homepage-section-title" data-testid="work-updates-header">
+            <?php if ( $title !== '' ) : ?>
+                <h2 class="govuk-heading-m gca-clamp-2" data-testid="work-updates-heading">
+                    <?php echo esc_html( $title ); ?>
+                </h2>
+            <?php endif; ?>
+            <?php if ( $description !== '' ) : ?>
+                <p class="govuk-body" data-testid="work-updates-subheading">
+                    <?php echo esc_html( $description ); ?>
+                </p>
+            <?php endif; ?>
+        </div>
+    <?php endif; ?>
 
     <div class="govuk-grid-row gca-equal-height-row" data-testid="work-updates-section">
-        <?php
-        $work_updates = new WP_Query( [
-            'post_type'      => 'work_update',
-            'posts_per_page' => $count,
-        ] );
-
-        if ( $work_updates->have_posts() ) :
-            while ( $work_updates->have_posts() ) :
-                $work_updates->the_post();
-                ?>
+        <?php if ( ! empty( $work_updates ) ) : ?>
+            <?php foreach ( $work_updates as $work_update_post ) : ?>
+                <?php setup_postdata( $work_update_post ); ?>
                 <div class="govuk-grid-column-one-half gca-work-update-card" data-testid="work-update-card">
                     <div class="govuk-grid-row gca-work-updates" data-testid="work-update-row">
                         <div class="govuk-grid-column-one-third" data-testid="work-update-avatar">
@@ -53,11 +57,9 @@ $count = max( 1, $count );
                         </div>
                     </div>
                 </div>
-                <?php
-            endwhile;
-        endif;
-        wp_reset_postdata();
-        ?>
+            <?php endforeach; ?>
+            <?php wp_reset_postdata(); ?>
+        <?php endif; ?>
 
         <?php if ( $see_more_url ) : ?>
             <div class="see-more-link-homepage" data-testid="work-updates-see-more">

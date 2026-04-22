@@ -1370,6 +1370,68 @@ function gca_sanitize_home_desc_40($value): string {
 }
 endif;
 
+if (!function_exists('gca_get_selected_or_latest_posts')):
+function gca_get_selected_or_latest_posts(string $post_type, array $selected_posts, int $count, array $extra_args = []): array {
+    $ordered_posts = [];
+    $seen_ids      = [];
+
+    foreach ($selected_posts as $selected_post) {
+        if ($selected_post instanceof \WP_Post) {
+            $selected_id = (int) $selected_post->ID;
+        } else {
+            $selected_id = absint($selected_post);
+        }
+
+        if ($selected_id > 0 && !in_array($selected_id, $seen_ids, true)) {
+            $seen_ids[] = $selected_id;
+        }
+    }
+
+    if (!empty($seen_ids)) {
+        $selected_posts = get_posts(array_merge($extra_args, [
+            'post_type'              => $post_type,
+            'post_status'            => 'publish',
+            'posts_per_page'         => count($seen_ids),
+            'post__in'               => $seen_ids,
+            'orderby'                => 'post__in',
+            'no_found_rows'          => true,
+            'update_post_meta_cache' => true,
+            'update_post_term_cache' => true,
+        ]));
+
+        $selected_posts_by_id = [];
+        foreach ($selected_posts as $selected_post) {
+            $selected_posts_by_id[$selected_post->ID] = $selected_post;
+        }
+
+        foreach ($seen_ids as $seen_id) {
+            if (isset($selected_posts_by_id[$seen_id])) {
+                $ordered_posts[] = $selected_posts_by_id[$seen_id];
+            }
+        }
+    }
+
+    $remaining = max(0, $count - count($ordered_posts));
+    if ($remaining > 0) {
+        $fallback_posts = get_posts(array_merge($extra_args, [
+            'post_type'              => $post_type,
+            'post_status'            => 'publish',
+            'posts_per_page'         => $remaining,
+            'post__not_in'           => array_map(static fn ($post) => (int) $post->ID, $ordered_posts),
+            'orderby'                => 'date',
+            'order'                  => 'DESC',
+            'no_found_rows'          => true,
+            'update_post_meta_cache' => true,
+            'update_post_term_cache' => true,
+        ]));
+
+        $ordered_posts = array_merge($ordered_posts, $fallback_posts);
+    }
+
+    return array_slice($ordered_posts, 0, $count);
+}
+endif;
+
 add_action('customize_register', function (\WP_Customize_Manager $wp_customize): void {
 
     $section = 'gca_homepage_options';

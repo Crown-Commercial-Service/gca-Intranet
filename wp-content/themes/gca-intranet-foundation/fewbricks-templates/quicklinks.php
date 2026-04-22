@@ -3,40 +3,57 @@
  * Fewbricks Template: Quick Links
  * Fields: quicklinks_quicklinks_title, _description, _links (repeater: text, url)
  */
+$row   = is_array($row ?? null) ? $row : [];
 $title = $row['quicklinks_quicklinks_title']       ?? 'Quick links';
 $desc  = $row['quicklinks_quicklinks_description'] ?? '';
 $links = $row['quicklinks_quicklinks_links']       ?? [];
+$title = trim((string) $title);
+$desc  = trim((string) $desc);
 
-// Normalise: filter out any rows missing both text and url
-$links = array_filter( $links, function ( $link ) {
-    return ! empty( trim( (string) ( $link['links_text'] ?? '' ) ) )
-        && ! empty( trim( (string) ( $link['links_url'] ?? '' ) ) );
-} );
+if (! is_array($links)) {
+    $links = [];
+}
+
+// Normalise: filter out any rows missing either text or url.
+$links = array_filter($links, function ($link) {
+    if (! is_array($link)) {
+        return false;
+    }
+
+    return ! empty(trim((string) ($link['links_text'] ?? '')))
+        && ! empty(trim((string) ($link['links_url'] ?? '')));
+});
 
 if ( empty( $links ) ) {
     return;
 }
+
+$has_header = ($title !== '' || $desc !== '');
 ?>
 
 <div class="gca-quick-links" data-testid="quick-links">
 
-    <div class="gca-homepage-section-title" data-testid="quick-links-header">
-        <h2 class="govuk-heading-m gca-clamp-2" data-testid="quick-links-heading">
-            <?php echo esc_html( $title ); ?>
-        </h2>
-        <?php if ( $desc ) : ?>
-            <p class="govuk-body" data-testid="quick-links-subheading">
-                <?php echo esc_html( $desc ); ?>
-            </p>
-        <?php endif; ?>
-    </div>
+    <?php if ( $has_header ) : ?>
+        <div class="gca-homepage-section-title" data-testid="quick-links-header">
+            <?php if ( $title !== '' ) : ?>
+                <h2 class="govuk-heading-m gca-clamp-2" data-testid="quick-links-heading">
+                    <?php echo esc_html( $title ); ?>
+                </h2>
+            <?php endif; ?>
+            <?php if ( $desc !== '' ) : ?>
+                <p class="govuk-body" data-testid="quick-links-subheading">
+                    <?php echo esc_html( $desc ); ?>
+                </p>
+            <?php endif; ?>
+        </div>
+    <?php endif; ?>
 
     <div class="gca-quick-links__list" data-testid="quick-links-list">
-        <?php foreach ( $links as $link ) : ?>
+        <?php foreach ($links as $link) : ?>
             <a class="gca-quick-links__item govuk-link"
-                href="<?php echo esc_url( $link['links_url'] ); ?>"
+                href="<?php echo esc_url($link['links_url'] ?? ''); ?>"
                 data-testid="quick-links-item">
-                <span class="gca-quick-links__text"><?php echo esc_html( $link['links_text'] ); ?></span>
+                <span class="gca-quick-links__text"><?php echo esc_html($link['links_text'] ?? ''); ?></span>
                 <svg class="gca-quick-links__chevron"
                     xmlns="http://www.w3.org/2000/svg"
                     width="16"
