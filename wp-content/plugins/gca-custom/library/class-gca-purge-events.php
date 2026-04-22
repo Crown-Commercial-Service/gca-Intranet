@@ -5,7 +5,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 /**
- * Deletes event posts that ended (or started) more than one month ago.
+ * Archives event posts that ended (or started) more than one month ago.
  *
  * Registers the WordPress cron hook `gca_purge_events` so it can be
  * scheduled via the Cron Jobs admin page (Tools → Cron Jobs). To schedule it,
@@ -13,11 +13,12 @@ if ( ! defined( 'ABSPATH' ) ) {
  *
  * Also registers the WP-CLI command `wp gca purge-events` for manual runs.
  *
- * Deletion logic:
+ * Archive logic:
  *  - If the event has an `end_date`, that date is used as the reference.
  *  - If `end_date` is absent or unparseable, `start_date` is used instead.
  *  - Events whose reference date is more than one month in the past are
- *    permanently deleted (i.e. bypassing the trash).
+ *    moved to the custom `gca_archived` post status so they no longer appear
+ *    on the frontend but remain recoverable in the admin.
  *  - Events with no parseable date are skipped and logged.
  *
  * ACF storage formats used by this plugin:
@@ -26,18 +27,32 @@ if ( ! defined( 'ABSPATH' ) ) {
  */
 class GCA_Purge_Events {
 
-    const CRON_HOOK = 'gca_purge_events';
+    const CRON_HOOK       = 'gca_purge_events';
+    const ARCHIVED_STATUS = 'gca_archived';
 
     // -------------------------------------------------------------------------
     // Bootstrap
     // -------------------------------------------------------------------------
 
     public static function init(): void {
+        self::register_archived_status();
         add_action( self::CRON_HOOK, [ __CLASS__, 'run' ] );
 
         if ( defined( 'WP_CLI' ) && WP_CLI ) {
             WP_CLI::add_command( 'gca purge-events', [ __CLASS__, 'cli_command' ] );
         }
+    }
+
+    public static function register_archived_status(): void {
+        register_post_status( self::ARCHIVED_STATUS, [
+            'label'                     => _x( 'Archived', 'post status', 'gca' ),
+            'public'                    => false,
+            'exclude_from_search'       => true,
+            'show_in_admin_all_list'    => false,
+            'show_in_admin_status_list' => true,
+            /* translators: %s: number of archived events */
+            'label_count'               => _n_noop( 'Archived <span class="count">(%s)</span>', 'Archived <span class="count">(%s)</span>', 'gca' ),
+        ] );
     }
 
     // -------------------------------------------------------------------------
@@ -50,7 +65,7 @@ class GCA_Purge_Events {
      * ## OPTIONS
      *
      * [--dry-run]
-     * : List events that would be deleted without actually deleting them.
+     * : List events that would be archived without actually archiving them.
      *
      * ## EXAMPLES
      *
@@ -63,10 +78,10 @@ class GCA_Purge_Events {
         $dry_run = (bool) \WP_CLI\Utils\get_flag_value( $assoc_args, 'dry-run', false );
 
         if ( $dry_run ) {
-            WP_CLI::log( 'Dry-run mode enabled — no events will be deleted.' );
+            WP_CLI::log( 'Dry-run mode enabled — no events will be archived.' );
         }
 
-        WP_CLI::log( 'Starting event purge…' );
+        WP_CLI::log( 'Starting event archive…' );
 
         try {
             $stats = self::purge(
@@ -77,8 +92,8 @@ class GCA_Purge_Events {
             );
 
             WP_CLI::success( sprintf(
-                'Purge complete. Deleted: %d, Skipped: %d.',
-                $stats['deleted'],
+                'Archive complete. Archived: %d, Skipped: %d.',
+                $stats['archived'],
                 $stats['skipped']
             ) );
         } catch ( Exception $e ) {
@@ -106,8 +121,8 @@ class GCA_Purge_Events {
             } );
 
             $summary = sprintf(
-                'Complete. Deleted: %d, Skipped: %d.',
-                $stats['deleted'],
+                'Complete. Archived: %d, Skipped: %d.',
+                $stats['archived'],
                 $stats['skipped']
             );
             $log_lines[] = $summary;
@@ -128,8 +143,8 @@ class GCA_Purge_Events {
 
     /**
      * @param callable|null $logger  Receives log message strings.
-     * @param bool          $dry_run When true, events are logged but not deleted.
-     * @return array{deleted:int, skipped:int}
+     * @param bool          $dry_run When true, events are logged but not archived.
+     * @return array{archived:int, skipped:int}
      */
     private static function purge( ?callable $logger = null, bool $dry_run = false ): array {
         $log = $logger ?? static function ( string $message ): void {
@@ -137,8 +152,8 @@ class GCA_Purge_Events {
         };
 
         $stats = [
-            'deleted' => 0,
-            'skipped' => 0,
+            'archived' => 0,
+            'skipped'  => 0,
         ];
 
         $threshold = new DateTime( '-1 month' );
@@ -173,16 +188,19 @@ class GCA_Purge_Events {
 
             if ( $dry_run ) {
                 $log( sprintf(
-                    '[dry-run] Would delete event #%d "%s" (%s: %s).',
+                    '[dry-run] Would archive event #%d "%s" (%s: %s).',
                     $post_id,
                     $title,
                     $reference_field,
                     $reference_date->format( 'd-m-Y' )
                 ) );
             } else {
-                wp_delete_post( $post_id, true );
+                wp_update_post( [
+                    'ID'          => $post_id,
+                    'post_status' => self::ARCHIVED_STATUS,
+                ] );
                 $log( sprintf(
-                    'Deleted event #%d "%s" (%s: %s).',
+                    'Archived event #%d "%s" (%s: %s).',
                     $post_id,
                     $title,
                     $reference_field,
@@ -190,7 +208,7 @@ class GCA_Purge_Events {
                 ) );
             }
 
-            $stats['deleted']++;
+            $stats['archived']++;
         }
 
         return $stats;
