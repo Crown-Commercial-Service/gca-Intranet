@@ -1869,18 +1869,6 @@ function gca_get_event_datetime( $return = 'dates', $post_id = null ) {
 }
 endif;
 
-add_filter('theme_page_templates', function($post_templates, $theme, $post, $post_type) {
-    $target_file = 'template-layout-1col.php';
-
-    foreach ( $post_templates as $file => $name ) {
-        if ( $file === $target_file || substr($file, -strlen($target_file)) === $target_file ) {
-            unset($post_templates[$file]);
-        }
-    }
-
-    return $post_templates;
-}, 9999, 4);
-
 if (!function_exists('gca_show_all_screen_options')):
 function gca_show_all_screen_options($hidden, $screen) {
     if (isset($screen->base) && $screen->base === 'post') {
