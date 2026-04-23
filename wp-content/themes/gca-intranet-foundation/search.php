@@ -176,7 +176,7 @@ get_template_part('template-parts/hero', null, [
                       </div>
                       <div class="gca-staff-result__body">
                         <?php if ($role_line) : ?>
-                          <p class="govuk-body govuk-!-margin-bottom-1"><?php echo esc_html($role_line); ?></p>
+                          <p class="govuk-body govuk-!-margin-bottom-1"><?php echo gca_highlight_search_excerpt($role_line, $search_query); ?></p>
                         <?php endif; ?>
                         <?php if ($result->email) : ?>
                           <p class="govuk-body-s govuk-!-margin-bottom-0" style="color:#505a5f;"><?php echo esc_html($result->email); ?></p>
@@ -211,7 +211,7 @@ get_template_part('template-parts/hero', null, [
 
                     <?php if ($excerpt) : ?>
                       <p class="govuk-body govuk-!-margin-bottom-2" data-testid="search-result-excerpt">
-                        <?php echo esc_html($excerpt); ?>
+                        <?php echo gca_highlight_search_excerpt($excerpt, $search_query); ?>
                       </p>
                     <?php endif; ?>
 
@@ -294,7 +294,7 @@ get_template_part('template-parts/hero', null, [
 
                   <?php if ($excerpt) : ?>
                     <p class="govuk-body govuk-!-margin-bottom-2" data-testid="search-result-excerpt">
-                      <?php echo esc_html($excerpt); ?>
+                      <?php echo gca_highlight_search_excerpt($excerpt, $search_query); ?>
                     </p>
                   <?php endif; ?>
 

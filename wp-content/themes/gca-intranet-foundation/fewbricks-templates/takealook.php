@@ -8,17 +8,24 @@ $desc      = $row['takealook_takealook_description'] ?? '';
 $link_text = $row['takealook_takealook_link_text'] ?? 'Learn more';
 $link_url  = $row['takealook_takealook_link_url']  ?? '';
 
-$has_link = ! empty( trim( $link_url ) );
+$title      = trim((string) $title);
+$desc       = trim((string) $desc);
+$has_header = ($title !== '' || $desc !== '');
+$has_link   = ! empty( trim( $link_url ) );
 ?>
 
 <div class="govuk-grid-column-one-third" data-testid="take-a-look-column">
 
-    <div class="gca-homepage-section-title" data-testid="take-a-look-header">
-        <h2 class="govuk-heading-m" data-testid="take-a-look-heading"><?php echo esc_html( $title ); ?></h2>
-        <?php if ( $desc ) : ?>
-            <p class="govuk-body" data-testid="take-a-look-subheading"><?php echo esc_html( $desc ); ?></p>
-        <?php endif; ?>
-    </div>
+    <?php if ( $has_header ) : ?>
+        <div class="gca-homepage-section-title" data-testid="take-a-look-header">
+            <?php if ( $title !== '' ) : ?>
+                <h2 class="govuk-heading-m" data-testid="take-a-look-heading"><?php echo esc_html( $title ); ?></h2>
+            <?php endif; ?>
+            <?php if ( $desc !== '' ) : ?>
+                <p class="govuk-body" data-testid="take-a-look-subheading"><?php echo esc_html( $desc ); ?></p>
+            <?php endif; ?>
+        </div>
+    <?php endif; ?>
 
     <div class="govuk-grid-row" data-testid="take-a-look-section">
         <div class="govuk-grid-column-full">
