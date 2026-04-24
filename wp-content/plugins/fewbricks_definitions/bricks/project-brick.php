@@ -7,6 +7,8 @@
 
 namespace fewbricks\bricks;
 
+use fewbricks\acf\fields as acf_fields;
+
 /**
  * Class project_brick
  * @package fewbricks\bricks
@@ -37,7 +39,16 @@ class project_brick extends brick
      */
     public function set_project_fields()
     {
-
+        $this->add_field(new acf_fields\select('Layout width', 'layout_width', '202604240001a', [
+            'instructions'  => 'Choose whether this component takes up the full row or sits alongside another half-width component.',
+            'choices'       => [
+                'full' => 'Full width',
+                'half' => 'Half width (50/50)',
+            ],
+            'default_value' => 'full',
+            'allow_null'    => 0,
+            'ui'            => 1,
+        ]));
     }
 
     /**
