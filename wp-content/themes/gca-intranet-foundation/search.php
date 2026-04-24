@@ -192,7 +192,7 @@ get_template_part('template-parts/hero', null, [
 
                   $content_type = gca_search_get_content_type_label();
                   $title        = gca_search_truncate(get_the_title(), 85);
-                  $excerpt      = gca_search_truncate(get_the_excerpt(), 125);
+                  $excerpt      = gca_search_context_excerpt($search_query);
                   $terms        = gca_search_get_post_terms();
                 ?>
 
@@ -275,7 +275,7 @@ get_template_part('template-parts/hero', null, [
 
                 $content_type = gca_search_get_content_type_label();
                 $title        = gca_search_truncate(get_the_title(), 85);
-                $excerpt      = gca_search_truncate(get_the_excerpt(), 125);
+                $excerpt      = gca_search_context_excerpt($search_query);
                 $terms        = gca_search_get_post_terms();
               ?>
 
