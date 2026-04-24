@@ -22,11 +22,26 @@ class component_events extends project_brick
             'maxlength'     => 50,
         ] ) );
 
+        $this->add_field( new acf_fields\textarea( 'Section description', 'description', '202604240010a', [
+            'instructions' => 'Short description shown below the heading. Leave empty to hide it and remove the underline.',
+            'maxlength'    => 120,
+            'rows'         => 2,
+            'new_lines'    => '',
+        ] ) );
+
         $this->add_field( new acf_fields\number( 'Event count', 'count', '202604100030a', [
-            'instructions'  => 'Number of upcoming events to display.',
+            'instructions'  => 'Number of upcoming events to display automatically. Ignored when specific events are chosen below.',
             'default_value' => 3,
             'min'           => 1,
             'max'           => 9,
+        ] ) );
+
+        $this->add_field( new acf_fields\relationship( 'Featured events', 'pinned_events', '202604240011a', [
+            'instructions'  => 'Optionally pick specific events to display. When set, overrides the event count above and shows exactly these events.',
+            'post_type'     => [ 'event' ],
+            'filters'       => [ 'search' ],
+            'max'           => 9,
+            'return_format' => 'id',
         ] ) );
 
         $this->add_field( new acf_fields\text( '"See more" link text', 'see_more_text', '202604100031a', [
