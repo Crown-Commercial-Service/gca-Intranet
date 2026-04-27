@@ -43,11 +43,11 @@ $work_updates = gca_get_selected_or_latest_posts( 'work_update', is_array( $sele
                             <?php echo gca_get_author_image_html( get_the_ID(), (int) get_the_author_meta( 'ID' ) ); ?>
                         </div>
                         <div class="govuk-grid-column-two-thirds" data-testid="work-update-content">
-                            <h3 class="govuk-heading-s" data-testid="work-update-title">
+                            <h4 class="govuk-heading-s" data-testid="work-update-title">
                                 <a class="govuk-link govuk-!-text-break-word" href="<?php the_permalink(); ?>" data-testid="work-update-link">
                                     <?php echo esc_html( get_the_title() ); ?>
                                 </a>
-                            </h3>
+                            </h4>
                             <p class="govuk-body-s" data-testid="work-update-author">
                                 By <?php echo esc_html( get_the_author() ); ?>
                             </p>

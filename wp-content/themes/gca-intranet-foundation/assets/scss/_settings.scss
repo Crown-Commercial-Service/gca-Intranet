@@ -321,7 +321,7 @@ main.govuk-main-wrapper {
       font-size: 48px !important;
     }
 
-    h1, h2, h3 {
+    h1, h2, h3, h4 {
         font-weight: 700 !important;
     }
 
@@ -334,6 +334,10 @@ main.govuk-main-wrapper {
     }
 
     h3, h3.govuk-heading-l {
+        font-size: 22px !important;
+    }
+
+    h4, h4.govuk-heading-l {
         font-size: 19px !important;
     }
 

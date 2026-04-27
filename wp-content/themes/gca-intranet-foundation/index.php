@@ -44,11 +44,11 @@
                                         <?php endif; ?>
 
                                         <div data-testid="latest-news-featured-content">
-                                            <h3 class="govuk-heading-m" data-testid="latest-news-featured-title">
+                                            <h4 class="govuk-heading-m" data-testid="latest-news-featured-title">
                                                 <a data-testid="latest-news-featured-link" href="<?php the_permalink(); ?>">
                                                     <?php the_title(); ?>
                                                 </a>
-                                            </h3>
+                                            </h4>
 
                                             <p data-testid="latest-news-featured-excerpt">
                                                 <?php echo wp_trim_words(get_the_excerpt(), 32, '...'); ?>
@@ -90,13 +90,13 @@
 
                                             <div class="govuk-grid-column-two-third gca-flex-box-news"
                                                 data-testid="latest-news-secondary-content">
-                                                <h3 class="govuk-heading-s govuk-!-margin-bottom-1"
+                                                <h4 class="govuk-heading-s govuk-!-margin-bottom-1"
                                                     data-testid="latest-news-secondary-title">
                                                     <a data-testid="latest-news-secondary-link"
                                                         href="<?php the_permalink(); ?>">
                                                         <?php the_title(); ?>
                                                     </a>
-                                                </h3>
+                                                </h4>
 
                                                 <p data-testid="latest-news-secondary-excerpt">
                                                     <?php echo wp_trim_words(get_the_excerpt(), 12, '...'); ?>
@@ -178,11 +178,11 @@
                                                 </div>
 
                                                 <div class="govuk-grid-column-two-thirds" data-testid="work-update-content">
-                                                    <h3 class="govuk-heading-s" data-testid="work-update-title">
+                                                    <h4 class="govuk-heading-s" data-testid="work-update-title">
                                                         <a href="<?php the_permalink(); ?>" data-testid="work-update-link">
                                                             <?php the_title(); ?>
                                                         </a>
-                                                    </h3>
+                                                    </h4>
 
                                                     <p data-testid="work-update-author">By
                                                         <?php echo get_the_author(); ?>
@@ -246,11 +246,11 @@
                                                 </div>
 
                                                 <div class="govuk-grid-column-two-thirds" data-testid="blogs-content">
-                                                    <h3 class="govuk-heading-s" data-testid="blogs-title">
+                                                    <h4 class="govuk-heading-s" data-testid="blogs-title">
                                                         <a data-testid="blogs-link" href="<?php the_permalink(); ?>">
                                                             <?php the_title(); ?>
                                                         </a>
-                                                    </h3>
+                                                    </h4>
 
                                                     <p data-testid="blogs-author">By
                                                         <?php echo get_the_author(); ?>

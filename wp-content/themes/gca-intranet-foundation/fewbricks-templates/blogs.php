@@ -43,11 +43,11 @@ $blogs      = gca_get_selected_or_latest_posts( 'blog', is_array( $selected_post
                             <?php echo gca_get_author_image_html( get_the_ID(), (int) get_the_author_meta( 'ID' ) ); ?>
                         </div>
                         <div class="govuk-grid-column-two-thirds" data-testid="blogs-content">
-                            <h3 class="govuk-heading-s" data-testid="blogs-title">
+                            <h4 class="govuk-heading-s" data-testid="blogs-title">
                                 <a class="govuk-link govuk-!-text-break-word" data-testid="blogs-link" href="<?php the_permalink(); ?>">
                                     <?php echo esc_html( get_the_title() ); ?>
                                 </a>
-                            </h3>
+                            </h4>
                             <p class="govuk-body-s" data-testid="blogs-author">
                                 By <?php echo esc_html( get_the_author() ); ?>
                             </p>
