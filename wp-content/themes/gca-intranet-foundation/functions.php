@@ -12,6 +12,7 @@ require_once get_template_directory() . '/inc/auth-logic.php';
 // Feature flag registrations
 require_once get_template_directory() . '/inc/features.php';
 require_once get_template_directory() . '/inc/rest-api-auth.php';
+require_once get_template_directory() . '/inc/features/likes-and-comments.php';
 
 /**
  * Theme setup
@@ -466,6 +467,394 @@ JS
         );
     }
 
+});
+
+/**
+ * Likes & Comments – enqueue config + inline JS on single posts.
+ */
+add_action('wp_enqueue_scripts', function (): void {
+    if (!is_singular(['post', 'blog', 'news', 'work_update'])) {
+        return;
+    }
+
+    wp_register_script('gca-interactions', '', [], false, true);
+    wp_enqueue_script('gca-interactions');
+
+    wp_add_inline_script('gca-interactions', 'window.gcaInteractions = ' . wp_json_encode([
+        'restUrl'       => esc_url_raw(rest_url('gca/v1')),
+        'nonce'         => wp_create_nonce('wp_rest'),
+        'currentUserId' => get_current_user_id(),
+    ]) . ';');
+
+    wp_add_inline_script('gca-interactions', <<<'JS'
+(function () {
+    'use strict';
+
+    var cfg     = window.gcaInteractions || {};
+    var restUrl = cfg.restUrl || '';
+    var nonce   = cfg.nonce  || '';
+
+    function apiFetch(method, path, body) {
+        var opts = {
+            method:  method,
+            headers: { 'X-WP-Nonce': nonce, 'Content-Type': 'application/json' }
+        };
+        if (body !== undefined) {
+            opts.body = JSON.stringify(body);
+        }
+        return fetch(restUrl + path, opts).then(function (r) {
+            if (!r.ok) { throw new Error(r.status); }
+            return r.json();
+        });
+    }
+
+    function esc(str) {
+        var d = document.createElement('div');
+        d.textContent = String(str);
+        return d.innerHTML;
+    }
+
+    // ── Comment rendering ────────────────────────────────────────────────────
+
+    function likeBtnHtml(liked, count, commentId) {
+        return '<button type="button" class="gca-lc__action-btn" aria-pressed="' + (liked ? 'true' : 'false') +
+            '" data-action="toggle-comment-like" data-comment-id="' + commentId + '">' +
+            '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">' +
+            '<path class="gca-lc__like-path" d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5' +
+            ' 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3' +
+            ' 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"' +
+            ' stroke="currentColor" stroke-width="2"/></svg>' +
+            '<span class="gca-lc__like-label">' + (liked ? 'Liked' : 'Like') + '</span>' +
+            ' <span data-like-count="' + commentId + '">' + count + '</span>' +
+            '</button>';
+    }
+
+    function renderComment(c, isReply) {
+        var repliesHtml = (c.replies || []).map(function (r) { return renderComment(r, true); }).join('');
+        var replyFormHtml = !isReply
+            ? '<div class="gca-lc__reply-form-wrap" id="gca-lc-reply-form-' + c.id + '" hidden>' +
+              '<div class="gca-lc__form-wrap">' +
+              '<form class="gca-lc__form gca-lc__reply-form" data-action="submit-comment" data-comment-id="' + c.id + '" novalidate>' +
+              '<input type="hidden" name="parent_id" value="' + c.id + '">' +
+              '<div class="govuk-form-group gca-lc__textarea-group">' +
+              '<label class="govuk-label govuk-visually-hidden" for="gca-lc-reply-ta-' + c.id + '">Reply to comment</label>' +
+              '<textarea id="gca-lc-reply-ta-' + c.id + '" class="govuk-textarea gca-lc__textarea"' +
+              ' name="content" rows="2" placeholder="Write a reply… Use @ to mention someone"' +
+              ' aria-label="Write a reply. Use @ to mention someone" maxlength="2000"></textarea>' +
+              '<ul class="gca-lc__mention-list" role="listbox" aria-label="Mention suggestions" hidden></ul>' +
+              '</div>' +
+              '<div class="gca-lc__form-actions">' +
+              '<button type="submit" class="govuk-button govuk-button--secondary gca-lc__submit-btn">Post reply</button>' +
+              ' <button type="button" class="gca-lc__action-btn" data-action="cancel-reply" data-comment-id="' + c.id + '">Cancel</button>' +
+              '</div></form></div></div>'
+            : '';
+
+        return '<div class="gca-lc__comment' + (isReply ? ' gca-lc__comment--reply' : '') +
+            '" id="gca-lc-comment-' + c.id + '">' +
+            '<div class="gca-lc__comment-avatar">' +
+            '<img src="' + esc(c.author_avatar) + '" alt="" width="40" height="40" class="gca-lc__avatar">' +
+            '</div>' +
+            '<div class="gca-lc__comment-body">' +
+            '<div class="gca-lc__comment-header">' +
+            (c.author_profile
+                ? '<a href="' + esc(c.author_profile) + '" class="gca-lc__comment-author">' + esc(c.author_name) + '</a>'
+                : '<span class="gca-lc__comment-author">' + esc(c.author_name) + '</span>') +
+            '<time class="gca-lc__comment-date" datetime="' + esc(c.date_iso) + '">' + esc(c.date_formatted) + '</time>' +
+            '</div>' +
+            '<p class="gca-lc__comment-text">' + c.content_html + '</p>' +
+            '<div class="gca-lc__comment-actions">' +
+            likeBtnHtml(c.user_has_liked, c.like_count, c.id) +
+            (!isReply ? '<button type="button" class="gca-lc__action-btn" data-action="show-reply-form" data-comment-id="' + c.id + '">Reply</button>' : '') +
+            (c.is_own ? '<button type="button" class="gca-lc__action-btn gca-lc__action-btn--delete" data-action="delete-comment" data-comment-id="' + c.id + '">Delete</button>' : '') +
+            '</div>' +
+            '</div>' +
+            '</div>' +
+            repliesHtml +
+            replyFormHtml;
+    }
+
+    function renderList(comments, container) {
+        if (!comments.length) {
+            container.innerHTML = '<p class="gca-lc__loading govuk-body-s">No comments yet. Be the first!</p>';
+            return;
+        }
+        container.innerHTML = comments.map(function (c) { return renderComment(c, false); }).join('');
+    }
+
+    // ── @mention autocomplete ────────────────────────────────────────────────
+
+    function setupMentions(textarea, mentionList) {
+        var timer = null;
+        var mentionStart = -1;
+        var query = '';
+        var users = [];
+        var selIdx = -1;
+
+        function close() {
+            mentionList.hidden = true;
+            mentionList.innerHTML = '';
+            mentionStart = -1;
+            query = '';
+            users = [];
+            selIdx = -1;
+        }
+
+        function setActive(idx) {
+            var items = mentionList.querySelectorAll('.gca-lc__mention-item');
+            items.forEach(function (li, i) {
+                li.setAttribute('aria-selected', i === idx ? 'true' : 'false');
+            });
+            selIdx = idx;
+        }
+
+        function insert(user) {
+            var val = textarea.value;
+            var token = '@[' + user.display_name + '](' + user.id + ')';
+            textarea.value = val.substring(0, mentionStart) + token + ' ' + val.substring(mentionStart + 1 + query.length);
+            close();
+            textarea.focus();
+        }
+
+        function showUsers(list) {
+            users = list;
+            if (!list.length) { close(); return; }
+            mentionList.innerHTML = list.map(function (u, i) {
+                return '<li class="gca-lc__mention-item" role="option" aria-selected="false" data-idx="' + i + '">' +
+                    '<img src="' + esc(u.avatar) + '" width="24" height="24" alt="">' +
+                    ' <span>' + esc(u.display_name) + '</span></li>';
+            }).join('');
+            mentionList.querySelectorAll('.gca-lc__mention-item').forEach(function (li) {
+                li.addEventListener('mousedown', function (e) {
+                    e.preventDefault();
+                    insert(users[parseInt(li.dataset.idx, 10)]);
+                });
+            });
+            mentionList.hidden = false;
+        }
+
+        textarea.addEventListener('input', function () {
+            var pos   = textarea.selectionStart;
+            var before = textarea.value.substring(0, pos);
+            var at    = before.lastIndexOf('@');
+            if (at === -1) { close(); return; }
+            var seg = before.substring(at + 1);
+            if (/\s/.test(seg) || seg.length > 40) { close(); return; }
+            mentionStart = at;
+            query = seg;
+            if (seg.length < 1) { close(); return; }
+            clearTimeout(timer);
+            timer = setTimeout(function () {
+                fetch(restUrl + '/users/search?q=' + encodeURIComponent(seg), {
+                    headers: { 'X-WP-Nonce': nonce }
+                }).then(function (r) { return r.json(); }).then(showUsers).catch(close);
+            }, 150);
+        });
+
+        textarea.addEventListener('keydown', function (e) {
+            if (mentionList.hidden) { return; }
+            var items = mentionList.querySelectorAll('.gca-lc__mention-item');
+            if (e.key === 'ArrowDown')  { e.preventDefault(); setActive((selIdx + 1) % items.length); }
+            else if (e.key === 'ArrowUp')   { e.preventDefault(); setActive((selIdx - 1 + items.length) % items.length); }
+            else if (e.key === 'Enter' && selIdx >= 0) { e.preventDefault(); insert(users[selIdx]); }
+            else if (e.key === 'Escape') { close(); }
+        });
+
+        textarea.addEventListener('blur', function () { setTimeout(close, 200); });
+    }
+
+    // ── Per-component initialisation ─────────────────────────────────────────
+
+    function initComponent(section) {
+        var postId = section.dataset.postId;
+        if (!postId) { return; }
+
+        var likeBtn          = section.querySelector('[data-action="toggle-post-like"]');
+        var likeCountEl      = section.querySelector('.gca-lc__like-count');
+        var commentToggleBtn = section.querySelector('[data-action="toggle-comments"]');
+        var commentsPanel    = section.querySelector('.gca-lc__comments-panel');
+        var commentList      = section.querySelector('.gca-lc__list');
+        var statusRegion     = section.querySelector('[aria-live="polite"]');
+        var mainForm         = section.querySelector('[data-action="submit-comment"]');
+        var panelLoaded      = false;
+        var listEvtsBound    = false;
+
+        function announce(msg) {
+            if (!statusRegion) { return; }
+            statusRegion.textContent = '';
+            setTimeout(function () { statusRegion.textContent = msg; }, 50);
+        }
+
+        function updateLike(liked, count) {
+            if (!likeBtn) { return; }
+            likeBtn.setAttribute('aria-pressed', liked ? 'true' : 'false');
+            var label = likeBtn.querySelector('.gca-lc__like-label');
+            if (label) { label.textContent = liked ? 'Liked' : 'Like'; }
+            if (likeCountEl) { likeCountEl.textContent = count; }
+        }
+
+        function updateCommentCount(count) {
+            var countEl = section.querySelector('.gca-lc__comment-count');
+            if (countEl) { countEl.textContent = count; }
+        }
+
+        // Bind a form (main or reply) submit event once.
+        function bindForm(form) {
+            if (!form || form.dataset.evtBound) { return; }
+            form.dataset.evtBound = '1';
+            var ta = form.querySelector('.gca-lc__textarea');
+            var ml = form.querySelector('.gca-lc__mention-list');
+            if (ta && ml) { setupMentions(ta, ml); }
+
+            form.addEventListener('submit', function (e) {
+                e.preventDefault();
+                var textarea  = form.querySelector('.gca-lc__textarea');
+                var parentEl  = form.querySelector('[name="parent_id"]');
+                var content   = textarea ? textarea.value.trim() : '';
+                var parentId  = parentEl ? parseInt(parentEl.value, 10) : 0;
+                if (!content) { if (textarea) { textarea.focus(); } return; }
+
+                var btn = form.querySelector('.gca-lc__submit-btn');
+                if (btn) { btn.disabled = true; }
+
+                apiFetch('POST', '/posts/' + postId + '/comments', { content: content, parent_id: parentId })
+                    .then(function (data) {
+                        if (textarea) { textarea.value = ''; }
+                        updateCommentCount(data.comment_count);
+
+                        var tmp = document.createElement('div');
+                        tmp.innerHTML = renderComment(data.comment, parentId > 0);
+
+                        if (parentId > 0) {
+                            var rf = document.getElementById('gca-lc-reply-form-' + parentId);
+                            if (rf) {
+                                while (tmp.firstChild) { rf.parentNode.insertBefore(tmp.firstChild, rf); }
+                                rf.hidden = true;
+                            }
+                        } else {
+                            while (tmp.firstChild) { commentList.appendChild(tmp.firstChild); }
+                        }
+
+                        // Remove "no comments" placeholder if present
+                        var ph = commentList.querySelector('.gca-lc__loading');
+                        if (ph) { ph.remove(); }
+
+                        // Bind any new reply form that was just inserted
+                        var newReplyForm = document.getElementById('gca-lc-reply-form-' + data.comment.id);
+                        if (newReplyForm) {
+                            var nrf = newReplyForm.querySelector('form');
+                            if (nrf) { bindForm(nrf); }
+                        }
+
+                        var newCommentEl = document.getElementById('gca-lc-comment-' + data.comment.id);
+                        if (newCommentEl) { newCommentEl.setAttribute('tabindex', '-1'); newCommentEl.focus(); }
+                        announce('Comment posted successfully.');
+                    })
+                    .catch(function () { announce('Could not post comment. Please try again.'); })
+                    .finally(function () { if (btn) { btn.disabled = false; } });
+            });
+        }
+
+        function bindListEvents() {
+            if (!commentList || listEvtsBound) { return; }
+            listEvtsBound = true;
+            commentList.addEventListener('click', function (e) {
+                var btn = e.target.closest('[data-action]');
+                if (!btn) { return; }
+                var action    = btn.dataset.action;
+                var commentId = btn.dataset.commentId;
+
+                if (action === 'toggle-comment-like') {
+                    apiFetch('POST', '/comments/' + commentId + '/like').then(function (data) {
+                        btn.setAttribute('aria-pressed', data.liked ? 'true' : 'false');
+                        var lbl = btn.querySelector('.gca-lc__like-label');
+                        if (lbl) { lbl.textContent = data.liked ? 'Liked' : 'Like'; }
+                        var cnt = commentList.querySelector('[data-like-count="' + commentId + '"]');
+                        if (cnt) { cnt.textContent = data.like_count; }
+                        announce(data.liked ? 'Comment liked.' : 'Comment like removed.');
+                    });
+                }
+
+                if (action === 'delete-comment') {
+                    if (!window.confirm('Delete this comment?')) { return; }
+                    apiFetch('DELETE', '/comments/' + commentId).then(function (data) {
+                        var el = document.getElementById('gca-lc-comment-' + commentId);
+                        if (el) { el.remove(); }
+                        var rf = document.getElementById('gca-lc-reply-form-' + commentId);
+                        if (rf) { rf.remove(); }
+                        updateCommentCount(data.comment_count);
+                        announce('Comment deleted.');
+                    });
+                }
+
+                if (action === 'show-reply-form') {
+                    var rf = document.getElementById('gca-lc-reply-form-' + commentId);
+                    if (!rf) { return; }
+                    rf.hidden = !rf.hidden;
+                    if (!rf.hidden) {
+                        var innerForm = rf.querySelector('form');
+                        bindForm(innerForm);
+                        var ta = rf.querySelector('.gca-lc__textarea');
+                        if (ta) { ta.focus(); }
+                    }
+                }
+
+                if (action === 'cancel-reply') {
+                    var rf = document.getElementById('gca-lc-reply-form-' + commentId);
+                    if (rf) { rf.hidden = true; }
+                }
+            });
+        }
+
+        function loadPanel() {
+            if (panelLoaded) { return; }
+            apiFetch('GET', '/posts/' + postId + '/interactions')
+                .then(function (data) {
+                    updateLike(data.user_has_liked, data.post_like_count);
+                    updateCommentCount(data.comment_count);
+                    renderList(data.comments, commentList);
+                    panelLoaded = true;
+                    bindListEvents();
+                })
+                .catch(function () {
+                    if (commentList) {
+                        commentList.innerHTML = '<p class="gca-lc__loading govuk-body-s">Could not load comments.</p>';
+                    }
+                });
+        }
+
+        // Load counts immediately on page load (without opening panel)
+        apiFetch('GET', '/posts/' + postId + '/interactions').then(function (data) {
+            updateLike(data.user_has_liked, data.post_like_count);
+            updateCommentCount(data.comment_count);
+        }).catch(function () {});
+
+        if (likeBtn) {
+            likeBtn.addEventListener('click', function () {
+                apiFetch('POST', '/posts/' + postId + '/like').then(function (data) {
+                    updateLike(data.liked, data.like_count);
+                    announce(data.liked ? 'Post liked.' : 'Post like removed.');
+                });
+            });
+        }
+
+        if (commentToggleBtn && commentsPanel) {
+            commentToggleBtn.addEventListener('click', function () {
+                var expanded = commentToggleBtn.getAttribute('aria-expanded') === 'true';
+                commentToggleBtn.setAttribute('aria-expanded', expanded ? 'false' : 'true');
+                commentsPanel.hidden = expanded;
+                if (!expanded) { loadPanel(); }
+            });
+        }
+
+        if (mainForm) { bindForm(mainForm); }
+    }
+
+    document.addEventListener('DOMContentLoaded', function () {
+        document.querySelectorAll('.gca-lc').forEach(initComponent);
+    });
+}());
+JS
+    );
 });
 
 /**

@@ -23,6 +23,8 @@ get_template_part('template-parts/single/_chrome');
       <div class="gca-content">
           <?php get_template_part('template-parts/template-body-content'); ?>
       </div>
+
+      <?php get_template_part('template-parts/likes-and-comments'); ?>
     </main>
 
   <?php endwhile; endif; ?>
