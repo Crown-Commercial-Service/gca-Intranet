@@ -7,10 +7,11 @@ if (!defined('ABSPATH')) {
 
 require_once get_template_directory() . '/inc/class-ccs-mega-menu-walker.php';
 require_once get_template_directory() . '/inc/shortcodes.php';
-require get_template_directory() . '/inc/auth-logic.php';
+require_once get_template_directory() . '/inc/auth-logic.php';
 
 // Feature flag registrations
-require get_template_directory() . '/inc/features.php';
+require_once get_template_directory() . '/inc/features.php';
+require_once get_template_directory() . '/inc/rest-api-auth.php';
 
 /**
  * Theme setup
@@ -655,6 +656,47 @@ function gca_search_truncate(string $str, int $length): string
         return $str;
     }
     return rtrim(mb_substr($str, 0, $length - 1)) . '…';
+}
+
+function gca_search_context_excerpt(string $query, int $context_chars = 60): string
+{
+    $content = wp_strip_all_tags(get_the_content());
+    $content = html_entity_decode($content, ENT_QUOTES, 'UTF-8');
+    $content = trim(preg_replace('/\s+/', ' ', $content) ?: '');
+
+    if ($content === '') {
+        return gca_search_truncate(get_the_excerpt(), 125);
+    }
+
+    $words = array_values(array_filter(array_map('trim', preg_split('/\s+/', trim($query)) ?: [])));
+
+    if (empty($words)) {
+        return gca_search_truncate($content, 125);
+    }
+
+    // Find the earliest position of any query word in the content.
+    $match_pos   = false;
+    $matched_len = 1;
+    foreach ($words as $word) {
+        $pos = mb_stripos($content, $word);
+        if ($pos !== false && ($match_pos === false || $pos < $match_pos)) {
+            $match_pos   = $pos;
+            $matched_len = mb_strlen($word);
+        }
+    }
+
+    if ($match_pos === false) {
+        return gca_search_truncate($content, 125);
+    }
+
+    $start   = max(0, $match_pos - $context_chars);
+    $length  = $context_chars + $matched_len + $context_chars;
+    $snippet = mb_substr($content, $start, $length);
+
+    $prefix = $start > 0 ? '…' : '';
+    $suffix = ($start + $length) < mb_strlen($content) ? '…' : '';
+
+    return $prefix . trim($snippet) . $suffix;
 }
 
 /**

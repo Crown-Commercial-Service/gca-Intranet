@@ -27,3 +27,34 @@
     margin-top: govuk-px-to-rem(- 70);
 
 }
+
+// 50/50 component row: two components rendered side by side.
+// On mobile they stack vertically; side-by-side from tablet up.
+.gca-component-row--50-50 {
+    display: flex;
+    flex-wrap: wrap;
+    margin-top: govuk-px-to-rem(40);
+
+    @include govuk-media-query($from: desktop) {
+        margin-top: govuk-px-to-rem(80);
+    }
+
+    // Each half column keeps govuk-grid padding intact.
+    // Override govuk-grid-column-one-half to ensure correct flex behaviour.
+    > [class*="govuk-grid-column"] {
+        flex: 0 0 100%;
+        max-width: 100%;
+
+        @include govuk-media-query($from: tablet) {
+            flex: 0 0 50%;
+            max-width: 50%;
+        }
+    }
+
+    // Prevent any inner govuk-width-container from breaking out of the column.
+    .govuk-width-container {
+        max-width: 100%;
+        margin: 0;
+        padding: 0;
+    }
+}
