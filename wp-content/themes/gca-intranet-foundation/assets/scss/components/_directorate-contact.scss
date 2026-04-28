@@ -1,12 +1,11 @@
 // =============================================================================
 // DIRECTORATE CONTACT WIDGET
-// Inline pill button in the footer with an upward popup panel.
+// Inline pill button in the footer — click to expand an accordion panel below.
 // Appears on responsible_team taxonomy term pills when popup data is configured.
 // =============================================================================
 
 .dc-widget {
     display: inline-block;
-    position: relative;
 
     // ---- Trigger button (styled to match existing .tag_label.grey pill) ------
     &__trigger {
@@ -18,11 +17,13 @@
         line-height: inherit;
 
         // Visual match for .tag_label.grey
-        display: inline-block;
+        display: inline-flex;
+        align-items: center;
+        gap: 7px;
         background: #f0f0ef;
         border: 1px solid #cbcbcb;
         border-radius: 100px;
-        padding: 5px 14px;
+        padding: 5px 12px 5px 14px;
         font-size: inherit;
         color: #0b0c0c;
 
@@ -45,67 +46,78 @@
         border-color: #cbcbcb;
     }
 
-    // ---- Popup panel ----------------------------------------------------------
-    &__popup {
-        position: absolute;
-        bottom: calc(100% + 10px);
-        right: 0;
-        width: 420px;
-        max-width: calc(100vw - 48px);
-        background: #fff;
-        border-radius: 16px;
-        box-shadow: 0 8px 40px rgba(0, 0, 0, 0.18);
-        overflow: hidden;
-        z-index: 9500;
+    // ---- Trigger icons --------------------------------------------------------
+    &__trigger-icon {
+        flex-shrink: 0;
+        width: 16px;
+        height: 16px;
+        opacity: 0.55;
+    }
 
-        // Hidden by default
+    &__chevron {
+        flex-shrink: 0;
+        width: 14px;
+        height: 14px;
+        transition: transform 0.22s ease;
+
+        [aria-expanded="true"] & {
+            transform: rotate(180deg);
+        }
+    }
+
+    // ---- Accordion panel ------------------------------------------------------
+    &__panel {
+        width: 100%;
+        background: #eef1fb;
+        border-radius: 16px;
+        overflow: hidden;
+        margin-top: 14px;
+
+        // Hidden by default — accordion collapse
         opacity: 0;
         visibility: hidden;
-        transform: translateY(8px);
-        transition: opacity 0.2s ease, transform 0.2s ease, visibility 0s linear 0.2s;
-        pointer-events: none;
+        max-height: 0;
+        transition: opacity 0.22s ease, max-height 0.3s ease, visibility 0s linear 0.3s;
+
+        &[aria-hidden="false"] {
+            opacity: 1;
+            visibility: visible;
+            max-height: 1000px;
+            transition: opacity 0.22s ease, max-height 0.35s ease;
+        }
     }
 
-    // Reveal when JS adds the open class (hover is handled by JS to avoid gap issues)
-    &--open &__popup {
-        opacity: 1;
-        visibility: visible;
-        transform: translateY(0);
-        transition: opacity 0.2s ease, transform 0.2s ease;
-        pointer-events: auto;
+    &__panel-inner {
+        padding: 24px;
     }
 
-    // ---- Popup header ---------------------------------------------------------
-    &__popup-header {
-        padding: 20px 24px 22px;
-        // background-color set inline from ACF
+    // ---- Panel header ---------------------------------------------------------
+    &__panel-header {
+        display: flex;
+        align-items: center;
+        gap: 14px;
+        margin-bottom: 14px;
     }
 
-    &__category-label {
-        display: inline-block;
-        background: rgba(255, 255, 255, 0.22);
-        color: #fff;
-        font-size: 12px;
-        font-weight: 700;
-        letter-spacing: 0.06em;
-        text-transform: uppercase;
-        padding: 4px 14px;
-        border-radius: 100px;
-        margin-bottom: 10px;
-        line-height: 1.5;
+    &__header-icon {
+        flex-shrink: 0;
+        display: flex;
+        align-items: center;
+        // color set inline from ACF header_color
+
+        svg {
+            width: 22px;
+            height: 22px;
+            display: block;
+        }
     }
 
     &__title {
-        color: #fff;
-        font-size: 26px;
+        font-size: 22px;
         font-weight: 700;
         line-height: 1.2;
         margin: 0;
-    }
-
-    // ---- Popup body -----------------------------------------------------------
-    &__popup-body {
-        padding: 20px 24px 22px;
+        color: #0b0c0c;
     }
 
     &__description {
@@ -115,39 +127,53 @@
         margin: 0 0 18px;
     }
 
-    // ---- Contact items list ---------------------------------------------------
+    // ---- Contact items grid --------------------------------------------------
     &__items {
         list-style: none;
         margin: 0;
         padding: 0;
-        display: flex;
-        flex-direction: column;
-        gap: 10px;
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 12px;
+
+        @media (max-width: 640px) {
+            grid-template-columns: 1fr;
+        }
     }
 
     &__item {
         border: 1px solid #e4e4e4;
         border-radius: 12px;
         overflow: hidden;
+        background: #fff;
+        transition: border-color 0.15s ease, box-shadow 0.15s ease;
+
+        &:has(.dc-widget__item-inner:hover) {
+            border-color: #60a5fa;
+            box-shadow: 0 1px 4px rgba(59, 130, 246, 0.12);
+        }
     }
 
     &__item-inner {
         display: flex;
         align-items: center;
         gap: 14px;
-        padding: 14px 16px;
+        padding: 12px 16px;
         text-decoration: none;
         color: inherit;
         width: 100%;
         background: transparent;
-        transition: background 0.1s ease;
+        transition: border-color 0.15s ease, box-shadow 0.15s ease;
 
-        // Only interactive styles when the item is a link
-        a& {
-            cursor: pointer;
+        &:hover {
+            .dc-widget__icon {
+                background: #eff6ff;
 
-            &:hover {
-                background: #f7f7f7;
+                svg { fill: #2563eb; }
+            }
+
+            .dc-widget__item-subtitle {
+                color: #1d4ed8;
             }
         }
     }
@@ -155,19 +181,21 @@
     // ---- Icon circle ----------------------------------------------------------
     &__icon {
         flex-shrink: 0;
-        width: 46px;
-        height: 46px;
+        width: 40px;
+        height: 40px;
         border-radius: 50%;
         display: flex;
         align-items: center;
         justify-content: center;
-        // background-color set inline from ACF
+        background: #f9fafb;
+        transition: background 0.15s ease;
 
         svg {
-            width: 22px;
-            height: 22px;
-            fill: #fff;
+            width: 18px;
+            height: 18px;
+            fill: #6b7280;
             display: block;
+            transition: fill 0.15s ease;
         }
     }
 
@@ -175,19 +203,22 @@
     &__item-text {
         display: flex;
         flex-direction: column;
-        gap: 2px;
+        gap: 3px;
     }
 
     &__item-title {
-        font-size: 16px;
-        font-weight: 700;
-        color: #0b0c0c;
+        font-size: 12px;
+        font-weight: 600;
+        color: #6a6a6a;
         line-height: 1.3;
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
     }
 
     &__item-subtitle {
-        font-size: 14px;
-        color: #6a6a6a;
+        font-size: 16px;
+        font-weight: 700;
+        color: #0b0c0c;
         line-height: 1.3;
     }
 
