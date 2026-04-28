@@ -1,0 +1,72 @@
+// ── Archive filter sidebar ──────────────────────────────────────────────────
+
+.archive-layout {
+    display: flex;
+    flex-wrap: wrap;
+
+    &__filters {
+        @media (max-width: 640px) {
+            margin-bottom: govuk-spacing(6);
+        }
+    }
+}
+
+.archive-filters {
+    &__heading {
+        margin-bottom: govuk-spacing(4);
+    }
+
+    // ── Each collapsible section ──
+    &__section {
+        background: $govuk-canvas-background-colour;
+        border: 1px solid $gca-border-mid;
+        border-radius: 12px;
+        padding: govuk-spacing(4);
+        margin-bottom: govuk-spacing(4);
+    }
+
+    &__section-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: govuk-spacing(3);
+    }
+
+    &__section-title {
+        margin-bottom: 0;
+    }
+
+    // ── Hide/Show toggle button ──
+    &__toggle {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        background: none;
+        border: none;
+        padding: 0;
+        cursor: pointer;
+        font-size: 16px;
+        color: $gca-blue-accessible;
+        text-decoration: underline;
+
+        &:hover {
+            color: $color-hover;
+        }
+    }
+
+    &__chevron {
+        transition: transform 0.2s ease;
+        flex-shrink: 0;
+
+        .archive-filters__toggle[aria-expanded="false"] & {
+            transform: rotate(180deg);
+        }
+    }
+
+    // ── Collapsed state ──
+    &__section-body {
+        &.is-hidden {
+            display: none;
+        }
+    }
+}

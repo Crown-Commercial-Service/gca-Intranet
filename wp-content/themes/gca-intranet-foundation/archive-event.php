@@ -13,8 +13,25 @@ get_template_part('template-parts/breadcrumbs');
 
 <div class="govuk-width-container" data-testid="archive-event-container">
   <main class="govuk-main-wrapper" id="main-content" tabindex="-1" data-testid="archive-event-main">
-    <div class="govuk-grid-row" data-testid="archive-event-row">
-      <div class="govuk-grid-column-full" data-testid="archive-event-col">
+
+    <div class="govuk-grid-row archive-layout" data-testid="archive-event-row">
+
+      <?php if (gca_flag_enabled('archive-filters')) : ?>
+        <div class="govuk-grid-column-one-quarter archive-layout__filters">
+          <?php
+          get_template_part('template-parts/archive-filters', null, [
+            'archive_url' => get_post_type_archive_link('event'),
+            'taxonomies'  => [
+              ['taxonomy' => 'category',       'label' => 'Category', 'param' => 'filter_category'],
+              ['taxonomy' => 'event_location', 'label' => 'Location', 'param' => 'filter_event_location'],
+            ],
+          ]);
+          ?>
+        </div>
+        <div class="govuk-grid-column-three-quarters archive-layout__results" data-testid="archive-event-col">
+      <?php else : ?>
+        <div class="govuk-grid-column-full archive-layout__results" data-testid="archive-event-col">
+      <?php endif; ?>
 
         <?php if (have_posts()) : ?>
 
@@ -53,7 +70,7 @@ get_template_part('template-parts/breadcrumbs');
                     $visible_i = 0;
                     foreach ($event_categories as $cat) :
                       if (strtolower($cat->name) === 'uncategorized' || strtolower($cat->name) === 'uncategorised') continue; ?>
-                      
+
                       <span class="tag_label <?php echo $visible_i === 0 ? '' : 'grey'; ?> govuk-body-s" data-testid="archive-event-post-category">
                         <?php echo esc_html($cat->name); ?>
                       </span>
@@ -66,7 +83,7 @@ get_template_part('template-parts/breadcrumbs');
                   $event_locations = get_the_terms(get_the_ID(), 'event_location');
                   if ($event_locations && !is_wp_error($event_locations)) :
                     foreach ($event_locations as $location) : ?>
-                      
+
                       <span class="tag_label grey govuk-body-s" data-testid="archive-event-post-location">
                         <?php echo esc_html($location->name); ?>
                       </span>
@@ -81,21 +98,21 @@ get_template_part('template-parts/breadcrumbs');
 
           <div class="govuk-!-margin-top-6 govuk-!-margin-bottom-8" data-testid="archive-event-pagination">
             <?php
-              the_posts_pagination( array(
-                'mid_size'  => 2,
-                'prev_text' => sprintf(
-                  '<span class="icon">
-                    <svg width="17" height="14" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false"><path d="M6.7 0l1.4 1.4-4.3 4.3h13v2H3.9l4.2 4-1.4 1.4L0 6.7z" fill="#007194" fill-rule="evenodd"/></svg>
-                  </span> <span>Previous</span>
-                  <span class="govuk-visually-hidden">page</span>'
-                ),
-                'next_text' => sprintf(
-                  '<span>Next</span> <span class="govuk-visually-hidden">page</span>
-                  <span class="icon">
-                    <svg width="17" height="14" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false"><path d="M10.1 0L8.7 1.4 13 5.7H0v2h12.9l-4.2 4 1.4 1.4 6.7-6.4z" fill="#007194" fill-rule="evenodd"/></svg>
-                  </span>'
-                ),
-              ) );
+            the_posts_pagination(array(
+              'mid_size'  => 2,
+              'prev_text' => sprintf(
+                '<span class="icon">
+                  <svg width="17" height="14" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false"><path d="M6.7 0l1.4 1.4-4.3 4.3h13v2H3.9l4.2 4-1.4 1.4L0 6.7z" fill="#007194" fill-rule="evenodd"/></svg>
+                </span> <span>Previous</span>
+                <span class="govuk-visually-hidden">page</span>'
+              ),
+              'next_text' => sprintf(
+                '<span>Next</span> <span class="govuk-visually-hidden">page</span>
+                <span class="icon">
+                  <svg width="17" height="14" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false"><path d="M10.1 0L8.7 1.4 13 5.7H0v2h12.9l-4.2 4 1.4 1.4 6.7-6.4z" fill="#007194" fill-rule="evenodd"/></svg>
+                </span>'
+              ),
+            ));
             ?>
           </div>
 
@@ -103,8 +120,10 @@ get_template_part('template-parts/breadcrumbs');
           <p class="govuk-body" data-testid="archive-event-no-posts">No events found.</p>
         <?php endif; ?>
 
-      </div>
-    </div>
+      </div><!-- .archive-layout__results -->
+
+    </div><!-- .govuk-grid-row -->
+
   </main>
 </div>
 
