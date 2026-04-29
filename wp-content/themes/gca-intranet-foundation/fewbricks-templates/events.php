@@ -74,14 +74,14 @@ if ( ! $events->have_posts() ) {
                     <p class="govuk-body-s gca-event-date" data-testid="events-date">
                         <?php echo esc_html( gca_get_event_datetime( 'start_date' ) ); ?>
                     </p>
-                    <h3 class="govuk-heading-s" data-testid="events-title">
+                    <h4 class="govuk-heading-s" data-testid="events-title">
                         <a class="govuk-link govuk-!-text-break-word" href="<?php the_permalink(); ?>" data-testid="events-link">
                             <?php
                             $event_title = get_the_title();
                             echo esc_html( mb_strlen( $event_title ) > 58 ? mb_substr( $event_title, 0, 58 ) . '...' : $event_title );
                             ?>
                         </a>
-                    </h3>
+                    </h4>
                     <div class="gca-card-meta">
                         <?php
                         $categories = get_the_category();

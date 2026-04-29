@@ -104,11 +104,11 @@ get_header();
                     </div>
 
                     <div class="govuk-grid-column-two-third gca-flex-box-news" data-testid="latest-news-secondary-content">
-                      <h3 class="govuk-heading-s govuk-!-margin-bottom-1" data-testid="latest-news-secondary-title">
+                      <h4 class="govuk-heading-s govuk-!-margin-bottom-1" data-testid="latest-news-secondary-title">
                         <a class="govuk-link govuk-!-text-break-word" data-testid="latest-news-secondary-link" href="<?php the_permalink(); ?>">
                           <?php the_title(); ?>
                         </a>
-                      </h3>
+                      </h4>
 
                       <p class="govuk-body-s" data-testid="latest-news-secondary-excerpt">
                         <?php echo esc_html(wp_trim_words(get_the_excerpt(), 12, '...')); ?>
@@ -335,11 +335,11 @@ get_header();
                     </div>
 
                     <div class="govuk-grid-column-two-thirds" data-testid="work-update-content">
-                      <h3 class="govuk-heading-s" data-testid="work-update-title">
+                      <h4 class="govuk-heading-s" data-testid="work-update-title">
                         <a class="govuk-link govuk-!-text-break-word" href="<?php the_permalink(); ?>" data-testid="work-update-link">
                           <?php echo esc_html(get_the_title()); ?>
                         </a>
-                      </h3>
+                      </h4>
 
                       <p class="govuk-body-s" data-testid="work-update-author">
                         By <?php echo esc_html(get_the_author()); ?>
@@ -421,11 +421,11 @@ get_header();
                     </div>
 
                     <div class="govuk-grid-column-two-thirds" data-testid="blogs-content">
-                      <h3 class="govuk-heading-s" data-testid="blogs-title">
+                      <h4 class="govuk-heading-s" data-testid="blogs-title">
                         <a class="govuk-link govuk-!-text-break-word" data-testid="blogs-link" href="<?php the_permalink(); ?>">
                           <?php echo esc_html(get_the_title()); ?>
                         </a>
-                      </h3>
+                      </h4>
 
                       <p class="govuk-body-s" data-testid="blogs-author">
                         By <?php echo esc_html(get_the_author()); ?>
@@ -511,14 +511,14 @@ get_header();
                   <p class="govuk-body-s gca-event-date" data-testid="events-date">
                     <?php echo esc_html(gca_get_event_datetime('start_date')); ?>
                   </p>
-                  <h3 class="govuk-heading-s" data-testid="events-title">
+                  <h4 class="govuk-heading-s" data-testid="events-title">
                     <a class="govuk-link govuk-!-text-break-word" href="<?php the_permalink(); ?>" data-testid="events-link">
                       <?php
                         $title = get_the_title();
                         echo esc_html(mb_strlen($title) > 58 ? mb_substr($title, 0, 58) . '...' : $title);
                       ?>
                     </a>
-                  </h3>
+                  </h4>
 
                   <div class="gca-card-meta">
                       <?php

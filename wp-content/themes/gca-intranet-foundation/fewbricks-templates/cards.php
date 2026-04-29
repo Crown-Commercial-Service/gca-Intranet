@@ -22,9 +22,9 @@ $cards   = $row['cards_cards_cards'] ?? [];
                         <li class="card-list__item">
                             <div class="card-list__item__wrapper">
                                 
-                                <h3 class="govuk-heading-m">
+                                <h4 class="govuk-heading-m">
                                     <?php echo esc_html($card['cards_title']); ?>
-                                </h3>
+                                </h4>
 
                                 <div class="wysiwyg-content govuk-body">
                                     <?php 
