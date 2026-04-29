@@ -122,14 +122,12 @@ class GCA_Cron_Manager {
                 // Send the redirect response to the browser immediately so the
                 // admin page is not blocked. On PHP-FPM, fastcgi_finish_request()
                 // closes the HTTP connection while the PHP process keeps running.
-                $redirect_url = add_query_arg(
-                    array_filter(array_merge(['page' => self::MENU_SLUG], [
-                        'run'      => '1',
-                        'log_id'   => $log_id ?: null,
-                        'log_hook' => $log_id ? $hook : null,
-                    ])),
-                    admin_url('tools.php')
-                );
+                $redirect_url = $log_id
+                    ? add_query_arg(
+                        ['page' => self::MENU_SLUG, 'action' => 'logs', 'hook' => rawurlencode($hook), 'log_id' => $log_id],
+                        admin_url('tools.php')
+                    )
+                    : add_query_arg(['page' => self::MENU_SLUG, 'run' => '1'], admin_url('tools.php'));
 
                 // Prevent PHP from aborting when the browser closes the
                 // connection after following the redirect.
@@ -854,12 +852,14 @@ class GCA_Cron_Manager {
             return;
         }
 
-        $per_page   = 25;
-        $log_page   = max(1, (int) ($_GET['log_page'] ?? 1));
-        $offset     = ($log_page - 1) * $per_page;
-        $total      = $hook ? GCA_Cron_Logger::count($hook) : 0;
-        $runs       = $hook ? GCA_Cron_Logger::get_recent($hook, $per_page, $offset) : [];
-        $total_pages = $hook ? (int) ceil($total / $per_page) : 0;
+        $per_page      = 25;
+        $log_page      = max(1, (int) ($_GET['log_page'] ?? 1));
+        $offset        = ($log_page - 1) * $per_page;
+        $total         = $hook ? GCA_Cron_Logger::count($hook) : 0;
+        $runs          = $hook ? GCA_Cron_Logger::get_recent($hook, $per_page, $offset) : [];
+        $total_pages   = $hook ? (int) ceil($total / $per_page) : 0;
+        $pending_log_id = (int) ($_GET['log_id'] ?? 0);
+        $is_polling    = $pending_log_id && !empty($runs) && (int) $runs[0]['duration_ms'] === 0 && (int) $runs[0]['id'] === $pending_log_id;
         ?>
         <div class="wrap">
             <h1>
@@ -872,6 +872,31 @@ class GCA_Cron_Manager {
             <hr class="wp-header-end">
 
             <?php self::render_styles(); ?>
+
+            <?php if ($is_polling) : ?>
+            <div class="notice notice-info gca-polling-notice" style="display:flex;align-items:center;gap:10px">
+                <span class="gca-spinner"></span>
+                <p style="margin:0"><strong>Job is running&hellip;</strong> This page will refresh automatically.</p>
+            </div>
+            <script>
+            (function () {
+                var pollUrl = <?php echo wp_json_encode(add_query_arg(['log_id' => $pending_log_id], remove_query_arg('run'))); ?>;
+                setTimeout(function poll() {
+                    fetch(pollUrl, {credentials: 'same-origin'})
+                        .then(function (r) { return r.text(); })
+                        .then(function (html) {
+                            var match = html.match(/data-log-id="(\d+)" data-duration="(\d+)"/);
+                            if (match && match[1] === '<?php echo (int) $pending_log_id; ?>' && parseInt(match[2], 10) > 0) {
+                                window.location.href = pollUrl;
+                            } else {
+                                setTimeout(poll, 3000);
+                            }
+                        })
+                        .catch(function () { setTimeout(poll, 5000); });
+                }, 3000);
+            }());
+            </script>
+            <?php endif; ?>
 
             <?php if (!$hook) : ?>
                 <p>No hook specified. <a href="<?php echo esc_url($back_url); ?>">Return to Cron Jobs</a> and click the Logs button for a specific job.</p>
@@ -893,15 +918,18 @@ class GCA_Cron_Manager {
                     </thead>
                     <tbody>
                         <?php foreach ($runs as $run) :
-                            $ran_at_abs  = wp_date('d M Y H:i:s', strtotime($run['ran_at']));
-                            $ran_at_rel  = human_time_diff(strtotime($run['ran_at']), time()) . ' ago';
-                            $duration    = $run['duration_ms'] >= 1000
-                                ? round($run['duration_ms'] / 1000, 2) . 's'
-                                : $run['duration_ms'] . 'ms';
-                            $stats       = $run['stats'] ? json_decode($run['stats'], true) : null;
-                            $is_manual   = 'manual' === $run['triggered_by'];
+                            $ran_at_abs   = wp_date('d M Y H:i:s', strtotime($run['ran_at']));
+                            $ran_at_rel   = human_time_diff(strtotime($run['ran_at']), time()) . ' ago';
+                            $is_pending   = (int) $run['duration_ms'] === 0 && (int) $run['id'] === $pending_log_id;
+                            $duration     = $is_pending
+                                ? '<em style="color:#8c8f94">Running&hellip;</em>'
+                                : ($run['duration_ms'] >= 1000
+                                    ? round($run['duration_ms'] / 1000, 2) . 's'
+                                    : $run['duration_ms'] . 'ms');
+                            $stats        = $run['stats'] ? json_decode($run['stats'], true) : null;
+                            $is_manual    = 'manual' === $run['triggered_by'];
                         ?>
-                        <tr>
+                        <tr data-log-id="<?php echo (int) $run['id']; ?>" data-duration="<?php echo (int) $run['duration_ms']; ?>">
                             <td>
                                 <span title="<?php echo esc_attr($ran_at_abs); ?>">
                                     <?php echo esc_html($ran_at_rel); ?>
@@ -913,7 +941,7 @@ class GCA_Cron_Manager {
                                     <?php echo $is_manual ? 'Manual' : 'Scheduled'; ?>
                                 </span>
                             </td>
-                            <td><?php echo esc_html($duration); ?></td>
+                            <td><?php echo $is_pending ? $duration : esc_html($duration); ?></td>
                             <td>
                                 <span class="gca-run-dot gca-run-<?php echo esc_attr($run['status']); ?>"></span>
                                 <?php echo esc_html(ucfirst($run['status'])); ?>
@@ -1053,6 +1081,17 @@ class GCA_Cron_Manager {
                 border-radius: 3px;
             }
             .gca-cron-form .form-table th { width: 200px; }
+            .gca-spinner {
+                display: inline-block;
+                width: 16px; height: 16px;
+                border: 2px solid #c3c4c7;
+                border-top-color: #2271b1;
+                border-radius: 50%;
+                animation: gca-spin 0.7s linear infinite;
+                flex-shrink: 0;
+            }
+            @keyframes gca-spin { to { transform: rotate(360deg); } }
+            .gca-polling-notice { padding: 10px 16px; }
             .required { color: #d63638; }
             .gca-cron-search { float: right; margin-bottom: 8px; }
             .gca-cron-search .button { margin-left: 4px; }
