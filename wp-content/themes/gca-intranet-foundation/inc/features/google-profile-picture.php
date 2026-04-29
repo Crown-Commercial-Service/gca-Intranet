@@ -41,10 +41,15 @@ add_action('gal_user_loggedin', function (WP_User $user, object $userinfo): void
     $profile_dir = $upload_dir['basedir'] . '/google-profile-pictures';
     $dest        = $profile_dir . '/user-' . $user->ID . '.jpg';
 
-    // Skip if we've already evaluated this exact Google picture URL.
-    // This covers both real photos (local file present) and confirmed letter avatars
-    // (URL stored but no local file, so the site falls back to the default avatar).
-    if (get_user_meta($user->ID, 'google_profile_picture_url', true) === $picture_url) {
+    // Skip only when we've already confirmed this URL is a letter-avatar (URL
+    // matches AND no local file saved). If a local file exists we must always
+    // re-download: Google can serve a letter-avatar at the same URL after the
+    // user removes their real photo, so URL equality alone is not enough to
+    // know the content hasn't changed.
+    $stored_picture_url = get_user_meta($user->ID, 'google_profile_picture_url', true);
+    $has_local_photo    = (bool) get_user_meta($user->ID, 'google_profile_picture_local_url', true);
+
+    if ($stored_picture_url === $picture_url && !$has_local_photo) {
         return;
     }
 
@@ -80,6 +85,7 @@ add_action('gal_user_loggedin', function (WP_User $user, object $userinfo): void
     if (GCA_Sync_Profile_Pictures::is_letter_avatar($dest)) {
         @unlink($dest);
         update_user_meta($user->ID, 'google_profile_picture_url', $picture_url);
+        delete_user_meta($user->ID, 'google_profile_picture_local_url');
         return;
     }
 
