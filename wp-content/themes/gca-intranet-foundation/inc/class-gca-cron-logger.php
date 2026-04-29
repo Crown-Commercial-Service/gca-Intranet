@@ -109,7 +109,7 @@ class GCA_Cron_Logger {
             [
                 'hook'         => $data['hook'],
                 'triggered_by' => $data['triggered_by'] ?? 'schedule',
-                'ran_at'       => current_time('mysql'),
+                'ran_at'       => current_time('mysql', true),
                 'duration_ms'  => $data['duration_ms'] ?? 0,
                 'status'       => $data['status'] ?? 'success',
                 'output'       => $data['output'] ?? '',
