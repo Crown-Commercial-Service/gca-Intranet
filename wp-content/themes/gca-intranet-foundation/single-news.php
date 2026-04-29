@@ -70,6 +70,7 @@ get_template_part('template-parts/breadcrumbs');
                             'hide_last_updated' => true,
                         ]); ?>
 
+                        <?php get_template_part('template-parts/likes-and-comments'); ?>
                     </div>
                 </div>
 
