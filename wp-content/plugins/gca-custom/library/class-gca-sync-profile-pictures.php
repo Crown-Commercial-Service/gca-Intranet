@@ -231,10 +231,21 @@ class GCA_Sync_Profile_Pictures {
         imagecopyresampled( $sample, $img, 0, 0, 0, 0, 20, 20, imagesx( $img ), imagesy( $img ) );
         imagedestroy( $img );
 
+        // Quantise each pixel to 4 bits per channel before counting.
+        // imagecopyresampled blends anti-aliased edge pixels (e.g. the white
+        // letter against an orange background) into dozens of intermediate
+        // shades, which inflates the unique-colour count and causes
+        // letter-avatars to be misclassified as real photos. Rounding to the
+        // nearest 16 collapses those blended pixels back into their dominant
+        // colour while still leaving real photographs with many distinct values.
         $unique = [];
         for ( $x = 0; $x < 20; $x++ ) {
             for ( $y = 0; $y < 20; $y++ ) {
-                $unique[ imagecolorat( $sample, $x, $y ) ] = true;
+                $c = imagecolorat( $sample, $x, $y );
+                $quantised = ( ( ( $c >> 16 ) & 0xFF ) >> 4 ) << 8
+                           | ( ( ( $c >> 8  ) & 0xFF ) >> 4 ) << 4
+                           | ( (   $c         & 0xFF ) >> 4 );
+                $unique[ $quantised ] = true;
             }
         }
         imagedestroy( $sample );
