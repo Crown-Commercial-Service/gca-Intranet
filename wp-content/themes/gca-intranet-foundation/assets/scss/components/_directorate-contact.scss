@@ -21,7 +21,7 @@
         align-items: center;
         gap: 7px;
         background: #f0f0ef;
-        border: 1px solid #cbcbcb;
+        border: 1px solid #e6e4e4;
         border-radius: 100px;
         padding: 5px 12px 5px 14px;
         font-size: inherit;
@@ -68,8 +68,9 @@
     // ---- Accordion panel ------------------------------------------------------
     &__panel {
         width: 100%;
-        background: #eef1fb;
-        border-radius: 16px;
+        background: #f8f8f8;
+        border: 1px solid #c8c8c8;
+        border-radius: 15px;
         overflow: hidden;
         margin-top: 14px;
 
@@ -103,7 +104,7 @@
         flex-shrink: 0;
         display: flex;
         align-items: center;
-        // color set inline from ACF header_color
+        color: #6b7280;
 
         svg {
             width: 22px;
@@ -113,7 +114,7 @@
     }
 
     &__title {
-        font-size: 22px;
+        font-size: 19px;
         font-weight: 700;
         line-height: 1.2;
         margin: 0;
@@ -122,7 +123,7 @@
 
     &__description {
         color: #4a4a4a;
-        font-size: 16px;
+        font-size: 19px;
         line-height: 1.5;
         margin: 0 0 18px;
     }
@@ -143,21 +144,21 @@
 
     &__item {
         border: 1px solid #e4e4e4;
-        border-radius: 12px;
+        border-radius: 5px;
         overflow: hidden;
         background: #fff;
         transition: border-color 0.15s ease, box-shadow 0.15s ease;
 
         &:has(.dc-widget__item-inner:hover) {
-            border-color: #60a5fa;
-            box-shadow: 0 1px 4px rgba(59, 130, 246, 0.12);
+            border-color: #1d70b8;
+            box-shadow: 0 1px 4px rgba(29, 112, 184, 0.12);
         }
     }
 
     &__item-inner {
         display: flex;
         align-items: center;
-        gap: 14px;
+        gap: 5px;
         padding: 12px 16px;
         text-decoration: none;
         color: inherit;
@@ -167,13 +168,13 @@
 
         &:hover {
             .dc-widget__icon {
-                background: #eff6ff;
+                background: #d2e4f3;
 
-                svg { fill: #2563eb; }
+                svg { fill: #003078; }
             }
 
             .dc-widget__item-subtitle {
-                color: #1d4ed8;
+                color: #003078;
             }
         }
     }
@@ -187,13 +188,13 @@
         display: flex;
         align-items: center;
         justify-content: center;
-        background: #f9fafb;
+        background: #fff;
         transition: background 0.15s ease;
 
         svg {
             width: 18px;
             height: 18px;
-            fill: #6b7280;
+            fill: #1d70b8;
             display: block;
             transition: fill 0.15s ease;
         }
@@ -202,21 +203,21 @@
     // ---- Item text ------------------------------------------------------------
     &__item-text {
         display: flex;
-        flex-direction: column;
-        gap: 3px;
+        flex-direction: row;
+        align-items: baseline;
+        gap: 10px;
+        flex-wrap: wrap;
     }
 
     &__item-title {
-        font-size: 12px;
+        font-size: 19px;
         font-weight: 600;
         color: #6a6a6a;
         line-height: 1.3;
-        text-transform: uppercase;
-        letter-spacing: 0.06em;
     }
 
     &__item-subtitle {
-        font-size: 16px;
+        font-size: 19px;
         font-weight: 700;
         color: #0b0c0c;
         line-height: 1.3;
@@ -227,14 +228,14 @@
         display: block;
         text-align: center;
         margin-top: 18px;
-        font-size: 16px;
+        font-size: 19px;
         font-weight: 600;
-        color: #3d53de;
+        color: #1d70b8;
         text-decoration: none;
 
         &:hover {
             text-decoration: underline;
-            color: #2a3db5;
+            color: #003078;
         }
 
         &:focus {

@@ -15,9 +15,21 @@ $location = [[
 
 $dc_fg = new fewacf\field_group('Team Contact Card', '202604140060a', $location, 10);
 
+$dc_fg->add_field(new acf_fields\select('Header Icon', 'dc_header_icon_type', '202604140060n', [
+    'instructions'  => 'Icon displayed in the card header and pill button.',
+    'choices'       => [
+        'group'      => 'Group / Team',
+        'person'     => 'Person',
+        'headphones' => 'Headphones (Support)',
+        'chat'       => 'Chat',
+    ],
+    'default_value' => 'group',
+    'allow_null'    => 0,
+]));
+
 $dc_fg->add_field(new acf_fields\color_picker('Header Icon Colour', 'dc_header_color', '202604140060b', [
     'instructions'  => 'Colour used for the card header icon.',
-    'default_value' => '#3d53de',
+    'default_value' => '#6b7280',
 ]));
 
 $dc_fg->add_field(new acf_fields\text('Card Title', 'dc_popup_title', '202604140060d', [

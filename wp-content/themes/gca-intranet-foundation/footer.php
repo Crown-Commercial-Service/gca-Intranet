@@ -18,15 +18,16 @@
           foreach ($responsible_teams as $term) {
             $popup_title = get_field('dc_popup_title', $term);
             $dc_terms[] = [
-              'term'         => $term,
-              'popup_title'  => $popup_title,
-              'header_color' => get_field('dc_header_color', $term) ?: '#3d53de',
-              'description'  => get_field('dc_popup_description', $term),
-              'items'        => get_field('dc_contact_items', $term) ?: [],
-              'footer_text'  => get_field('dc_footer_link_text', $term),
-              'footer_url'   => get_field('dc_footer_link_url', $term),
-              'has_panel'    => !empty($popup_title) && gca_flag_enabled('directorate-contact'),
-              'widget_id'    => wp_unique_id('dc-term-'),
+              'term'             => $term,
+              'popup_title'      => $popup_title,
+              'header_icon_type' => get_field('dc_header_icon_type', $term) ?: 'group',
+              'header_color'     => get_field('dc_header_color', $term) ?: '#6b7280',
+              'description'      => get_field('dc_popup_description', $term),
+              'items'            => get_field('dc_contact_items', $term) ?: [],
+              'footer_text'      => get_field('dc_footer_link_text', $term),
+              'footer_url'       => get_field('dc_footer_link_url', $term),
+              'has_panel'        => !empty($popup_title) && gca_flag_enabled('directorate-contact'),
+              'widget_id'        => wp_unique_id('dc-term-'),
             ];
           }
       ?>
@@ -43,7 +44,7 @@
                 <?php else : ?>
                   disabled
                 <?php endif; ?>
-              ><svg class="dc-widget__trigger-icon" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 2C6.48 2 2 6.48 2 12v4.5c0 .83.67 1.5 1.5 1.5H6c.55 0 1-.45 1-1v-4c0-.55-.45-1-1-1H4v-1c0-4.42 3.58-8 8-8s8 3.58 8 8v1h-2c-.55 0-1 .45-1 1v4c0 .55.45 1 1 1h2.5c.83 0 1.5-.67 1.5-1.5V12c0-5.52-4.48-10-10-10z"/></svg><?php echo esc_html($td['term']->name); ?><?php if ($td['has_panel']) : ?><svg class="dc-widget__chevron" width="14" height="14" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg><?php endif; ?></button>
+              ><svg class="dc-widget__trigger-icon" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="<?php echo esc_attr(dc_get_icon_path_d($td['header_icon_type'])); ?>"/></svg><?php echo esc_html($td['term']->name); ?><?php if ($td['has_panel']) : ?><svg class="dc-widget__chevron" width="14" height="14" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg><?php endif; ?></button>
             </div>
           <?php endforeach; ?>
         </div>
@@ -58,10 +59,10 @@
           >
             <div class="dc-widget__panel-inner">
               <div class="dc-widget__panel-header">
-                <span class="dc-widget__header-icon" style="color:<?php echo esc_attr($td['header_color']); ?>;">
-                  <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 2C6.48 2 2 6.48 2 12v4.5c0 .83.67 1.5 1.5 1.5H6c.55 0 1-.45 1-1v-4c0-.55-.45-1-1-1H4v-1c0-4.42 3.58-8 8-8s8 3.58 8 8v1h-2c-.55 0-1 .45-1 1v4c0 .55.45 1 1 1h2.5c.83 0 1.5-.67 1.5-1.5V12c0-5.52-4.48-10-10-10z"/></svg>
+                <span class="dc-widget__header-icon">
+                  <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="<?php echo esc_attr(dc_get_icon_path_d($td['header_icon_type'])); ?>"/></svg>
                 </span>
-                <h2 class="dc-widget__title"><?php echo esc_html($td['popup_title']); ?></h2>
+                <h3 class="dc-widget__title"><?php echo esc_html($td['popup_title']); ?></h3>
               </div>
               <div class="dc-widget__panel-body">
                 <?php if ($td['description']) : ?>
