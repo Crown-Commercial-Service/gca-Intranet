@@ -56,6 +56,8 @@ get_template_part('template-parts/breadcrumbs');
                 <div class="govuk-body" data-testid="blog-content">
                   <?php the_content(); ?>
                 </div>
+
+                <?php get_template_part('template-parts/likes-and-comments'); ?>
             </div>
         </div>
 
