@@ -16,12 +16,21 @@ RUN set -eux; \
     npm run js:minifygovuk-frontend
 
 # STAGE 2: The actual WordPress container
-FROM wordpress:6.9.4-php8.2-apache
+FROM wordpress:6.9.4-php8.3-apache
 
 COPY docker/php.ini /usr/local/etc/php/conf.d/custom-php.ini
 
+<<<<<<< HEAD
 # 1. Install system dependencies (zip for WP-CLI/GDS)
 RUN apt-get update && apt-get install -y libzip-dev unzip && docker-php-ext-install zip
+=======
+# 1. Upgrade all OS packages to pick up patched versions of Debian libraries (resolves CVEs in
+#    libraw, libde265, nghttp2, lcms2 etc. that ship with the base image).
+#    Then install system dependencies and the PHP Redis extension.
+RUN apt-get update && apt-get upgrade -y && apt-get install -y libzip-dev unzip && docker-php-ext-install zip \
+  && pecl install redis \
+  && docker-php-ext-enable redis
+>>>>>>> 873297c (Added base image upgrade and package update)
 
 # 2. Install WP-CLI into the image
 ARG WP_CLI_VERSION=2.12.0
