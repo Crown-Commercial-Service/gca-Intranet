@@ -2,38 +2,48 @@
 /**
  * Fewbricks Template: Latest News
  * Fields: latestnews_latestnews_title, _description, _featured_count, _secondary_count,
- *         _see_more_text, _see_more_url
+ *         _selected_posts, _see_more_text, _see_more_url
  */
 $title           = $row['latestnews_latestnews_title']           ?? 'Latest news';
 $description     = $row['latestnews_latestnews_description']     ?? "What's happening in our organisation";
 $featured_count  = (int) ( $row['latestnews_latestnews_featured_count']  ?? 1 );
 $secondary_count = (int) ( $row['latestnews_latestnews_secondary_count'] ?? 3 );
+$selected_posts  = $row['latestnews_latestnews_selected_posts']  ?? [];
 $see_more_text   = $row['latestnews_latestnews_see_more_text']   ?? 'Browse all news articles';
 $see_more_url    = $row['latestnews_latestnews_see_more_url']    ?? '/news/';
 
 $featured_count  = max( 1, $featured_count );
 $secondary_count = max( 1, $secondary_count );
+$title           = trim((string) $title);
+$description     = trim((string) $description);
+$has_header      = ($title !== '' || $description !== '');
+$news_posts      = gca_get_selected_or_latest_posts( 'news', is_array( $selected_posts ) ? $selected_posts : [], $featured_count + $secondary_count );
+$featured_posts  = array_slice( $news_posts, 0, $featured_count );
+$secondary_posts = array_slice( $news_posts, $featured_count, $secondary_count );
 ?>
 
 <div class="govuk-grid-column-two-thirds gca-right-line" data-testid="latest-news-column">
-    <div class="gca-homepage-section-title" data-testid="latest-news-header">
-        <h2 class="govuk-heading-m gca-clamp-2" data-testid="latest-news-heading">
-            <?php echo esc_html( $title ); ?>
-        </h2>
-        <p class="govuk-body" data-testid="latest-news-subheading">
-            <?php echo esc_html( $description ); ?>
-        </p>
-    </div>
+    <?php if ( $has_header ) : ?>
+        <div class="gca-homepage-section-title" data-testid="latest-news-header">
+            <?php if ( $title !== '' ) : ?>
+                <h2 class="govuk-heading-m gca-clamp-2" data-testid="latest-news-heading">
+                    <?php echo esc_html( $title ); ?>
+                </h2>
+            <?php endif; ?>
+            <?php if ( $description !== '' ) : ?>
+                <p class="govuk-body" data-testid="latest-news-subheading">
+                    <?php echo esc_html( $description ); ?>
+                </p>
+            <?php endif; ?>
+        </div>
+    <?php endif; ?>
 
     <div class="gca-equal-height-row" data-testid="latest-news-section">
         <div class="govuk-grid-column-one-half govuk-!-padding-left-0" data-testid="latest-news-featured-col">
             <div class="gca-featured-news" data-testid="latest-news-featured-card">
-                <?php
-                $latest_post = new WP_Query( [ 'post_type' => 'news', 'posts_per_page' => $featured_count ] );
-                if ( $latest_post->have_posts() ) :
-                    while ( $latest_post->have_posts() ) :
-                        $latest_post->the_post();
-                        ?>
+                <?php if ( ! empty( $featured_posts ) ) : ?>
+                    <?php foreach ( $featured_posts as $featured_post ) : ?>
+                        <?php setup_postdata( $featured_post ); ?>
                         <?php if ( has_post_thumbnail() ) : ?>
                             <img
                                 data-testid="latest-news-featured-image"
@@ -55,25 +65,18 @@ $secondary_count = max( 1, $secondary_count );
                                 <?php echo esc_html( get_the_date( 'j F Y' ) ); ?>
                             </p>
                         </div>
-                        <?php
-                    endwhile;
-                endif;
-                wp_reset_postdata();
-                ?>
+                    <?php endforeach; ?>
+                    <?php wp_reset_postdata(); ?>
+                <?php endif; ?>
             </div>
         </div>
 
         <div class="govuk-grid-column-one-half gca-flex-box-news" data-testid="latest-news-secondary-col">
-            <?php
-            $secondary_posts = new WP_Query( [
-                'post_type'      => 'news',
-                'posts_per_page' => $secondary_count,
-                'offset'         => $featured_count,
-            ] );
-            if ( $secondary_posts->have_posts() ) :
-                while ( $secondary_posts->have_posts() ) :
-                    $secondary_posts->the_post();
-                    $is_first         = ( $secondary_posts->current_post === 0 );
+            <?php if ( ! empty( $secondary_posts ) ) : ?>
+                <?php foreach ( $secondary_posts as $index => $secondary_post ) : ?>
+                    <?php
+                    setup_postdata( $secondary_post );
+                    $is_first          = ( $index === 0 );
                     $padding_top_class = $is_first ? 'gca-first-small-list-news' : 'gca-not_first-small-list-news';
                     ?>
                     <div class="gca-small-list-news <?php echo esc_attr( $padding_top_class ); ?>" data-testid="latest-news-secondary-card">
@@ -88,11 +91,11 @@ $secondary_count = max( 1, $secondary_count );
                                 <?php endif; ?>
                             </div>
                             <div class="govuk-grid-column-two-third gca-flex-box-news" data-testid="latest-news-secondary-content">
-                                <h3 class="govuk-heading-s govuk-!-margin-bottom-1" data-testid="latest-news-secondary-title">
+                                <h4 class="govuk-heading-s govuk-!-margin-bottom-1" data-testid="latest-news-secondary-title">
                                     <a class="govuk-link govuk-!-text-break-word" data-testid="latest-news-secondary-link" href="<?php the_permalink(); ?>">
                                         <?php the_title(); ?>
                                     </a>
-                                </h3>
+                                </h4>
                                 <p class="govuk-body-s" data-testid="latest-news-secondary-excerpt">
                                     <?php echo esc_html( wp_trim_words( get_the_excerpt(), 12, '...' ) ); ?>
                                 </p>
@@ -102,11 +105,9 @@ $secondary_count = max( 1, $secondary_count );
                             </div>
                         </div>
                     </div>
-                    <?php
-                endwhile;
-            endif;
-            wp_reset_postdata();
-            ?>
+                <?php endforeach; ?>
+                <?php wp_reset_postdata(); ?>
+            <?php endif; ?>
         </div>
 
         <?php if ( $see_more_url ) : ?>

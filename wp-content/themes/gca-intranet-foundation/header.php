@@ -64,10 +64,10 @@ height="0" width="0" style="display:none;visibility:hidden" title="Google Tag Ma
             </nav>
 
             <?php if (!is_search()) : ?>
-            <form class="site-search" role="search" action="<?php echo esc_url(get_theme_mod('gca_search_url', home_url('/'))); ?>" method="get">
+            <form class="site-search site-search--autocomplete" role="search" action="<?php echo esc_url(get_theme_mod('gca_search_url', home_url('/'))); ?>" method="get" data-autocomplete="header-search">
               <label class="govuk-visually-hidden" for="site-search">Search the intranet</label>
               <div class="search-input-group">
-                <input id="site-search" name="s" type="search" class="govuk-input" placeholder="Search the intranet" autocomplete="off">
+                <input id="site-search" name="s" type="search" class="govuk-input" placeholder="Search the intranet" autocomplete="off" aria-autocomplete="list" aria-expanded="false" aria-controls="site-search-suggestions" role="combobox">
                 <button class="govuk-button search-submit" type="submit" aria-label="Search the intranet">
                   <span class="govuk-visually-hidden">Search</span>
                   <svg class="gca-search-icon" width="22" height="22" viewBox="0 0 22 22" fill="none" aria-hidden="true" focusable="false" xmlns="http://www.w3.org/2000/svg">
@@ -75,6 +75,7 @@ height="0" width="0" style="display:none;visibility:hidden" title="Google Tag Ma
                   </svg>
                 </button>
               </div>
+              <div class="gca-search-autocomplete" id="site-search-suggestions" hidden></div>
             </form>
             <?php endif; ?>
 

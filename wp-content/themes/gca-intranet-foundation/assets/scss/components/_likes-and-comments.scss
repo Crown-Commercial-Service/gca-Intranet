@@ -1,0 +1,323 @@
+// =============================================================================
+// Likes & Comments
+// =============================================================================
+
+$gca-lc-border:   #b1b4b6;
+$gca-lc-bg:       #f8f8f8;
+$gca-lc-liked:    #d4351c;
+$gca-lc-reply-bg: #f3f2f1;
+
+.gca-lc {
+    font-family: $govuk-font-family;
+}
+
+// ── Like bar ────────────────────────────────────────────────────────────────
+
+.gca-lc__like-bar {
+    display: flex;
+    align-items: center;
+    gap: govuk-spacing(4);
+    margin-bottom: govuk-spacing(4);
+}
+
+.gca-lc__like-btn,
+.gca-lc__comment-toggle-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: govuk-spacing(1);
+    background: none;
+    border: 2px solid transparent;
+    border-radius: 4px;
+    padding: govuk-spacing(1) govuk-spacing(2);
+    cursor: pointer;
+    font-family: $govuk-font-family;
+    font-size: govuk-px-to-rem(16);
+    font-weight: 600;
+    color: $govuk-text-colour;
+    transition: color 0.15s ease, border-color 0.15s ease;
+
+    &:hover {
+        color: $gca-lc-liked;
+        text-decoration: underline;
+    }
+
+    &:focus {
+        @include govuk-focused-text;
+        outline-offset: 0;
+    }
+}
+
+// Pressed/liked state
+.gca-lc__like-btn[aria-pressed="true"] {
+    color: $gca-lc-liked;
+
+    .gca-lc__like-path {
+        fill: $gca-lc-liked;
+        stroke: $gca-lc-liked;
+    }
+}
+
+.gca-lc__like-count {
+    min-width: 1.2em;
+    text-align: left;
+}
+
+// ── Comments panel ──────────────────────────────────────────────────────────
+
+.gca-lc__comments-panel {
+    border-top: 1px solid $gca-lc-border;
+    padding-top: govuk-spacing(4);
+
+    &[hidden] {
+        display: none;
+    }
+}
+
+// ── Comment form ────────────────────────────────────────────────────────────
+
+.gca-lc__form-wrap {
+    display: flex;
+    gap: govuk-spacing(2);
+    margin-bottom: govuk-spacing(5);
+    position: relative;
+}
+
+.gca-lc__form-avatar {
+    flex-shrink: 0;
+    padding-top: govuk-spacing(1);
+}
+
+.gca-lc__avatar {
+    border-radius: 50%;
+    display: block;
+}
+
+.gca-lc__form {
+    flex: 1;
+    min-width: 0;
+}
+
+.gca-lc__textarea-group {
+    margin-bottom: govuk-spacing(2);
+    position: relative;
+}
+
+.gca-lc__textarea {
+    width: 100%;
+    resize: vertical;
+    min-height: 80px;
+    font-size: govuk-px-to-rem(16);
+}
+
+.gca-lc__form-actions {
+    display: flex;
+    align-items: center;
+    gap: govuk-spacing(3);
+
+    .govuk-button {
+        margin-bottom: 0;
+    }
+}
+
+// ── @mention dropdown ───────────────────────────────────────────────────────
+
+.gca-lc__mention-list {
+    position: absolute;
+    top: calc(100% + 2px);
+    left: 0;
+    right: 0;
+    z-index: 100;
+    background: #fff;
+    border: 2px solid $govuk-focus-colour;
+    border-radius: 4px;
+    list-style: none;
+    margin: 0;
+    padding: govuk-spacing(1) 0;
+    max-height: 220px;
+    overflow-y: auto;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
+
+    &[hidden] {
+        display: none;
+    }
+}
+
+.gca-lc__mention-item {
+    display: flex;
+    align-items: center;
+    gap: govuk-spacing(2);
+    padding: govuk-spacing(1) govuk-spacing(3);
+    cursor: pointer;
+    font-size: govuk-px-to-rem(16);
+
+    &:hover,
+    &[aria-selected="true"] {
+        background: $govuk-focus-colour;
+        color: $govuk-focus-text-colour;
+    }
+
+    img {
+        border-radius: 50%;
+        flex-shrink: 0;
+    }
+}
+
+// ── Comments list ───────────────────────────────────────────────────────────
+
+.gca-lc__list {
+    display: flex;
+    flex-direction: column;
+    gap: govuk-spacing(4);
+}
+
+.gca-lc__loading {
+    color: govuk-colour('dark-grey');
+    margin-bottom: 0;
+}
+
+// ── Individual comment ──────────────────────────────────────────────────────
+
+.gca-lc__comment {
+    display: flex;
+    gap: govuk-spacing(2);
+}
+
+.gca-lc__comment--reply {
+    margin-left: govuk-spacing(7);
+    margin-top: govuk-spacing(2);
+
+    @include govuk-media-query($until: tablet) {
+        margin-left: govuk-spacing(4);
+    }
+}
+
+.gca-lc__comment-avatar {
+    flex-shrink: 0;
+    padding-top: 4px;
+}
+
+.gca-lc__comment-body {
+    flex: 1;
+    min-width: 0;
+    background: $gca-lc-bg;
+    border-radius: 4px;
+    padding: govuk-spacing(2) govuk-spacing(3);
+}
+
+.gca-lc__comment--reply .gca-lc__comment-body {
+    background: $gca-lc-reply-bg;
+}
+
+.gca-lc__comment-header {
+    display: flex;
+    align-items: baseline;
+    flex-wrap: wrap;
+    gap: govuk-spacing(1);
+    margin-bottom: govuk-spacing(1);
+}
+
+.gca-lc__comment-author {
+    font-weight: 700;
+    font-size: govuk-px-to-rem(16);
+    color: $govuk-text-colour;
+    text-decoration: none;
+
+    &:hover {
+        text-decoration: underline;
+    }
+}
+
+.gca-lc__comment-date {
+    font-size: govuk-px-to-rem(14);
+    color: govuk-colour('dark-grey');
+}
+
+.gca-lc__comment-text {
+    margin: 0 0 govuk-spacing(2);
+    font-size: govuk-px-to-rem(16);
+    word-break: break-word;
+    white-space: pre-wrap;
+}
+
+.gca-lc__mention {
+    color: govuk-colour('blue');
+    font-weight: 600;
+    text-decoration: none;
+
+    &:hover {
+        text-decoration: underline;
+    }
+}
+
+// ── Comment actions bar ─────────────────────────────────────────────────────
+
+.gca-lc__comment-actions {
+    display: flex;
+    align-items: center;
+    gap: govuk-spacing(3);
+    flex-wrap: wrap;
+}
+
+.gca-lc__action-btn {
+    background: none;
+    border: none;
+    padding: 0;
+    cursor: pointer;
+    font-family: $govuk-font-family;
+    font-size: govuk-px-to-rem(14);
+    font-weight: 600;
+    color: govuk-colour('dark-grey');
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    border-bottom: 2px solid transparent;
+
+    &:hover {
+        color: $govuk-text-colour;
+        border-bottom-color: $govuk-text-colour;
+        text-decoration: none;
+    }
+
+    &:focus {
+        @include govuk-focused-text;
+    }
+
+    &[aria-pressed="true"] {
+        color: $gca-lc-liked;
+
+        .gca-lc__like-path {
+            fill: $gca-lc-liked;
+            stroke: $gca-lc-liked;
+        }
+    }
+}
+
+.gca-lc__action-btn--delete {
+    color: $gca-lc-liked;
+
+    &:hover {
+        color: #a0280e;
+        border-bottom-color: #a0280e;
+    }
+}
+
+// ── Reply form (inline) ─────────────────────────────────────────────────────
+
+.gca-lc__reply-form-wrap {
+    margin-top: govuk-spacing(3);
+    margin-left: govuk-spacing(7);
+
+    @include govuk-media-query($until: tablet) {
+        margin-left: govuk-spacing(4);
+    }
+}
+
+// ── Notification banner (success/error) ─────────────────────────────────────
+
+.gca-lc__notification {
+    margin-bottom: govuk-spacing(3);
+
+    &[hidden] {
+        display: none;
+    }
+}

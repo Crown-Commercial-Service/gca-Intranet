@@ -43,6 +43,15 @@ class component_latestnews extends project_brick
             'max'           => 6,
         ] ) );
 
+        $this->add_field( new acf_fields\relationship( 'Selected news articles', 'selected_posts', '202604220001a', [
+            'post_type'    => [ 'news' ],
+            'max'          => 9,
+            'filters'      => [
+                0 => 'search',
+            ],
+            'instructions' => 'Optional. Choose specific news articles in display order. If you leave this empty, the latest published news will be used.',
+        ] ) );
+
         $this->add_field( new acf_fields\text( '"See more" link text', 'see_more_text', '202604100008a', [
             'instructions'  => 'Label for the "browse all" link at the bottom of the section.',
             'default_value' => 'Browse all news articles',

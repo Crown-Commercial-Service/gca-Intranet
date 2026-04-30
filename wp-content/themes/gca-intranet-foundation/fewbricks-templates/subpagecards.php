@@ -55,11 +55,11 @@ if ( empty( $subpages ) ) {
                     <li class="card-list__item">
                         <div class="card-list__item__wrapper subpage-card">
 
-                            <h3 class="govuk-heading-m subpage-card__title">
+                            <h4 class="govuk-heading-m subpage-card__title">
                                 <a href="<?php echo esc_url( $url ); ?>" class="subpage-card__link">
                                     <?php echo esc_html( $title ); ?>
                                 </a>
-                            </h3>
+                            </h4>
 
                             <?php if ( $summary ) : ?>
                                 <p class="govuk-body subpage-card__summary">

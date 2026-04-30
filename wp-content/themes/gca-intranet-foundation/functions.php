@@ -7,10 +7,12 @@ if (!defined('ABSPATH')) {
 
 require_once get_template_directory() . '/inc/class-ccs-mega-menu-walker.php';
 require_once get_template_directory() . '/inc/shortcodes.php';
-require get_template_directory() . '/inc/auth-logic.php';
+require_once get_template_directory() . '/inc/auth-logic.php';
 
 // Feature flag registrations
-require get_template_directory() . '/inc/features.php';
+require_once get_template_directory() . '/inc/features.php';
+require_once get_template_directory() . '/inc/rest-api-auth.php';
+require_once get_template_directory() . '/inc/features/likes-and-comments.php';
 
 /**
  * Theme setup
@@ -206,6 +208,239 @@ add_action('wp_enqueue_scripts', function (): void {
 })();
 ');
 
+    wp_register_script('gca-search-autocomplete', '', [], false, true);
+    wp_enqueue_script('gca-search-autocomplete');
+    wp_add_inline_script(
+        'gca-search-autocomplete',
+        'window.gcaSearchAutocomplete = ' . wp_json_encode([
+            'ajaxUrl'       => admin_url('admin-ajax.php'),
+            'minChars'      => 3,
+            'maxResults'    => 5,
+            'loadingText'   => __('Searching...', 'gca-intranet'),
+            'noResultsText' => __('No suggestions found', 'gca-intranet'),
+        ]) . ';',
+        'before'
+    );
+    wp_add_inline_script('gca-search-autocomplete', <<<'JS'
+document.addEventListener("DOMContentLoaded", function () {
+    var config = window.gcaSearchAutocomplete || {};
+    var forms = document.querySelectorAll("[data-autocomplete='header-search']");
+
+    forms.forEach(function (form, formIndex) {
+        var input = form.querySelector("input[name='s']");
+        var panel = form.querySelector(".gca-search-autocomplete");
+
+        if (!input || !panel) {
+            return;
+        }
+
+        var listId = panel.id || ("gca-search-autocomplete-" + formIndex);
+        var abortController = null;
+        var debounceTimer = null;
+        var activeIndex = -1;
+        var suggestions = [];
+
+        panel.id = listId;
+        panel.setAttribute("role", "listbox");
+        input.setAttribute("aria-controls", listId);
+
+        function escapeHtml(value) {
+            return String(value).replace(/[&<>"']/g, function (char) {
+                return {
+                    "&": "&amp;",
+                    "<": "&lt;",
+                    ">": "&gt;",
+                    "\"": "&quot;",
+                    "'": "&#039;"
+                }[char];
+            });
+        }
+
+        function closePanel() {
+            activeIndex = -1;
+            suggestions = [];
+            input.removeAttribute("aria-activedescendant");
+            input.setAttribute("aria-expanded", "false");
+            panel.hidden = true;
+            panel.innerHTML = "";
+        }
+
+        function setActive(index) {
+            var options = panel.querySelectorAll(".gca-search-autocomplete__option");
+
+            options.forEach(function (option, optionIndex) {
+                var isActive = optionIndex === index;
+                option.classList.toggle("is-active", isActive);
+                option.setAttribute("aria-selected", isActive ? "true" : "false");
+
+                if (isActive) {
+                    input.setAttribute("aria-activedescendant", option.id);
+                }
+            });
+
+            if (index < 0 || !options[index]) {
+                input.removeAttribute("aria-activedescendant");
+            }
+        }
+
+        function renderStatus(message) {
+            activeIndex = -1;
+            suggestions = [];
+            input.removeAttribute("aria-activedescendant");
+            input.setAttribute("aria-expanded", "true");
+            panel.hidden = false;
+            panel.innerHTML = "<div class=\"gca-search-autocomplete__status\">" + escapeHtml(message) + "</div>";
+        }
+
+        function renderSuggestions(items) {
+            if (!items.length) {
+                renderStatus(config.noResultsText || "No suggestions found");
+                return;
+            }
+
+            suggestions = items;
+            activeIndex = -1;
+            input.removeAttribute("aria-activedescendant");
+            input.setAttribute("aria-expanded", "true");
+            panel.hidden = false;
+
+            var html = "<ul class=\"gca-search-autocomplete__list\">";
+            items.forEach(function (item, index) {
+                var optionId = listId + "-option-" + index;
+                var mediaHtml = item.image
+                    ? "<span class=\"gca-search-autocomplete__option-media\"><img src=\"" + escapeHtml(item.image) + "\" alt=\"\" class=\"gca-search-autocomplete__option-avatar\" loading=\"lazy\" decoding=\"async\"></span>"
+                    : "";
+                var bodyClass = item.image
+                    ? "gca-search-autocomplete__option-body has-avatar"
+                    : "gca-search-autocomplete__option-body";
+                html += "<li class=\"gca-search-autocomplete__item\">" +
+                    "<a href=\"" + escapeHtml(item.url) + "\" id=\"" + optionId + "\" class=\"gca-search-autocomplete__option\" role=\"option\" aria-selected=\"false\" data-index=\"" + index + "\">" +
+                    mediaHtml +
+                    "<span class=\"" + bodyClass + "\">" +
+                    "<span class=\"gca-search-autocomplete__option-title\">" + escapeHtml(item.title) + "</span>" +
+                    (item.meta ? "<span class=\"gca-search-autocomplete__option-meta\">" + escapeHtml(item.meta) + "</span>" : "") +
+                    "</span>" +
+                    "</a>" +
+                    "</li>";
+            });
+            html += "</ul>";
+            panel.innerHTML = html;
+        }
+
+        function fetchSuggestions(term) {
+            if (abortController) {
+                abortController.abort();
+            }
+
+            abortController = new AbortController();
+            renderStatus(config.loadingText || "Searching...");
+
+            var params = new URLSearchParams({
+                action: "gca_search_autocomplete",
+                term: term
+            });
+
+            fetch(config.ajaxUrl + "?" + params.toString(), {
+                method: "GET",
+                credentials: "same-origin",
+                signal: abortController.signal
+            })
+                .then(function (response) {
+                    if (!response.ok) {
+                        throw new Error("Request failed");
+                    }
+
+                    return response.json();
+                })
+                .then(function (payload) {
+                    var items = payload && payload.success && payload.data && payload.data.items
+                        ? payload.data.items
+                        : [];
+
+                    renderSuggestions(items);
+                })
+                .catch(function (error) {
+                    if (error && error.name === "AbortError") {
+                        return;
+                    }
+
+                    closePanel();
+                });
+        }
+
+        input.addEventListener("input", function () {
+            var value = input.value.trim();
+
+            if (value.length < (config.minChars || 3)) {
+                if (abortController) {
+                    abortController.abort();
+                }
+
+                window.clearTimeout(debounceTimer);
+                closePanel();
+                return;
+            }
+
+            window.clearTimeout(debounceTimer);
+            debounceTimer = window.setTimeout(function () {
+                fetchSuggestions(value);
+            }, 180);
+        });
+
+        input.addEventListener("keydown", function (event) {
+            if (panel.hidden || !suggestions.length) {
+                return;
+            }
+
+            if (event.key === "ArrowDown") {
+                event.preventDefault();
+                activeIndex = (activeIndex + 1) % suggestions.length;
+                setActive(activeIndex);
+                return;
+            }
+
+            if (event.key === "ArrowUp") {
+                event.preventDefault();
+                activeIndex = (activeIndex - 1 + suggestions.length) % suggestions.length;
+                setActive(activeIndex);
+                return;
+            }
+
+            if (event.key === "Enter" && activeIndex >= 0 && suggestions[activeIndex]) {
+                event.preventDefault();
+                window.location.href = suggestions[activeIndex].url;
+                return;
+            }
+
+            if (event.key === "Escape") {
+                closePanel();
+            }
+        });
+
+        panel.addEventListener("mousedown", function (event) {
+            if (!event.target.closest(".gca-search-autocomplete__option")) {
+                event.preventDefault();
+            }
+        });
+
+        form.addEventListener("focusout", function () {
+            window.setTimeout(function () {
+                if (!form.contains(document.activeElement)) {
+                    closePanel();
+                }
+            }, 120);
+        });
+
+        document.addEventListener("click", function (event) {
+            if (!form.contains(event.target)) {
+                closePanel();
+            }
+        });
+    });
+});
+JS
+    );
+
     // GOV.UK Frontend JS
     if (is_singular()) {
         $govuk_js_rel = '/assets/scripts/all.js';
@@ -232,6 +467,394 @@ add_action('wp_enqueue_scripts', function (): void {
         );
     }
 
+});
+
+/**
+ * Likes & Comments – enqueue config + inline JS on single posts.
+ */
+add_action('wp_enqueue_scripts', function (): void {
+    if (!is_singular(['post', 'blog', 'news', 'work_update'])) {
+        return;
+    }
+
+    wp_register_script('gca-interactions', '', [], false, true);
+    wp_enqueue_script('gca-interactions');
+
+    wp_add_inline_script('gca-interactions', 'window.gcaInteractions = ' . wp_json_encode([
+        'restUrl'       => esc_url_raw(rest_url('gca/v1')),
+        'nonce'         => wp_create_nonce('wp_rest'),
+        'currentUserId' => get_current_user_id(),
+    ]) . ';');
+
+    wp_add_inline_script('gca-interactions', <<<'JS'
+(function () {
+    'use strict';
+
+    var cfg     = window.gcaInteractions || {};
+    var restUrl = cfg.restUrl || '';
+    var nonce   = cfg.nonce  || '';
+
+    function apiFetch(method, path, body) {
+        var opts = {
+            method:  method,
+            headers: { 'X-WP-Nonce': nonce, 'Content-Type': 'application/json' }
+        };
+        if (body !== undefined) {
+            opts.body = JSON.stringify(body);
+        }
+        return fetch(restUrl + path, opts).then(function (r) {
+            if (!r.ok) { throw new Error(r.status); }
+            return r.json();
+        });
+    }
+
+    function esc(str) {
+        var d = document.createElement('div');
+        d.textContent = String(str);
+        return d.innerHTML;
+    }
+
+    // ── Comment rendering ────────────────────────────────────────────────────
+
+    function likeBtnHtml(liked, count, commentId) {
+        return '<button type="button" class="gca-lc__action-btn" aria-pressed="' + (liked ? 'true' : 'false') +
+            '" data-action="toggle-comment-like" data-comment-id="' + commentId + '">' +
+            '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">' +
+            '<path class="gca-lc__like-path" d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5' +
+            ' 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3' +
+            ' 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"' +
+            ' stroke="currentColor" stroke-width="2"/></svg>' +
+            '<span class="gca-lc__like-label">' + (liked ? 'Liked' : 'Like') + '</span>' +
+            ' <span data-like-count="' + commentId + '">' + count + '</span>' +
+            '</button>';
+    }
+
+    function renderComment(c, isReply) {
+        var repliesHtml = (c.replies || []).map(function (r) { return renderComment(r, true); }).join('');
+        var replyFormHtml = !isReply
+            ? '<div class="gca-lc__reply-form-wrap" id="gca-lc-reply-form-' + c.id + '" hidden>' +
+              '<div class="gca-lc__form-wrap">' +
+              '<form class="gca-lc__form gca-lc__reply-form" data-action="submit-comment" data-comment-id="' + c.id + '" novalidate>' +
+              '<input type="hidden" name="parent_id" value="' + c.id + '">' +
+              '<div class="govuk-form-group gca-lc__textarea-group">' +
+              '<label class="govuk-label govuk-visually-hidden" for="gca-lc-reply-ta-' + c.id + '">Reply to comment</label>' +
+              '<textarea id="gca-lc-reply-ta-' + c.id + '" class="govuk-textarea gca-lc__textarea"' +
+              ' name="content" rows="2" placeholder="Write a reply… Use @ to mention someone"' +
+              ' aria-label="Write a reply. Use @ to mention someone" maxlength="2000"></textarea>' +
+              '<ul class="gca-lc__mention-list" role="listbox" aria-label="Mention suggestions" hidden></ul>' +
+              '</div>' +
+              '<div class="gca-lc__form-actions">' +
+              '<button type="submit" class="govuk-button govuk-button--secondary gca-lc__submit-btn">Post reply</button>' +
+              ' <button type="button" class="gca-lc__action-btn" data-action="cancel-reply" data-comment-id="' + c.id + '">Cancel</button>' +
+              '</div></form></div></div>'
+            : '';
+
+        return '<div class="gca-lc__comment' + (isReply ? ' gca-lc__comment--reply' : '') +
+            '" id="gca-lc-comment-' + c.id + '">' +
+            '<div class="gca-lc__comment-avatar">' +
+            '<img src="' + esc(c.author_avatar) + '" alt="" width="40" height="40" class="gca-lc__avatar">' +
+            '</div>' +
+            '<div class="gca-lc__comment-body">' +
+            '<div class="gca-lc__comment-header">' +
+            (c.author_profile
+                ? '<a href="' + esc(c.author_profile) + '" class="gca-lc__comment-author">' + esc(c.author_name) + '</a>'
+                : '<span class="gca-lc__comment-author">' + esc(c.author_name) + '</span>') +
+            '<time class="gca-lc__comment-date" datetime="' + esc(c.date_iso) + '">' + esc(c.date_formatted) + '</time>' +
+            '</div>' +
+            '<p class="gca-lc__comment-text">' + c.content_html + '</p>' +
+            '<div class="gca-lc__comment-actions">' +
+            likeBtnHtml(c.user_has_liked, c.like_count, c.id) +
+            (!isReply ? '<button type="button" class="gca-lc__action-btn" data-action="show-reply-form" data-comment-id="' + c.id + '">Reply</button>' : '') +
+            (c.is_own ? '<button type="button" class="gca-lc__action-btn gca-lc__action-btn--delete" data-action="delete-comment" data-comment-id="' + c.id + '">Delete</button>' : '') +
+            '</div>' +
+            '</div>' +
+            '</div>' +
+            repliesHtml +
+            replyFormHtml;
+    }
+
+    function renderList(comments, container) {
+        if (!comments.length) {
+            container.innerHTML = '<p class="gca-lc__loading govuk-body-s">No comments yet. Be the first!</p>';
+            return;
+        }
+        container.innerHTML = comments.map(function (c) { return renderComment(c, false); }).join('');
+    }
+
+    // ── @mention autocomplete ────────────────────────────────────────────────
+
+    function setupMentions(textarea, mentionList) {
+        var timer = null;
+        var mentionStart = -1;
+        var query = '';
+        var users = [];
+        var selIdx = -1;
+
+        function close() {
+            mentionList.hidden = true;
+            mentionList.innerHTML = '';
+            mentionStart = -1;
+            query = '';
+            users = [];
+            selIdx = -1;
+        }
+
+        function setActive(idx) {
+            var items = mentionList.querySelectorAll('.gca-lc__mention-item');
+            items.forEach(function (li, i) {
+                li.setAttribute('aria-selected', i === idx ? 'true' : 'false');
+            });
+            selIdx = idx;
+        }
+
+        function insert(user) {
+            var val = textarea.value;
+            var token = '@[' + user.display_name + '](' + user.id + ')';
+            textarea.value = val.substring(0, mentionStart) + token + ' ' + val.substring(mentionStart + 1 + query.length);
+            close();
+            textarea.focus();
+        }
+
+        function showUsers(list) {
+            users = list;
+            if (!list.length) { close(); return; }
+            mentionList.innerHTML = list.map(function (u, i) {
+                return '<li class="gca-lc__mention-item" role="option" aria-selected="false" data-idx="' + i + '">' +
+                    '<img src="' + esc(u.avatar) + '" width="24" height="24" alt="">' +
+                    ' <span>' + esc(u.display_name) + '</span></li>';
+            }).join('');
+            mentionList.querySelectorAll('.gca-lc__mention-item').forEach(function (li) {
+                li.addEventListener('mousedown', function (e) {
+                    e.preventDefault();
+                    insert(users[parseInt(li.dataset.idx, 10)]);
+                });
+            });
+            mentionList.hidden = false;
+        }
+
+        textarea.addEventListener('input', function () {
+            var pos   = textarea.selectionStart;
+            var before = textarea.value.substring(0, pos);
+            var at    = before.lastIndexOf('@');
+            if (at === -1) { close(); return; }
+            var seg = before.substring(at + 1);
+            if (/\s/.test(seg) || seg.length > 40) { close(); return; }
+            mentionStart = at;
+            query = seg;
+            if (seg.length < 1) { close(); return; }
+            clearTimeout(timer);
+            timer = setTimeout(function () {
+                fetch(restUrl + '/users/search?q=' + encodeURIComponent(seg), {
+                    headers: { 'X-WP-Nonce': nonce }
+                }).then(function (r) { return r.json(); }).then(showUsers).catch(close);
+            }, 150);
+        });
+
+        textarea.addEventListener('keydown', function (e) {
+            if (mentionList.hidden) { return; }
+            var items = mentionList.querySelectorAll('.gca-lc__mention-item');
+            if (e.key === 'ArrowDown')  { e.preventDefault(); setActive((selIdx + 1) % items.length); }
+            else if (e.key === 'ArrowUp')   { e.preventDefault(); setActive((selIdx - 1 + items.length) % items.length); }
+            else if (e.key === 'Enter' && selIdx >= 0) { e.preventDefault(); insert(users[selIdx]); }
+            else if (e.key === 'Escape') { close(); }
+        });
+
+        textarea.addEventListener('blur', function () { setTimeout(close, 200); });
+    }
+
+    // ── Per-component initialisation ─────────────────────────────────────────
+
+    function initComponent(section) {
+        var postId = section.dataset.postId;
+        if (!postId) { return; }
+
+        var likeBtn          = section.querySelector('[data-action="toggle-post-like"]');
+        var likeCountEl      = section.querySelector('.gca-lc__like-count');
+        var commentToggleBtn = section.querySelector('[data-action="toggle-comments"]');
+        var commentsPanel    = section.querySelector('.gca-lc__comments-panel');
+        var commentList      = section.querySelector('.gca-lc__list');
+        var statusRegion     = section.querySelector('[aria-live="polite"]');
+        var mainForm         = section.querySelector('[data-action="submit-comment"]');
+        var panelLoaded      = false;
+        var listEvtsBound    = false;
+
+        function announce(msg) {
+            if (!statusRegion) { return; }
+            statusRegion.textContent = '';
+            setTimeout(function () { statusRegion.textContent = msg; }, 50);
+        }
+
+        function updateLike(liked, count) {
+            if (!likeBtn) { return; }
+            likeBtn.setAttribute('aria-pressed', liked ? 'true' : 'false');
+            var label = likeBtn.querySelector('.gca-lc__like-label');
+            if (label) { label.textContent = liked ? 'Liked' : 'Like'; }
+            if (likeCountEl) { likeCountEl.textContent = count; }
+        }
+
+        function updateCommentCount(count) {
+            var countEl = section.querySelector('.gca-lc__comment-count');
+            if (countEl) { countEl.textContent = count; }
+        }
+
+        // Bind a form (main or reply) submit event once.
+        function bindForm(form) {
+            if (!form || form.dataset.evtBound) { return; }
+            form.dataset.evtBound = '1';
+            var ta = form.querySelector('.gca-lc__textarea');
+            var ml = form.querySelector('.gca-lc__mention-list');
+            if (ta && ml) { setupMentions(ta, ml); }
+
+            form.addEventListener('submit', function (e) {
+                e.preventDefault();
+                var textarea  = form.querySelector('.gca-lc__textarea');
+                var parentEl  = form.querySelector('[name="parent_id"]');
+                var content   = textarea ? textarea.value.trim() : '';
+                var parentId  = parentEl ? parseInt(parentEl.value, 10) : 0;
+                if (!content) { if (textarea) { textarea.focus(); } return; }
+
+                var btn = form.querySelector('.gca-lc__submit-btn');
+                if (btn) { btn.disabled = true; }
+
+                apiFetch('POST', '/posts/' + postId + '/comments', { content: content, parent_id: parentId })
+                    .then(function (data) {
+                        if (textarea) { textarea.value = ''; }
+                        updateCommentCount(data.comment_count);
+
+                        var tmp = document.createElement('div');
+                        tmp.innerHTML = renderComment(data.comment, parentId > 0);
+
+                        if (parentId > 0) {
+                            var rf = document.getElementById('gca-lc-reply-form-' + parentId);
+                            if (rf) {
+                                while (tmp.firstChild) { rf.parentNode.insertBefore(tmp.firstChild, rf); }
+                                rf.hidden = true;
+                            }
+                        } else {
+                            while (tmp.firstChild) { commentList.appendChild(tmp.firstChild); }
+                        }
+
+                        // Remove "no comments" placeholder if present
+                        var ph = commentList.querySelector('.gca-lc__loading');
+                        if (ph) { ph.remove(); }
+
+                        // Bind any new reply form that was just inserted
+                        var newReplyForm = document.getElementById('gca-lc-reply-form-' + data.comment.id);
+                        if (newReplyForm) {
+                            var nrf = newReplyForm.querySelector('form');
+                            if (nrf) { bindForm(nrf); }
+                        }
+
+                        var newCommentEl = document.getElementById('gca-lc-comment-' + data.comment.id);
+                        if (newCommentEl) { newCommentEl.setAttribute('tabindex', '-1'); newCommentEl.focus(); }
+                        announce('Comment posted successfully.');
+                    })
+                    .catch(function () { announce('Could not post comment. Please try again.'); })
+                    .finally(function () { if (btn) { btn.disabled = false; } });
+            });
+        }
+
+        function bindListEvents() {
+            if (!commentList || listEvtsBound) { return; }
+            listEvtsBound = true;
+            commentList.addEventListener('click', function (e) {
+                var btn = e.target.closest('[data-action]');
+                if (!btn) { return; }
+                var action    = btn.dataset.action;
+                var commentId = btn.dataset.commentId;
+
+                if (action === 'toggle-comment-like') {
+                    apiFetch('POST', '/comments/' + commentId + '/like').then(function (data) {
+                        btn.setAttribute('aria-pressed', data.liked ? 'true' : 'false');
+                        var lbl = btn.querySelector('.gca-lc__like-label');
+                        if (lbl) { lbl.textContent = data.liked ? 'Liked' : 'Like'; }
+                        var cnt = commentList.querySelector('[data-like-count="' + commentId + '"]');
+                        if (cnt) { cnt.textContent = data.like_count; }
+                        announce(data.liked ? 'Comment liked.' : 'Comment like removed.');
+                    });
+                }
+
+                if (action === 'delete-comment') {
+                    if (!window.confirm('Delete this comment?')) { return; }
+                    apiFetch('DELETE', '/comments/' + commentId).then(function (data) {
+                        var el = document.getElementById('gca-lc-comment-' + commentId);
+                        if (el) { el.remove(); }
+                        var rf = document.getElementById('gca-lc-reply-form-' + commentId);
+                        if (rf) { rf.remove(); }
+                        updateCommentCount(data.comment_count);
+                        announce('Comment deleted.');
+                    });
+                }
+
+                if (action === 'show-reply-form') {
+                    var rf = document.getElementById('gca-lc-reply-form-' + commentId);
+                    if (!rf) { return; }
+                    rf.hidden = !rf.hidden;
+                    if (!rf.hidden) {
+                        var innerForm = rf.querySelector('form');
+                        bindForm(innerForm);
+                        var ta = rf.querySelector('.gca-lc__textarea');
+                        if (ta) { ta.focus(); }
+                    }
+                }
+
+                if (action === 'cancel-reply') {
+                    var rf = document.getElementById('gca-lc-reply-form-' + commentId);
+                    if (rf) { rf.hidden = true; }
+                }
+            });
+        }
+
+        function loadPanel() {
+            if (panelLoaded) { return; }
+            apiFetch('GET', '/posts/' + postId + '/interactions')
+                .then(function (data) {
+                    updateLike(data.user_has_liked, data.post_like_count);
+                    updateCommentCount(data.comment_count);
+                    renderList(data.comments, commentList);
+                    panelLoaded = true;
+                    bindListEvents();
+                })
+                .catch(function () {
+                    if (commentList) {
+                        commentList.innerHTML = '<p class="gca-lc__loading govuk-body-s">Could not load comments.</p>';
+                    }
+                });
+        }
+
+        // Load counts immediately on page load (without opening panel)
+        apiFetch('GET', '/posts/' + postId + '/interactions').then(function (data) {
+            updateLike(data.user_has_liked, data.post_like_count);
+            updateCommentCount(data.comment_count);
+        }).catch(function () {});
+
+        if (likeBtn) {
+            likeBtn.addEventListener('click', function () {
+                apiFetch('POST', '/posts/' + postId + '/like').then(function (data) {
+                    updateLike(data.liked, data.like_count);
+                    announce(data.liked ? 'Post liked.' : 'Post like removed.');
+                });
+            });
+        }
+
+        if (commentToggleBtn && commentsPanel) {
+            commentToggleBtn.addEventListener('click', function () {
+                var expanded = commentToggleBtn.getAttribute('aria-expanded') === 'true';
+                commentToggleBtn.setAttribute('aria-expanded', expanded ? 'false' : 'true');
+                commentsPanel.hidden = expanded;
+                if (!expanded) { loadPanel(); }
+            });
+        }
+
+        if (mainForm) { bindForm(mainForm); }
+    }
+
+    document.addEventListener('DOMContentLoaded', function () {
+        document.querySelectorAll('.gca-lc').forEach(initComponent);
+    });
+}());
+JS
+    );
 });
 
 /**
@@ -423,6 +1046,245 @@ function gca_search_truncate(string $str, int $length): string
     }
     return rtrim(mb_substr($str, 0, $length - 1)) . '…';
 }
+
+function gca_search_context_excerpt(string $query, int $context_chars = 60): string
+{
+    $content = wp_strip_all_tags(get_the_content());
+    $content = html_entity_decode($content, ENT_QUOTES, 'UTF-8');
+    $content = trim(preg_replace('/\s+/', ' ', $content) ?: '');
+
+    if ($content === '') {
+        return gca_search_truncate(get_the_excerpt(), 125);
+    }
+
+    $words = array_values(array_filter(array_map('trim', preg_split('/\s+/', trim($query)) ?: [])));
+
+    if (empty($words)) {
+        return gca_search_truncate($content, 125);
+    }
+
+    // Find the earliest position of any query word in the content.
+    $match_pos   = false;
+    $matched_len = 1;
+    foreach ($words as $word) {
+        $pos = mb_stripos($content, $word);
+        if ($pos !== false && ($match_pos === false || $pos < $match_pos)) {
+            $match_pos   = $pos;
+            $matched_len = mb_strlen($word);
+        }
+    }
+
+    if ($match_pos === false) {
+        return gca_search_truncate($content, 125);
+    }
+
+    $start   = max(0, $match_pos - $context_chars);
+    $length  = $context_chars + $matched_len + $context_chars;
+    $snippet = mb_substr($content, $start, $length);
+
+    $prefix = $start > 0 ? '…' : '';
+    $suffix = ($start + $length) < mb_strlen($content) ? '…' : '';
+
+    return $prefix . trim($snippet) . $suffix;
+}
+
+/**
+ * Build a compact autocomplete result set for the header search.
+ *
+ * @return array<int, array{title:string,meta:string,url:string,image?:string}>
+ */
+function gca_get_search_autocomplete_items(string $term, int $limit = 5): array
+{
+    $term = trim($term);
+    if (mb_strlen($term) < 3) {
+        return [];
+    }
+
+    $limit   = max(1, $limit);
+    $results = [];
+    $q_lower = mb_strtolower($term);
+
+    $score_text = static function (string $text) use ($q_lower): int {
+        $text = mb_strtolower(trim($text));
+        if ($text === '') {
+            return 0;
+        }
+        if ($text === $q_lower) {
+            return 100;
+        }
+        if (str_starts_with($text, $q_lower)) {
+            return 75;
+        }
+        if (str_contains($text, $q_lower)) {
+            return 50;
+        }
+
+        return 0;
+    };
+
+    if (
+        function_exists('gca_flag_enabled')
+        && gca_flag_enabled('staff-profiles')
+        && function_exists('gca_search_staff')
+    ) {
+        foreach (gca_search_staff($term, $limit) as $result) {
+            $role_line = trim(implode(' | ', array_filter([
+                (string) ($result->job_title ?? ''),
+                (string) ($result->team ?? ''),
+            ])));
+
+            $results[] = [
+                'title'    => (string) $result->display_name,
+                'meta'     => $role_line !== ''
+                    ? sprintf(__('Staff profile - %s', 'gca-intranet'), $role_line)
+                    : __('Staff profile', 'gca-intranet'),
+                'url'      => (string) $result->profile_url,
+                'image'    => (string) ($result->avatar_url ?? ''),
+                'score'    => max(
+                    $score_text((string) $result->display_name),
+                    $score_text((string) ($result->job_title ?? '')) > 0 ? 20 : 0,
+                    $score_text((string) ($result->team ?? '')) > 0 ? 10 : 0,
+                    10
+                ),
+                'sort_key' => (string) $result->display_name,
+            ];
+        }
+    }
+
+    $post_types = array_values(array_diff(
+        array_keys(get_post_types(['public' => true, 'exclude_from_search' => false])),
+        ['news']
+    ));
+
+    $posts = get_posts([
+        's'                   => $term,
+        'post_type'           => $post_types,
+        'post_status'         => 'publish',
+        'posts_per_page'      => max(10, $limit),
+        'orderby'             => 'relevance',
+        'order'               => 'DESC',
+        'suppress_filters'    => false,
+        'ignore_sticky_posts' => true,
+    ]);
+
+    foreach ($posts as $post) {
+        $title = get_the_title($post);
+        if ($title === '') {
+            continue;
+        }
+
+        $post_type = get_post_type($post);
+        $meta      = __('Content', 'gca-intranet');
+
+        if ($post_type === 'page') {
+            $meta = __('Page', 'gca-intranet');
+            $ct_terms = get_the_terms($post->ID, 'content_type');
+            if (!empty($ct_terms) && !is_wp_error($ct_terms)) {
+                $meta = $ct_terms[0]->name;
+            }
+        } else {
+            $post_type_object = get_post_type_object((string) $post_type);
+            if ($post_type_object) {
+                $meta = $post_type_object->labels->singular_name;
+            }
+        }
+
+        $results[] = [
+            'title'    => $title,
+            'meta'     => $meta,
+            'url'      => (string) get_permalink($post),
+            'score'    => max($score_text($title), 10),
+            'sort_key' => $title,
+        ];
+    }
+
+    usort($results, static function (array $a, array $b): int {
+        if ($b['score'] !== $a['score']) {
+            return $b['score'] <=> $a['score'];
+        }
+
+        return strcasecmp($a['sort_key'], $b['sort_key']);
+    });
+
+    $results = array_values(array_reduce($results, static function (array $carry, array $item): array {
+        $key = mb_strtolower($item['title']) . '|' . untrailingslashit($item['url']);
+        if (!isset($carry[$key])) {
+            $carry[$key] = $item;
+        }
+
+        return $carry;
+    }, []));
+
+    return array_map(static function (array $item): array {
+        return [
+            'title' => $item['title'],
+            'meta'  => $item['meta'],
+            'url'   => $item['url'],
+            'image' => $item['image'] ?? '',
+        ];
+    }, array_slice($results, 0, $limit));
+}
+
+/**
+ * Highlight search terms within a plain-text excerpt.
+ */
+function gca_highlight_search_excerpt(string $text, string $query): string
+{
+    $text  = wp_strip_all_tags($text);
+    $query = trim($query);
+
+    if ($text === '' || $query === '') {
+        return esc_html($text);
+    }
+
+    $parts = preg_split('/\s+/', $query) ?: [];
+    $parts = array_values(array_unique(array_filter(array_map('trim', $parts))));
+
+    if ($parts === []) {
+        return esc_html($text);
+    }
+
+    usort($parts, static fn (string $a, string $b): int => mb_strlen($b) <=> mb_strlen($a));
+
+    $pattern = '/(' . implode('|', array_map(static fn (string $part): string => preg_quote($part, '/'), $parts)) . ')/iu';
+    $segments = preg_split($pattern, $text, -1, PREG_SPLIT_DELIM_CAPTURE);
+
+    if ($segments === false) {
+        return esc_html($text);
+    }
+
+    $html = '';
+
+    foreach ($segments as $segment) {
+        if ($segment === '') {
+            continue;
+        }
+
+        if (preg_match($pattern, $segment) === 1) {
+            $html .= '<strong>' . esc_html($segment) . '</strong>';
+            continue;
+        }
+
+        $html .= esc_html($segment);
+    }
+
+    return $html;
+}
+
+/**
+ * AJAX endpoint for header search autocomplete.
+ */
+function gca_ajax_search_autocomplete(): void
+{
+    $term = isset($_GET['term']) ? sanitize_text_field(wp_unslash((string) $_GET['term'])) : '';
+
+    wp_send_json_success([
+        'items' => gca_get_search_autocomplete_items($term, 5),
+    ]);
+}
+
+add_action('wp_ajax_gca_search_autocomplete', 'gca_ajax_search_autocomplete');
+add_action('wp_ajax_nopriv_gca_search_autocomplete', 'gca_ajax_search_autocomplete');
 
 function gca_clean_post_excerpt(int $length = 320): string
 {
@@ -1010,6 +1872,7 @@ add_filter('tiny_mce_before_init', function($init_array) {
         ['title' => 'Heading 1', 'block' => 'h1'],
         ['title' => 'Heading 2', 'block' => 'h2'],
         ['title' => 'Heading 3', 'block' => 'h3'],
+        ['title' => 'Heading 4', 'block' => 'h4'],
 
         // GDS Custom Styles
         [
@@ -1367,6 +2230,68 @@ function gca_sanitize_home_desc_40($value): string {
         return (string) mb_substr($value, 0, $max);
     }
     return (string) substr($value, 0, $max);
+}
+endif;
+
+if (!function_exists('gca_get_selected_or_latest_posts')):
+function gca_get_selected_or_latest_posts(string $post_type, array $selected_posts, int $count, array $extra_args = []): array {
+    $ordered_posts = [];
+    $seen_ids      = [];
+
+    foreach ($selected_posts as $selected_post) {
+        if ($selected_post instanceof \WP_Post) {
+            $selected_id = (int) $selected_post->ID;
+        } else {
+            $selected_id = absint($selected_post);
+        }
+
+        if ($selected_id > 0 && !in_array($selected_id, $seen_ids, true)) {
+            $seen_ids[] = $selected_id;
+        }
+    }
+
+    if (!empty($seen_ids)) {
+        $selected_posts = get_posts(array_merge($extra_args, [
+            'post_type'              => $post_type,
+            'post_status'            => 'publish',
+            'posts_per_page'         => count($seen_ids),
+            'post__in'               => $seen_ids,
+            'orderby'                => 'post__in',
+            'no_found_rows'          => true,
+            'update_post_meta_cache' => true,
+            'update_post_term_cache' => true,
+        ]));
+
+        $selected_posts_by_id = [];
+        foreach ($selected_posts as $selected_post) {
+            $selected_posts_by_id[$selected_post->ID] = $selected_post;
+        }
+
+        foreach ($seen_ids as $seen_id) {
+            if (isset($selected_posts_by_id[$seen_id])) {
+                $ordered_posts[] = $selected_posts_by_id[$seen_id];
+            }
+        }
+    }
+
+    $remaining = max(0, $count - count($ordered_posts));
+    if ($remaining > 0) {
+        $fallback_posts = get_posts(array_merge($extra_args, [
+            'post_type'              => $post_type,
+            'post_status'            => 'publish',
+            'posts_per_page'         => $remaining,
+            'post__not_in'           => array_map(static fn ($post) => (int) $post->ID, $ordered_posts),
+            'orderby'                => 'date',
+            'order'                  => 'DESC',
+            'no_found_rows'          => true,
+            'update_post_meta_cache' => true,
+            'update_post_term_cache' => true,
+        ]));
+
+        $ordered_posts = array_merge($ordered_posts, $fallback_posts);
+    }
+
+    return array_slice($ordered_posts, 0, $count);
 }
 endif;
 

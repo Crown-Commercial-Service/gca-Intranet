@@ -36,6 +36,15 @@ class component_workupdates extends project_brick
             'max'           => 6,
         ] ) );
 
+        $this->add_field( new acf_fields\relationship( 'Selected work updates', 'selected_posts', '202604220002a', [
+            'post_type'    => [ 'work_update' ],
+            'max'          => 6,
+            'filters'      => [
+                0 => 'search',
+            ],
+            'instructions' => 'Optional. Choose specific work updates in display order. If you leave this empty, the latest published work updates will be used.',
+        ] ) );
+
         $this->add_field( new acf_fields\text( '"See more" link text', 'see_more_text', '202604100022a', [
             'instructions'  => 'Label for the "more" link at the bottom of the section.',
             'default_value' => 'More work updates',

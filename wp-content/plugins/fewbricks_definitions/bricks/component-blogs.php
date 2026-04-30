@@ -36,6 +36,15 @@ class component_blogs extends project_brick
             'max'           => 6,
         ] ) );
 
+        $this->add_field( new acf_fields\relationship( 'Selected blog posts', 'selected_posts', '202604220003a', [
+            'post_type'    => [ 'blog' ],
+            'max'          => 6,
+            'filters'      => [
+                0 => 'search',
+            ],
+            'instructions' => 'Optional. Choose specific blog posts in display order. If you leave this empty, the latest published blog posts will be used.',
+        ] ) );
+
         $this->add_field( new acf_fields\text( '"See more" link text', 'see_more_text', '202604100027a', [
             'instructions'  => 'Label for the "more blogs" link at the bottom of the section.',
             'default_value' => 'More blogs',
