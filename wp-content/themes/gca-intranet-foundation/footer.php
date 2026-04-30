@@ -62,7 +62,7 @@
                 <span class="dc-widget__header-icon">
                   <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="<?php echo esc_attr(dc_get_icon_path_d($td['header_icon_type'])); ?>"/></svg>
                 </span>
-                <h3 class="dc-widget__title"><?php echo esc_html($td['popup_title']); ?></h3>
+                <h4 class="dc-widget__title"><?php echo esc_html($td['popup_title']); ?></h4>
               </div>
               <div class="dc-widget__panel-body">
                 <?php if ($td['description']) : ?>
