@@ -37,6 +37,7 @@ include('templates/sectors.php');
  * Import field groups for taxonomies (WIP)
  */
 //include('taxonomies/pillars.php');
+include('taxonomies/responsible-team.php');
 
 
 
