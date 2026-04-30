@@ -33,12 +33,14 @@
 .wysiwyg-content h3 {
 
     @extend .govuk-heading-m;
+    font-size: 22px !important;
 
 }
 
 .wysiwyg-content h4 {
 
     @include govuk-font(20, $weight: bold);
+    font-size: 19px !important;
 
 }
 
