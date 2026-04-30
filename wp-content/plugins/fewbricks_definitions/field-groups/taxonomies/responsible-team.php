@@ -9,11 +9,21 @@ use fewbricks\acf\fields as acf_fields;
  * Any page tagged with the term automatically gets the card in the footer.
  */
 
+if (!function_exists('gca_flag_enabled') || !gca_flag_enabled('directorate-contact')) {
+    return;
+}
+
 $location = [[
     ['param' => 'taxonomy', 'operator' => '==', 'value' => 'responsible_team']
 ]];
 
 $dc_fg = new fewacf\field_group('Team Contact Card', '202604140060a', $location, 10);
+
+$dc_fg->add_field(new acf_fields\message('', 'dc_section_heading', '202604140060p', [
+    'message'   => '<strong style="font-size:14px;">Team Contact Card</strong>',
+    'esc_html'  => 0,
+    'new_lines' => '',
+]));
 
 $dc_fg->add_field(new acf_fields\select('Header Icon', 'dc_header_icon_type', '202604140060n', [
     'instructions'  => 'Icon displayed in the card header and pill button.',
