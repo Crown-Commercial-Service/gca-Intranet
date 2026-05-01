@@ -24,7 +24,9 @@ get_template_part('template-parts/single/_chrome');
           <?php get_template_part('template-parts/template-body-content'); ?>
       </div>
 
-      <?php get_template_part('template-parts/likes-and-comments'); ?>
+      <?php if (in_array($post_type, ['news', 'blog', 'work_update'])): ?>
+        <?php get_template_part('template-parts/likes-and-comments'); ?>
+      <?php endif; ?>
     </main>
 
   <?php endwhile; endif; ?>
