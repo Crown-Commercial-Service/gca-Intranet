@@ -1,0 +1,734 @@
+// =============================================================================
+// Community Wall
+// =============================================================================
+
+// Local tokens (use GCA palette from _tokens.scss)
+$gca-cw-card-bg:       #ffffff;
+$gca-cw-card-border:   #e4e7ed;
+$gca-cw-card-shadow:   0 1px 4px rgba(0, 0, 0, 0.07);
+$gca-cw-page-bg:       #f0f2f7;
+$gca-cw-hero-bg:       $gca-blue-2;   // #8ba9fe — light periwinkle
+$gca-cw-liked:         #d4351c;
+$gca-cw-compose-input-bg: #f5f6fa;
+
+// ── Hero banner ───────────────────────────────────────────────────────────────
+
+.gca-cw-hero {
+    background: $gca-cw-hero-bg;
+    padding: govuk-spacing(8) 0 govuk-spacing(7);
+}
+
+.gca-cw-hero__title {
+    @include govuk-font($size: 48, $weight: bold);
+    color: $govuk-text-colour;
+}
+
+.gca-cw-hero__subtitle {
+    @include govuk-font($size: 19);
+    color: $govuk-text-colour;
+    margin: 0;
+}
+
+// ── Page wrapper ──────────────────────────────────────────────────────────────
+
+.gca-cw-page-wrap {
+    background: $gca-cw-page-bg;
+    padding-top: govuk-spacing(6);
+    padding-bottom: govuk-spacing(9);
+    min-height: 60vh;
+}
+
+.gca-cw-layout {
+    align-items: flex-start;
+}
+
+// ── Sidebar ───────────────────────────────────────────────────────────────────
+
+.gca-cw-sidebar-col {
+    @include govuk-media-query($from: tablet) {
+        position: sticky;
+        top: govuk-spacing(4);
+    }
+}
+
+.gca-cw-sidebar {
+    background: $gca-cw-card-bg;
+    border: 1px solid $gca-cw-card-border;
+    border-radius: 8px;
+    box-shadow: $gca-cw-card-shadow;
+    padding: govuk-spacing(5);
+    display: flex;
+    flex-direction: column;
+    gap: govuk-spacing(3);
+
+    @include govuk-media-query($until: tablet) {
+        flex-direction: row;
+        flex-wrap: wrap;
+    }
+}
+
+.gca-cw__sidebar-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: govuk-spacing(2);
+    width: 100%;
+    padding: govuk-spacing(3) govuk-spacing(4);
+    border-radius: 6px;
+    font-family: $govuk-font-family;
+    font-size: govuk-px-to-rem(16);
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.15s ease;
+
+    &:disabled {
+        cursor: default;
+        opacity: 0.75;
+    }
+
+    &:focus {
+        @include govuk-focused-text;
+    }
+
+    @include govuk-media-query($until: tablet) {
+        flex: 1 1 180px;
+    }
+}
+
+.gca-cw__sidebar-btn--question {
+    background: $gca-cw-card-bg;
+    border: 2px solid $gca-action-blue;
+    color: $gca-action-blue;
+}
+
+.gca-cw__sidebar-btn--shoutout {
+    background: $gca-cw-card-bg;
+    border: 2px solid #e6b000;   // $gca-yellow darkened 5%
+    color: #6b5100;               // $gca-yellow darkened 35%
+}
+
+// ── Tabs ──────────────────────────────────────────────────────────────────────
+
+.gca-cw-tabs {
+    background: $gca-cw-card-bg;
+    border: 1px solid $gca-cw-card-border;
+    border-radius: 8px;
+    box-shadow: $gca-cw-card-shadow;
+    padding: govuk-spacing(2) govuk-spacing(4);
+    margin-bottom: govuk-spacing(4);
+}
+
+.gca-cw-tabs__list {
+    display: flex;
+    align-items: center;
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    flex-wrap: wrap;
+
+    li {
+        flex: 1;
+        display: flex;
+    }
+}
+
+.gca-cw-tabs__btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: govuk-spacing(1);
+    width: 100%;
+    padding: govuk-spacing(2) govuk-spacing(2);
+    border: none;
+    border-radius: 999px;
+    background: none;
+    font-family: $govuk-font-family;
+    font-size: govuk-px-to-rem(16);
+    font-weight: 600;
+    color: $govuk-text-colour;
+    cursor: pointer;
+    transition: background 0.15s ease;
+    white-space: nowrap;
+
+    &:not(.gca-cw-tabs__btn--active):not(:disabled):hover {
+        background: $gca-light-grey;
+    }
+
+    &:disabled {
+        opacity: 0.6;
+        cursor: default;
+    }
+
+    &:focus {
+        @include govuk-focused-text;
+        outline-offset: 2px;
+    }
+
+    &--active {
+        background: $gca-cw-hero-bg;
+        color: $govuk-text-colour;
+    }
+}
+
+// ── Compose / create post ─────────────────────────────────────────────────────
+
+.gca-cw-compose {
+    background: $gca-cw-card-bg;
+    border: 1px solid $gca-cw-card-border;
+    border-radius: 8px;
+    box-shadow: $gca-cw-card-shadow;
+    padding: govuk-spacing(4) govuk-spacing(5);
+    margin-bottom: govuk-spacing(4);
+}
+
+.gca-cw-compose__trigger-row {
+    display: flex;
+    align-items: center;
+    gap: govuk-spacing(3);
+}
+
+.gca-cw-compose__avatar {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    flex-shrink: 0;
+    display: block;
+    object-fit: cover;
+}
+
+.gca-cw-compose__trigger {
+    flex: 1;
+    text-align: left;
+    padding: govuk-spacing(2) govuk-spacing(4);
+    background: $gca-cw-compose-input-bg;
+    border: 1px solid $gca-cw-card-border;
+    border-radius: 999px;
+    font-family: $govuk-font-family;
+    font-size: govuk-px-to-rem(16);
+    color: govuk-colour('dark-grey');
+    cursor: pointer;
+    transition: border-color 0.15s ease, background 0.15s ease;
+
+    &:hover {
+        border-color: $gca-action-blue;
+        background: $gca-cw-card-bg;
+    }
+
+    &:focus {
+        @include govuk-focused-text;
+    }
+}
+
+.gca-cw-compose__form-area {
+    margin-top: govuk-spacing(4);
+
+    &[hidden] {
+        display: none;
+    }
+}
+
+.gca-cw-compose__textarea-group {
+    margin-bottom: govuk-spacing(1);
+}
+
+.gca-cw-compose__textarea {
+    width: 100%;
+    resize: vertical;
+    min-height: 100px;
+    font-size: govuk-px-to-rem(16);
+}
+
+.gca-cw-compose__char-hint {
+    @include govuk-font($size: 14);
+    color: govuk-colour('dark-grey');
+    text-align: right;
+    margin-bottom: govuk-spacing(3);
+
+    &--warning {
+        color: $gca-cw-liked;
+        font-weight: 700;
+    }
+}
+
+// Media preview grid
+.gca-cw-compose__media-preview {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-start;
+    gap: govuk-spacing(2);
+    margin-bottom: govuk-spacing(3);
+
+    &[hidden] {
+        display: none;
+    }
+}
+
+.gca-cw-compose__preview-item {
+    position: relative;
+    width: 120px;
+    height: 80px;
+    border-radius: 6px;
+    overflow: hidden;
+    border: 1px solid $gca-cw-card-border;
+    background: $gca-light-grey;
+    flex-shrink: 0;
+
+    img,
+    video {
+        width: 120px;
+        height: 80px;
+        object-fit: cover;
+        display: block;
+    }
+}
+
+.gca-cw-compose__preview-remove {
+    position: absolute;
+    top: 4px;
+    right: 4px;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background: rgba(0, 0, 0, 0.55);
+    border: none;
+    color: #fff;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 13px;
+    line-height: 1;
+    padding: 0;
+
+    &:focus {
+        @include govuk-focused-text;
+    }
+}
+
+.gca-cw-compose__footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: govuk-spacing(3);
+    padding-top: govuk-spacing(3);
+    border-top: 1px solid $gca-light-grey;
+}
+
+.gca-cw-compose__attach-row {
+    display: flex;
+    align-items: center;
+    gap: govuk-spacing(2);
+}
+
+.gca-cw-compose__attach-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: govuk-spacing(1);
+    background: none;
+    border: none;
+    padding: govuk-spacing(1) govuk-spacing(2);
+    border-radius: 4px;
+    font-family: $govuk-font-family;
+    font-size: govuk-px-to-rem(14);
+    font-weight: 600;
+    color: govuk-colour('dark-grey');
+    cursor: pointer;
+    transition: color 0.15s ease, background 0.15s ease;
+    text-decoration: none;
+
+    &:not(&--disabled):hover {
+        color: $gca-action-blue;
+        background: $gca-light-grey;
+    }
+
+    &--disabled,
+    &:disabled {
+        opacity: 0.5;
+        cursor: default;
+    }
+
+    &:focus {
+        @include govuk-focused-text;
+    }
+}
+
+.gca-cw-compose__actions {
+    display: flex;
+    align-items: center;
+    gap: govuk-spacing(3);
+
+    .govuk-button {
+        margin-bottom: 0;
+    }
+}
+
+.gca-cw-compose__error {
+    margin-top: govuk-spacing(3);
+    padding: govuk-spacing(3) govuk-spacing(4);
+    background: #fdf3f2;
+    border-left: 4px solid $gca-cw-liked;
+    @include govuk-font($size: 16);
+    color: $govuk-text-colour;
+
+    &[hidden] {
+        display: none;
+    }
+}
+
+// ── Feed ──────────────────────────────────────────────────────────────────────
+
+.gca-cw-feed {
+    display: flex;
+    flex-direction: column;
+    gap: govuk-spacing(4);
+}
+
+.gca-cw-feed__status {
+    @include govuk-font($size: 16);
+    color: govuk-colour('dark-grey');
+    text-align: center;
+    padding: govuk-spacing(8) 0;
+    margin: 0;
+}
+
+.gca-cw-feed__footer {
+    text-align: center;
+    padding: govuk-spacing(5) 0;
+
+    &[hidden] {
+        display: none;
+    }
+}
+
+.gca-cw-feed__load-more {
+    display: inline-flex;
+    align-items: center;
+    gap: govuk-spacing(2);
+    padding: govuk-spacing(3) govuk-spacing(7);
+    background: $gca-cw-card-bg;
+    border: 1px solid $gca-cw-card-border;
+    border-radius: 999px;
+    font-family: $govuk-font-family;
+    font-size: govuk-px-to-rem(16);
+    font-weight: 600;
+    color: $govuk-text-colour;
+    cursor: pointer;
+    box-shadow: $gca-cw-card-shadow;
+    transition: border-color 0.15s ease, box-shadow 0.15s ease;
+
+    &:hover {
+        border-color: $gca-action-blue;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    }
+
+    &:focus {
+        @include govuk-focused-text;
+    }
+
+    &:disabled {
+        opacity: 0.7;
+        cursor: default;
+    }
+}
+
+.gca-cw-feed__end {
+    @include govuk-font($size: 16);
+    text-align: center;
+    color: govuk-colour('dark-grey');
+    padding: govuk-spacing(4) 0;
+    margin: 0;
+
+    &[hidden] {
+        display: none;
+    }
+}
+
+// ── Post card ─────────────────────────────────────────────────────────────────
+
+.gca-cw-post {
+    background: $gca-cw-card-bg;
+    border: 1px solid $gca-cw-card-border;
+    border-radius: 8px;
+    box-shadow: $gca-cw-card-shadow;
+    padding: govuk-spacing(5);
+    position: relative;
+}
+
+// Header row: author info + more-options button
+.gca-cw-post__header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: govuk-spacing(2);
+    margin-bottom: govuk-spacing(3);
+}
+
+.gca-cw-post__author-row {
+    display: flex;
+    align-items: center;
+    gap: govuk-spacing(3);
+    flex: 1;
+    min-width: 0;
+}
+
+.gca-cw-post__avatar {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    flex-shrink: 0;
+    display: block;
+    object-fit: cover;
+}
+
+.gca-cw-post__author-info {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 0;
+}
+
+.gca-cw-post__author-name {
+    font-weight: 700;
+    font-size: govuk-px-to-rem(16);
+    color: $govuk-text-colour;
+    text-decoration: none;
+    display: block;
+
+    &:hover {
+        text-decoration: underline;
+    }
+}
+
+.gca-cw-post__author-meta {
+    @include govuk-font($size: 14);
+    color: govuk-colour('dark-grey');
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    flex-wrap: wrap;
+}
+
+.gca-cw-post__meta-dot {
+    &::before {
+        content: '•';
+        margin-right: 4px;
+    }
+}
+
+// Three-dot menu wrapper
+.gca-cw-post__more-wrap {
+    position: relative;
+    flex-shrink: 0;
+}
+
+.gca-cw-post__more-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    border: none;
+    border-radius: 50%;
+    background: none;
+    cursor: pointer;
+    color: govuk-colour('dark-grey');
+    transition: background 0.15s ease;
+    padding: 0;
+
+    &:hover {
+        background: $gca-light-grey;
+        color: $govuk-text-colour;
+    }
+
+    &:focus {
+        @include govuk-focused-text;
+    }
+}
+
+.gca-cw-post__dropdown {
+    position: absolute;
+    top: calc(100% + 4px);
+    right: 0;
+    z-index: 100;
+    background: $gca-cw-card-bg;
+    border: 1px solid $gca-cw-card-border;
+    border-radius: 6px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+    min-width: 160px;
+    padding: govuk-spacing(1) 0;
+    list-style: none;
+    margin: 0;
+
+    &[hidden] {
+        display: none;
+    }
+}
+
+.gca-cw-post__dropdown-btn {
+    display: flex;
+    align-items: center;
+    gap: govuk-spacing(2);
+    width: 100%;
+    padding: govuk-spacing(2) govuk-spacing(4);
+    background: none;
+    border: none;
+    text-align: left;
+    font-family: $govuk-font-family;
+    font-size: govuk-px-to-rem(16);
+    cursor: pointer;
+    color: $govuk-text-colour;
+    transition: background 0.1s ease;
+
+    &:hover {
+        background: $gca-light-grey;
+    }
+
+    &:focus {
+        @include govuk-focused-text;
+        outline-offset: -2px;
+    }
+
+    &--delete {
+        color: $gca-cw-liked;
+    }
+}
+
+// Post body content
+.gca-cw-post__content {
+    @include govuk-font($size: 16);
+    color: $govuk-text-colour;
+    line-height: 1.65;
+    margin-bottom: govuk-spacing(3);
+    word-break: break-word;
+    white-space: pre-wrap;
+}
+
+.gca-cw__hashtag {
+    color: $gca-action-blue;
+    font-weight: 600;
+}
+
+// Attached media
+.gca-cw-post__media {
+    margin-bottom: govuk-spacing(4);
+    border-radius: 6px;
+    overflow: hidden;
+
+    img,
+    video {
+        width: 100%;       // intentional — fill card width
+        height: auto;
+        max-height: 500px;
+        object-fit: cover;
+        display: block;
+        border-radius: 6px;
+    }
+
+    video {
+        background: #000;
+    }
+}
+
+.gca-cw-post__media--grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 4px;
+
+    img,
+    video {
+        border-radius: 4px;
+    }
+}
+
+// Interaction bar: Like | Comment | (spacer) Bookmark
+.gca-cw-post__interact-bar {
+    display: flex;
+    align-items: center;
+    gap: govuk-spacing(2);
+    padding-top: govuk-spacing(3);
+    border-top: 1px solid $gca-light-grey;
+    flex-wrap: wrap;
+}
+
+.gca-cw-post__interact-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: govuk-spacing(1);
+    background: none;
+    border: none;
+    padding: govuk-spacing(1) govuk-spacing(2);
+    border-radius: 4px;
+    font-family: $govuk-font-family;
+    font-size: govuk-px-to-rem(15);
+    font-weight: 600;
+    color: govuk-colour('dark-grey');
+    cursor: pointer;
+    transition: color 0.15s ease, background 0.15s ease;
+
+    &:hover {
+        color: $govuk-text-colour;
+        background: $gca-light-grey;
+    }
+
+    &:focus {
+        @include govuk-focused-text;
+    }
+
+    // Override — these become .gca-lc__like-btn / .gca-lc__comment-toggle-btn
+    // so this class is just for the bookmark placeholder
+}
+
+.gca-cw-post__bookmark-btn {
+    margin-left: auto;
+    opacity: 0.5;
+    cursor: default;
+
+    &:hover {
+        background: none;
+        color: govuk-colour('dark-grey');
+    }
+}
+
+// ── Responsive tweaks ─────────────────────────────────────────────────────────
+
+@include govuk-media-query($until: tablet) {
+    .gca-cw-layout {
+        display: block;
+    }
+
+    .gca-cw-sidebar-col {
+        width: 100%;
+        margin-bottom: govuk-spacing(4);
+        padding: 0 govuk-spacing(3);
+    }
+
+    .gca-cw-sidebar {
+        flex-direction: row;
+        flex-wrap: wrap;
+        gap: govuk-spacing(2);
+    }
+
+    .gca-cw__sidebar-btn {
+        flex: 1 1 160px;
+    }
+
+    .gca-cw-main-col {
+        width: 100%;
+        padding: 0 govuk-spacing(3);
+    }
+
+    .gca-cw-hero__title {
+        font-size: govuk-px-to-rem(32);
+    }
+
+    .gca-cw-compose__footer {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .gca-cw-compose__actions {
+        width: 100%;
+        justify-content: flex-end;
+    }
+}

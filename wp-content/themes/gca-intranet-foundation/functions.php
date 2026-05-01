@@ -13,6 +13,7 @@ require_once get_template_directory() . '/inc/auth-logic.php';
 require_once get_template_directory() . '/inc/features.php';
 require_once get_template_directory() . '/inc/rest-api-auth.php';
 require_once get_template_directory() . '/inc/features/likes-and-comments.php';
+require_once get_template_directory() . '/inc/features/community-wall.php';
 
 /**
  * Theme setup
@@ -473,7 +474,10 @@ JS
  * Likes & Comments – enqueue config + inline JS on single posts.
  */
 add_action('wp_enqueue_scripts', function (): void {
-    if (!is_singular(['post', 'blog', 'news', 'work_update'])) {
+    $is_interaction_page = is_singular(['post', 'blog', 'news', 'work_update'])
+        || is_page_template('template-community-wall.php');
+
+    if (!$is_interaction_page) {
         return;
     }
 
@@ -849,11 +853,78 @@ add_action('wp_enqueue_scripts', function (): void {
         if (mainForm) { bindForm(mainForm); }
     }
 
+    // Expose init so community wall JS can wire dynamically created .gca-lc elements
+    window.GcaLc = { init: initComponent };
+
     document.addEventListener('DOMContentLoaded', function () {
         document.querySelectorAll('.gca-lc').forEach(initComponent);
     });
 }());
 JS
+    );
+});
+
+/**
+ * Community Wall – enqueue config + JS on the community wall page template.
+ */
+add_action('wp_enqueue_scripts', function (): void {
+    if (!is_page_template('template-community-wall.php')) {
+        return;
+    }
+
+    $current_user = wp_get_current_user();
+    $local_avatar = $current_user->exists()
+        ? trim((string) get_user_meta($current_user->ID, 'google_profile_picture_local_url', true))
+        : '';
+    $avatar_url = $local_avatar
+        ?: ($current_user->exists() ? (string) get_avatar_url($current_user->ID, ['size' => 40]) : '');
+
+    $cw_js_rel = '/assets/scripts/community-wall.js';
+    $cw_js_abs = get_template_directory() . $cw_js_rel;
+    $cw_js_ver = file_exists($cw_js_abs) ? (string) filemtime($cw_js_abs) : '1.0.0';
+
+    wp_register_script(
+        'gca-community-wall',
+        get_template_directory_uri() . $cw_js_rel,
+        ['gca-interactions'],
+        $cw_js_ver,
+        true
+    );
+    wp_enqueue_script('gca-community-wall');
+
+    wp_add_inline_script(
+        'gca-community-wall',
+        'window.gcaCommunityData = ' . wp_json_encode([
+            'restUrl'           => esc_url_raw(rest_url('gca/v1')),
+            'wpRestBase'        => esc_url_raw(rest_url()),
+            'nonce'             => wp_create_nonce('wp_rest'),
+            'currentUserId'     => get_current_user_id(),
+            'currentUserAvatar' => $avatar_url,
+        ]) . ';',
+        'before'
+    );
+
+    // Also load GOV.UK Frontend on the community wall page (normally only on is_singular)
+    $govuk_js_rel = '/assets/scripts/all.js';
+    $govuk_js_abs = get_template_directory() . $govuk_js_rel;
+    $govuk_js_ver = file_exists($govuk_js_abs) ? (string) filemtime($govuk_js_abs) : '1.0.0';
+
+    wp_enqueue_script(
+        'gca-govuk-frontend-cw',
+        get_template_directory_uri() . $govuk_js_rel,
+        [],
+        $govuk_js_ver,
+        true
+    );
+    wp_add_inline_script(
+        'gca-govuk-frontend-cw',
+        'document.addEventListener("DOMContentLoaded", function() {
+            if (window.GOVUKFrontend && typeof window.GOVUKFrontend.initAll === "function") {
+                window.GOVUKFrontend.initAll();
+                document.documentElement.classList.add("js-enabled");
+            }
+        });',
+        'after'
     );
 });
 
