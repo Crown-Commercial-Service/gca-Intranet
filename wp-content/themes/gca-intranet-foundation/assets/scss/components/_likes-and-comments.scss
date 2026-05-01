@@ -88,8 +88,12 @@ $gca-lc-reply-bg: #f3f2f1;
 }
 
 .gca-lc__avatar {
+    width: 40px;
+    height: 40px;
     border-radius: 50%;
     display: block;
+    object-fit: cover;
+    flex-shrink: 0;
 }
 
 .gca-lc__form {
@@ -157,8 +161,11 @@ $gca-lc-reply-bg: #f3f2f1;
     }
 
     img {
+        width: 24px;
+        height: 24px;
         border-radius: 50%;
         flex-shrink: 0;
+        object-fit: cover;
     }
 }
 
@@ -194,6 +201,14 @@ $gca-lc-reply-bg: #f3f2f1;
 .gca-lc__comment-avatar {
     flex-shrink: 0;
     padding-top: 4px;
+
+    img {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        display: block;
+        object-fit: cover;
+    }
 }
 
 .gca-lc__comment-body {
