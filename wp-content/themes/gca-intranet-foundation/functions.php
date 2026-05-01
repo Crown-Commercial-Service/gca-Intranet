@@ -523,11 +523,9 @@ add_action('wp_enqueue_scripts', function (): void {
     function likeBtnHtml(liked, count, commentId) {
         return '<button type="button" class="gca-lc__action-btn" aria-pressed="' + (liked ? 'true' : 'false') +
             '" data-action="toggle-comment-like" data-comment-id="' + commentId + '">' +
-            '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">' +
-            '<path class="gca-lc__like-path" d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5' +
-            ' 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3' +
-            ' 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"' +
-            ' stroke="currentColor" stroke-width="2"/></svg>' +
+            '<svg width="14" height="14" viewBox="0 0 22 20" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">' +
+            '<path class="gca-lc__like-path" d="M22 9C22 7.89 21.1 7 20 7H13.68L14.64 2.43C14.66 2.33 14.67 2.22 14.67 2.11C14.67 1.7 14.5 1.32 14.23 1.05L13.17 0L6.59 6.58C6.22 6.95 6 7.45 6 8V18C6 18.5304 6.21071 19.0391 6.58579 19.4142C6.96086 19.7893 7.46957 20 8 20H17C17.83 20 18.54 19.5 18.84 18.78L21.86 11.73C21.95 11.5 22 11.26 22 11V9ZM0 20H4V8H0V20Z"' +
+            ' fill="currentColor"/></svg>' +
             '<span class="gca-lc__like-label">' + (liked ? 'Liked' : 'Like') + '</span>' +
             ' <span data-like-count="' + commentId + '">' + count + '</span>' +
             '</button>';
