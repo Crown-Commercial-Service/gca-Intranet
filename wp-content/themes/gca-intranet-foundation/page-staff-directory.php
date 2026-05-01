@@ -25,6 +25,16 @@ if (function_exists('gca_flag_enabled') && gca_flag_enabled('staff-directory')) 
 get_header();
 ?>
 
+<section class="gca-hero-banner" aria-label="Page banner">
+  <div class="govuk-width-container">
+    <div class="gca-hero-banner__inner">
+      <h1 class="govuk-heading-xl gca-hero-banner__title">
+        <?php the_title(); ?>
+      </h1>
+    </div>
+  </div>
+</section>
+
 <div class="govuk-width-container govuk-!-padding-top-6 govuk-!-padding-bottom-9">
   <main id="main-content" tabindex="-1">
 
@@ -33,6 +43,36 @@ get_header();
 
         <!-- ─────────────────────────────────────────────────────── Sidebar -->
         <nav class="sd-directory__sidebar" aria-label="Browse staff directory">
+
+          <!-- Search by name -->
+          <div class="sd-directory__nav-section sd-directory__nav-section--search">
+            <div class="sd-directory__search-box">
+              <label class="govuk-label" for="sd-search-input">Search by name</label>
+              <div class="sd-directory__search-field">
+                <input
+                  class="govuk-input sd-directory__search-input"
+                  type="search"
+                  id="sd-search-input"
+                  name="q"
+                  autocomplete="off"
+                  placeholder="e.g. Jane Smith"
+                >
+                <button
+                  class="sd-directory__search-btn"
+                  type="button"
+                  id="sd-search-btn"
+                  aria-label="Search staff by name"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20"
+                       viewBox="0 0 24 24" fill="none" aria-hidden="true" focusable="false">
+                    <circle cx="11" cy="11" r="7" stroke="currentColor" stroke-width="2"/>
+                    <path d="M21 21l-4.35-4.35" stroke="currentColor"
+                          stroke-width="2" stroke-linecap="round"/>
+                  </svg>
+                </button>
+              </div>
+            </div>
+          </div>
 
           <!-- 1. Directorates -->
           <div class="sd-directory__nav-section">
@@ -73,44 +113,12 @@ get_header();
         <!-- ────────────────────────────────────────────────── Main content -->
         <div class="sd-directory__main">
 
-          <!-- Top bar: breadcrumb/title (left) + search box (right) -->
-          <div class="sd-directory__topbar">
-
-            <div class="sd-directory__panel-meta" id="sd-panel-meta" hidden>
-              <p class="sd-directory__breadcrumb govuk-body-s" id="sd-breadcrumb"></p>
-              <h1 class="sd-directory__panel-title govuk-heading-l" id="sd-panel-title"></h1>
-              <p class="govuk-body-s" id="sd-staff-count"></p>
-            </div>
-
-            <div class="sd-directory__search-box">
-              <label class="govuk-label" for="sd-search-input">Search by name</label>
-              <div class="sd-directory__search-field">
-                <input
-                  class="govuk-input sd-directory__search-input"
-                  type="search"
-                  id="sd-search-input"
-                  name="q"
-                  autocomplete="off"
-                  placeholder="e.g. Jane Smith"
-                >
-                <button
-                  class="sd-directory__search-btn"
-                  type="button"
-                  id="sd-search-btn"
-                  aria-label="Search staff by name"
-                >
-                  <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20"
-                       viewBox="0 0 24 24" fill="none" aria-hidden="true" focusable="false">
-                    <circle cx="11" cy="11" r="7" stroke="currentColor" stroke-width="2"/>
-                    <path d="M21 21l-4.35-4.35" stroke="currentColor"
-                          stroke-width="2" stroke-linecap="round"/>
-                  </svg>
-                </button>
-              </div>
-            </div>
-
+          <!-- Panel meta: breadcrumb/title -->
+          <div class="sd-directory__panel-meta" id="sd-panel-meta" hidden>
+            <p class="sd-directory__breadcrumb govuk-body-s" id="sd-breadcrumb"></p>
+            <h1 class="sd-directory__panel-title govuk-heading-l" id="sd-panel-title"></h1>
+            <p class="govuk-body-s" id="sd-staff-count"></p>
           </div>
-          <!-- /.sd-directory__topbar -->
 
           <!-- Loading indicator -->
           <p class="sd-directory__loading govuk-body-s" id="sd-loading" hidden

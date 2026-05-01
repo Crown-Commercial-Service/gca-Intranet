@@ -320,20 +320,7 @@
 .sd-staff-card__manager {
     @include govuk-font(14);
     color: #505a5f;
-    display: flex;
-    align-items: flex-start;
-    gap: govuk-spacing(1);
     margin-bottom: 0;
     margin-top: 0;
 
-    svg {
-        flex-shrink: 0;
-        margin-top: 2px;
-        color: #505a5f;
-    }
-
-    strong {
-        text-transform: uppercase;
-        letter-spacing: 0.03em;
-    }
 }
