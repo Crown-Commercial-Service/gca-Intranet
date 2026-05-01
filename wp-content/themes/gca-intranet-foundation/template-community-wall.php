@@ -1,6 +1,6 @@
 <?php
 /**
- * Template Name: Community Wall
+ * Template Name: Community Hub
  *
  * @package gca-intranet-foundation
  */
@@ -22,10 +22,11 @@ if ($current_user->exists()) {
 get_header();
 ?>
 
-<section class="gca-cw-hero" aria-label="Community wall header">
+<section class="gca-hero-banner" aria-label="Page banner">
     <div class="govuk-width-container">
-        <h1 class="gca-cw-hero__title">Community wall</h1>
-        <p class="gca-cw-hero__subtitle">Connect, collaborate, and celebrate success across the agency.</p>
+        <div class="gca-hero-banner__inner">
+            <h1 class="govuk-heading-xl gca-hero-banner__title">Community Hub</h1>
+        </div>
     </div>
 </section>
 
@@ -68,7 +69,7 @@ get_header();
             <main class="govuk-grid-column-three-quarters gca-cw-main-col" id="main-content" tabindex="-1">
 
                 <?php /* Tabs */ ?>
-                <nav class="gca-cw-tabs" aria-label="Community wall sections">
+                <nav class="gca-cw-tabs" aria-label="Community Hub sections">
                     <ul class="gca-cw-tabs__list" role="list">
                         <li>
                             <button type="button" class="gca-cw-tabs__btn gca-cw-tabs__btn--active" data-tab="feed" aria-pressed="true">

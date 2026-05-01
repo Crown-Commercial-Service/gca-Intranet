@@ -21,7 +21,6 @@ $gca-cw-compose-input-bg: #f5f6fa;
 .gca-cw-hero__title {
     @include govuk-font($size: 48, $weight: bold);
     color: $govuk-text-colour;
-    margin-bottom: govuk-spacing(2);
 }
 
 .gca-cw-hero__subtitle {
@@ -122,18 +121,24 @@ $gca-cw-compose-input-bg: #f5f6fa;
 .gca-cw-tabs__list {
     display: flex;
     align-items: center;
-    gap: govuk-spacing(1);
     list-style: none;
     margin: 0;
     padding: 0;
     flex-wrap: wrap;
+
+    li {
+        flex: 1;
+        display: flex;
+    }
 }
 
 .gca-cw-tabs__btn {
-    display: inline-flex;
+    display: flex;
     align-items: center;
+    justify-content: center;
     gap: govuk-spacing(1);
-    padding: govuk-spacing(2) govuk-spacing(4);
+    width: 100%;
+    padding: govuk-spacing(2) govuk-spacing(2);
     border: none;
     border-radius: 999px;
     background: none;
