@@ -2,10 +2,11 @@
 // Likes & Comments
 // =============================================================================
 
-$gca-lc-border:   #b1b4b6;
-$gca-lc-bg:       #f8f8f8;
-$gca-lc-liked:    #d4351c;
-$gca-lc-reply-bg: #f3f2f1;
+$gca-lc-border:     #b1b4b6;
+$gca-lc-bg:         #f8f8f8;
+$gca-lc-liked:      #d4351c;
+$gca-lc-reply-bg:   #f3f2f1;
+$gca-lc-icon-color: #767676;
 
 .gca-lc {
     font-family: $govuk-font-family;
@@ -55,6 +56,11 @@ $gca-lc-reply-bg: #f3f2f1;
         fill: $gca-lc-liked;
         stroke: $gca-lc-liked;
     }
+}
+
+.gca-lc__like-icon,
+.gca-lc__comment-icon {
+    color: $gca-lc-icon-color;
 }
 
 .gca-lc__like-count {
@@ -111,6 +117,8 @@ $gca-lc-reply-bg: #f3f2f1;
     resize: vertical;
     min-height: 80px;
     font-size: govuk-px-to-rem(16);
+    border: 1px solid $gca-lc-border;
+    border-radius: 5px;
 }
 
 .gca-lc__form-actions {
@@ -120,6 +128,12 @@ $gca-lc-reply-bg: #f3f2f1;
 
     .govuk-button {
         margin-bottom: 0;
+        background-color: #8BA9FE;
+        color: #0b0c0c;
+        padding: 6px 14px;
+        border-radius: 8px;
+        font-size: 19px;
+        font-weight: 400;
     }
 }
 
