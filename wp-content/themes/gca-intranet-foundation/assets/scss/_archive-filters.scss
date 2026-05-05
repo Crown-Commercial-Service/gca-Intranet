@@ -29,7 +29,6 @@
         display: flex;
         justify-content: space-between;
         align-items: center;
-        margin-bottom: govuk-spacing(3);
     }
 
     &__section-title {
@@ -67,6 +66,21 @@
     &__section-body {
         &.is-hidden {
             display: none;
+        }
+    }
+
+    // ── Apply filters button — CCS brand colour ──
+    &__submit.govuk-button {
+        background-color: $gca-lime;
+        color: $govuk-text-colour;
+
+        &:hover {
+            background-color: $ccs-button-hover-colour;
+            color: $govuk-text-colour;
+        }
+
+        &:focus {
+            color: $govuk-focus-text-colour;
         }
     }
 }

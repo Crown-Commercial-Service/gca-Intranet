@@ -22,6 +22,96 @@ gca_register_feature_flag('archive-filters', [
     'tags'        => ['news', 'blog', 'work_update', 'event', 'filters'],
 ]);
 
+// Per-taxonomy toggles — each controls one filter section on its respective archive.
+gca_register_feature_flag('archive-filter-news-category', [
+    'label'       => 'News: Category filter',
+    'description' => 'Show the Category filter on the News archive page.',
+    'default'     => true,
+    'tags'        => ['news', 'filters'],
+    'parent'      => 'archive-filters',
+]);
+
+gca_register_feature_flag('archive-filter-news-label', [
+    'label'       => 'News: Type of article filter',
+    'description' => 'Show the Type of article (Label) filter on the News archive page.',
+    'default'     => true,
+    'tags'        => ['news', 'filters'],
+    'parent'      => 'archive-filters',
+]);
+
+gca_register_feature_flag('archive-filter-blog-label', [
+    'label'       => 'Blog: Type of article filter',
+    'description' => 'Show the Type of article (Label) filter on the Blog archive page.',
+    'default'     => true,
+    'tags'        => ['blog', 'filters'],
+    'parent'      => 'archive-filters',
+]);
+
+gca_register_feature_flag('archive-filter-event-category', [
+    'label'       => 'Events: Category filter',
+    'description' => 'Show the Category filter on the Events archive page.',
+    'default'     => true,
+    'tags'        => ['event', 'filters'],
+    'parent'      => 'archive-filters',
+]);
+
+gca_register_feature_flag('archive-filter-event-location', [
+    'label'       => 'Events: Location filter',
+    'description' => 'Show the Event Location filter on the Events archive page.',
+    'default'     => true,
+    'tags'        => ['event', 'filters'],
+    'parent'      => 'archive-filters',
+]);
+
+gca_register_feature_flag('archive-filter-work_update-label', [
+    'label'       => 'Work Updates: Type of article filter',
+    'description' => 'Show the Type of article (Label) filter on the Work Updates archive page.',
+    'default'     => true,
+    'tags'        => ['work_update', 'filters'],
+    'parent'      => 'archive-filters',
+]);
+
+gca_register_feature_flag('archive-filter-work_update-responsible_team', [
+    'label'       => 'Work Updates: Responsible Team filter',
+    'description' => 'Show the Responsible Team filter on the Work Updates archive page.',
+    'default'     => true,
+    'tags'        => ['work_update', 'filters'],
+    'parent'      => 'archive-filters',
+]);
+
+/**
+ * Return the enabled taxonomy filter definitions for a given post type.
+ *
+ * Each entry: ['taxonomy' => string, 'label' => string, 'param' => string]
+ * Only entries whose per-taxonomy feature flag is enabled are included.
+ */
+function gca_get_archive_filter_taxonomies(string $post_type): array {
+    $map = [
+        'news' => [
+            ['taxonomy' => 'category', 'label' => 'Category',        'param' => 'filter_category',   'flag' => 'archive-filter-news-category'],
+            ['taxonomy' => 'label',    'label' => 'Type of article', 'param' => 'filter_label',       'flag' => 'archive-filter-news-label'],
+        ],
+        'blog' => [
+            ['taxonomy' => 'label',    'label' => 'Type of article', 'param' => 'filter_label',       'flag' => 'archive-filter-blog-label'],
+        ],
+        'event' => [
+            ['taxonomy' => 'category',       'label' => 'Category', 'param' => 'filter_category',       'flag' => 'archive-filter-event-category'],
+            ['taxonomy' => 'event_location', 'label' => 'Location', 'param' => 'filter_event_location', 'flag' => 'archive-filter-event-location'],
+        ],
+        'work_update' => [
+            ['taxonomy' => 'label',            'label' => 'Type of article',  'param' => 'filter_label',            'flag' => 'archive-filter-work_update-label'],
+            ['taxonomy' => 'responsible_team', 'label' => 'Responsible Team', 'param' => 'filter_responsible_team', 'flag' => 'archive-filter-work_update-responsible_team'],
+        ],
+    ];
+
+    $definitions = $map[$post_type] ?? [];
+
+    return array_values(array_filter(
+        $definitions,
+        fn(array $def) => gca_flag_enabled($def['flag'])
+    ));
+}
+
 /**
  * Apply sort order and taxonomy filters on archive queries.
  *

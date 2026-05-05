@@ -38,11 +38,14 @@ $current_sort = isset($_GET['sort']) ? sanitize_text_field($_GET['sort']) : 'new
     </div>
 
     <?php /* ── Taxonomy filter sections ── */ ?>
-    <?php foreach ($taxonomies as $tax) :
+    <?php
+    $rendered_sections = 0;
+    foreach ($taxonomies as $tax) :
       $terms = get_terms(['taxonomy' => $tax['taxonomy'], 'hide_empty' => true]);
       if (empty($terms) || is_wp_error($terms)) {
         continue;
       }
+      $rendered_sections++;
 
       $param    = $tax['param'];
       $selected = (isset($_GET[$param]) && is_array($_GET[$param]))
@@ -99,9 +102,11 @@ $current_sort = isset($_GET['sort']) ? sanitize_text_field($_GET['sort']) : 'new
       </div>
     <?php endforeach; ?>
 
-    <button type="submit" class="govuk-button govuk-!-margin-top-4 govuk-!-margin-bottom-0">
-      Apply filters
-    </button>
+    <?php if ($rendered_sections > 0) : ?>
+      <button type="submit" class="govuk-button archive-filters__submit govuk-!-margin-top-4 govuk-!-margin-bottom-0">
+        Apply filters
+      </button>
+    <?php endif; ?>
 
   </form>
 </div>

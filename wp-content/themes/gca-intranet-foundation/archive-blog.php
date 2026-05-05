@@ -16,14 +16,16 @@ get_template_part('template-parts/breadcrumbs');
 
     <div class="govuk-grid-row archive-layout">
 
-      <?php if (gca_flag_enabled('archive-filters')) : ?>
+      <?php
+      $filter_taxonomies = gca_get_archive_filter_taxonomies('blog');
+      $show_filters      = gca_flag_enabled('archive-filters') && !empty($filter_taxonomies);
+      ?>
+      <?php if ($show_filters) : ?>
         <div class="govuk-grid-column-one-quarter archive-layout__filters">
           <?php
           get_template_part('template-parts/archive-filters', null, [
             'archive_url' => get_post_type_archive_link('blog'),
-            'taxonomies'  => [
-              ['taxonomy' => 'label', 'label' => 'Type of article', 'param' => 'filter_label'],
-            ],
+            'taxonomies'  => $filter_taxonomies,
           ]);
           ?>
         </div>

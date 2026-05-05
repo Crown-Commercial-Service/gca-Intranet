@@ -16,15 +16,16 @@ get_template_part('template-parts/breadcrumbs');
 
     <div class="govuk-grid-row archive-layout" data-testid="archive-event-row">
 
-      <?php if (gca_flag_enabled('archive-filters')) : ?>
+      <?php
+      $filter_taxonomies = gca_get_archive_filter_taxonomies('event');
+      $show_filters      = gca_flag_enabled('archive-filters') && !empty($filter_taxonomies);
+      ?>
+      <?php if ($show_filters) : ?>
         <div class="govuk-grid-column-one-quarter archive-layout__filters">
           <?php
           get_template_part('template-parts/archive-filters', null, [
             'archive_url' => get_post_type_archive_link('event'),
-            'taxonomies'  => [
-              ['taxonomy' => 'category',       'label' => 'Category', 'param' => 'filter_category'],
-              ['taxonomy' => 'event_location', 'label' => 'Location', 'param' => 'filter_event_location'],
-            ],
+            'taxonomies'  => $filter_taxonomies,
           ]);
           ?>
         </div>

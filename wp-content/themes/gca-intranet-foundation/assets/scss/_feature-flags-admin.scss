@@ -1,0 +1,301 @@
+// ── GCA Feature Flags — Admin UI ─────────────────────────────────────────────
+
+// Table
+.gca-flags-table {
+    width: 100%;
+    border-collapse: collapse;
+    background: #fff;
+    box-shadow: 0 1px 1px rgba(0, 0, 0, .04);
+    border: 1px solid #c3c4c7;
+
+    th {
+        text-align: left;
+        padding: 12px 16px;
+        font-size: 13px;
+    }
+
+    td {
+        padding: 14px 16px;
+        vertical-align: middle;
+    }
+
+    tbody {
+        tr:not(.gca-flag-child) td {
+            border-top: 6px solid #f0f0f1;
+        }
+
+        tr:hover td {
+            background: #f6f7f7;
+        }
+    }
+}
+
+// Flag metadata
+.gca-flag-id {
+    font-family: monospace;
+    font-size: 11px;
+    color: #8c8f94;
+    margin-top: 4px;
+}
+
+.gca-flag-desc {
+    color: #50575e;
+    font-size: 13px;
+    margin-top: 3px;
+}
+
+// Tags
+.gca-flag-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+    margin-top: 5px;
+}
+
+.gca-flag-tag {
+    display: inline-block;
+    padding: 1px 8px;
+    background: #e5f0fb;
+    color: #2271b1;
+    border-radius: 10px;
+    font-size: 11px;
+    font-weight: 500;
+}
+
+// Toggle switch
+.gca-toggle {
+    position: relative;
+    display: inline-block;
+    width: 46px;
+    height: 26px;
+    vertical-align: middle;
+
+    input {
+        opacity: 0;
+        width: 0;
+        height: 0;
+
+        &:checked + .gca-toggle-slider {
+            background-color: #2271b1;
+
+            &::before {
+                transform: translateX(20px);
+            }
+        }
+
+        &:focus-visible + .gca-toggle-slider {
+            outline: 2px solid #2271b1;
+            outline-offset: 2px;
+        }
+    }
+}
+
+.gca-toggle-slider {
+    position: absolute;
+    cursor: pointer;
+    inset: 0;
+    background-color: #c3c4c7;
+    border-radius: 26px;
+    transition: background-color 0.15s ease;
+
+    &::before {
+        content: "";
+        position: absolute;
+        height: 20px;
+        width: 20px;
+        left: 3px;
+        bottom: 3px;
+        background-color: #fff;
+        border-radius: 50%;
+        transition: transform 0.15s ease;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, .25);
+    }
+}
+
+// Controls bar
+.gca-flags-submit {
+    margin-top: 20px;
+}
+
+.gca-flags-controls {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 16px;
+
+    .gca-flags-search {
+        margin-bottom: 0;
+    }
+}
+
+.gca-flags-search {
+    margin-bottom: 16px;
+
+    input[type="search"] {
+        width: 100%;
+        max-width: 400px;
+        padding: 6px 10px;
+        font-size: 13px;
+    }
+}
+
+#gca-flags-no-results {
+    padding: 20px 16px;
+    color: #50575e;
+    font-style: italic;
+    display: none;
+}
+
+.gca-toggle-all-btn {
+    white-space: nowrap;
+}
+
+// Tag filter dropdown
+.gca-tag-filter {
+    position: relative;
+}
+
+.gca-tag-filter-btn {
+    padding: 6px 10px;
+    font-size: 13px;
+    cursor: pointer;
+    background: #fff;
+    border: 1px solid #c3c4c7;
+    border-radius: 3px;
+    white-space: nowrap;
+    line-height: 1.4;
+
+    &:hover {
+        border-color: #2271b1;
+    }
+}
+
+.gca-tag-filter-count {
+    display: inline-block;
+    background: #2271b1;
+    color: #fff;
+    border-radius: 10px;
+    padding: 0 6px;
+    font-size: 11px;
+    margin-left: 4px;
+    vertical-align: middle;
+}
+
+.gca-tag-filter-dropdown {
+    position: absolute;
+    top: calc(100% + 4px);
+    left: 0;
+    z-index: 100;
+    background: #fff;
+    border: 1px solid #c3c4c7;
+    border-radius: 3px;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, .15);
+    min-width: 160px;
+    padding: 6px 0;
+
+    label {
+        display: flex;
+        align-items: center;
+        gap: 7px;
+        padding: 5px 12px;
+        cursor: pointer;
+        font-size: 13px;
+        margin: 0;
+
+        &:hover {
+            background: #f6f7f7;
+        }
+    }
+}
+
+.gca-tag-filter-clear {
+    display: block;
+    width: 100%;
+    border: none;
+    border-top: 1px solid #f0f0f1;
+    background: none;
+    padding: 6px 12px;
+    text-align: left;
+    font-size: 12px;
+    color: #646970;
+    cursor: pointer;
+    margin-top: 4px;
+
+    &:hover {
+        color: #d63638;
+    }
+}
+
+// Child flag rows
+.gca-flag-child {
+    background: #fafafa;
+
+    &:hover > td {
+        background: #f2f2f3 !important;
+    }
+
+    > td {
+        border-bottom-color: #ececec;
+        padding-top: 0;
+        padding-bottom: 0;
+        overflow: hidden;
+
+        &:first-child {
+            padding-left: 40px;
+            position: relative;
+
+            // Vertical line — runs full height so siblings connect
+            &::before {
+                content: "";
+                position: absolute;
+                left: 20px;
+                top: 0;
+                bottom: 0;
+                border-left: 2px solid #c3c4c7;
+            }
+
+            // Horizontal branch off the vertical line
+            &::after {
+                content: "";
+                position: absolute;
+                left: 20px;
+                top: 50%;
+                width: 10px;
+                border-bottom: 2px solid #c3c4c7;
+            }
+        }
+    }
+
+    // Last child: cap the vertical line at the branch so it doesn't overshoot
+    &-last > td:first-child::before {
+        bottom: 50%;
+    }
+
+    &-hidden {
+        > td:first-child::before,
+        > td:first-child::after {
+            display: none;
+        }
+
+        .gca-child-inner {
+            max-height: 0;
+            opacity: 0;
+            padding-top: 0;
+            padding-bottom: 0;
+        }
+    }
+}
+
+// Inner wrapper — carries vertical padding and drives the accordion animation
+.gca-child-inner {
+    padding-top: 14px;
+    padding-bottom: 14px;
+    max-height: 300px;
+    opacity: 1;
+    overflow: hidden;
+    transition:
+        max-height     0.35s cubic-bezier(0.4, 0, 0.2, 1),
+        opacity        0.25s ease,
+        padding-top    0.3s ease,
+        padding-bottom 0.3s ease;
+}
