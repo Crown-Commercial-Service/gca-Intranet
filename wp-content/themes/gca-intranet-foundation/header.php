@@ -79,6 +79,16 @@ height="0" width="0" style="display:none;visibility:hidden" title="Google Tag Ma
             </form>
             <?php endif; ?>
 
+            <?php if (is_user_logged_in()) :
+              $current_user = wp_get_current_user();
+              $profile_url  = home_url('/profile/' . rawurlencode($current_user->user_login) . '/');
+              $avatar_url   = get_avatar_url($current_user->ID, ['size' => 40]);
+            ?>
+            <a href="<?php echo esc_url($profile_url); ?>" class="header-profile-link" aria-label="<?php echo esc_attr('View profile: ' . $current_user->display_name); ?>">
+              <img class="header-profile-avatar" src="<?php echo esc_url($avatar_url); ?>" alt="" width="40" height="40">
+            </a>
+            <?php endif; ?>
+
             <button class="global-navigation__toggler" type="button" aria-controls="primaryNav" aria-expanded="false" aria-label="Toggle navigation">
               Menu
             </button>

@@ -136,10 +136,24 @@ if (!$yes_form_id || !$no_form_id || !$report_form_id) {
 
   panels.forEach(injectCancel);
 
-  // Re-inject cancel whenever GF re-renders a panel's contents (e.g. after validation failure)
+  // Move .validation_message to appear immediately after the label/legend (GDS order)
+  function hoistValidationMessages(panel) {
+    panel.querySelectorAll('.gfield_error').forEach(function (field) {
+      var msg = field.querySelector('.validation_message');
+      if (!msg) { return; }
+      // Find the label or legend to insert after
+      var anchor = field.querySelector('legend.gfield_label, label.gfield_label, .gfield_label');
+      if (anchor && anchor.nextSibling !== msg) {
+        anchor.parentNode.insertBefore(msg, anchor.nextSibling);
+      }
+    });
+  }
+
+  // Re-inject cancel and hoist validation messages whenever GF re-renders a panel
   panels.forEach(function (panel) {
     new MutationObserver(function () {
       injectCancel(panel);
+      hoistValidationMessages(panel);
     }).observe(panel, { childList: true, subtree: true });
   });
 
