@@ -123,6 +123,14 @@ class GCA_Sync_Users {
     // -------------------------------------------------------------------------
 
     public static function run(): void {
+        // Prevent concurrent runs — WordPress cron can fire the same hook twice
+        // if two requests arrive simultaneously (TOCTOU race → duplicate users).
+        if ( get_transient( self::CRON_HOOK . '_running' ) ) {
+            error_log( '[GCA Workday Sync] Skipped — another instance is already running.' );
+            return;
+        }
+        set_transient( self::CRON_HOOK . '_running', true, 10 * MINUTE_IN_SECONDS );
+
         $log_lines = [];
 
         try {
@@ -189,6 +197,19 @@ class GCA_Sync_Users {
         // --- Upsert: create or update each API user in WordPress ---
         foreach ( $api_users as $email => $record ) {
             $wp_user = get_user_by( 'email', $email );
+
+            // Fallback: look up by employee_key meta in case the email changed.
+            if ( ! $wp_user && ! empty( $record['EmployeeKey'] ) ) {
+                $users_by_key = get_users( [
+                    'meta_key'   => self::EMPLOYEE_KEY_META,
+                    'meta_value' => $record['EmployeeKey'],
+                    'number'     => 1,
+                ] );
+                if ( ! empty( $users_by_key ) ) {
+                    $wp_user = $users_by_key[0];
+                    $log( sprintf( 'Matched user %s by employee_key (email changed from %s).', $email, $wp_user->user_email ) );
+                }
+            }
 
             if ( $wp_user ) {
                 $data       = self::build_update_data( $record );
@@ -337,10 +358,10 @@ class GCA_Sync_Users {
      * @return array<string, string>
      */
     private static function build_common_fields( array $record ): array {
-        $email      = trim( $record['Email'] ?? '' );
+        $email      = strtolower( trim( $record['Email'] ?? '' ) );
         $name       = trim( $record['EmployeeName'] ?? '' );
         $name_parts = explode( ' ', $name, 2 );
-        $prefix     = strtolower( (string) strstr( $email, '@', true ) );
+        $prefix     = (string) strstr( $email, '@', true );
 
         return [
             'user_login'   => $prefix,

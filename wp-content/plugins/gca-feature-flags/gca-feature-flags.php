@@ -365,6 +365,9 @@ class GCA_Feature_Flags {
 					.gca-tag-filter-clear:hover {
 						color: #d63638;
 					}
+					.gca-toggle-all-btn {
+						white-space: nowrap;
+					}
 				</style>
 
 				<div class="gca-flags-controls">
@@ -395,6 +398,57 @@ class GCA_Feature_Flags {
 				</div>
 				<p id="gca-flags-no-results">No flags match your search.</p>
 
+				<form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>">
+					<?php wp_nonce_field( self::NONCE_ACTION ); ?>
+					<input type="hidden" name="action" value="gca_feature_flags_save">
+
+					<table class="gca-flags-table">
+						<thead>
+							<tr>
+								<th>Feature</th>
+								<th style="width: 80px; text-align: center;">
+							<button type="button" id="gca-toggle-all-btn" class="button gca-toggle-all-btn">Enable All</button>
+						</th>
+							</tr>
+						</thead>
+						<tbody>
+							<?php foreach ( $flags as $id => $flag ) : ?>
+								<?php $tags = ! empty( $flag['tags'] ) ? (array) $flag['tags'] : array(); ?>
+								<tr data-tags="<?php echo esc_attr( implode( ',', array_map( 'sanitize_key', $tags ) ) ); ?>">
+									<td>
+										<strong><?php echo esc_html( $flag['label'] ); ?></strong>
+										<?php if ( ! empty( $flag['description'] ) ) : ?>
+											<div class="gca-flag-desc"><?php echo esc_html( $flag['description'] ); ?></div>
+										<?php endif; ?>
+										<?php if ( ! empty( $tags ) ) : ?>
+											<div class="gca-flag-tags">
+												<?php foreach ( $tags as $tag ) : ?>
+													<span class="gca-flag-tag"><?php echo esc_html( $tag ); ?></span>
+												<?php endforeach; ?>
+											</div>
+										<?php endif; ?>
+										<div class="gca-flag-id">gca_flag_enabled( '<?php echo esc_html( $id ); ?>' )</div>
+									</td>
+									<td style="text-align: center;">
+										<label class="gca-toggle" aria-label="Toggle <?php echo esc_attr( $flag['label'] ); ?>">
+											<input
+												type="checkbox"
+												name="gca_flags[<?php echo esc_attr( $id ); ?>]"
+												<?php checked( self::is_enabled( $id ) ); ?>
+											>
+											<span class="gca-toggle-slider"></span>
+										</label>
+									</td>
+								</tr>
+							<?php endforeach; ?>
+						</tbody>
+					</table>
+
+					<div class="gca-flags-submit">
+						<?php submit_button( 'Save Changes', 'primary', 'submit', false ); ?>
+					</div>
+				</form>
+
 				<script>
 				(function () {
 					var searchInput    = document.getElementById('gca-flag-search');
@@ -404,6 +458,7 @@ class GCA_Feature_Flags {
 					var filterCount    = document.getElementById('gca-tag-filter-count');
 					var clearBtn       = document.getElementById('gca-tag-filter-clear');
 					var filterWrap     = document.getElementById('gca-tag-filter');
+					var toggleAllBtn   = document.getElementById('gca-toggle-all-btn');
 					var selectedTags   = [];
 
 					function applyFilters() {
@@ -427,6 +482,28 @@ class GCA_Feature_Flags {
 
 					if (searchInput) {
 						searchInput.addEventListener('input', applyFilters);
+					}
+
+					function updateToggleAllBtn() {
+						if (!toggleAllBtn) return;
+						var checkboxes = document.querySelectorAll('.gca-flags-table tbody input[type="checkbox"]');
+						var allChecked = checkboxes.length > 0 && Array.from(checkboxes).every(function (cb) { return cb.checked; });
+						toggleAllBtn.textContent = allChecked ? 'Disable All' : 'Enable All';
+					}
+
+					if (toggleAllBtn) {
+						toggleAllBtn.addEventListener('click', function () {
+							var checkboxes = document.querySelectorAll('.gca-flags-table tbody input[type="checkbox"]');
+							var allChecked = checkboxes.length > 0 && Array.from(checkboxes).every(function (cb) { return cb.checked; });
+							checkboxes.forEach(function (cb) { cb.checked = !allChecked; });
+							updateToggleAllBtn();
+						});
+
+						document.querySelectorAll('.gca-flags-table tbody input[type="checkbox"]').forEach(function (cb) {
+							cb.addEventListener('change', updateToggleAllBtn);
+						});
+
+						updateToggleAllBtn();
 					}
 
 					if (filterBtn && filterDropdown) {
@@ -476,54 +553,6 @@ class GCA_Feature_Flags {
 				})();
 				</script>
 
-				<form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>">
-					<?php wp_nonce_field( self::NONCE_ACTION ); ?>
-					<input type="hidden" name="action" value="gca_feature_flags_save">
-
-					<table class="gca-flags-table">
-						<thead>
-							<tr>
-								<th>Feature</th>
-								<th style="width: 80px; text-align: center;">Enabled</th>
-							</tr>
-						</thead>
-						<tbody>
-							<?php foreach ( $flags as $id => $flag ) : ?>
-								<?php $tags = ! empty( $flag['tags'] ) ? (array) $flag['tags'] : array(); ?>
-								<tr data-tags="<?php echo esc_attr( implode( ',', array_map( 'sanitize_key', $tags ) ) ); ?>">
-									<td>
-										<strong><?php echo esc_html( $flag['label'] ); ?></strong>
-										<?php if ( ! empty( $flag['description'] ) ) : ?>
-											<div class="gca-flag-desc"><?php echo esc_html( $flag['description'] ); ?></div>
-										<?php endif; ?>
-										<?php if ( ! empty( $tags ) ) : ?>
-											<div class="gca-flag-tags">
-												<?php foreach ( $tags as $tag ) : ?>
-													<span class="gca-flag-tag"><?php echo esc_html( $tag ); ?></span>
-												<?php endforeach; ?>
-											</div>
-										<?php endif; ?>
-										<div class="gca-flag-id">gca_flag_enabled( '<?php echo esc_html( $id ); ?>' )</div>
-									</td>
-									<td style="text-align: center;">
-										<label class="gca-toggle" aria-label="Toggle <?php echo esc_attr( $flag['label'] ); ?>">
-											<input
-												type="checkbox"
-												name="gca_flags[<?php echo esc_attr( $id ); ?>]"
-												<?php checked( self::is_enabled( $id ) ); ?>
-											>
-											<span class="gca-toggle-slider"></span>
-										</label>
-									</td>
-								</tr>
-							<?php endforeach; ?>
-						</tbody>
-					</table>
-
-					<div class="gca-flags-submit">
-						<?php submit_button( 'Save Changes', 'primary', 'submit', false ); ?>
-					</div>
-				</form>
 			<?php endif; ?>
 		</div>
 		<?php
