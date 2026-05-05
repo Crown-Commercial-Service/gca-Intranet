@@ -38,7 +38,7 @@ if ( empty( $subpages ) ) {
         <div class="govuk-grid-column-full">
 
             <?php if ( $heading ) : ?>
-                <h2 class="govuk-heading-l intro__heading">
+                <h2 class="intro__heading">
                     <?php echo esc_html( $heading ); ?>
                 </h2>
             <?php endif; ?>
@@ -55,11 +55,11 @@ if ( empty( $subpages ) ) {
                     <li class="card-list__item">
                         <div class="card-list__item__wrapper subpage-card">
 
-                            <h4 class="govuk-heading-m subpage-card__title">
+                            <h3 class="govuk-heading-m subpage-card__title">
                                 <a href="<?php echo esc_url( $url ); ?>" class="subpage-card__link">
                                     <?php echo esc_html( $title ); ?>
                                 </a>
-                            </h4>
+                            </h3>
 
                             <?php if ( $summary ) : ?>
                                 <p class="govuk-body subpage-card__summary">
