@@ -11,12 +11,22 @@ $archive_url = $args['archive_url'] ?? '/';
 $taxonomies  = $args['taxonomies']  ?? [];
 
 $current_sort = isset($_GET['sort']) ? sanitize_text_field($_GET['sort']) : 'newest';
+
+$has_active_filters = false;
+foreach ($taxonomies as $tax) {
+    if (!empty($_GET[$tax['param']])) {
+        $has_active_filters = true;
+        break;
+    }
+}
 ?>
 
 <div class="archive-filters" data-testid="archive-filters">
   <div class="archive-filters__header">
     <h2 class="govuk-heading-m archive-filters__heading">Apply filters</h2>
-    <a href="<?php echo esc_url($archive_url); ?>" class="govuk-link archive-filters__clear">Clear filters</a>
+    <?php if ($has_active_filters) : ?>
+      <a href="<?php echo esc_url($archive_url); ?>" class="govuk-link archive-filters__clear">Clear filters</a>
+    <?php endif; ?>
   </div>
 
   <form method="get" action="<?php echo esc_url($archive_url); ?>" data-archive-filter-form>
