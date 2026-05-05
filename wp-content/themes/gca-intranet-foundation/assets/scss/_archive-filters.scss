@@ -4,8 +4,18 @@
     display: flex;
     flex-wrap: wrap;
 
+    // Below 900px the 25/75 GDS split becomes too narrow — stack instead
+    @media (max-width: 900px) {
+        flex-direction: column;
+
+        // Override GDS column widths so both sections go full-width
+        > [class*="govuk-grid-column"] {
+            width: 100%;
+        }
+    }
+
     &__filters {
-        @media (max-width: 640px) {
+        @media (max-width: 900px) {
             margin-bottom: govuk-spacing(6);
         }
     }
@@ -69,8 +79,11 @@
         }
     }
 
-    // ── Apply filters button — CCS brand colour ──
+    // ── Apply filters button — CCS brand colour, full width ──
     &__submit.govuk-button {
+        display: block;
+        width: 100%;
+        text-align: center;
         background-color: $gca-lime;
         color: $govuk-text-colour;
 
