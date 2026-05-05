@@ -28,8 +28,36 @@ if (!gca_flag_enabled('page-feedback')) {
 
 add_action('init', 'gca_pf_maybe_create_forms');
 
+add_filter('gform_field_content', function (string $content, GF_Field $field, $value, $entry_id, int $form_id): string {
+    $our_ids = array_filter([
+        (int) get_option('gca_pf_yes_form_id', 0),
+        (int) get_option('gca_pf_no_form_id', 0),
+        (int) get_option('gca_pf_report_form_id', 0),
+    ]);
+    if (!in_array($form_id, $our_ids, true) || $field->type !== 'checkbox') {
+        return $content;
+    }
+    return preg_replace(
+        '/(<legend\b[^>]*>)(.*?)(<\/legend>)/s',
+        '$1<h3 class="gca-pf-checkbox-heading">$2</h3>$3',
+        $content
+    );
+}, 10, 5);
+
+add_filter('gform_validation_message', function (string $message, array $form): string {
+    $our_ids = array_filter([
+        (int) get_option('gca_pf_yes_form_id', 0),
+        (int) get_option('gca_pf_no_form_id', 0),
+        (int) get_option('gca_pf_report_form_id', 0),
+    ]);
+    if (in_array((int) $form['id'], $our_ids, true)) {
+        return '<h2 class="gform_submission_error hide_summary">There is a problem</h2>';
+    }
+    return $message;
+}, 10, 2);
+
 // Bump this whenever a form definition changes — triggers an auto-update of existing forms.
-define('GCA_PF_FORMS_VERSION', 2);
+define('GCA_PF_FORMS_VERSION', 6);
 
 // ---------------------------------------------------------------------------
 // Gravity Forms – programmatic form creation / update
@@ -97,11 +125,12 @@ function gca_pf_yes_form_definition(): array
         'is_active'    => '1',
         'fields'       => [
             [
-                'id'          => 1,
-                'type'        => 'checkbox',
-                'label'       => 'Can you tell us why this page was useful?',
-                'isRequired'  => true,
-                'choices'     => [
+                'id'           => 1,
+                'type'         => 'checkbox',
+                'label'        => 'Can you tell us why this page was useful?',
+                'isRequired'   => true,
+                'errorMessage' => 'Select at least one option',
+                'choices'      => [
                     ['text' => 'I found the information I was looking for',            'value' => 'found_info',       'isSelected' => false],
                     ['text' => 'The information was clear and easy to understand',     'value' => 'clear_info',       'isSelected' => false],
                     ['text' => 'The information helped me complete what I needed to do', 'value' => 'helped_complete', 'isSelected' => false],
@@ -129,11 +158,12 @@ function gca_pf_no_form_definition(): array
         'is_active'    => '1',
         'fields'       => [
             [
-                'id'          => 1,
-                'type'        => 'checkbox',
-                'label'       => 'Can you tell us why this page was not useful?',
-                'isRequired'  => true,
-                'choices'     => [
+                'id'           => 1,
+                'type'         => 'checkbox',
+                'label'        => 'Can you tell us why this page was not useful?',
+                'isRequired'   => true,
+                'errorMessage' => 'Select at least one option',
+                'choices'      => [
                     ['text' => 'I could not find what I was looking for',   'value' => 'not_found',        'isSelected' => false],
                     ['text' => 'The information was out of date',            'value' => 'out_of_date',      'isSelected' => false],
                     ['text' => 'The information was difficult to understand', 'value' => 'hard_to_understand', 'isSelected' => false],
@@ -160,8 +190,8 @@ function gca_pf_report_form_definition(): array
         'notifications' => [],
         'is_active'    => '1',
         'fields'       => [
-            ['id' => 1, 'type' => 'text',     'label' => 'What were you doing?', 'isRequired' => false],
-            ['id' => 2, 'type' => 'textarea', 'label' => 'What went wrong?',     'isRequired' => true],
+            ['id' => 1, 'type' => 'textarea', 'label' => 'What were you doing?', 'isRequired' => true, 'errorMessage' => 'Enter what you were doing'],
+            ['id' => 2, 'type' => 'textarea', 'label' => 'What went wrong?',     'isRequired' => true, 'errorMessage' => 'Enter what went wrong'],
             ['id' => 3, 'type' => 'hidden',   'label' => 'Page ID',              'defaultValue' => '{embed_post:ID}'],
             ['id' => 4, 'type' => 'hidden',   'label' => 'Response Type',        'defaultValue' => 'report'],
         ],
