@@ -49,11 +49,10 @@
 }
 
 .sd-directory__nav-label {
-    @include govuk-font(14);
-    font-weight: 700;
-    letter-spacing: 0.06em;
-    text-transform: uppercase;
-    color: govuk-colour("dark-grey");
+    @include govuk-font(19);
+    font-weight: 600;
+    text-transform: capitalize;
+    color: #0b0c0c;
     margin-bottom: govuk-spacing(2);
     margin-top: 0;
 }
@@ -106,7 +105,6 @@
     &:focus {
         outline: 3px solid #ffdd00;
         outline-offset: 0;
-        background: #ffdd00;
     }
 
     &--active {
@@ -154,12 +152,15 @@
 .sd-directory__panel-meta {
     flex: 1 1 0;
     min-width: 0;
+
+    .govuk-body-s {
+        @include govuk-font(19);
+    }
 }
 
 .sd-directory__breadcrumb {
-    @include govuk-font(14);
-    text-transform: uppercase;
-    letter-spacing: 0.06em;
+    @include govuk-font(16);
+    text-transform: capitalize;
     color: govuk-colour("dark-grey");
     margin-bottom: govuk-spacing(1);
     margin-top: 0;
@@ -179,7 +180,7 @@
     }
 
     .govuk-label {
-        @include govuk-font(16);
+        @include govuk-font(19);
         font-weight: 600;
         margin-bottom: govuk-spacing(1);
     }
@@ -311,16 +312,15 @@
 }
 
 .sd-staff-card__role {
-    @include govuk-font(16);
+    @include govuk-font(19);
     color: govuk-colour("dark-grey");
     margin-bottom: govuk-spacing(2);
     margin-top: 0;
 }
 
 .sd-staff-card__manager {
-    @include govuk-font(14);
+    @include govuk-font(16);
     color: #505a5f;
     margin-bottom: 0;
     margin-top: 0;
-
 }
