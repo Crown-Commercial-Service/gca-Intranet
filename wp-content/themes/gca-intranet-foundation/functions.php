@@ -13,6 +13,7 @@ require_once get_template_directory() . '/inc/auth-logic.php';
 require_once get_template_directory() . '/inc/features.php';
 require_once get_template_directory() . '/inc/rest-api-auth.php';
 require_once get_template_directory() . '/inc/features/likes-and-comments.php';
+require_once get_template_directory() . '/inc/features/community-wall.php';
 
 /**
  * Theme setup
@@ -473,7 +474,10 @@ JS
  * Likes & Comments – enqueue config + inline JS on single posts.
  */
 add_action('wp_enqueue_scripts', function (): void {
-    if (!is_singular(['post', 'blog', 'news', 'work_update'])) {
+    $is_interaction_page = is_singular(['post', 'blog', 'news', 'work_update'])
+        || is_page_template('template-community-wall.php');
+
+    if (!$is_interaction_page) {
         return;
     }
 
@@ -519,11 +523,9 @@ add_action('wp_enqueue_scripts', function (): void {
     function likeBtnHtml(liked, count, commentId) {
         return '<button type="button" class="gca-lc__action-btn" aria-pressed="' + (liked ? 'true' : 'false') +
             '" data-action="toggle-comment-like" data-comment-id="' + commentId + '">' +
-            '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">' +
-            '<path class="gca-lc__like-path" d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5' +
-            ' 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3' +
-            ' 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"' +
-            ' stroke="currentColor" stroke-width="2"/></svg>' +
+            '<svg width="14" height="14" viewBox="0 0 22 20" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">' +
+            '<path class="gca-lc__like-path" d="M22 9C22 7.89 21.1 7 20 7H13.68L14.64 2.43C14.66 2.33 14.67 2.22 14.67 2.11C14.67 1.7 14.5 1.32 14.23 1.05L13.17 0L6.59 6.58C6.22 6.95 6 7.45 6 8V18C6 18.5304 6.21071 19.0391 6.58579 19.4142C6.96086 19.7893 7.46957 20 8 20H17C17.83 20 18.54 19.5 18.84 18.78L21.86 11.73C21.95 11.5 22 11.26 22 11V9ZM0 20H4V8H0V20Z"' +
+            ' fill="currentColor"/></svg>' +
             '<span class="gca-lc__like-label">' + (liked ? 'Liked' : 'Like') + '</span>' +
             ' <span data-like-count="' + commentId + '">' + count + '</span>' +
             '</button>';
@@ -849,11 +851,78 @@ add_action('wp_enqueue_scripts', function (): void {
         if (mainForm) { bindForm(mainForm); }
     }
 
+    // Expose init so community wall JS can wire dynamically created .gca-lc elements
+    window.GcaLc = { init: initComponent };
+
     document.addEventListener('DOMContentLoaded', function () {
         document.querySelectorAll('.gca-lc').forEach(initComponent);
     });
 }());
 JS
+    );
+});
+
+/**
+ * Community Wall – enqueue config + JS on the community wall page template.
+ */
+add_action('wp_enqueue_scripts', function (): void {
+    if (!is_page_template('template-community-wall.php')) {
+        return;
+    }
+
+    $current_user = wp_get_current_user();
+    $local_avatar = $current_user->exists()
+        ? trim((string) get_user_meta($current_user->ID, 'google_profile_picture_local_url', true))
+        : '';
+    $avatar_url = $local_avatar
+        ?: ($current_user->exists() ? (string) get_avatar_url($current_user->ID, ['size' => 40]) : '');
+
+    $cw_js_rel = '/assets/scripts/community-wall.js';
+    $cw_js_abs = get_template_directory() . $cw_js_rel;
+    $cw_js_ver = file_exists($cw_js_abs) ? (string) filemtime($cw_js_abs) : '1.0.0';
+
+    wp_register_script(
+        'gca-community-wall',
+        get_template_directory_uri() . $cw_js_rel,
+        ['gca-interactions'],
+        $cw_js_ver,
+        true
+    );
+    wp_enqueue_script('gca-community-wall');
+
+    wp_add_inline_script(
+        'gca-community-wall',
+        'window.gcaCommunityData = ' . wp_json_encode([
+            'restUrl'           => esc_url_raw(rest_url('gca/v1')),
+            'wpRestBase'        => esc_url_raw(rest_url()),
+            'nonce'             => wp_create_nonce('wp_rest'),
+            'currentUserId'     => get_current_user_id(),
+            'currentUserAvatar' => $avatar_url,
+        ]) . ';',
+        'before'
+    );
+
+    // Also load GOV.UK Frontend on the community wall page (normally only on is_singular)
+    $govuk_js_rel = '/assets/scripts/all.js';
+    $govuk_js_abs = get_template_directory() . $govuk_js_rel;
+    $govuk_js_ver = file_exists($govuk_js_abs) ? (string) filemtime($govuk_js_abs) : '1.0.0';
+
+    wp_enqueue_script(
+        'gca-govuk-frontend-cw',
+        get_template_directory_uri() . $govuk_js_rel,
+        [],
+        $govuk_js_ver,
+        true
+    );
+    wp_add_inline_script(
+        'gca-govuk-frontend-cw',
+        'document.addEventListener("DOMContentLoaded", function() {
+            if (window.GOVUKFrontend && typeof window.GOVUKFrontend.initAll === "function") {
+                window.GOVUKFrontend.initAll();
+                document.documentElement.classList.add("js-enabled");
+            }
+        });',
+        'after'
     );
 });
 

@@ -1,0 +1,326 @@
+// =============================================================================
+// STAFF DIRECTORY
+// Two-panel layout: directorate/team sidebar + staff card grid.
+// Follows GOV.UK Frontend conventions and the GCA token system.
+// =============================================================================
+
+// ── Layout ────────────────────────────────────────────────────────────────────
+
+.sd-directory {
+    width: 100%;
+}
+
+.sd-directory__layout {
+    display: flex;
+    flex-direction: column;
+    gap: govuk-spacing(6);
+
+    @include govuk-media-query($from: tablet) {
+        flex-direction: row;
+        align-items: flex-start;
+        gap: govuk-spacing(8);
+    }
+}
+
+// ── Sidebar ───────────────────────────────────────────────────────────────────
+
+.sd-directory__sidebar {
+    background: #ffffff;
+    border: 1px solid $gca-border-grey;
+    border-radius: $border-radius;
+    padding: govuk-spacing(5);
+    flex-shrink: 0;
+
+    @include govuk-media-query($from: tablet) {
+        width: 260px;
+    }
+
+    @include govuk-media-query($from: desktop) {
+        width: 290px;
+    }
+}
+
+.sd-directory__nav-section {
+    & + & {
+        margin-top: govuk-spacing(5);
+        padding-top: govuk-spacing(5);
+        border-top: 1px solid $gca-border-grey;
+    }
+}
+
+.sd-directory__nav-label {
+    @include govuk-font(19);
+    font-weight: 600;
+    text-transform: capitalize;
+    color: #0b0c0c;
+    margin-bottom: govuk-spacing(2);
+    margin-top: 0;
+}
+
+// Directorate dropdown — full-width within sidebar
+.sd-directory__directorate-select {
+    width: 100%;
+}
+
+.sd-directory__nav-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: govuk-spacing(1);
+}
+
+.sd-directory__nav-item {
+    margin: 0;
+}
+
+// Team buttons — plain text, bullet dot indicator
+.sd-directory__team-btn {
+    appearance: none;
+    -webkit-appearance: none;
+    font-family: inherit;
+    @include govuk-font(19);
+    font-weight: 400;
+    line-height: 1.4;
+    color: #0b0c0c;
+    background: transparent;
+    border: none;
+    padding: govuk-spacing(1) govuk-spacing(2);
+    padding-left: govuk-spacing(4);
+    width: 100%;
+    display: flex;
+    align-items: center;
+    gap: govuk-spacing(2);
+    cursor: pointer;
+    text-align: left;
+    position: relative;
+    border-radius: govuk-spacing(1);
+    transition: background 0.15s ease;
+
+    &:hover {
+        background: govuk-colour("light-grey");
+    }
+
+    &:focus {
+        outline: 3px solid #ffdd00;
+        outline-offset: 0;
+    }
+
+    &--active {
+        font-weight: 600;
+        color: $gca-action-blue;
+
+        .sd-directory__team-dot {
+            background: $gca-action-blue;
+        }
+    }
+}
+
+.sd-directory__team-dot {
+    display: inline-block;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: $gca-border-grey;
+    flex-shrink: 0;
+    transition: background 0.15s ease;
+}
+
+// ── Main content area ─────────────────────────────────────────────────────────
+
+.sd-directory__main {
+    flex: 1 1 0;
+    min-width: 0;
+}
+
+// Top bar — panel meta (left) + search box (right)
+.sd-directory__topbar {
+    display: flex;
+    flex-direction: column;
+    gap: govuk-spacing(4);
+    margin-bottom: govuk-spacing(5);
+
+    @include govuk-media-query($from: tablet) {
+        flex-direction: row;
+        justify-content: flex-end;
+        align-items: flex-start;
+        gap: govuk-spacing(6);
+    }
+}
+
+.sd-directory__panel-meta {
+    flex: 1 1 0;
+    min-width: 0;
+
+    .govuk-body-s {
+        @include govuk-font(19);
+    }
+}
+
+.sd-directory__breadcrumb {
+    @include govuk-font(16);
+    text-transform: capitalize;
+    color: govuk-colour("dark-grey");
+    margin-bottom: govuk-spacing(1);
+    margin-top: 0;
+}
+
+.sd-directory__panel-title {
+    margin-bottom: govuk-spacing(1);
+}
+
+// ── Search box ─────────────────────────────────────────────────────────────────
+
+.sd-directory__search-box {
+    flex-shrink: 0;
+
+    @include govuk-media-query($from: tablet) {
+        width: 240px;
+    }
+
+    .govuk-label {
+        @include govuk-font(19);
+        font-weight: 600;
+        margin-bottom: govuk-spacing(1);
+    }
+}
+
+.sd-directory__search-field {
+    position: relative;
+    display: flex;
+    align-items: stretch;
+}
+
+.sd-directory__search-input {
+    padding-right: govuk-spacing(9) !important;
+    margin-bottom: 0;
+    width: 100%;
+}
+
+.sd-directory__search-btn {
+    position: absolute;
+    right: 0;
+    top: 0;
+    bottom: 0;
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 0 govuk-spacing(3);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: govuk-colour("black");
+
+    &:hover {
+        color: $gca-action-blue;
+    }
+
+    &:focus {
+        outline: 3px solid #ffdd00;
+        outline-offset: 0;
+        background: #ffdd00;
+    }
+}
+
+// ── Loading indicator ─────────────────────────────────────────────────────────
+
+.sd-directory__loading {
+    color: govuk-colour("dark-grey");
+    margin-bottom: govuk-spacing(4);
+}
+
+// ── Staff grid ────────────────────────────────────────────────────────────────
+
+.sd-directory__staff-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: govuk-spacing(4);
+
+    @include govuk-media-query($from: tablet) {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    @include govuk-media-query($from: desktop) {
+        grid-template-columns: repeat(3, 1fr);
+    }
+}
+
+// ── Staff card ────────────────────────────────────────────────────────────────
+
+.sd-staff-card {
+    background: #ffffff;
+    border: 1px solid $gca-border-grey;
+    border-radius: $border-radius;
+    overflow: hidden;
+    transition: border-color 0.15s ease, box-shadow 0.15s ease;
+
+    &:hover {
+        border-color: $gca-action-blue;
+        box-shadow: 0 2px 6px rgba(29, 112, 184, 0.12);
+    }
+}
+
+.sd-staff-card__link {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    padding: govuk-spacing(4);
+    text-decoration: none;
+    color: inherit;
+    height: 100%;
+
+    &:hover {
+        text-decoration: none;
+    }
+
+    &:focus {
+        outline: 3px solid #ffdd00;
+        outline-offset: 0;
+    }
+}
+
+.sd-staff-card__avatar-wrap {
+    margin-bottom: govuk-spacing(3);
+}
+
+.sd-staff-card__avatar {
+    display: block;
+    width: 64px;
+    height: 64px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 2px solid $gca-border-grey;
+}
+
+.sd-staff-card__body {
+    flex: 1 1 0;
+    min-width: 0;
+}
+
+.sd-staff-card__name {
+    @include govuk-font(19);
+    font-weight: 700;
+    color: $gca-action-blue;
+    margin-bottom: govuk-spacing(1);
+    margin-top: 0;
+
+    .sd-staff-card__link:hover & {
+        text-decoration: underline;
+        color: #003078;
+    }
+}
+
+.sd-staff-card__role {
+    @include govuk-font(19);
+    color: govuk-colour("dark-grey");
+    margin-bottom: govuk-spacing(2);
+    margin-top: 0;
+}
+
+.sd-staff-card__manager {
+    @include govuk-font(16);
+    color: #505a5f;
+    margin-bottom: 0;
+    margin-top: 0;
+}

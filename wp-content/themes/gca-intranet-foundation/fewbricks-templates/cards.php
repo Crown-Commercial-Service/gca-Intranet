@@ -11,7 +11,7 @@ $cards   = $row['cards_cards_cards'] ?? [];
         <div class="govuk-grid-column-full">
 
             <?php if ($heading) : ?>
-                <h2 class="govuk-heading-l intro__heading">
+                <h2 class="intro__heading">
                     <?php echo esc_html($heading); ?>
                 </h2>
             <?php endif; ?>
@@ -22,9 +22,9 @@ $cards   = $row['cards_cards_cards'] ?? [];
                         <li class="card-list__item">
                             <div class="card-list__item__wrapper">
                                 
-                                <h4 class="govuk-heading-m">
+                                <h3 class="govuk-heading-m">
                                     <?php echo esc_html($card['cards_title']); ?>
-                                </h4>
+                                </h3>
 
                                 <div class="wysiwyg-content govuk-body">
                                     <?php 

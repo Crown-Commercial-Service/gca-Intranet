@@ -142,6 +142,10 @@
   </div>
 <?php endif; ?>
 
+<?php if (is_singular() && gca_flag_enabled('page-feedback')) : ?>
+  <?php get_template_part('template-parts/page-feedback'); ?>
+<?php endif; ?>
+
 <footer class="govuk-footer site-footer" role="contentinfo">
   <div class="govuk-width-container">
 
