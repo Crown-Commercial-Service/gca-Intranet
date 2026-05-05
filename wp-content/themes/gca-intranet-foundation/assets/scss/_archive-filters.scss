@@ -1,5 +1,18 @@
 // ── Archive filter sidebar ──────────────────────────────────────────────────
 
+// ── Results loading state (AJAX swap) ────────────────────────────────────────
+
+.archive-layout__results {
+    transition: opacity 0.2s ease;
+
+    &.is-loading {
+        opacity: 0.4;
+        pointer-events: none;
+    }
+}
+
+// ── Archive filter sidebar ──────────────────────────────────────────────────
+
 .archive-layout {
     display: flex;
     flex-wrap: wrap;
@@ -22,17 +35,30 @@
 }
 
 .archive-filters {
+    // ── Header row: title + clear link ──
+    &__header {
+        display: flex;
+        justify-content: space-between;
+        align-items: baseline;
+        margin-bottom: 19px;
+    }
+
     &__heading {
-        margin-bottom: govuk-spacing(4);
+        margin-bottom: 0;
+    }
+
+    &__clear {
+        font-size: 16px;
+        white-space: nowrap;
     }
 
     // ── Each collapsible section ──
     &__section {
         background: $govuk-canvas-background-colour;
         border: 1px solid $gca-border-mid;
-        border-radius: 12px;
-        padding: govuk-spacing(4);
-        margin-bottom: govuk-spacing(4);
+        border-radius: 15px;
+        padding: 19px;
+        margin-bottom: 19px;
     }
 
     &__section-header {
@@ -76,24 +102,6 @@
     &__section-body {
         &.is-hidden {
             display: none;
-        }
-    }
-
-    // ── Apply filters button — CCS brand colour, full width ──
-    &__submit.govuk-button {
-        display: block;
-        width: 100%;
-        text-align: center;
-        background-color: $gca-lime;
-        color: $govuk-text-colour;
-
-        &:hover {
-            background-color: $ccs-button-hover-colour;
-            color: $govuk-text-colour;
-        }
-
-        &:focus {
-            color: $govuk-focus-text-colour;
         }
     }
 }

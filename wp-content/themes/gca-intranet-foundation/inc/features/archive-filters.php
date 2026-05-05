@@ -195,14 +195,94 @@ document.addEventListener("DOMContentLoaded", function () {
     var form = document.querySelector("[data-archive-filter-form]");
     if (!form) return;
 
-    // Auto-submit when sort radio changes
+    var resultsContainer = document.querySelector(".archive-layout__results");
+    if (!resultsContainer) return;
+
+    // ── AJAX fetch: replace results, optionally push a history entry ──
+    function fetchResults(url, pushState) {
+        resultsContainer.classList.add("is-loading");
+
+        fetch(url)
+            .then(function (res) { return res.text(); })
+            .then(function (html) {
+                var doc = new DOMParser().parseFromString(html, "text/html");
+                var newResults = doc.querySelector(".archive-layout__results");
+                if (newResults) {
+                    resultsContainer.innerHTML = newResults.innerHTML;
+                    bindResultLinks();
+                    resultsContainer.scrollIntoView({ behavior: "smooth", block: "nearest" });
+                }
+                if (pushState) {
+                    history.pushState({ url: url }, "", url);
+                }
+            })
+            .catch(function () {
+                // Network error — fall back to a normal navigation
+                window.location.href = url;
+            })
+            .finally(function () {
+                resultsContainer.classList.remove("is-loading");
+            });
+    }
+
+    // ── Build the filtered URL from the current form state ──
+    function buildUrl() {
+        var params = new URLSearchParams();
+        new FormData(form).forEach(function (value, key) {
+            params.append(key, value);
+        });
+        var qs = params.toString();
+        return form.action + (qs ? "?" + qs : "");
+    }
+
+    // ── Bind pagination / any same-archive link inside the results ──
+    function bindResultLinks() {
+        var archiveBase = form.action.replace(/\/$/, "");
+        resultsContainer.querySelectorAll("a[href]").forEach(function (link) {
+            if (link.href.indexOf(archiveBase) === 0) {
+                link.addEventListener("click", function (e) {
+                    e.preventDefault();
+                    syncFormToUrl(link.href);
+                    fetchResults(link.href, true);
+                });
+            }
+        });
+    }
+
+    // ── Sync form controls to the params in a given URL ──
+    function syncFormToUrl(url) {
+        var params = new URLSearchParams(url.split("?")[1] || "");
+
+        // Reset everything first
+        form.querySelectorAll("[data-filter-term]").forEach(function (cb) { cb.checked = false; });
+        form.querySelectorAll("[data-view-all]").forEach(function (va) { va.checked = true; });
+
+        params.forEach(function (value, key) {
+            var param = key.replace(/\[\]$/, "");
+            if (key === "sort") {
+                var radio = form.querySelector("input[name='sort'][value='" + CSS.escape(value) + "']");
+                if (radio) radio.checked = true;
+            } else {
+                var cb = form.querySelector(
+                    "[data-filter-term='" + CSS.escape(param) + "'][value='" + CSS.escape(value) + "']"
+                );
+                if (cb) {
+                    cb.checked = true;
+                    var va = form.querySelector("[data-view-all='" + CSS.escape(param) + "']");
+                    if (va) va.checked = false;
+                }
+            }
+        });
+    }
+
+    // ── Sort radio ──
     form.querySelectorAll("input[name='sort']").forEach(function (radio) {
         radio.addEventListener("change", function () {
-            form.submit();
+            fetchResults(buildUrl(), true);
         });
     });
 
-    // View all / individual checkbox logic
+    // ── View all / individual checkbox logic ──
     form.querySelectorAll("[data-view-all]").forEach(function (viewAll) {
         var param = viewAll.getAttribute("data-view-all");
 
@@ -212,24 +292,24 @@ document.addEventListener("DOMContentLoaded", function () {
             viewAll.checked = !anyChecked;
         }
 
-        // Clicking "View all" unchecks all individual terms
         viewAll.addEventListener("change", function () {
             if (viewAll.checked) {
                 form.querySelectorAll("[data-filter-term='" + param + "']").forEach(function (cb) {
                     cb.checked = false;
                 });
             }
+            fetchResults(buildUrl(), true);
         });
 
-        // Clicking any individual term unchecks "View all"
         form.querySelectorAll("[data-filter-term='" + param + "']").forEach(function (cb) {
             cb.addEventListener("change", function () {
                 syncViewAll();
+                fetchResults(buildUrl(), true);
             });
         });
     });
 
-    // Hide/Show section toggle
+    // ── Hide/Show section toggle ──
     form.querySelectorAll("[data-toggle-section]").forEach(function (btn) {
         btn.addEventListener("click", function () {
             var section = btn.closest("[data-filter-section]");
@@ -249,6 +329,19 @@ document.addEventListener("DOMContentLoaded", function () {
             }
         });
     });
+
+    // ── Browser back / forward ──
+    window.addEventListener("popstate", function (e) {
+        var url = (e.state && e.state.url) ? e.state.url : location.href;
+        syncFormToUrl(url);
+        fetchResults(url, false);
+    });
+
+    // Replace the initial history entry so the back button can return here
+    history.replaceState({ url: location.href }, "", location.href);
+
+    // Bind links on first paint
+    bindResultLinks();
 });
 JS);
 });

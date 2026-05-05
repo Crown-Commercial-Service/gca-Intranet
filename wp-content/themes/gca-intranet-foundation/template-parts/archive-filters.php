@@ -14,7 +14,10 @@ $current_sort = isset($_GET['sort']) ? sanitize_text_field($_GET['sort']) : 'new
 ?>
 
 <div class="archive-filters" data-testid="archive-filters">
-  <h2 class="govuk-heading-m archive-filters__heading">Apply filters</h2>
+  <div class="archive-filters__header">
+    <h2 class="govuk-heading-m archive-filters__heading">Apply filters</h2>
+    <a href="<?php echo esc_url($archive_url); ?>" class="govuk-link archive-filters__clear">Clear filters</a>
+  </div>
 
   <form method="get" action="<?php echo esc_url($archive_url); ?>" data-archive-filter-form>
 
@@ -101,12 +104,6 @@ $current_sort = isset($_GET['sort']) ? sanitize_text_field($_GET['sort']) : 'new
         </div>
       </div>
     <?php endforeach; ?>
-
-    <?php if ($rendered_sections > 0) : ?>
-      <button type="submit" class="govuk-button archive-filters__submit govuk-!-margin-top-4 govuk-!-margin-bottom-0">
-        Apply filters
-      </button>
-    <?php endif; ?>
 
   </form>
 </div>
