@@ -142,7 +142,7 @@
   </div>
 <?php endif; ?>
 
-<?php if (is_singular() && gca_flag_enabled('page-feedback')) : ?>
+<?php if (is_singular(['page']) && gca_flag_enabled('page-feedback')) : ?>
   <?php get_template_part('template-parts/page-feedback'); ?>
 <?php endif; ?>
 
