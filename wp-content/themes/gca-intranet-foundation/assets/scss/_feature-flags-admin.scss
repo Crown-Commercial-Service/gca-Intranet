@@ -112,6 +112,52 @@
     }
 }
 
+// Taxonomy page: archive-filter toggle + lock button
+.gca-tax-toggle-wrap {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    margin-right: 10px;
+    vertical-align: middle;
+
+    .gca-toggle {
+        flex-shrink: 0;
+    }
+}
+
+.gca-tax-toggle-text {
+    font-size: 13px;
+    color: #1d2327;
+    white-space: nowrap;
+}
+
+.gca-tax-lock-btn {
+    background: none;
+    border: none;
+    padding: 0;
+    cursor: pointer;
+    color: #8c8f94;
+    display: inline-flex;
+    align-items: center;
+    flex-shrink: 0;
+
+    &:hover {
+        color: #1d2327;
+    }
+}
+
+// Locked: dim the toggle so it looks inactive
+.gca-tax-toggle-wrap:not(.is-unlocked) .gca-toggle {
+    opacity: 0.45;
+    cursor: not-allowed;
+    pointer-events: none;
+}
+
+// Unlocked: turn the lock icon blue to signal the window is open
+.gca-tax-toggle-wrap.is-unlocked .gca-tax-lock-btn {
+    color: #2271b1;
+}
+
 // Controls bar
 .gca-flags-submit {
     margin-top: 20px;

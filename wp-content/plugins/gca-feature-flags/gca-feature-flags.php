@@ -23,6 +23,31 @@ class GCA_Feature_Flags {
 		add_action( 'admin_post_gca_feature_flags_save', array( __CLASS__, 'handle_save' ) );
 		add_action( 'admin_notices', array( __CLASS__, 'show_notices' ) );
 		add_action( 'admin_enqueue_scripts', array( __CLASS__, 'enqueue_admin_assets' ) );
+		add_action( 'wp_ajax_gca_toggle_single_flag', array( __CLASS__, 'handle_toggle_single' ) );
+	}
+
+	public static function handle_toggle_single() {
+		if ( ! current_user_can( 'manage_options' ) ) {
+			wp_send_json_error( 'Insufficient permissions.', 403 );
+		}
+
+		check_ajax_referer( 'gca_toggle_single_flag' );
+
+		$flag_id = isset( $_POST['flag_id'] ) ? sanitize_key( $_POST['flag_id'] ) : '';
+
+		if ( ! $flag_id || ! isset( self::$flags[ $flag_id ] ) ) {
+			wp_send_json_error( 'Unknown flag.', 400 );
+		}
+
+		$options = get_option( self::OPTION_NAME, array() );
+		if ( ! is_array( $options ) ) {
+			$options = array();
+		}
+
+		$options[ $flag_id ] = ! self::is_enabled( $flag_id );
+		update_option( self::OPTION_NAME, $options );
+
+		wp_send_json_success( array( 'enabled' => $options[ $flag_id ] ) );
 	}
 
 	public static function enqueue_admin_assets( $hook ) {

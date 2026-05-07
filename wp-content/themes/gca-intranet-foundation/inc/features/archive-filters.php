@@ -79,6 +79,169 @@ gca_register_feature_flag('archive-filter-work_update-responsible_team', [
     'parent'      => 'archive-filters',
 ]);
 
+// Map of [post_type][taxonomy] => flag_id for the taxonomy admin pages.
+const GCA_ARCHIVE_FILTER_TAX_FLAG_MAP = [
+    'news' => [
+        'category'         => 'archive-filter-news-category',
+        'label'            => 'archive-filter-news-label',
+    ],
+    'blog' => [
+        'label'            => 'archive-filter-blog-label',
+    ],
+    'event' => [
+        'category'         => 'archive-filter-event-category',
+        'event_location'   => 'archive-filter-event-location',
+    ],
+    'work_update' => [
+        'label'            => 'archive-filter-work_update-label',
+        'responsible_team' => 'archive-filter-work_update-responsible_team',
+    ],
+];
+
+/**
+ * Enqueue the feature-flags admin CSS on relevant taxonomy list pages.
+ */
+add_action('admin_enqueue_scripts', function (string $hook): void {
+    if ($hook !== 'edit-tags.php') {
+        return;
+    }
+
+    $screen = get_current_screen();
+    if (!$screen || !isset(GCA_ARCHIVE_FILTER_TAX_FLAG_MAP[$screen->post_type][$screen->taxonomy])) {
+        return;
+    }
+
+    wp_enqueue_style(
+        'gca-feature-flags-admin',
+        get_stylesheet_directory_uri() . '/assets/dist/feature-flags-admin.css',
+        [],
+        wp_get_theme()->get('Version')
+    );
+});
+
+/**
+ * Inject the archive-filter toggle to the left of the search input on
+ * relevant taxonomy admin list pages.
+ */
+add_action('admin_footer', function (): void {
+    $screen = get_current_screen();
+    if (!$screen || $screen->base !== 'edit-tags') {
+        return;
+    }
+
+    $flag_id = GCA_ARCHIVE_FILTER_TAX_FLAG_MAP[$screen->post_type][$screen->taxonomy] ?? null;
+    if (!$flag_id) {
+        return;
+    }
+
+    $enabled  = gca_flag_enabled($flag_id);
+    $nonce    = wp_create_nonce('gca_toggle_single_flag');
+    $ajax_url = admin_url('admin-ajax.php');
+    ?>
+    <script>
+    document.addEventListener('DOMContentLoaded', function () {
+        var searchInput = document.querySelector('.search-box input[type="search"]');
+        if (!searchInput) return;
+
+        var RELOCK_DELAY = 10000;
+        var relockTimer  = null;
+
+        var ICON_CLOSED = '<svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true" focusable="false"><path d="M11 7V5a3 3 0 0 0-6 0v2H4v7h8V7h-1zm-4-2a1 1 0 0 1 2 0v2H7V5z"/></svg>';
+        var ICON_OPEN   = '<svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true" focusable="false"><path d="M11 7V4a3 3 0 0 0-6 0H7a1 1 0 0 1 2 0v3H4v7h8V7h-1z"/></svg>';
+
+        // ── Lock button ──
+        var lockBtn = document.createElement('button');
+        lockBtn.type      = 'button';
+        lockBtn.className = 'gca-tax-lock-btn';
+        lockBtn.setAttribute('aria-label', 'Unlock archive filter toggle');
+        lockBtn.innerHTML = ICON_CLOSED;
+
+        // ── Toggle switch ──
+        var wrap = document.createElement('span');
+        wrap.className = 'gca-tax-toggle-wrap';
+
+        var toggleLabel = document.createElement('label');
+        toggleLabel.className = 'gca-toggle';
+        toggleLabel.setAttribute('aria-label', 'Toggle archive filter');
+
+        var checkbox = document.createElement('input');
+        checkbox.type     = 'checkbox';
+        checkbox.checked  = <?php echo $enabled ? 'true' : 'false'; ?>;
+        checkbox.disabled = true;
+
+        var slider = document.createElement('span');
+        slider.className = 'gca-toggle-slider';
+
+        toggleLabel.appendChild(checkbox);
+        toggleLabel.appendChild(slider);
+
+        var text = document.createElement('span');
+        text.className   = 'gca-tax-toggle-text';
+        text.textContent = 'Archive filter';
+
+        wrap.appendChild(lockBtn);
+        wrap.appendChild(toggleLabel);
+        wrap.appendChild(text);
+
+        searchInput.parentNode.insertBefore(wrap, searchInput);
+
+        // ── Helpers ──
+        function lockToggle() {
+            clearTimeout(relockTimer);
+            relockTimer       = null;
+            checkbox.disabled = true;
+            wrap.classList.remove('is-unlocked');
+            lockBtn.innerHTML = ICON_CLOSED;
+            lockBtn.setAttribute('aria-label', 'Unlock archive filter toggle');
+        }
+
+        function unlockToggle() {
+            clearTimeout(relockTimer);
+            checkbox.disabled = false;
+            wrap.classList.add('is-unlocked');
+            lockBtn.innerHTML = ICON_OPEN;
+            lockBtn.setAttribute('aria-label', 'Lock archive filter toggle');
+            relockTimer = setTimeout(lockToggle, RELOCK_DELAY);
+        }
+
+        // ── Lock button click ──
+        lockBtn.addEventListener('click', function () {
+            if (wrap.classList.contains('is-unlocked')) {
+                lockToggle();
+            } else {
+                unlockToggle();
+            }
+        });
+
+        // ── Toggle change → AJAX ──
+        checkbox.addEventListener('change', function () {
+            var expected = checkbox.checked;
+
+            fetch('<?php echo esc_url($ajax_url); ?>', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                body: new URLSearchParams({
+                    action:      'gca_toggle_single_flag',
+                    flag_id:     '<?php echo esc_js($flag_id); ?>',
+                    _ajax_nonce: '<?php echo esc_js($nonce); ?>',
+                }),
+            })
+            .then(function (r) { return r.json(); })
+            .then(function (data) {
+                if (!data.success) {
+                    checkbox.checked = !expected;
+                }
+            })
+            .catch(function () {
+                checkbox.checked = !expected;
+            })
+            .finally(lockToggle);
+        });
+    });
+    </script>
+    <?php
+});
+
 /**
  * Return the enabled taxonomy filter definitions for a given post type.
  *
