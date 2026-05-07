@@ -1,0 +1,107 @@
+// ── Archive filter sidebar ──────────────────────────────────────────────────
+
+// ── Results loading state (AJAX swap) ────────────────────────────────────────
+
+.archive-layout__results {
+    transition: opacity 0.2s ease;
+
+    &.is-loading {
+        opacity: 0.4;
+        pointer-events: none;
+    }
+}
+
+// ── Archive filter sidebar ──────────────────────────────────────────────────
+
+.archive-layout {
+    display: flex;
+    flex-wrap: wrap;
+
+    // Below 900px the 25/75 GDS split becomes too narrow — stack instead
+    @media (max-width: 900px) {
+        flex-direction: column;
+
+        // Override GDS column widths so both sections go full-width
+        > [class*="govuk-grid-column"] {
+            width: 100%;
+        }
+    }
+
+    &__filters {
+        @media (max-width: 900px) {
+            margin-bottom: govuk-spacing(6);
+        }
+    }
+}
+
+.archive-filters {
+    // ── Header row: title + clear link ──
+    &__header {
+        display: flex;
+        justify-content: space-between;
+        align-items: baseline;
+        margin-bottom: 19px;
+    }
+
+    &__heading {
+        margin-bottom: 0;
+    }
+
+    &__clear {
+        font-size: 16px;
+        white-space: nowrap;
+    }
+
+    // ── Each collapsible section ──
+    &__section {
+        background: $govuk-canvas-background-colour;
+        border: 1px solid $gca-border-mid;
+        border-radius: 15px;
+        padding: 19px;
+        margin-bottom: 19px;
+    }
+
+    &__section-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    &__section-title {
+        margin-bottom: 0;
+    }
+
+    // ── Hide/Show toggle button ──
+    &__toggle {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        background: none;
+        border: none;
+        padding: 0;
+        cursor: pointer;
+        font-size: 16px;
+        color: $gca-blue-accessible;
+        text-decoration: underline;
+
+        &:hover {
+            color: $color-hover;
+        }
+    }
+
+    &__chevron {
+        transition: transform 0.2s ease;
+        flex-shrink: 0;
+
+        .archive-filters__toggle[aria-expanded="false"] & {
+            transform: rotate(180deg);
+        }
+    }
+
+    // ── Collapsed state ──
+    &__section-body {
+        &.is-hidden {
+            display: none;
+        }
+    }
+}

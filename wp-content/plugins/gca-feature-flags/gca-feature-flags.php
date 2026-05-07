@@ -22,6 +22,45 @@ class GCA_Feature_Flags {
 		add_action( 'admin_menu', array( __CLASS__, 'add_admin_page' ) );
 		add_action( 'admin_post_gca_feature_flags_save', array( __CLASS__, 'handle_save' ) );
 		add_action( 'admin_notices', array( __CLASS__, 'show_notices' ) );
+		add_action( 'admin_enqueue_scripts', array( __CLASS__, 'enqueue_admin_assets' ) );
+		add_action( 'wp_ajax_gca_toggle_single_flag', array( __CLASS__, 'handle_toggle_single' ) );
+	}
+
+	public static function handle_toggle_single() {
+		if ( ! current_user_can( 'manage_options' ) ) {
+			wp_send_json_error( 'Insufficient permissions.', 403 );
+		}
+
+		check_ajax_referer( 'gca_toggle_single_flag' );
+
+		$flag_id = isset( $_POST['flag_id'] ) ? sanitize_key( $_POST['flag_id'] ) : '';
+
+		if ( ! $flag_id || ! isset( self::$flags[ $flag_id ] ) ) {
+			wp_send_json_error( 'Unknown flag.', 400 );
+		}
+
+		$options = get_option( self::OPTION_NAME, array() );
+		if ( ! is_array( $options ) ) {
+			$options = array();
+		}
+
+		$options[ $flag_id ] = ! self::is_enabled( $flag_id );
+		update_option( self::OPTION_NAME, $options );
+
+		wp_send_json_success( array( 'enabled' => $options[ $flag_id ] ) );
+	}
+
+	public static function enqueue_admin_assets( $hook ) {
+		if ( 'settings_page_' . self::MENU_SLUG !== $hook ) {
+			return;
+		}
+
+		wp_enqueue_style(
+			'gca-feature-flags-admin',
+			get_stylesheet_directory_uri() . '/assets/dist/feature-flags-admin.css',
+			array(),
+			wp_get_theme()->get( 'Version' )
+		);
 	}
 
 	/**
@@ -50,6 +89,7 @@ class GCA_Feature_Flags {
 				'description' => '',
 				'default'     => false,
 				'tags'        => array(),
+				'parent'      => '',
 			)
 		);
 
@@ -178,198 +218,6 @@ class GCA_Feature_Flags {
 					</p>
 				</div>
 			<?php else : ?>
-				<style>
-					.gca-flags-table {
-						width: 100%;
-						border-collapse: collapse;
-						background: #fff;
-						box-shadow: 0 1px 1px rgba(0,0,0,.04);
-						border: 1px solid #c3c4c7;
-					}
-					.gca-flags-table th {
-						text-align: left;
-						padding: 12px 16px;
-						border-bottom: 2px solid #c3c4c7;
-						font-size: 13px;
-					}
-					.gca-flags-table td {
-						padding: 14px 16px;
-						border-bottom: 1px solid #f0f0f1;
-						vertical-align: middle;
-					}
-					.gca-flags-table tbody tr:last-child td {
-						border-bottom: none;
-					}
-					.gca-flags-table tbody tr:hover td {
-						background: #f6f7f7;
-					}
-					.gca-flag-id {
-						font-family: monospace;
-						font-size: 11px;
-						color: #8c8f94;
-						margin-top: 4px;
-					}
-					.gca-flag-desc {
-						color: #50575e;
-						font-size: 13px;
-						margin-top: 3px;
-					}
-					/* Toggle switch */
-					.gca-toggle {
-						position: relative;
-						display: inline-block;
-						width: 46px;
-						height: 26px;
-						vertical-align: middle;
-					}
-					.gca-toggle input {
-						opacity: 0;
-						width: 0;
-						height: 0;
-					}
-					.gca-toggle-slider {
-						position: absolute;
-						cursor: pointer;
-						inset: 0;
-						background-color: #c3c4c7;
-						border-radius: 26px;
-						transition: background-color 0.15s ease;
-					}
-					.gca-toggle-slider::before {
-						content: "";
-						position: absolute;
-						height: 20px;
-						width: 20px;
-						left: 3px;
-						bottom: 3px;
-						background-color: #fff;
-						border-radius: 50%;
-						transition: transform 0.15s ease;
-						box-shadow: 0 1px 3px rgba(0,0,0,.25);
-					}
-					.gca-toggle input:checked + .gca-toggle-slider {
-						background-color: #2271b1;
-					}
-					.gca-toggle input:checked + .gca-toggle-slider::before {
-						transform: translateX(20px);
-					}
-					.gca-toggle input:focus-visible + .gca-toggle-slider {
-						outline: 2px solid #2271b1;
-						outline-offset: 2px;
-					}
-					.gca-flags-submit {
-						margin-top: 20px;
-					}
-					.gca-flags-search {
-						margin-bottom: 16px;
-					}
-					.gca-flags-search input[type="search"] {
-						width: 100%;
-						max-width: 400px;
-						padding: 6px 10px;
-						font-size: 13px;
-					}
-					#gca-flags-no-results {
-						padding: 20px 16px;
-						color: #50575e;
-						font-style: italic;
-						display: none;
-					}
-					.gca-flag-tags {
-						display: flex;
-						flex-wrap: wrap;
-						gap: 4px;
-						margin-top: 5px;
-					}
-					.gca-flag-tag {
-						display: inline-block;
-						padding: 1px 8px;
-						background: #e5f0fb;
-						color: #2271b1;
-						border-radius: 10px;
-						font-size: 11px;
-						font-weight: 500;
-					}
-					.gca-flags-controls {
-						display: flex;
-						align-items: center;
-						gap: 12px;
-						margin-bottom: 16px;
-					}
-					.gca-flags-controls .gca-flags-search {
-						margin-bottom: 0;
-					}
-					.gca-tag-filter {
-						position: relative;
-					}
-					.gca-tag-filter-btn {
-						padding: 6px 10px;
-						font-size: 13px;
-						cursor: pointer;
-						background: #fff;
-						border: 1px solid #c3c4c7;
-						border-radius: 3px;
-						white-space: nowrap;
-						line-height: 1.4;
-					}
-					.gca-tag-filter-btn:hover {
-						border-color: #2271b1;
-					}
-					.gca-tag-filter-count {
-						display: inline-block;
-						background: #2271b1;
-						color: #fff;
-						border-radius: 10px;
-						padding: 0 6px;
-						font-size: 11px;
-						margin-left: 4px;
-						vertical-align: middle;
-					}
-					.gca-tag-filter-dropdown {
-						position: absolute;
-						top: calc(100% + 4px);
-						left: 0;
-						z-index: 100;
-						background: #fff;
-						border: 1px solid #c3c4c7;
-						border-radius: 3px;
-						box-shadow: 0 2px 6px rgba(0,0,0,.15);
-						min-width: 160px;
-						padding: 6px 0;
-					}
-					.gca-tag-filter-dropdown label {
-						display: flex;
-						align-items: center;
-						gap: 7px;
-						padding: 5px 12px;
-						cursor: pointer;
-						font-size: 13px;
-						margin: 0;
-					}
-					.gca-tag-filter-dropdown label:hover {
-						background: #f6f7f7;
-					}
-					.gca-tag-filter-clear {
-						display: block;
-						width: 100%;
-						border: none;
-						border-top: 1px solid #f0f0f1;
-						background: none;
-						padding: 6px 12px;
-						text-align: left;
-						font-size: 12px;
-						color: #646970;
-						cursor: pointer;
-						margin-top: 4px;
-					}
-					.gca-tag-filter-clear:hover {
-						color: #d63638;
-					}
-					.gca-toggle-all-btn {
-						white-space: nowrap;
-					}
-				</style>
-
 				<div class="gca-flags-controls">
 					<div class="gca-flags-search">
 						<input
@@ -412,9 +260,29 @@ class GCA_Feature_Flags {
 							</tr>
 						</thead>
 						<tbody>
-							<?php foreach ( $flags as $id => $flag ) : ?>
-								<?php $tags = ! empty( $flag['tags'] ) ? (array) $flag['tags'] : array(); ?>
-								<tr data-tags="<?php echo esc_attr( implode( ',', array_map( 'sanitize_key', $tags ) ) ); ?>">
+							<?php
+							// Group flags: root flags in order, children keyed by parent id.
+							$root_flags     = array();
+							$children_flags = array();
+							foreach ( $flags as $id => $flag ) {
+								$parent = ! empty( $flag['parent'] ) ? sanitize_key( $flag['parent'] ) : '';
+								if ( $parent && isset( $flags[ $parent ] ) ) {
+									$children_flags[ $parent ][ $id ] = $flag;
+								} else {
+									$root_flags[ $id ] = $flag;
+								}
+							}
+
+							foreach ( $root_flags as $id => $flag ) :
+								$tags         = ! empty( $flag['tags'] ) ? (array) $flag['tags'] : array();
+								$has_children = ! empty( $children_flags[ $id ] );
+							?>
+								<tr
+									data-tags="<?php echo esc_attr( implode( ',', array_map( 'sanitize_key', $tags ) ) ); ?>"
+									<?php if ( $has_children ) : ?>
+										data-flag-id="<?php echo esc_attr( $id ); ?>"
+									<?php endif; ?>
+								>
 									<td>
 										<strong><?php echo esc_html( $flag['label'] ); ?></strong>
 										<?php if ( ! empty( $flag['description'] ) ) : ?>
@@ -435,12 +303,60 @@ class GCA_Feature_Flags {
 												type="checkbox"
 												name="gca_flags[<?php echo esc_attr( $id ); ?>]"
 												<?php checked( self::is_enabled( $id ) ); ?>
+												<?php if ( $has_children ) : ?>
+													data-parent-toggle="<?php echo esc_attr( $id ); ?>"
+												<?php endif; ?>
 											>
 											<span class="gca-toggle-slider"></span>
 										</label>
 									</td>
 								</tr>
-							<?php endforeach; ?>
+
+								<?php if ( $has_children ) :
+									$parent_enabled = self::is_enabled( $id );
+									$last_child_id  = array_key_last( $children_flags[ $id ] );
+									foreach ( $children_flags[ $id ] as $child_id => $child_flag ) :
+										$child_tags = ! empty( $child_flag['tags'] ) ? (array) $child_flag['tags'] : array();
+										$is_last    = ( $child_id === $last_child_id );
+									?>
+										<tr
+											class="gca-flag-child<?php echo $parent_enabled ? '' : ' gca-flag-child-hidden'; ?><?php echo $is_last ? ' gca-flag-child-last' : ''; ?>"
+											data-child-of="<?php echo esc_attr( $id ); ?>"
+											data-tags="<?php echo esc_attr( implode( ',', array_map( 'sanitize_key', $child_tags ) ) ); ?>"
+										>
+											<td>
+												<div class="gca-child-inner">
+													<strong><?php echo esc_html( $child_flag['label'] ); ?></strong>
+													<?php if ( ! empty( $child_flag['description'] ) ) : ?>
+														<div class="gca-flag-desc"><?php echo esc_html( $child_flag['description'] ); ?></div>
+													<?php endif; ?>
+													<?php if ( ! empty( $child_tags ) ) : ?>
+														<div class="gca-flag-tags">
+															<?php foreach ( $child_tags as $tag ) : ?>
+																<span class="gca-flag-tag"><?php echo esc_html( $tag ); ?></span>
+															<?php endforeach; ?>
+														</div>
+													<?php endif; ?>
+													<div class="gca-flag-id">gca_flag_enabled( '<?php echo esc_html( $child_id ); ?>' )</div>
+												</div>
+											</td>
+											<td style="text-align: center;">
+												<div class="gca-child-inner" style="display:flex;align-items:center;justify-content:center;">
+													<label class="gca-toggle" aria-label="Toggle <?php echo esc_attr( $child_flag['label'] ); ?>">
+														<input
+															type="checkbox"
+															name="gca_flags[<?php echo esc_attr( $child_id ); ?>]"
+															<?php checked( self::is_enabled( $child_id ) ); ?>
+														>
+														<span class="gca-toggle-slider"></span>
+													</label>
+												</div>
+											</td>
+										</tr>
+									<?php endforeach;
+								endif;
+
+							endforeach; ?>
 						</tbody>
 					</table>
 
@@ -497,6 +413,7 @@ class GCA_Feature_Flags {
 							var allChecked = checkboxes.length > 0 && Array.from(checkboxes).every(function (cb) { return cb.checked; });
 							checkboxes.forEach(function (cb) { cb.checked = !allChecked; });
 							updateToggleAllBtn();
+							syncAllChildRows();
 						});
 
 						document.querySelectorAll('.gca-flags-table tbody input[type="checkbox"]').forEach(function (cb) {
@@ -505,6 +422,29 @@ class GCA_Feature_Flags {
 
 						updateToggleAllBtn();
 					}
+
+					// Parent toggle → show/hide child rows
+					function syncChildRows(parentId, enabled) {
+						document.querySelectorAll('[data-child-of="' + parentId + '"]').forEach(function (row) {
+							if (enabled) {
+								row.classList.remove('gca-flag-child-hidden');
+							} else {
+								row.classList.add('gca-flag-child-hidden');
+							}
+						});
+					}
+
+					function syncAllChildRows() {
+						document.querySelectorAll('[data-parent-toggle]').forEach(function (cb) {
+							syncChildRows(cb.getAttribute('data-parent-toggle'), cb.checked);
+						});
+					}
+
+					document.querySelectorAll('[data-parent-toggle]').forEach(function (cb) {
+						cb.addEventListener('change', function () {
+							syncChildRows(cb.getAttribute('data-parent-toggle'), cb.checked);
+						});
+					});
 
 					if (filterBtn && filterDropdown) {
 						filterBtn.addEventListener('click', function (e) {
