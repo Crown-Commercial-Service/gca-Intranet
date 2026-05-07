@@ -20,6 +20,12 @@ FROM wordpress:6.9.4-php8.2-apache
 
 COPY docker/php.ini /usr/local/etc/php/conf.d/custom-php.ini
 
+# Remove default WordPress themes from the source directory so docker-entrypoint.sh
+# doesn't copy them into /var/www/html at container startup.
+RUN rm -rf /usr/src/wordpress/wp-content/themes/twentytwentyfive \
+           /usr/src/wordpress/wp-content/themes/twentytwentyfour \
+           /usr/src/wordpress/wp-content/themes/twentytwentythree
+
 # 1. Install system dependencies (zip for WP-CLI/GDS) and PHP Redis extension (for Redis Object Cache with TLS)
 RUN apt-get update && apt-get install -y libzip-dev unzip && docker-php-ext-install zip \
   && pecl install redis \
