@@ -14,10 +14,6 @@ fi
 
 chown -R www-data:www-data /var/www/html/wp-content 2>/dev/null || true
 
-# Ensure Redis Object Cache plugin is active on every container start
-wp plugin activate redis-cache --allow-root 2>/dev/null || true
-wp redis enable --allow-root 2>/dev/null || true
-
 if [ "$1" = "wp" ]; then
     if [ ! -f /var/www/html/wp-config.php ]; then
         echo "Running WordPress setup for WP-CLI..."
