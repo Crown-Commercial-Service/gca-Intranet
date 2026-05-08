@@ -9,6 +9,10 @@
         opacity: 0.4;
         pointer-events: none;
     }
+
+    [data-testid="news-no-posts"] {
+        margin-top: govuk-spacing(9);
+    }
 }
 
 // ── Archive filter sidebar ──────────────────────────────────────────────────
@@ -54,7 +58,7 @@
 
     // ── Each collapsible section ──
     &__section {
-        background: $govuk-canvas-background-colour;
+        background: #e8e8e8;
         border: 1px solid $gca-border-mid;
         border-radius: 15px;
         padding: 19px;

@@ -107,7 +107,7 @@ get_template_part('template-parts/breadcrumbs');
           </div>
 
         <?php else : ?>
-          <p class="govuk-body" data-testid="news-no-posts">No News found.</p>
+          <p class="govuk-body" data-testid="news-no-posts">No news found.</p>
         <?php endif; ?>
 
       </div><!-- .archive-layout__results -->
