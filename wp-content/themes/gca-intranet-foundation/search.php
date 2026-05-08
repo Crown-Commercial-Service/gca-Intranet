@@ -9,6 +9,16 @@ $flag_on = function_exists('gca_flag_enabled')
     && gca_flag_enabled('staff-profiles')
     && function_exists('gca_search_staff');
 
+$show_search_filters = function_exists('gca_flag_enabled') && gca_flag_enabled('search-filters');
+
+$filter_types = ($show_search_filters && isset($_GET['filter_post_type']) && is_array($_GET['filter_post_type']))
+    ? array_values(array_filter(array_map('sanitize_text_field', $_GET['filter_post_type']), fn($t) => $t !== ''))
+    : [];
+
+$filter_content_types = ($show_search_filters && isset($_GET['filter_content_type']) && is_array($_GET['filter_content_type']))
+    ? array_values(array_filter(array_map('sanitize_text_field', $_GET['filter_content_type']), fn($t) => $t !== ''))
+    : [];
+
 if ($flag_on) {
     // -------------------------------------------------------------------------
     // Merged mode: staff + posts in one paginated list.
@@ -22,7 +32,8 @@ if ($flag_on) {
     $per_page     = 10;
     $current_page = max(1, (int) (get_query_var('paged') ?: 1));
 
-    $staff_results = gca_search_staff($search_query, 50);
+    $include_staff = empty($filter_types) || in_array('staff', $filter_types, true);
+    $staff_results = $include_staff ? gca_search_staff($search_query, 50) : [];
     $all_posts     = $wp_query->posts ?: [];
 
     // Relevance scoring:
@@ -106,8 +117,24 @@ get_template_part('template-parts/hero', null, [
 
 <div class="govuk-width-container" data-testid="search-container">
   <main class="govuk-main-wrapper" id="main-content" tabindex="-1" data-testid="search-main">
-    <div class="govuk-grid-row" data-testid="search-row">
-      <div class="govuk-grid-column-full" data-testid="search-col">
+    <div class="govuk-grid-row archive-layout" data-testid="search-row">
+
+      <?php if ($show_search_filters) : ?>
+        <div class="govuk-grid-column-one-quarter archive-layout__filters">
+          <?php
+          get_template_part('template-parts/search-filters', null, [
+            'search_url'          => $search_url,
+            'search_query'        => $search_query,
+            'flag_on'             => $flag_on,
+            'filter_types'        => $filter_types,
+            'filter_content_types' => $filter_content_types,
+          ]);
+          ?>
+        </div>
+        <div class="govuk-grid-column-three-quarters archive-layout__results" data-testid="search-col">
+      <?php else : ?>
+        <div class="govuk-grid-column-full archive-layout__results" data-testid="search-col">
+      <?php endif; ?>
 
         <h1 class="govuk-heading-l govuk-!-margin-bottom-4" data-testid="search-heading">
           Search results for <span class="gca-search-query">&ldquo;<?php echo esc_html($search_query); ?>&rdquo;</span>
@@ -337,8 +364,9 @@ get_template_part('template-parts/hero', null, [
 
         <?php endif; ?>
 
-      </div>
-    </div>
+        </div><!-- .archive-layout__results -->
+
+    </div><!-- .govuk-grid-row -->
   </main>
 </div>
 
