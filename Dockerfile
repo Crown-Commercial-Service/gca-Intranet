@@ -20,8 +20,10 @@ FROM wordpress:6.9.4-php8.2-apache
 
 COPY docker/php.ini /usr/local/etc/php/conf.d/custom-php.ini
 
-# 1. Install system dependencies (zip for WP-CLI/GDS)
-RUN apt-get update && apt-get install -y libzip-dev unzip && docker-php-ext-install zip
+# 1. Install system dependencies (zip for WP-CLI/GDS) and PHP Redis extension (for Redis Object Cache with TLS)
+RUN apt-get update && apt-get install -y libzip-dev unzip && docker-php-ext-install zip \
+  && pecl install redis \
+  && docker-php-ext-enable redis
 
 # 2. Install WP-CLI into the image
 ARG WP_CLI_VERSION=2.12.0
@@ -31,6 +33,13 @@ RUN curl -sSLo /usr/local/bin/wp "https://github.com/wp-cli/wp-cli/releases/down
 
 # 3. Copy the whole wp-content (contains your php files)
 COPY wp-content/ /var/www/html/wp-content/
+
+# 3a. Download Redis Object Cache plugin and install object-cache.php drop-in
+ARG REDIS_CACHE_VERSION=2.5.4
+RUN curl -sSLo /tmp/redis-cache.zip "https://downloads.wordpress.org/plugin/redis-cache.${REDIS_CACHE_VERSION}.zip" \
+  && unzip -q /tmp/redis-cache.zip -d /var/www/html/wp-content/plugins/ \
+  && cp /var/www/html/wp-content/plugins/redis-cache/includes/object-cache.php /var/www/html/wp-content/object-cache.php \
+  && rm /tmp/redis-cache.zip
 
 # 4. Pull ONLY the compiled CSS/JS from the builder stage
 # This ensures ECR gets the "ready to go" assets
