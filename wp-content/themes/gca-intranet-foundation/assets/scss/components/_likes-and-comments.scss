@@ -4,7 +4,8 @@
 
 $gca-lc-border:     #b1b4b6;
 $gca-lc-bg:         #f8f8f8;
-$gca-lc-liked:      #d4351c;
+$gca-lc-liked:      #ca3535;
+$gca-lc-blue:      #1d70b8;
 $gca-lc-reply-bg:   #f3f2f1;
 $gca-lc-icon-color: #767676;
 
@@ -34,7 +35,7 @@ $gca-lc-icon-color: #767676;
     padding: govuk-spacing(1) govuk-spacing(2);
     cursor: pointer;
     font-family: $govuk-font-family;
-    font-size: govuk-px-to-rem(16);
+    font-size: govuk-px-to-rem(19);
     font-weight: 600;
     color: $govuk-text-colour;
     transition: color 0.15s ease, border-color 0.15s ease;
@@ -130,12 +131,10 @@ $gca-lc-icon-color: #767676;
 
     .govuk-button {
         margin-bottom: 0;
-        background-color: #8BA9FE;
-        color: #0b0c0c;
+        background-color: #B8CA1C;
+        color: #000000;
         padding: 6px 14px;
         border-radius: 8px;
-        font-size: 19px;
-        font-weight: 400;
     }
 }
 
@@ -295,7 +294,7 @@ $gca-lc-icon-color: #767676;
     padding: 0;
     cursor: pointer;
     font-family: $govuk-font-family;
-    font-size: govuk-px-to-rem(14);
+    font-size: govuk-px-to-rem(19);
     font-weight: 600;
     color: govuk-colour('dark-grey');
     display: inline-flex;
@@ -314,12 +313,21 @@ $gca-lc-icon-color: #767676;
     }
 
     &[aria-pressed="true"] {
-        color: $gca-lc-liked;
+        color: $gca-lc-blue;
 
         .gca-lc__like-path {
-            fill: $gca-lc-liked;
-            stroke: $gca-lc-liked;
+            fill: $gca-lc-blue;
+            stroke: $gca-lc-blue;
         }
+    }
+}
+
+.gca-lc__action-btn[data-action="show-reply-form"] {
+    color: #1d70b8;
+
+    &:hover {
+        color: darken(#1d70b8, 10%);
+        border-bottom-color: darken(#1d70b8, 10%);
     }
 }
 
