@@ -475,7 +475,7 @@ JS
  */
 add_action('wp_enqueue_scripts', function (): void {
     $is_interaction_page = is_singular(['post', 'blog', 'news', 'work_update'])
-        || is_page_template('template-community-wall.php');
+        || (is_page_template('template-community-wall.php') && gca_flag_enabled('community-hub'));
 
     if (!$is_interaction_page) {
         return;
@@ -867,6 +867,10 @@ JS
  */
 add_action('wp_enqueue_scripts', function (): void {
     if (!is_page_template('template-community-wall.php')) {
+        return;
+    }
+
+    if (!gca_flag_enabled('community-hub')) {
         return;
     }
 
