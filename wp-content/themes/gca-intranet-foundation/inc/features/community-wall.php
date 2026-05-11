@@ -7,7 +7,7 @@ if (!defined('ABSPATH')) {
 }
 
 // ---------------------------------------------------------------------------
-// Community Wall
+// Community Hub
 //
 // Custom post type + REST API for the social community feed.
 //
@@ -18,6 +18,13 @@ if (!defined('ABSPATH')) {
 //   DELETE /wp-json/gca/v1/community/posts/{post_id} – delete own post
 // ---------------------------------------------------------------------------
 
+gca_register_feature_flag('community-hub', [
+    'label'       => 'Community Hub',
+    'description' => 'Enables the Community Hub page where staff can post updates, share content, and engage with colleagues.',
+    'default'     => true,
+    'tags'        => ['social', 'community'],
+]);
+
 /** Meta key storing media attachment IDs for a community post. */
 const GCA_CW_MEDIA_IDS_META = '_gca_cw_media_ids';
 
@@ -26,6 +33,10 @@ const GCA_CW_MEDIA_IDS_META = '_gca_cw_media_ids';
 // ---------------------------------------------------------------------------
 
 add_action('init', function (): void {
+    if (!gca_flag_enabled('community-hub')) {
+        return;
+    }
+
     register_post_type('community_post', [
         'label'              => 'Community Posts',
         'labels'             => [
@@ -60,6 +71,9 @@ add_action('init', function (): void {
 // ---------------------------------------------------------------------------
 
 add_action('rest_api_init', function (): void {
+    if (!gca_flag_enabled('community-hub')) {
+        return;
+    }
 
     register_rest_route('gca/v1', '/community/feed', [
         'methods'             => 'GET',
@@ -128,8 +142,10 @@ function gca_cw_format_post(WP_Post $post, int $current_user_id): array
     if ($author instanceof WP_User) {
         $local      = trim((string) get_user_meta($author->ID, 'google_profile_picture_local_url', true));
         $avatar_url = $local ?: (string) get_avatar_url($author->ID, ['size' => 48]);
-        $profile_url = esc_url(home_url('/profile/' . $author->user_nicename));
-        $team        = trim((string) get_user_meta($author->ID, 'team', true));
+        if (gca_flag_enabled('staff-profiles')) {
+            $profile_url = esc_url(home_url('/profile/' . $author->user_nicename));
+        }
+        $team = trim((string) get_user_meta($author->ID, 'team', true));
     }
 
     // Attached media
