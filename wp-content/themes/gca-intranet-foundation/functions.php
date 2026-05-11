@@ -1372,17 +1372,49 @@ function gca_clean_post_excerpt(int $length = 320): string
 
 add_action('pre_get_posts', function (WP_Query $query): void {
     if (!is_admin() && $query->is_main_query() && $query->is_post_type_archive('event')) {
+        $today         = date('Ymd');
+        $one_month_ago = date('Ymd', strtotime('-1 month'));
+        $yesterday     = date('Ymd', strtotime('-1 day'));
+        $is_past_view  = isset($_GET['view']) && $_GET['view'] === 'past';
+
         $query->set('meta_key', 'start_date');
         $query->set('orderby', 'meta_value');
-        $query->set('order', 'ASC');
-        $query->set('meta_query', [
-            [
-                'key'     => 'start_date',
-                'value'   => date('Ymd'),
-                'compare' => '>=',
-                'type'    => 'DATE',
-            ],
-        ]);
+
+        if ($is_past_view) {
+            $query->set('order', 'DESC');
+            $query->set('meta_query', [
+                'relation' => 'OR',
+                [
+                    'key'     => 'end_date',
+                    'value'   => [$one_month_ago, $yesterday],
+                    'compare' => 'BETWEEN',
+                    'type'    => 'DATE',
+                ],
+                [
+                    'key'     => 'start_date',
+                    'value'   => [$one_month_ago, $yesterday],
+                    'compare' => 'BETWEEN',
+                    'type'    => 'DATE',
+                ],
+            ]);
+        } else {
+            $query->set('order', 'ASC');
+            $query->set('meta_query', [
+                'relation' => 'OR',
+                [
+                    'key'     => 'start_date',
+                    'value'   => $today,
+                    'compare' => '>=',
+                    'type'    => 'DATE',
+                ],
+                [
+                    'key'     => 'end_date',
+                    'value'   => $today,
+                    'compare' => '>=',
+                    'type'    => 'DATE',
+                ],
+            ]);
+        }
     }
 });
 
