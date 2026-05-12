@@ -99,27 +99,6 @@ const GCA_ARCHIVE_FILTER_TAX_FLAG_MAP = [
 ];
 
 /**
- * Enqueue the feature-flags admin CSS on relevant taxonomy list pages.
- */
-add_action('admin_enqueue_scripts', function (string $hook): void {
-    if ($hook !== 'edit-tags.php') {
-        return;
-    }
-
-    $screen = get_current_screen();
-    if (!$screen || !isset(GCA_ARCHIVE_FILTER_TAX_FLAG_MAP[$screen->post_type][$screen->taxonomy])) {
-        return;
-    }
-
-    wp_enqueue_style(
-        'gca-feature-flags-admin',
-        get_stylesheet_directory_uri() . '/assets/dist/feature-flags-admin.css',
-        [],
-        wp_get_theme()->get('Version')
-    );
-});
-
-/**
  * Inject the archive-filter toggle to the left of the search input on
  * relevant taxonomy admin list pages.
  */
@@ -138,6 +117,20 @@ add_action('admin_footer', function (): void {
     $nonce    = wp_create_nonce('gca_toggle_single_flag');
     $ajax_url = admin_url('admin-ajax.php');
     ?>
+    <style>
+    .gca-tax-toggle-wrap{display:inline-flex;align-items:center;gap:8px;margin-right:10px;vertical-align:middle}
+    .gca-tax-toggle-text{font-size:13px;color:#1d2327;white-space:nowrap}
+    .gca-tax-lock-btn{background:none!important;border:none!important;box-shadow:none!important;padding:0!important;cursor:pointer;color:#8c8f94;display:inline-flex;align-items:center;flex-shrink:0}
+    .gca-tax-lock-btn:hover{color:#1d2327}
+    .gca-toggle{position:relative!important;display:inline-block!important;width:46px!important;height:26px!important;vertical-align:middle;flex-shrink:0}
+    .gca-toggle input{opacity:0!important;width:0!important;height:0!important}
+    .gca-toggle-slider{position:absolute;cursor:pointer;inset:0;background-color:#c3c4c7;border-radius:26px;transition:background-color .15s ease}
+    .gca-toggle-slider::before{content:"";position:absolute;height:20px;width:20px;left:3px;bottom:3px;background-color:#fff;border-radius:50%;transition:transform .15s ease;box-shadow:0 1px 3px rgba(0,0,0,.25)}
+    .gca-toggle input:checked+.gca-toggle-slider{background-color:#2271b1}
+    .gca-toggle input:checked+.gca-toggle-slider::before{transform:translateX(20px)}
+    .gca-tax-toggle-wrap:not(.is-unlocked) .gca-toggle{opacity:.45;cursor:not-allowed;pointer-events:none}
+    .gca-tax-toggle-wrap.is-unlocked .gca-tax-lock-btn{color:#2271b1!important}
+    </style>
     <script>
     document.addEventListener('DOMContentLoaded', function () {
         var searchInput = document.querySelector('.search-box input[type="search"]');
@@ -177,11 +170,11 @@ add_action('admin_footer', function (): void {
 
         var text = document.createElement('span');
         text.className   = 'gca-tax-toggle-text';
-        text.textContent = 'Archive filter';
+        text.textContent = 'Activate filter';
 
         wrap.appendChild(lockBtn);
-        wrap.appendChild(toggleLabel);
         wrap.appendChild(text);
+        wrap.appendChild(toggleLabel);
 
         searchInput.parentNode.insertBefore(wrap, searchInput);
 
@@ -398,11 +391,14 @@ document.addEventListener("DOMContentLoaded", function () {
         return form.action + (qs ? "?" + qs : "");
     }
 
-    // ── Bind pagination / any same-archive link inside the results ──
+    // ── Bind pagination links inside the results ──
     function bindResultLinks() {
         var archiveBase = form.action.replace(/\/$/, "");
         resultsContainer.querySelectorAll("a[href]").forEach(function (link) {
-            if (link.href.indexOf(archiveBase) === 0) {
+            var linkPath = link.href.split("?")[0].replace(/\/$/, "");
+            var isPagination = /\/page\/\d+/.test(link.href);
+            var isArchiveBase = linkPath === archiveBase;
+            if (isPagination || isArchiveBase) {
                 link.addEventListener("click", function (e) {
                     e.preventDefault();
                     syncFormToUrl(link.href);

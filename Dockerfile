@@ -7,7 +7,10 @@ RUN set -eux; \
     cd ./theme-folder; \
     npm install; \
     # We override the command here to ensure the load-path is absolute and correct
-    ./node_modules/.bin/sass assets/scss/theme.scss assets/dist/gca-theme.css \
+    ./node_modules/.bin/sass \
+        assets/scss/theme.scss:assets/dist/gca-theme.css \
+        assets/scss/_landing-page.scss:assets/dist/landing-page.css \
+        assets/scss/_feature-flags-admin.scss:assets/dist/feature-flags-admin.css \
     --style=compressed \
     --load-path=node_modules \
     --quiet-deps; \
