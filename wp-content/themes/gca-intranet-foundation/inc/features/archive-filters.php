@@ -391,11 +391,14 @@ document.addEventListener("DOMContentLoaded", function () {
         return form.action + (qs ? "?" + qs : "");
     }
 
-    // ── Bind pagination / any same-archive link inside the results ──
+    // ── Bind pagination links inside the results ──
     function bindResultLinks() {
         var archiveBase = form.action.replace(/\/$/, "");
         resultsContainer.querySelectorAll("a[href]").forEach(function (link) {
-            if (link.href.indexOf(archiveBase) === 0) {
+            var linkPath = link.href.split("?")[0].replace(/\/$/, "");
+            var isPagination = /\/page\/\d+/.test(link.href);
+            var isArchiveBase = linkPath === archiveBase;
+            if (isPagination || isArchiveBase) {
                 link.addEventListener("click", function (e) {
                     e.preventDefault();
                     syncFormToUrl(link.href);
