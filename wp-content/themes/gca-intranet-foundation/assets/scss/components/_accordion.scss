@@ -9,7 +9,7 @@
 
 .js-enabled .govuk-accordion__section-header {
 
-    padding-bottom: govuk-px-to-rem(20);
+    padding-bottom: govuk-px-to-rem(5);
     z-index: 100;
 
 }
@@ -18,6 +18,10 @@
 
     padding-top: govuk-px-to-rem(20);
 
+}
+
+.js-enabled .govuk-accordion__section-toggle {
+    margin: 0;
 }
 
 .js-enabled .govuk-accordion__section-content {
