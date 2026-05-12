@@ -63,6 +63,55 @@
     gap: 15px;
 }
 
+.events-tabs {
+    display: flex;
+    border: 1px solid $gca-border-mid;
+    border-radius: 999px;
+    padding: 4px;
+    margin-bottom: govuk-spacing(6);
+
+    @include govuk-media-query($from: tablet) {
+        display: inline-flex;
+    }
+
+    &__tab {
+        flex: 1;
+        text-align: center;
+        padding: govuk-spacing(2) govuk-spacing(4);
+        border-radius: 999px;
+        text-decoration: none;
+        color: $govuk-text-colour;
+        font-family: $govuk-font-family;
+        font-size: 16px;
+        white-space: nowrap;
+
+        @include govuk-media-query($from: tablet) {
+            flex: unset;
+            padding: govuk-spacing(2) govuk-spacing(5);
+        }
+
+        &:hover {
+            color: $govuk-link-colour;
+            text-decoration: none;
+        }
+
+        &--active {
+            background: govuk-colour("white");
+            color: $govuk-link-colour;
+            font-weight: bold;
+            box-shadow: 0 1px 4px rgba(0, 0, 0, 0.12);
+        }
+    }
+}
+
+.events-month-heading {
+    margin-top: govuk-spacing(6);
+
+    &:first-child {
+        margin-top: 0;
+    }
+}
+
 .event-card {
     background: #fff;
     padding: govuk-spacing(4);
@@ -70,7 +119,7 @@
     border: 1px solid $gca-border-mid;
     border-radius: 10px;
 
-    h2 a {
+    h3 a {
         color: $govuk-link-colour !important;
 
         &:hover {

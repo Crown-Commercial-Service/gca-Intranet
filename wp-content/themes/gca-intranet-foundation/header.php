@@ -79,7 +79,7 @@ height="0" width="0" style="display:none;visibility:hidden" title="Google Tag Ma
             </form>
             <?php endif; ?>
 
-            <?php if (is_user_logged_in()) :
+            <?php if (is_user_logged_in() && gca_flag_enabled('staff-profiles')) :
               $current_user = wp_get_current_user();
               $profile_url  = home_url('/profile/' . rawurlencode($current_user->user_login) . '/');
               $avatar_url   = get_avatar_url($current_user->ID, ['size' => 40]);

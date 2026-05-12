@@ -20,6 +20,32 @@ if ($current_user->exists()) {
 }
 
 get_header();
+
+if (!gca_flag_enabled('community-hub')) :
+?>
+<section class="gca-hero-banner" aria-label="Page banner">
+    <div class="govuk-width-container">
+        <div class="gca-hero-banner__inner">
+            <h1 class="govuk-heading-xl gca-hero-banner__title">Community Hub</h1>
+        </div>
+    </div>
+</section>
+<div class="govuk-width-container govuk-!-padding-top-6 govuk-!-padding-bottom-9">
+    <main id="main-content" tabindex="-1">
+        <div class="govuk-notification-banner govuk-notification-banner--important" role="region" aria-labelledby="govuk-notification-banner-title" data-module="govuk-notification-banner">
+            <div class="govuk-notification-banner__header">
+                <h2 class="govuk-notification-banner__title" id="govuk-notification-banner-title">Feature not enabled</h2>
+            </div>
+            <div class="govuk-notification-banner__content">
+                <p class="govuk-body">The Community Hub is not currently available.<?php if (current_user_can('manage_options')) : ?> To enable it, please contact your administrator.<?php endif; ?></p>
+            </div>
+        </div>
+    </main>
+</div>
+<?php
+get_footer();
+exit;
+endif;
 ?>
 
 <section class="gca-hero-banner" aria-label="Page banner">

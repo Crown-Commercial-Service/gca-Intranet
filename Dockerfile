@@ -7,7 +7,10 @@ RUN set -eux; \
     cd ./theme-folder; \
     npm install; \
     # We override the command here to ensure the load-path is absolute and correct
-    ./node_modules/.bin/sass assets/scss/theme.scss assets/dist/gca-theme.css \
+    ./node_modules/.bin/sass \
+        assets/scss/theme.scss:assets/dist/gca-theme.css \
+        assets/scss/_landing-page.scss:assets/dist/landing-page.css \
+        assets/scss/_feature-flags-admin.scss:assets/dist/feature-flags-admin.css \
     --style=compressed \
     --load-path=node_modules \
     --quiet-deps; \
@@ -19,6 +22,12 @@ RUN set -eux; \
 FROM wordpress:6.9.4-php8.2-apache
 
 COPY docker/php.ini /usr/local/etc/php/conf.d/custom-php.ini
+
+# Remove default WordPress themes from the source directory so docker-entrypoint.sh
+# doesn't copy them into /var/www/html at container startup.
+RUN rm -rf /usr/src/wordpress/wp-content/themes/twentytwentyfive \
+           /usr/src/wordpress/wp-content/themes/twentytwentyfour \
+           /usr/src/wordpress/wp-content/themes/twentytwentythree
 
 # 1. Install system dependencies (zip for WP-CLI/GDS) and PHP Redis extension (for Redis Object Cache with TLS)
 RUN apt-get update && apt-get install -y libzip-dev unzip && docker-php-ext-install zip \
