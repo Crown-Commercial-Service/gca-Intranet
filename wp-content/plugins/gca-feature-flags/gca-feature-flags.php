@@ -55,12 +55,14 @@ class GCA_Feature_Flags {
 			return;
 		}
 
-		wp_enqueue_style(
-			'gca-feature-flags-admin',
-			get_stylesheet_directory_uri() . '/assets/dist/feature-flags-admin.css',
-			array(),
-			wp_get_theme()->get( 'Version' )
-		);
+		$css_file = get_template_directory() . '/assets/dist/feature-flags-admin.css';
+
+		wp_register_style( 'gca-feature-flags-admin', false, array(), null );
+		wp_enqueue_style( 'gca-feature-flags-admin' );
+
+		if ( file_exists( $css_file ) ) {
+			wp_add_inline_style( 'gca-feature-flags-admin', file_get_contents( $css_file ) ); // phpcs:ignore
+		}
 	}
 
 	/**
