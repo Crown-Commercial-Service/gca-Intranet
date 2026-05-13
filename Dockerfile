@@ -55,6 +55,9 @@ RUN curl -sSLo /tmp/redis-cache.zip "https://downloads.wordpress.org/plugin/redi
 COPY --from=builder /app/theme-folder/assets/dist/ /var/www/html/wp-content/themes/gca-intranet-foundation/assets/dist/
 COPY --from=builder /app/theme-folder/assets/scripts/ /var/www/html/wp-content/themes/gca-intranet-foundation/assets/scripts/
 
+# Block execution of scripts in the uploads directory (pentest hardening)
+COPY docker/uploads-security.conf /etc/apache2/conf-enabled/uploads-security.conf
+
 # Ensure Apache listens on 8080 for ECS
 RUN sed -i 's/Listen 80/Listen 8080/' /etc/apache2/ports.conf && \
     sed -i 's/<VirtualHost \*:80>/<VirtualHost *:8080>/' /etc/apache2/sites-available/000-default.conf
