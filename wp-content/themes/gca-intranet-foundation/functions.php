@@ -1748,6 +1748,16 @@ add_action('admin_init', function (): void {
             'default'           => 0,
         ]);
     }
+
+    register_setting('gca_global_settings', 'gca_announcement_enabled', [
+        'sanitize_callback' => 'absint',
+        'default'           => 0,
+    ]);
+
+    register_setting('gca_global_settings', 'gca_announcement_content', [
+        'sanitize_callback' => 'wp_kses_post',
+        'default'           => '',
+    ]);
 });
 
 add_action('admin_enqueue_scripts', function (string $hook): void {
@@ -1892,7 +1902,96 @@ function gca_global_settings_page(): void
           <?php endforeach; ?>
         </table>
 
+        <h2><?php esc_html_e('Announcement banner', 'gca-intranet'); ?></h2>
+        <p class="description"><?php esc_html_e('Displays a site-wide announcement bar at the top of every page. Requires the "Site-wide Announcement Banner" feature flag to be enabled.', 'gca-intranet'); ?></p>
+
+        <table class="form-table" role="presentation">
+          <tr>
+            <th scope="row">
+              <?php esc_html_e('Enable banner', 'gca-intranet'); ?>
+            </th>
+            <td>
+              <label for="gca_announcement_enabled">
+                <input
+                  type="checkbox"
+                  id="gca_announcement_enabled"
+                  name="gca_announcement_enabled"
+                  value="1"
+                  <?php checked(1, get_option('gca_announcement_enabled', 0)); ?>
+                >
+                <?php esc_html_e('Show the announcement banner across the site', 'gca-intranet'); ?>
+              </label>
+            </td>
+          </tr>
+          <tr>
+            <th scope="row">
+              <label for="gca_announcement_content"><?php esc_html_e('Announcement content', 'gca-intranet'); ?></label>
+            </th>
+            <td>
+              <?php
+                wp_editor(
+                    get_option('gca_announcement_content', ''),
+                    'gca_announcement_content',
+                    [
+                        'textarea_name' => 'gca_announcement_content',
+                        'media_buttons' => false,
+                        'textarea_rows' => 3,
+                        'tinymce'       => [
+                            'toolbar1' => 'bold,italic,link,unlink',
+                            'toolbar2' => '',
+                        ],
+                        'quicktags'     => ['buttons' => 'strong,em,link'],
+                    ]
+                );
+              ?>
+              <p class="description">
+                <?php esc_html_e('Maximum 150 characters of visible text. Use the link tool to add links; they will display underlined in the banner.', 'gca-intranet'); ?>
+              </p>
+              <p id="gca-announcement-char-count" style="margin-top:4px;font-style:italic;color:#646970;">0 / 150</p>
+            </td>
+          </tr>
+        </table>
+
         <script>
+        (function ($) {
+          var MAX = 150;
+          var countEl = document.getElementById('gca-announcement-char-count');
+
+          function updateCount(text) {
+            var len = (text || '').replace(/^\s+|\s+$/g, '').length;
+            countEl.textContent = len + ' / ' + MAX;
+            countEl.style.color = len > MAX ? '#d63638' : '#646970';
+          }
+
+          function attachEditor(ed) {
+            updateCount(ed.getContent({ format: 'text' }));
+            ed.on('keyup NodeChange', function () {
+              var text = ed.getContent({ format: 'text' }).replace(/^\s+|\s+$/g, '');
+              if (text.length > MAX) {
+                ed.execCommand('Undo');
+                return;
+              }
+              updateCount(text);
+            });
+          }
+
+          // WordPress fires this jQuery event after each TinyMCE editor initialises
+          $(document).on('tinymce-editor-init', function (event, ed) {
+            if (ed.id === 'gca_announcement_content') {
+              attachEditor(ed);
+            }
+          });
+
+          // Code tab (plain textarea)
+          var textarea = document.getElementById('gca_announcement_content');
+          if (textarea) {
+            textarea.addEventListener('input', function () {
+              var text = this.value.replace(/<[^>]+>/g, '').replace(/^\s+|\s+$/g, '');
+              updateCount(text);
+            });
+          }
+        }(jQuery));
+
         (function ($) {
           $('.gca-banner-select').on('click', function () {
             var targetId  = $(this).data('target');

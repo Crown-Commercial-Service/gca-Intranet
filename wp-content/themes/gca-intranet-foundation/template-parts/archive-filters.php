@@ -33,7 +33,7 @@ foreach ($taxonomies as $tax) {
 
     <?php /* ── Sort by ── */ ?>
     <div class="archive-filters__section">
-      <h3 class="govuk-heading-s archive-filters__section-title">Sort by</h3>
+      <h4 class="govuk-heading-s archive-filters__section-title">Sort by</h4>
       <div class="archive-filters__section-body">
         <div class="govuk-radios govuk-radios--small">
           <div class="govuk-radios__item">
@@ -68,7 +68,7 @@ foreach ($taxonomies as $tax) {
     ?>
       <div class="archive-filters__section" data-filter-section>
         <div class="archive-filters__section-header">
-          <h3 class="govuk-heading-s archive-filters__section-title"><?php echo esc_html($tax['label']); ?></h3>
+          <h4 class="govuk-heading-s archive-filters__section-title"><?php echo esc_html($tax['label']); ?></h4>
           <button type="button"
                   class="archive-filters__toggle govuk-link"
                   aria-expanded="false"

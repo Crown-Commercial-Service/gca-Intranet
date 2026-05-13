@@ -121,6 +121,12 @@
         }
     }
 
+    // ── Checkbox border radius ──
+    .govuk-checkboxes__input,
+    .govuk-checkboxes__label::before {
+        border-radius: 5px !important;
+    }
+
     // ── Remove GovUK checkbox hover background and border thickness ──
     .govuk-checkboxes__item:hover .govuk-checkboxes__input:not(:disabled) + .govuk-checkboxes__label::before,
     .govuk-checkboxes__item:hover .govuk-checkboxes__input:focus + .govuk-checkboxes__label::before {
