@@ -19,6 +19,10 @@ $filter_content_types = ($show_search_filters && isset($_GET['filter_content_typ
     ? array_values(array_filter(array_map('sanitize_text_field', $_GET['filter_content_type']), fn($t) => $t !== ''))
     : [];
 
+$filter_audiences = ($show_search_filters && isset($_GET['filter_audience']) && is_array($_GET['filter_audience']))
+    ? array_values(array_filter(array_map('sanitize_text_field', $_GET['filter_audience']), fn($t) => $t !== ''))
+    : [];
+
 if ($flag_on) {
     // -------------------------------------------------------------------------
     // Merged mode: staff + posts in one paginated list.
@@ -123,11 +127,12 @@ get_template_part('template-parts/hero', null, [
         <div class="govuk-grid-column-one-quarter archive-layout__filters">
           <?php
           get_template_part('template-parts/search-filters', null, [
-            'search_url'          => $search_url,
-            'search_query'        => $search_query,
-            'flag_on'             => $flag_on,
-            'filter_types'        => $filter_types,
+            'search_url'           => $search_url,
+            'search_query'         => $search_query,
+            'flag_on'              => $flag_on,
+            'filter_types'         => $filter_types,
             'filter_content_types' => $filter_content_types,
+            'filter_audiences'     => $filter_audiences,
           ]);
           ?>
         </div>

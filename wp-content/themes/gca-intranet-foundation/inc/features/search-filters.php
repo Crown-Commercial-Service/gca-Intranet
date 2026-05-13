@@ -11,9 +11,13 @@ if (!defined('ABSPATH')) {
 //
 // Adds a content type filter sidebar to the search results page, allowing
 // users to narrow results by post type (News, Blog, Work Updates, Events,
-// and optionally Staff if the staff-profiles flag is on).
+// and optionally Staff if the staff-profiles flag is on), content type
+// taxonomy, and audience taxonomy.
 //
-// URL param: filter_post_type[] (e.g. filter_post_type[]=news&filter_post_type[]=blog)
+// URL params:
+//   filter_post_type[]    — WP post type slugs
+//   filter_content_type[] — content_type taxonomy term slugs
+//   filter_audience[]     — audience taxonomy term slugs
 // -----------------------------------------------------------------------------
 
 gca_register_feature_flag('search-filters', [
@@ -25,14 +29,17 @@ gca_register_feature_flag('search-filters', [
 ]);
 
 /**
- * Apply post type and content type filters on search queries.
+ * Apply post type, content type, and audience filters on search queries.
  *
- * Handles two URL params:
- *   filter_post_type[]    — WP post type slugs (work_update, event, staff)
+ * Handles three URL params:
+ *   filter_post_type[]    — WP post type slugs (work_update, news, staff)
  *   filter_content_type[] — content_type taxonomy term slugs (guidance, etc.)
+ *   filter_audience[]     — static values: 'all_colleagues' or 'line_manager'
  *
- * When both are active the query uses an OR tax_query so that non-page post
- * types (which have no content_type terms) are not inadvertently excluded.
+ * When post_type + content_type are both active, an OR tax_query is used so
+ * non-page post types (which carry no content_type terms) are not excluded.
+ * Audience is ANDed on top: 'all_colleagues' excludes the line-manager audience
+ * term; 'line_manager' restricts to it. Both selected = no-op (show all).
  */
 add_action('pre_get_posts', function (WP_Query $query): void {
     if (!gca_flag_enabled('search-filters')) {
@@ -51,10 +58,15 @@ add_action('pre_get_posts', function (WP_Query $query): void {
         ? array_values(array_filter(array_map('sanitize_text_field', $_GET['filter_content_type']), fn($t) => $t !== ''))
         : [];
 
+    $raw_audiences = (!empty($_GET['filter_audience']) && is_array($_GET['filter_audience']))
+        ? array_values(array_filter(array_map('sanitize_text_field', $_GET['filter_audience']), fn($t) => $t !== ''))
+        : [];
+
     $has_post_type_filter    = !empty($raw_post_types);
     $has_content_type_filter = !empty($raw_content_types);
+    $has_audience_filter     = !empty($raw_audiences);
 
-    if (!$has_post_type_filter && !$has_content_type_filter) {
+    if (!$has_post_type_filter && !$has_content_type_filter && !$has_audience_filter) {
         // Check if only staff was selected — no WP posts needed.
         if (!empty($_GET['filter_post_type'])) {
             $query->set('posts_per_page', 0);
@@ -62,32 +74,56 @@ add_action('pre_get_posts', function (WP_Query $query): void {
         return;
     }
 
-    $post_types = $raw_post_types;
+    $post_types  = $raw_post_types;
+    $tax_clauses = [];
 
     if ($has_content_type_filter) {
         $post_types[] = 'page';
-        $post_types = array_unique($post_types);
+        $post_types   = array_unique($post_types);
 
         if ($has_post_type_filter) {
-            // Mixed: keep non-page post types (no content_type terms) + matching pages.
-            // NOT EXISTS ensures work_update/event posts aren't excluded by the tax_query.
-            $query->set('tax_query', [
+            // Mixed: keep non-page post types + matching pages.
+            // NOT EXISTS ensures work_update/event posts aren't excluded.
+            $tax_clauses[] = [
                 'relation' => 'OR',
                 ['taxonomy' => 'content_type', 'field' => 'slug', 'terms' => $raw_content_types],
                 ['taxonomy' => 'content_type', 'operator' => 'NOT EXISTS'],
-            ]);
+            ];
         } else {
             // Pages only — filter strictly by content_type term.
-            $query->set('tax_query', [
-                ['taxonomy' => 'content_type', 'field' => 'slug', 'terms' => $raw_content_types],
-            ]);
+            $tax_clauses[] = ['taxonomy' => 'content_type', 'field' => 'slug', 'terms' => $raw_content_types];
         }
+    }
+
+    // Audience: static values 'all_colleagues' and 'line_manager'.
+    // If both are selected (or neither), the filter is a no-op — show everything.
+    $has_all_colleagues = in_array('all_colleagues', $raw_audiences, true);
+    $has_line_manager   = in_array('line_manager',   $raw_audiences, true);
+
+    if ($has_audience_filter && !($has_all_colleagues && $has_line_manager)) {
+        if ($has_all_colleagues) {
+            // Show everything EXCEPT line-manager-only content.
+            $tax_clauses[] = [
+                'relation' => 'OR',
+                ['taxonomy' => 'audience', 'field' => 'slug', 'terms' => ['line-manager'], 'operator' => 'NOT IN'],
+                ['taxonomy' => 'audience', 'operator' => 'NOT EXISTS'],
+            ];
+        } elseif ($has_line_manager) {
+            $tax_clauses[] = ['taxonomy' => 'audience', 'field' => 'slug', 'terms' => ['line-manager'], 'operator' => 'IN'];
+        }
+    }
+
+    if (!empty($tax_clauses)) {
+        $tax_query = count($tax_clauses) > 1
+            ? array_merge(['relation' => 'AND'], $tax_clauses)
+            : $tax_clauses;
+        $query->set('tax_query', $tax_query);
     }
 
     if (!empty($post_types)) {
         $query->set('post_type', $post_types);
-    } else {
-        // Only staff selected — no WP posts needed.
+    } elseif (!$has_audience_filter) {
+        // Only staff selected (no other active filter) — no WP posts needed.
         $query->set('posts_per_page', 0);
     }
 }, 20);
@@ -193,13 +229,13 @@ document.addEventListener("DOMContentLoaded", function () {
             : form.querySelectorAll("[data-filter-term='" + param + "']");
 
         function syncViewAll() {
-            var anyChecked = Array.from(allTermCbs).some(function (cb) { return cb.checked; });
+            var anyChecked = Array.from(termCbs).some(function (cb) { return cb.checked; });
             viewAll.checked = !anyChecked;
         }
 
         viewAll.addEventListener("change", function () {
             if (viewAll.checked) {
-                allTermCbs.forEach(function (cb) { cb.checked = false; });
+                termCbs.forEach(function (cb) { cb.checked = false; });
             }
             fetchResults(buildUrl(), true);
         });
