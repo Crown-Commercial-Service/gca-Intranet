@@ -145,6 +145,16 @@ $pf-text: #0b0c0c;
         margin-bottom: 8px !important;
     }
 
+    input[type="checkbox"] {
+        width: 19px !important;
+        height: 19px !important;
+    }
+
+    .gchoice label,
+    .gfield-choice-input + label {
+        font-size: 19px !important;
+    }
+
     .gfield--type-hidden {
         display: none !important;
         margin: 0 !important;
@@ -169,6 +179,7 @@ $pf-text: #0b0c0c;
         font-weight: 700 !important;
         line-height: 1.2 !important;
         padding: 7px 14px !important;
+        margin: 0 3px 0 0 !important;
         -webkit-appearance: none !important;
         box-shadow: none !important;
 
@@ -241,6 +252,7 @@ $pf-error: #ca3535;
         input[type="checkbox"] {
             border-color: #0b0c0c !important;
         }
+
 
         .gchoice label,
         .gfield-choice-input + label {

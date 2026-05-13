@@ -469,12 +469,14 @@ document.addEventListener("DOMContentLoaded", function () {
     });
 
     // ── Hide/Show section toggle ──
-    form.querySelectorAll("[data-toggle-section]").forEach(function (btn) {
-        btn.addEventListener("click", function () {
-            var section = btn.closest("[data-filter-section]");
-            if (!section) return;
-            var body    = section.querySelector("[data-section-body]");
-            var label   = btn.querySelector(".archive-filters__toggle-label");
+    form.querySelectorAll("[data-filter-section]").forEach(function (section) {
+        var header = section.querySelector(".archive-filters__section-header");
+        var btn    = section.querySelector("[data-toggle-section]");
+        if (!header || !btn) return;
+
+        header.addEventListener("click", function () {
+            var body     = section.querySelector("[data-section-body]");
+            var label    = btn.querySelector(".archive-filters__toggle-label");
             var expanded = btn.getAttribute("aria-expanded") === "true";
 
             if (expanded) {

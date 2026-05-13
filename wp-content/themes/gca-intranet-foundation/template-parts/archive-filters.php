@@ -33,7 +33,7 @@ foreach ($taxonomies as $tax) {
 
     <?php /* ── Sort by ── */ ?>
     <div class="archive-filters__section">
-      <h3 class="govuk-heading-s archive-filters__section-title">Sort by</h3>
+      <h4 class="govuk-heading-s archive-filters__section-title">Sort by</h4>
       <div class="archive-filters__section-body">
         <div class="govuk-radios govuk-radios--small">
           <div class="govuk-radios__item">
@@ -68,20 +68,22 @@ foreach ($taxonomies as $tax) {
     ?>
       <div class="archive-filters__section" data-filter-section>
         <div class="archive-filters__section-header">
-          <h3 class="govuk-heading-s archive-filters__section-title"><?php echo esc_html($tax['label']); ?></h3>
+          <h4 class="govuk-heading-s archive-filters__section-title"><?php echo esc_html($tax['label']); ?></h4>
           <button type="button"
                   class="archive-filters__toggle govuk-link"
-                  aria-expanded="true"
+                  aria-expanded="false"
                   data-toggle-section>
-            <svg class="archive-filters__chevron" xmlns="http://www.w3.org/2000/svg"
-                 width="13" height="8" viewBox="0 0 13 8" aria-hidden="true" focusable="false">
-              <path d="M1 1l5.5 5.5L12 1" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round"/>
-            </svg>
-            <span class="archive-filters__toggle-label">Hide</span>
+            <span class="archive-filters__chevron-circle">
+              <svg class="archive-filters__chevron" xmlns="http://www.w3.org/2000/svg"
+                   width="10" height="6" viewBox="0 0 13 8" aria-hidden="true" focusable="false">
+                <path d="M1 1l5.5 5.5L12 1" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round"/>
+              </svg>
+            </span>
+            <span class="archive-filters__toggle-label">Show</span>
           </button>
         </div>
 
-        <div class="archive-filters__section-body" data-section-body>
+        <div class="archive-filters__section-body is-hidden" data-section-body>
           <div class="govuk-checkboxes govuk-checkboxes--small">
 
             <div class="govuk-checkboxes__item">
