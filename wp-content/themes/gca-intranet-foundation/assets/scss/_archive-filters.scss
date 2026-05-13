@@ -58,8 +58,7 @@
 
     // ── Each collapsible section ──
     &__section {
-        background: #e8e8e8;
-        border: 1px solid $gca-border-mid;
+        background: #f6f6f6;
         border-radius: 15px;
         padding: 19px;
         margin-bottom: 19px;
@@ -67,45 +66,86 @@
 
     &__section-header {
         display: flex;
-        justify-content: space-between;
-        align-items: center;
+        flex-direction: column;
+        align-items: flex-start;
+        cursor: pointer;
     }
 
     &__section-title {
-        margin-bottom: 0;
+        margin-bottom: 8px;
     }
 
     // ── Hide/Show toggle button ──
     &__toggle {
         display: inline-flex;
         align-items: center;
-        gap: 4px;
+        gap: 6px;
         background: none;
         border: none;
         padding: 0;
         cursor: pointer;
         font-size: 16px;
         color: $gca-blue-accessible;
-        text-decoration: underline;
+        text-decoration: none;
+    }
 
-        &:hover {
-            color: $color-hover;
-        }
+    &__chevron-circle {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 24px;
+        height: 24px;
+        border: 2px solid currentColor;
+        border-radius: 50%;
+        flex-shrink: 0;
+        text-decoration: none;
+        transition: background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease;
+    }
+
+    &__section-header:hover &__toggle {
+        color: $color-hover;
+    }
+
+    &__section-header:hover &__chevron-circle {
+        background-color: #0b0c0c;
+        border-color: #0b0c0c;
+        color: #fff;
     }
 
     &__chevron {
         transition: transform 0.2s ease;
         flex-shrink: 0;
 
-        .archive-filters__toggle[aria-expanded="false"] & {
+        .archive-filters__toggle[aria-expanded="true"] & {
             transform: rotate(180deg);
         }
     }
 
+    // ── Remove GovUK checkbox hover background and border thickness ──
+    .govuk-checkboxes__item:hover .govuk-checkboxes__input:not(:disabled) + .govuk-checkboxes__label::before,
+    .govuk-checkboxes__item:hover .govuk-checkboxes__input:focus + .govuk-checkboxes__label::before {
+        background-color: #fff !important;
+        box-shadow: none !important;
+    }
+
+    // ── Remove GovUK radio hover background and border thickness ──
+    .govuk-radios__item:hover .govuk-radios__input:not(:disabled) + .govuk-radios__label::before,
+    .govuk-radios__item:hover .govuk-radios__input:focus + .govuk-radios__label::before {
+        background-color: #fff !important;
+        box-shadow: none !important;
+    }
+
     // ── Collapsed state ──
     &__section-body {
+        overflow: hidden;
+        max-height: 2000px;
+        margin-top: 15px;
+        padding-left: 10px;
+        transition: max-height 0.35s ease, margin-top 0.35s ease;
+
         &.is-hidden {
-            display: none;
+            max-height: 0;
+            margin-top: 0;
         }
     }
 }
