@@ -876,11 +876,19 @@ add_action('wp_enqueue_scripts', function (): void {
                     confirmDeleteComment(btn).then(function (confirmed) {
                         if (!confirmed) { return; }
 
+                        var el = document.getElementById('gca-lc-comment-' + commentId);
+                        var rf = document.getElementById('gca-lc-reply-form-' + commentId);
+                        var countEl = section.querySelector('.gca-lc__comment-count');
+                        var currentCount = countEl ? parseInt(countEl.textContent, 10) : NaN;
+
+                        if (el) { el.remove(); }
+                        if (rf) { rf.remove(); }
+                        if (!Number.isNaN(currentCount) && currentCount > 0) {
+                            updateCommentCount(currentCount - 1);
+                        }
+                        announce('Deleting comment...');
+
                         apiFetch('DELETE', '/comments/' + commentId).then(function (data) {
-                            var el = document.getElementById('gca-lc-comment-' + commentId);
-                            if (el) { el.remove(); }
-                            var rf = document.getElementById('gca-lc-reply-form-' + commentId);
-                            if (rf) { rf.remove(); }
                             updateCommentCount(data.comment_count);
                             announce('Comment deleted.');
                         }).catch(function (err) {
@@ -888,6 +896,7 @@ add_action('wp_enqueue_scripts', function (): void {
                                 ? 'Could not delete comment. You can only delete comments posted from this account.'
                                 : 'Could not delete comment. Please try again.';
                             announce(message);
+                            reloadPanel();
                         });
                     });
                 }
@@ -932,6 +941,14 @@ add_action('wp_enqueue_scripts', function (): void {
                         commentList.innerHTML = '<p class="gca-lc__loading govuk-body-s">Could not load comments.</p>';
                     }
                 });
+        }
+
+        function reloadPanel() {
+            panelLoaded = false;
+            if (commentList) {
+                commentList.innerHTML = '<p class="gca-lc__loading govuk-body-s">Loading comments...</p>';
+            }
+            loadPanel();
         }
 
         // Load counts immediately on page load (without opening panel)
