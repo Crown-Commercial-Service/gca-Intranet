@@ -152,11 +152,7 @@ endif;
 
           <!-- Default CMS content — shown until a team or search is active -->
           <div id="sd-default-content">
-            <?php if (have_posts()) : while (have_posts()) : the_post(); ?>
-              <div class="govuk-body">
-                <?php the_content(); ?>
-              </div>
-            <?php endwhile; endif; ?>
+            <p class="govuk-body">Select a directorate or search by name to see results</p>
           </div>
 
           <!-- Staff grid — shown when a team is selected -->
