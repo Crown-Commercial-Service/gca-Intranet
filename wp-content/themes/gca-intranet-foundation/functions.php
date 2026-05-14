@@ -474,7 +474,7 @@ JS
  * Likes & Comments – enqueue config + inline JS on single posts.
  */
 add_action('wp_enqueue_scripts', function (): void {
-    $is_interaction_page = is_singular(['post', 'blog', 'news', 'work_update'])
+    $is_interaction_page = is_singular(['post', 'blog', 'news', 'work_update', 'event'])
         || (is_page_template('template-community-wall.php') && gca_flag_enabled('community-hub'));
 
     if (!$is_interaction_page) {
@@ -516,6 +516,93 @@ add_action('wp_enqueue_scripts', function (): void {
         var d = document.createElement('div');
         d.textContent = String(str);
         return d.innerHTML;
+    }
+
+    function confirmDeleteComment(triggerEl) {
+        return new Promise(function (resolve) {
+            var previouslyFocused = document.activeElement;
+            var modal = document.createElement('div');
+            modal.className = 'gca-lc-delete-modal';
+            modal.setAttribute('role', 'presentation');
+            modal.innerHTML =
+                '<div class="gca-lc-delete-modal__overlay" data-action="cancel-delete-comment"></div>' +
+                '<div class="gca-lc-delete-modal__dialog" role="dialog" aria-modal="true" aria-labelledby="gca-lc-delete-title" aria-describedby="gca-lc-delete-description" tabindex="-1">' +
+                '<button type="button" class="gca-lc-delete-modal__close" data-action="cancel-delete-comment" aria-label="Close delete confirmation">' +
+                '<span aria-hidden="true">&times;</span>' +
+                '</button>' +
+                '<div class="gca-lc-delete-modal__content">' +
+                '<h2 class="gca-lc-delete-modal__title" id="gca-lc-delete-title">Are you sure you want to delete this comment?</h2>' +
+                '<p class="gca-lc-delete-modal__body" id="gca-lc-delete-description">This will permanently delete the comment. You cannot undo this action.</p>' +
+                '<div class="gca-lc-delete-modal__actions">' +
+                '<button type="button" class="gca-lc-delete-modal__confirm" data-action="confirm-delete-comment">Yes, delete it</button>' +
+                '<button type="button" class="gca-lc-delete-modal__cancel" data-action="cancel-delete-comment">Cancel</button>' +
+                '</div>' +
+                '</div>' +
+                '</div>';
+
+            function close(confirmed) {
+                document.removeEventListener('keydown', onKeydown);
+                modal.remove();
+
+                if (previouslyFocused && typeof previouslyFocused.focus === 'function') {
+                    previouslyFocused.focus();
+                } else if (triggerEl && typeof triggerEl.focus === 'function') {
+                    triggerEl.focus();
+                }
+
+                resolve(confirmed);
+            }
+
+            function onKeydown(e) {
+                if (e.key === 'Escape') {
+                    close(false);
+                    return;
+                }
+
+                if (e.key !== 'Tab') {
+                    return;
+                }
+
+                var focusable = modal.querySelectorAll('button');
+                var first = focusable[0];
+                var last = focusable[focusable.length - 1];
+
+                if (!first || !last) {
+                    return;
+                }
+
+                if (e.shiftKey && document.activeElement === first) {
+                    e.preventDefault();
+                    last.focus();
+                } else if (!e.shiftKey && document.activeElement === last) {
+                    e.preventDefault();
+                    first.focus();
+                }
+            }
+
+            modal.addEventListener('click', function (e) {
+                var actionBtn = e.target.closest('[data-action]');
+                if (!actionBtn) {
+                    return;
+                }
+
+                if (actionBtn.dataset.action === 'confirm-delete-comment') {
+                    close(true);
+                }
+
+                if (actionBtn.dataset.action === 'cancel-delete-comment') {
+                    close(false);
+                }
+            });
+
+            document.body.appendChild(modal);
+            document.addEventListener('keydown', onKeydown);
+
+            var cancelBtn = modal.querySelector('[data-action="cancel-delete-comment"].gca-lc-delete-modal__cancel');
+            if (cancelBtn) {
+                setTimeout(function () { cancelBtn.focus(); }, 50);
+            }
+        });
     }
 
     // ── Comment rendering ────────────────────────────────────────────────────
@@ -667,6 +754,9 @@ add_action('wp_enqueue_scripts', function (): void {
     // ── Per-component initialisation ─────────────────────────────────────────
 
     function initComponent(section) {
+        if (section.dataset.gcaLcInit === '1') { return; }
+        section.dataset.gcaLcInit = '1';
+
         var postId = section.dataset.postId;
         if (!postId) { return; }
 
@@ -766,6 +856,9 @@ add_action('wp_enqueue_scripts', function (): void {
                 var commentId = btn.dataset.commentId;
 
                 if (action === 'toggle-comment-like') {
+                    e.preventDefault();
+                    e.stopPropagation();
+
                     apiFetch('POST', '/comments/' + commentId + '/like').then(function (data) {
                         btn.setAttribute('aria-pressed', data.liked ? 'true' : 'false');
                         var lbl = btn.querySelector('.gca-lc__like-label');
@@ -777,18 +870,32 @@ add_action('wp_enqueue_scripts', function (): void {
                 }
 
                 if (action === 'delete-comment') {
-                    if (!window.confirm('Delete this comment?')) { return; }
-                    apiFetch('DELETE', '/comments/' + commentId).then(function (data) {
-                        var el = document.getElementById('gca-lc-comment-' + commentId);
-                        if (el) { el.remove(); }
-                        var rf = document.getElementById('gca-lc-reply-form-' + commentId);
-                        if (rf) { rf.remove(); }
-                        updateCommentCount(data.comment_count);
-                        announce('Comment deleted.');
+                    e.preventDefault();
+                    e.stopPropagation();
+
+                    confirmDeleteComment(btn).then(function (confirmed) {
+                        if (!confirmed) { return; }
+
+                        apiFetch('DELETE', '/comments/' + commentId).then(function (data) {
+                            var el = document.getElementById('gca-lc-comment-' + commentId);
+                            if (el) { el.remove(); }
+                            var rf = document.getElementById('gca-lc-reply-form-' + commentId);
+                            if (rf) { rf.remove(); }
+                            updateCommentCount(data.comment_count);
+                            announce('Comment deleted.');
+                        }).catch(function (err) {
+                            var message = err && err.message === '403'
+                                ? 'Could not delete comment. You can only delete comments posted from this account.'
+                                : 'Could not delete comment. Please try again.';
+                            announce(message);
+                        });
                     });
                 }
 
                 if (action === 'show-reply-form') {
+                    e.preventDefault();
+                    e.stopPropagation();
+
                     var rf = document.getElementById('gca-lc-reply-form-' + commentId);
                     if (!rf) { return; }
                     rf.hidden = !rf.hidden;
@@ -801,6 +908,9 @@ add_action('wp_enqueue_scripts', function (): void {
                 }
 
                 if (action === 'cancel-reply') {
+                    e.preventDefault();
+                    e.stopPropagation();
+
                     var rf = document.getElementById('gca-lc-reply-form-' + commentId);
                     if (rf) { rf.hidden = true; }
                 }

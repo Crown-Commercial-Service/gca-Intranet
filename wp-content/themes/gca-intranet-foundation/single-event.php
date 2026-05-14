@@ -78,6 +78,10 @@ get_template_part('template-parts/breadcrumbs');
               <?php the_content(); ?>
             </div>
 
+            <?php get_template_part('template-parts/likes-and-comments', null, [
+                'post_id' => get_the_ID(),
+            ]); ?>
+
         <?php endwhile; endif; ?>
     </main>
 </div>

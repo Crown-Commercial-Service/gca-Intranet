@@ -102,6 +102,12 @@ $is_page = !empty($GLOBALS['gca_is_page']);
 
           <?php get_template_part('template-parts/template-body-content'); ?>
 
+          <?php if (in_array($post_type, ['news', 'blog', 'work_update', 'event'], true)) : ?>
+            <?php get_template_part('template-parts/likes-and-comments', null, [
+              'post_id' => $post_id,
+            ]); ?>
+          <?php endif; ?>
+
         </div>
 
       </div>
