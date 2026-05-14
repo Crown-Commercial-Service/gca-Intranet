@@ -55,6 +55,10 @@ $gca-lc-icon-color: #767676;
 .gca-lc__like-btn[aria-pressed="true"] {
     color: $gca-lc-blue;
 
+    .gca-lc__like-icon {
+        color: $gca-lc-blue;
+    }
+
     .gca-lc__like-path {
         fill: $gca-lc-blue;
         stroke: $gca-lc-blue;
@@ -119,7 +123,7 @@ $gca-lc-icon-color: #767676;
     width: 100%;
     resize: vertical;
     min-height: 80px;
-    font-size: govuk-px-to-rem(16);
+    font-size: govuk-px-to-rem(19);
     border: 1px solid $gca-lc-border;
     border-radius: 5px;
 }
@@ -264,7 +268,7 @@ $gca-lc-icon-color: #767676;
 
 .gca-lc__comment-text {
     margin: 0 0 govuk-spacing(2);
-    font-size: govuk-px-to-rem(16);
+    font-size: govuk-px-to-rem(19);
     word-break: break-word;
     white-space: pre-wrap;
 }
