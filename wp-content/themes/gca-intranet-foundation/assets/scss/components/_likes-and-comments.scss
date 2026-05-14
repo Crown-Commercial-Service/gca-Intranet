@@ -376,7 +376,7 @@ $gca-lc-icon-color: #767676;
 .gca-lc-delete-modal__overlay {
     position: absolute;
     inset: 0;
-    background: rgba(0, 0, 0, 0.94);
+    background: rgba(0, 0, 0, 0.5);
 }
 
 .gca-lc-delete-modal__dialog {
@@ -384,13 +384,15 @@ $gca-lc-icon-color: #767676;
     width: min(640px, 100%);
     background: #fff;
     color: $govuk-text-colour;
+    border: 10px solid #0b0c0c;
+    border-top-width: 48px;
     outline: none;
 }
 
 .gca-lc-delete-modal__close {
     position: absolute;
-    top: -39px;
-    right: 0;
+    top: -45px;
+    right: -6px;
     width: 38px;
     height: 38px;
     border: 0;
