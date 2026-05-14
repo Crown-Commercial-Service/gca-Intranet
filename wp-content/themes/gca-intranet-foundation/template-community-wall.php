@@ -214,17 +214,17 @@ endif;
                                     </button>
                                 </div>
 
-                                <div class="gca-cw-compose__actions">
-                                    <button
-                                        type="button"
-                                        class="govuk-button govuk-button--secondary gca-cw-compose__cancel-btn"
-                                        id="gca-cw-cancel"
-                                    >Cancel</button>
+                                <div class="gca-cw-compose__actions gca-lc-delete-modal__actions">
                                     <button
                                         type="submit"
-                                        class="govuk-button gca-cw-compose__submit-btn"
+                                        class="gca-lc-delete-modal__confirm gca-cw-compose__submit-btn"
                                         id="gca-cw-submit"
                                     >Post update</button>
+                                    <button
+                                        type="button"
+                                        class="gca-lc-delete-modal__cancel gca-cw-compose__cancel-btn"
+                                        id="gca-cw-cancel"
+                                    >Cancel</button>
                                 </div>
                             </div>
 
