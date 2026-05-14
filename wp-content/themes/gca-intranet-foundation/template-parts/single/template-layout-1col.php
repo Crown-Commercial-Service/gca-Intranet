@@ -24,8 +24,10 @@ get_template_part('template-parts/single/_chrome');
           <?php get_template_part('template-parts/template-body-content'); ?>
       </div>
 
-      <?php if (in_array($post_type, ['news', 'blog', 'work_update'])): ?>
-        <?php get_template_part('template-parts/likes-and-comments'); ?>
+      <?php if (in_array($post_type, ['news', 'blog', 'work_update', 'event'], true)): ?>
+        <?php get_template_part('template-parts/likes-and-comments', null, [
+          'post_id' => get_the_ID(),
+        ]); ?>
       <?php endif; ?>
     </main>
 

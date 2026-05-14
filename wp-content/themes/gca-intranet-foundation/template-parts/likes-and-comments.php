@@ -1,15 +1,15 @@
 <?php
 /**
  * Likes & Comments component.
- * Rendered on single blog, news, and work_update posts.
+ * Rendered on single blog, news, work_update, and event posts.
  * All interaction is handled client-side via the GCA REST API.
  */
 
-if (!is_user_logged_in() || !in_the_loop()) {
+$post_id = isset($args['post_id']) ? absint($args['post_id']) : get_the_ID();
+
+if (!is_user_logged_in() || $post_id <= 0) {
     return;
 }
-
-$post_id = get_the_ID();
 ?>
 
 <section
