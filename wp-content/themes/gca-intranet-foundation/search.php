@@ -108,6 +108,34 @@ if ($flag_on) {
     $flag_on     = false;
 }
 
+$listing_hits = [];
+if (!empty($search_query)) {
+    $s_lower = mb_strtolower(trim($search_query));
+
+    $staff_dir_page = get_page_by_path('staff-directory');
+    $staff_dir_url  = ($staff_dir_page instanceof WP_Post) ? get_permalink($staff_dir_page) : null;
+
+    $sections = [
+        ['keywords' => ['news'],                        'title' => 'News',           'url' => get_post_type_archive_link('news')],
+        ['keywords' => ['blog', 'blogs'],               'title' => 'Blogs',          'url' => get_post_type_archive_link('blog')],
+        ['keywords' => ['work update', 'work updates'], 'title' => 'Work Updates',   'url' => get_post_type_archive_link('work_update')],
+        ['keywords' => ['event', 'events'],             'title' => 'Events',         'url' => get_post_type_archive_link('event')],
+        ['keywords' => ['staff directory'],             'title' => 'Staff Directory', 'url' => $staff_dir_url],
+    ];
+
+    foreach ($sections as $section) {
+        if (empty($section['url'])) {
+            continue;
+        }
+        foreach ($section['keywords'] as $kw) {
+            if ($s_lower === $kw || str_contains($s_lower, $kw) || str_contains($kw, $s_lower)) {
+                $listing_hits[$section['url']] = $section;
+                break;
+            }
+        }
+    }
+}
+
 ?>
 
 <?php
@@ -171,6 +199,22 @@ get_template_part('template-parts/hero', null, [
             </button>
           </div>
         </form>
+
+        <?php if (!empty($listing_hits)) : ?>
+          <div data-testid="listing-page-results">
+            <?php foreach ($listing_hits as $hit) : ?>
+              <article class="gca-search-result govuk-!-margin-bottom-0" data-testid="search-result">
+                <h2 class="govuk-heading-m govuk-!-margin-bottom-2" data-testid="search-result-title">
+                  <span class="gca-search-result__type">Section - </span>
+                  <a class="govuk-link" href="<?php echo esc_url($hit['url']); ?>" data-testid="search-result-link">
+                    <?php echo esc_html($hit['title']); ?>
+                  </a>
+                </h2>
+              </article>
+              <hr class="govuk-section-break govuk-section-break--m govuk-section-break--visible">
+            <?php endforeach; ?>
+          </div>
+        <?php endif; ?>
 
         <?php if ($flag_on) : ?>
 
