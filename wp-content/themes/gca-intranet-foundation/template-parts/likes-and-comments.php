@@ -57,6 +57,7 @@ if (!is_user_logged_in() || $post_id <= 0) {
             <span class="gca-lc__comment-count-label"><span class="gca-lc__comment-count">0</span> comments</span>
         </button>
 
+        <?php if (gca_flag_enabled('post-saves')) : ?>
         <button
             type="button"
             class="gca-lc__save-btn"
@@ -71,6 +72,7 @@ if (!is_user_logged_in() || $post_id <= 0) {
             </span>
             <span class="gca-lc__save-label">Save</span>
         </button>
+        <?php endif; ?>
     </div>
 
     <?php /* ── Comments panel ───────────────────────────────────────────── */ ?>

@@ -4,7 +4,7 @@
  * Rendered as a minimal .gca-lc wrapper so the shared interactions JS can init it.
  * Only shown to logged-in users.
  */
-if (!is_user_logged_in()) {
+if (!is_user_logged_in() || !gca_flag_enabled('post-saves')) {
     return;
 }
 ?>

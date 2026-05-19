@@ -14,12 +14,22 @@ if (!defined('ABSPATH')) {
 //
 //   GET    /wp-json/gca/v1/posts/{post_id}/interactions  – likes + comments + saved
 //   POST   /wp-json/gca/v1/posts/{post_id}/like          – toggle post like
-//   POST   /wp-json/gca/v1/posts/{post_id}/save          – toggle post save
+//   POST   /wp-json/gca/v1/posts/{post_id}/save          – toggle post save  [flag: post-saves]
 //   POST   /wp-json/gca/v1/posts/{post_id}/comments      – add comment
 //   DELETE /wp-json/gca/v1/comments/{comment_id}         – delete own comment
 //   POST   /wp-json/gca/v1/comments/{comment_id}/like    – toggle comment like
 //   GET    /wp-json/gca/v1/users/search                  – @mention user search
+//   GET    /wp-json/gca/v1/profile/me/saves              – saved posts list   [flag: post-saves]
+//   GET    /wp-json/gca/v1/profile/me/posts              – authored posts      [flag: post-saves]
+//   GET    /wp-json/gca/v1/profile/me/mentions           – comment mentions    [flag: post-saves]
 // ---------------------------------------------------------------------------
+
+gca_register_feature_flag('post-saves', [
+    'label'       => 'Post Saves & Profile Tabs',
+    'description' => 'Save button on posts and pages, plus the My Saves / Mentions / My Posts tabs on the profile page.',
+    'default'     => true,
+    'tags'        => ['posts', 'profiles'],
+]);
 
 add_action('rest_api_init', function (): void {
 
@@ -43,15 +53,17 @@ add_action('rest_api_init', function (): void {
         ],
     ]);
 
-    // POST – toggle save on a post
-    register_rest_route('gca/v1', '/posts/(?P<post_id>\d+)/save', [
-        'methods'             => 'POST',
-        'callback'            => 'gca_lc_toggle_post_save',
-        'permission_callback' => 'is_user_logged_in',
-        'args'                => [
-            'post_id' => ['validate_callback' => fn ($v) => is_numeric($v)],
-        ],
-    ]);
+    // POST – toggle save on a post  [flag: post-saves]
+    if (gca_flag_enabled('post-saves')) {
+        register_rest_route('gca/v1', '/posts/(?P<post_id>\d+)/save', [
+            'methods'             => 'POST',
+            'callback'            => 'gca_lc_toggle_post_save',
+            'permission_callback' => 'is_user_logged_in',
+            'args'                => [
+                'post_id' => ['validate_callback' => fn ($v) => is_numeric($v)],
+            ],
+        ]);
+    }
 
     // POST – add a comment or reply
     register_rest_route('gca/v1', '/posts/(?P<post_id>\d+)/comments', [
@@ -92,26 +104,26 @@ add_action('rest_api_init', function (): void {
         ],
     ]);
 
-    // GET – current user's saved posts (profile: My Saves tab)
-    register_rest_route('gca/v1', '/profile/me/saves', [
-        'methods'             => 'GET',
-        'callback'            => 'gca_profile_get_saves',
-        'permission_callback' => 'is_user_logged_in',
-    ]);
+    // Profile tab routes  [flag: post-saves]
+    if (gca_flag_enabled('post-saves')) {
+        register_rest_route('gca/v1', '/profile/me/saves', [
+            'methods'             => 'GET',
+            'callback'            => 'gca_profile_get_saves',
+            'permission_callback' => 'is_user_logged_in',
+        ]);
 
-    // GET – current user's published posts (profile: My Posts tab)
-    register_rest_route('gca/v1', '/profile/me/posts', [
-        'methods'             => 'GET',
-        'callback'            => 'gca_profile_get_posts',
-        'permission_callback' => 'is_user_logged_in',
-    ]);
+        register_rest_route('gca/v1', '/profile/me/posts', [
+            'methods'             => 'GET',
+            'callback'            => 'gca_profile_get_posts',
+            'permission_callback' => 'is_user_logged_in',
+        ]);
 
-    // GET – comments that mention the current user (profile: Mentions tab)
-    register_rest_route('gca/v1', '/profile/me/mentions', [
-        'methods'             => 'GET',
-        'callback'            => 'gca_profile_get_mentions',
-        'permission_callback' => 'is_user_logged_in',
-    ]);
+        register_rest_route('gca/v1', '/profile/me/mentions', [
+            'methods'             => 'GET',
+            'callback'            => 'gca_profile_get_mentions',
+            'permission_callback' => 'is_user_logged_in',
+        ]);
+    }
 
     // GET – user search for @mention autocomplete
     register_rest_route('gca/v1', '/users/search', [

@@ -47,7 +47,7 @@ get_header();
         'avatar_url'   => $profile_data['avatar_url'],
     ]); ?>
 
-    <?php if ($is_own_profile) : ?>
+    <?php if ($is_own_profile && gca_flag_enabled('post-saves')) : ?>
       <?php get_template_part('template-parts/profile-tabs', null, [
           'rest_url' => esc_url_raw(rest_url('gca/v1')),
           'nonce'    => wp_create_nonce('wp_rest'),

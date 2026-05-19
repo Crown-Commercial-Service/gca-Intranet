@@ -475,7 +475,7 @@ JS
  */
 add_action('wp_enqueue_scripts', function (): void {
     $is_interaction_page = is_singular(['post', 'blog', 'news', 'work_update', 'event'])
-        || is_page()
+        || (is_page() && gca_flag_enabled('post-saves'))
         || (is_page_template('template-community-wall.php') && gca_flag_enabled('community-hub'));
 
     if (!$is_interaction_page) {
