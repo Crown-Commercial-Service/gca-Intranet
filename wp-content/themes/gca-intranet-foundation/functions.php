@@ -1576,7 +1576,7 @@ add_action('pre_get_posts', function (WP_Query $query): void {
 });
 
 /**
- * Limit search results to 10 per page and exclude news post type.
+ * Limit search results to 10 per page and exclude news and blog post types.
  */
 add_action('pre_get_posts', function (WP_Query $query): void {
     if (!is_admin() && $query->is_main_query() && $query->is_search()) {
@@ -1584,7 +1584,7 @@ add_action('pre_get_posts', function (WP_Query $query): void {
 
         $post_types = array_values(array_diff(
             array_keys(get_post_types(['public' => true, 'exclude_from_search' => false])),
-            ['news']
+            ['news', 'blog']
         ));
         $query->set('post_type', $post_types);
     }
