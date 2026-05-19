@@ -22,25 +22,6 @@ get_template_part('template-parts/breadcrumbs');
     $archive_url       = get_post_type_archive_link('event');
     ?>
 
-    <nav class="events-tabs" aria-label="Events view" data-testid="events-tabs">
-      <a
-        href="<?php echo esc_url($archive_url); ?>"
-        class="events-tabs__tab <?php echo $current_view === 'upcoming' ? 'events-tabs__tab--active' : ''; ?>"
-        <?php echo $current_view === 'upcoming' ? 'aria-current="page"' : ''; ?>
-        data-testid="events-tab-upcoming"
-      >
-        Upcoming Events
-      </a>
-      <a
-        href="<?php echo esc_url(add_query_arg('view', 'past', $archive_url)); ?>"
-        class="events-tabs__tab <?php echo $current_view === 'past' ? 'events-tabs__tab--active' : ''; ?>"
-        <?php echo $current_view === 'past' ? 'aria-current="page"' : ''; ?>
-        data-testid="events-tab-past"
-      >
-        Past Events
-      </a>
-    </nav>
-
     <div class="govuk-grid-row archive-layout" data-testid="archive-event-row">
 
       <?php if ($show_filters) : ?>
@@ -56,6 +37,25 @@ get_template_part('template-parts/breadcrumbs');
       <?php else : ?>
         <div class="govuk-grid-column-full archive-layout__results" data-testid="archive-event-col">
       <?php endif; ?>
+
+        <nav class="events-tabs" aria-label="Events view" data-testid="events-tabs">
+          <a
+            href="<?php echo esc_url($archive_url); ?>"
+            class="events-tabs__tab <?php echo $current_view === 'upcoming' ? 'events-tabs__tab--active' : ''; ?>"
+            <?php echo $current_view === 'upcoming' ? 'aria-current="page"' : ''; ?>
+            data-testid="events-tab-upcoming"
+          >
+            Upcoming Events
+          </a>
+          <a
+            href="<?php echo esc_url(add_query_arg('view', 'past', $archive_url)); ?>"
+            class="events-tabs__tab <?php echo $current_view === 'past' ? 'events-tabs__tab--active' : ''; ?>"
+            <?php echo $current_view === 'past' ? 'aria-current="page"' : ''; ?>
+            data-testid="events-tab-past"
+          >
+            Past Events
+          </a>
+        </nav>
 
         <?php
         $events_by_month = [];
