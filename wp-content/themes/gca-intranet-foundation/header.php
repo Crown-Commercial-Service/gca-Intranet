@@ -69,8 +69,8 @@ height="0" width="0" style="display:none;visibility:hidden" title="Google Tag Ma
                 <input id="site-search" name="s" type="search" class="govuk-input" placeholder="Search the intranet" autocomplete="off" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="site-search-suggestions">
                 <button class="govuk-button search-submit" type="submit" aria-label="Search">
                   <span class="govuk-visually-hidden">Search</span>
-                  <svg class="gca-search-icon" width="20" height="20" viewBox="0 0 16 16" aria-hidden="true" focusable="false">
-                    <path fill="white" d="M11.742 10.344l3.387 3.387-.998.998-3.387-3.387a6 6 0 1 1 .998-.998zM6.5 11.5a5 5 0 0 0 0-10 5 5 0 0 0 0 10z"></path>
+                  <svg class="gca-search-icon" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 25 25" fill="none" aria-hidden="true" focusable="false">
+                    <path d="M23.25 23.25L17.9333 17.9333M20.8056 11.0278C20.8056 16.4279 16.4279 20.8056 11.0278 20.8056C5.62766 20.8056 1.25 16.4279 1.25 11.0278C1.25 5.62766 5.62766 1.25 11.0278 1.25C16.4279 1.25 20.8056 5.62766 20.8056 11.0278Z" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
                   </svg>
                 </button>
               </div>
