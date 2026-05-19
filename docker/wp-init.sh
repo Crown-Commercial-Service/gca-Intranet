@@ -20,6 +20,18 @@ if [ -d /opt/wp-content-seed ] && [ ! -f /var/www/html/wp-content/.seeded ] && [
   touch /var/www/html/wp-content/.seeded || true
 fi
 
+# 2b) Temporarily disable Redis object cache drop-in for all WP-CLI operations.
+# The init task intentionally has no Redis credentials, so object-cache.php causes
+# connection timeouts. Those timeouts make `wp core is-installed` return non-zero,
+# which tricks this script into running `wp core install` and wiping the database.
+# `wp redis enable` at step 7b will recreate object-cache.php correctly when done.
+OBJECT_CACHE="/var/www/html/wp-content/object-cache.php"
+OBJECT_CACHE_BACKUP="/tmp/object-cache.php.bak"
+if [ -f "$OBJECT_CACHE" ]; then
+  echo "Temporarily disabling Redis object cache drop-in for init..."
+  mv "$OBJECT_CACHE" "$OBJECT_CACHE_BACKUP"
+fi
+
 # 3) Wait for DB TCP (no mysqlcheck needed)
 DB_HOST="${WORDPRESS_DB_HOST%%:*}"
 DB_PORT="${WORDPRESS_DB_HOST##*:}"
@@ -91,7 +103,14 @@ wp rewrite flush --allow-root || true
 wp plugin activate redis-cache --allow-root || true
 wp redis enable --allow-root || true
 
-# 8) Permissions (best effort)
+# 8) Restore Redis object cache drop-in if it existed before init
+# (wp redis enable at step 7b will have already recreated it; this is a safety net)
+if [ -f "$OBJECT_CACHE_BACKUP" ] && [ ! -f "$OBJECT_CACHE" ]; then
+  echo "Restoring Redis object cache drop-in from backup..."
+  mv "$OBJECT_CACHE_BACKUP" "$OBJECT_CACHE"
+fi
+
+# 9) Permissions (best effort)
 chown -R www-data:www-data /var/www/html/wp-content 2>/dev/null || true
 
 echo "INIT DONE"

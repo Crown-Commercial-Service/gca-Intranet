@@ -39,7 +39,13 @@ if (!defined('WP_MAX_MEMORY_LIMIT')) {
 /**
  * Playwright Test Database Switcher
  * We check the header and define the constant EARLY.
+ *
+ * Redis object cache is also disabled for test requests: the cache is keyed
+ * against the main database, so cached data would bleed into test requests
+ * (and vice versa), causing tests to see stale results or miss newly created
+ * test content entirely.
  */
 if (isset($_SERVER['HTTP_X_GCA_TEST_SUITE']) && $_SERVER['HTTP_X_GCA_TEST_SUITE'] === 'true') {
     define('DB_NAME', 'wordpress-test');
+    define('WP_REDIS_DISABLED', true);
 }
