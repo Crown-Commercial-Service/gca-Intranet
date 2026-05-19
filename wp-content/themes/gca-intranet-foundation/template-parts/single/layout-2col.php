@@ -10,7 +10,7 @@ get_template_part('template-parts/single/_chrome');
 $is_page = !empty($GLOBALS['gca_is_page']);
 ?>
 
-<div class="govuk-width-container govuk-!-padding-top-6 govuk-!-padding-bottom-6" data-testid="page-container">
+<div class="govuk-width-container govuk-!-padding-bottom-6" data-testid="page-container">
   <?php if (have_posts()) : while (have_posts()) : the_post(); ?>
 
     <?php
@@ -31,6 +31,10 @@ $is_page = !empty($GLOBALS['gca_is_page']);
     ?>
 
     <main class="gca-single gca-single--2col" id="main-content" data-testid="layout-2col">
+      <?php if ($is_page) : ?>
+        <?php get_template_part('template-parts/page-save-btn'); ?>
+      <?php endif; ?>
+
       <div class="govuk-grid-row">
 
         <?php if ($has_left_content) : ?>

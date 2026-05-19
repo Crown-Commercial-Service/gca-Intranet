@@ -6,7 +6,7 @@
 get_template_part('template-parts/single/_chrome');
 ?>
 
-<div class="govuk-width-container govuk-!-padding-top-6 govuk-!-padding-bottom-6">
+<div class="govuk-width-container govuk-!-padding-bottom-6">
   <?php if (have_posts()) : while (have_posts()) : the_post(); 
       $post_type = get_post_type();
   ?>
@@ -19,6 +19,10 @@ get_template_part('template-parts/single/_chrome');
          */
         get_template_part('template-parts/content', $post_type); 
       ?>
+
+      <?php if ($post_type === 'page') : ?>
+        <?php get_template_part('template-parts/page-save-btn'); ?>
+      <?php endif; ?>
 
       <div class="gca-content">
           <?php get_template_part('template-parts/template-body-content'); ?>

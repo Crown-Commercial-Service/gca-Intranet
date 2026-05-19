@@ -31,6 +31,8 @@ if ($profile_data === null) {
     exit;
 }
 
+$is_own_profile = is_user_logged_in() && get_current_user_id() === $user->ID;
+
 get_header();
 ?>
 
@@ -44,6 +46,13 @@ get_header();
         'team'         => $profile_data['team'],
         'avatar_url'   => $profile_data['avatar_url'],
     ]); ?>
+
+    <?php if ($is_own_profile) : ?>
+      <?php get_template_part('template-parts/profile-tabs', null, [
+          'rest_url' => esc_url_raw(rest_url('gca/v1')),
+          'nonce'    => wp_create_nonce('wp_rest'),
+      ]); ?>
+    <?php endif; ?>
   </main>
 </div>
 

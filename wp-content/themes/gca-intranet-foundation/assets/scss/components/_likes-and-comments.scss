@@ -13,6 +13,11 @@ $gca-lc-icon-color: #767676;
     font-family: $govuk-font-family;
 }
 
+.gca-lc--page-save {
+    display: flex;
+    justify-content: flex-end;
+}
+
 // ── Like bar ────────────────────────────────────────────────────────────────
 
 .gca-lc__like-bar {
@@ -25,7 +30,8 @@ $gca-lc-icon-color: #767676;
 }
 
 .gca-lc__like-btn,
-.gca-lc__comment-toggle-btn {
+.gca-lc__comment-toggle-btn,
+.gca-lc__save-btn {
     display: inline-flex;
     align-items: center;
     gap: govuk-spacing(1);
@@ -65,8 +71,29 @@ $gca-lc-icon-color: #767676;
     }
 }
 
+// Saved state
+.gca-lc__save-btn[aria-pressed="true"],
+.gca-lc__save-btn--saved {
+    color: $gca-lc-blue;
+
+    .gca-lc__save-icon {
+        color: $gca-lc-blue;
+    }
+
+    .gca-lc__save-path {
+        fill: $gca-lc-blue;
+        stroke: $gca-lc-blue;
+    }
+}
+
+.gca-lc__save-btn:disabled {
+    opacity: 0.6;
+    cursor: wait;
+}
+
 .gca-lc__like-icon,
-.gca-lc__comment-icon {
+.gca-lc__comment-icon,
+.gca-lc__save-icon {
     color: $gca-lc-icon-color;
 }
 
