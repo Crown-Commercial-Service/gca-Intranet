@@ -20,6 +20,17 @@ if (!defined('ABSPATH')) {
 //   GET    /wp-json/gca/v1/users/search                  – @mention user search
 // ---------------------------------------------------------------------------
 
+gca_register_feature_flag('likes-and-comments', [
+    'label'       => 'Likes & Comments',
+    'description' => 'Enables the likes and comments component on blog, news, work update, and event posts, along with the supporting REST API endpoints.',
+    'default'     => false,
+    'tags'        => ['ui', 'engagement'],
+]);
+
+if (!gca_flag_enabled('likes-and-comments')) {
+    return;
+}
+
 add_action('rest_api_init', function (): void {
 
     // GET – all interactions (likes + comments) for a post
