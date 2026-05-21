@@ -374,6 +374,15 @@ main.govuk-main-wrapper {
         &:focus {
             color: $color-active-focus !important;
         }
+
+        &.events-tabs__tab,
+        &.events-tabs__tab--active {
+            &:link,
+            &:visited,
+            &:hover {
+                color: #0b0c0c !important;
+            }
+        }
     }
 }
 

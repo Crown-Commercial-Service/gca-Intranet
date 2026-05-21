@@ -341,7 +341,7 @@ get_header();
                         </a>
                       </h4>
 
-                      <p class="govuk-body-s" data-testid="work-update-author">
+                      <p class="govuk-body-s" data-testid="work-update-author" style="margin-bottom: 15px;">
                         By <?php echo esc_html(get_the_author()); ?>
                       </p>
 
