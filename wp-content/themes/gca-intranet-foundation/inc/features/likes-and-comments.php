@@ -24,12 +24,23 @@ if (!defined('ABSPATH')) {
 //   GET    /wp-json/gca/v1/profile/me/mentions           – comment mentions    [flag: post-saves]
 // ---------------------------------------------------------------------------
 
+gca_register_feature_flag('likes-and-comments', [
+    'label'       => 'Likes & Comments',
+    'description' => 'Enables the likes and comments component on blog, news, work update, and event posts, along with the supporting REST API endpoints.',
+    'default'     => false,
+    'tags'        => ['ui', 'engagement'],
+]);
+
 gca_register_feature_flag('post-saves', [
     'label'       => 'Post Saves & Profile Tabs',
     'description' => 'Save button on posts and pages, plus the My Saves / Mentions / My Posts tabs on the profile page.',
     'default'     => true,
     'tags'        => ['posts', 'profiles'],
 ]);
+
+if (!gca_flag_enabled('likes-and-comments')) {
+    return;
+}
 
 add_action('rest_api_init', function (): void {
 
