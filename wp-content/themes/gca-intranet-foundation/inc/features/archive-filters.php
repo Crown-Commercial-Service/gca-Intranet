@@ -291,10 +291,16 @@ add_action('pre_get_posts', function (WP_Query $query): void {
             $query->set('orderby', 'date');
             $query->set('order', $sort === 'oldest' ? 'ASC' : 'DESC');
         } else {
-            // Events: sort by start_date meta. ASC = soonest first (default).
+            // Events: sort by start_date meta.
+            // Upcoming — ASC = soonest first (default); Past — DESC = most recently occurred first (default).
+            $is_past = isset($_GET['view']) && $_GET['view'] === 'past';
             $query->set('meta_key', 'start_date');
             $query->set('orderby', 'meta_value');
-            $query->set('order', $sort === 'oldest' ? 'DESC' : 'ASC');
+            if ($is_past) {
+                $query->set('order', $sort === 'oldest' ? 'ASC' : 'DESC');
+            } else {
+                $query->set('order', $sort === 'oldest' ? 'DESC' : 'ASC');
+            }
         }
 
         // Taxonomy filters
@@ -415,6 +421,7 @@ document.addEventListener("DOMContentLoaded", function () {
         // Reset everything first
         form.querySelectorAll("[data-filter-term]").forEach(function (cb) { cb.checked = false; });
         form.querySelectorAll("[data-view-all]").forEach(function (va) { va.checked = true; });
+        form.querySelectorAll("input[type='hidden']").forEach(function (h) { h.value = ""; });
 
         params.forEach(function (value, key) {
             var param = key.replace(/\[\]$/, "");
@@ -422,6 +429,8 @@ document.addEventListener("DOMContentLoaded", function () {
                 var radio = form.querySelector("input[name='sort'][value='" + CSS.escape(value) + "']");
                 if (radio) radio.checked = true;
             } else {
+                var hidden = form.querySelector("input[type='hidden'][name='" + CSS.escape(param) + "']");
+                if (hidden) { hidden.value = value; }
                 var cb = form.querySelector(
                     "[data-filter-term='" + CSS.escape(param) + "'][value='" + CSS.escape(value) + "']"
                 );

@@ -7,8 +7,9 @@
  *   taxonomies   array    Each entry: ['taxonomy' => string, 'label' => string, 'param' => string]
  */
 
-$archive_url = $args['archive_url'] ?? '/';
-$taxonomies  = $args['taxonomies']  ?? [];
+$archive_url  = $args['archive_url']  ?? '/';
+$taxonomies   = $args['taxonomies']   ?? [];
+$current_view = $args['current_view'] ?? '';
 
 $current_sort = isset($_GET['sort']) ? sanitize_text_field($_GET['sort']) : 'newest';
 
@@ -19,17 +20,23 @@ foreach ($taxonomies as $tax) {
         break;
     }
 }
+
+$clear_url = ($current_view !== '') ? add_query_arg('view', $current_view, $archive_url) : $archive_url;
 ?>
 
 <div class="archive-filters" data-testid="archive-filters">
   <div class="archive-filters__header">
     <h2 class="govuk-heading-m archive-filters__heading">Apply filters</h2>
     <?php if ($has_active_filters) : ?>
-      <a href="<?php echo esc_url($archive_url); ?>" class="govuk-link archive-filters__clear">Clear filters</a>
+      <a href="<?php echo esc_url($clear_url); ?>" class="govuk-link archive-filters__clear">Clear filters</a>
     <?php endif; ?>
   </div>
 
   <form method="get" action="<?php echo esc_url($archive_url); ?>" data-archive-filter-form>
+
+    <?php if ($current_view !== '') : ?>
+      <input type="hidden" name="view" value="<?php echo esc_attr($current_view); ?>">
+    <?php endif; ?>
 
     <?php /* ── Sort by ── */ ?>
     <div class="archive-filters__section">
