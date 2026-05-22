@@ -37,9 +37,9 @@ if ( ! empty( $pinned_ids ) ) {
         'meta_query'     => [
             [
                 'key'     => 'start_date',
-                'value'   => date( 'Y-m-d H:i:s' ),
+                'value'   => date( 'Y-m-d' ),
                 'compare' => '>=',
-                'type'    => 'DATETIME',
+                'type'    => 'DATE',
             ],
         ],
     ] );
