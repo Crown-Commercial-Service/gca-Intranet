@@ -220,6 +220,31 @@
         initLcForPost(articleEl);
     }
 
+    function appendItem(item, prepend) {
+        var renderer = null;
+        var initialiser = null;
+
+        if (item.type === 'poll' && window.GcaPolls && typeof window.GcaPolls.renderPoll === 'function') {
+            renderer   = window.GcaPolls.renderPoll;
+            initialiser = window.GcaPolls.initPollCard;
+        } else if (item.type === 'shoutout' && window.GcaShoutouts && typeof window.GcaShoutouts.renderShoutout === 'function') {
+            renderer   = window.GcaShoutouts.renderShoutout;
+            initialiser = window.GcaShoutouts.initShoutoutCard;
+        }
+
+        if (renderer) {
+            var tmp = document.createElement('div');
+            tmp.innerHTML = renderer(item);
+            var el = tmp.firstElementChild;
+            if (!el) { return; }
+            if (prepend) { feedEl.insertBefore(el, feedEl.firstChild); } else { feedEl.appendChild(el); }
+            if (initialiser) { initialiser(el); }
+            initLcForPost(el);
+        } else {
+            appendPost(item, prepend);
+        }
+    }
+
     function loadFeed(page) {
         if (isLoading) { return; }
         isLoading = true;
@@ -232,7 +257,9 @@
 
                 if (loadingEl) { loadingEl.hidden = true; }
 
-                if (!data.posts || !data.posts.length) {
+                var feedItems = data.items || data.posts || [];
+
+                if (!feedItems.length) {
                     if (page === 1) {
                         var empty = document.createElement('p');
                         empty.className = 'gca-cw-feed__status';
@@ -244,7 +271,7 @@
                     return;
                 }
 
-                data.posts.forEach(function (post) { appendPost(post, false); });
+                feedItems.forEach(function (item) { appendItem(item, false); });
 
                 if (currentPage < totalPages) {
                     if (footerEl) { footerEl.hidden = false; }

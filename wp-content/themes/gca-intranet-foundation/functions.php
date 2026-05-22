@@ -13,6 +13,9 @@ require_once get_template_directory() . '/inc/auth-logic.php';
 require_once get_template_directory() . '/inc/features.php';
 require_once get_template_directory() . '/inc/rest-api-auth.php';
 require_once get_template_directory() . '/inc/features/community-wall.php';
+require_once get_template_directory() . '/inc/features/qa.php';
+require_once get_template_directory() . '/inc/features/polls.php';
+require_once get_template_directory() . '/inc/features/shoutouts.php';
 
 /**
  * Theme setup
@@ -1080,6 +1083,103 @@ add_action('wp_enqueue_scripts', function (): void {
         });',
         'after'
     );
+});
+
+/**
+ * Community Q&A – enqueue JS on the community wall page template.
+ */
+add_action('wp_enqueue_scripts', function (): void {
+    if (!is_page_template('template-community-wall.php')) {
+        return;
+    }
+
+    if (!gca_flag_enabled('community-qa')) {
+        return;
+    }
+
+    $current_user = wp_get_current_user();
+    $local_avatar = $current_user->exists()
+        ? trim((string) get_user_meta($current_user->ID, 'google_profile_picture_local_url', true))
+        : '';
+    $avatar_url = $local_avatar
+        ?: ($current_user->exists() ? (string) get_avatar_url($current_user->ID, ['size' => 40]) : '');
+
+    $qa_js_rel = '/assets/scripts/qa.js';
+    $qa_js_abs = get_template_directory() . $qa_js_rel;
+    $qa_js_ver = file_exists($qa_js_abs) ? (string) filemtime($qa_js_abs) : '1.0.0';
+
+    wp_register_script(
+        'gca-qa',
+        get_template_directory_uri() . $qa_js_rel,
+        ['gca-interactions'],
+        $qa_js_ver,
+        true
+    );
+    wp_enqueue_script('gca-qa');
+
+    wp_add_inline_script(
+        'gca-qa',
+        'window.gcaQaData = ' . wp_json_encode([
+            'restUrl'           => esc_url_raw(rest_url('gca/v1')),
+            'nonce'             => wp_create_nonce('wp_rest'),
+            'currentUserId'     => get_current_user_id(),
+            'currentUserAvatar' => $avatar_url,
+            'isQaModerator'     => current_user_can('edit_others_qa_questions'),
+        ]) . ';',
+        'before'
+    );
+});
+
+/**
+ * Community Polls – enqueue JS on the community wall page template.
+ */
+add_action('wp_enqueue_scripts', function (): void {
+    if (!is_page_template('template-community-wall.php')) {
+        return;
+    }
+
+    if (!gca_flag_enabled('community-polls')) {
+        return;
+    }
+
+    $polls_js_rel = '/assets/scripts/polls.js';
+    $polls_js_abs = get_template_directory() . $polls_js_rel;
+    $polls_js_ver = file_exists($polls_js_abs) ? (string) filemtime($polls_js_abs) : '1.0.0';
+
+    wp_register_script(
+        'gca-polls',
+        get_template_directory_uri() . $polls_js_rel,
+        ['gca-community-wall'],
+        $polls_js_ver,
+        true
+    );
+    wp_enqueue_script('gca-polls');
+});
+
+/**
+ * Community Shout-outs – enqueue JS on the community wall page template.
+ */
+add_action('wp_enqueue_scripts', function (): void {
+    if (!is_page_template('template-community-wall.php')) {
+        return;
+    }
+
+    if (!gca_flag_enabled('community-shoutouts')) {
+        return;
+    }
+
+    $shoutouts_js_rel = '/assets/scripts/shoutouts.js';
+    $shoutouts_js_abs = get_template_directory() . $shoutouts_js_rel;
+    $shoutouts_js_ver = file_exists($shoutouts_js_abs) ? (string) filemtime($shoutouts_js_abs) : '1.0.0';
+
+    wp_register_script(
+        'gca-shoutouts',
+        get_template_directory_uri() . $shoutouts_js_rel,
+        ['gca-community-wall'],
+        $shoutouts_js_ver,
+        true
+    );
+    wp_enqueue_script('gca-shoutouts');
 });
 
 /**

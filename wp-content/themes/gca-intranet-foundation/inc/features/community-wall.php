@@ -178,6 +178,7 @@ function gca_cw_format_post(WP_Post $post, int $current_user_id): array
 
     return [
         'id'             => $post->ID,
+        'type'           => 'post',
         'content_html'   => gca_cw_render_content($post->post_content),
         'content_raw'    => $post->post_content,
         'author_id'      => (int) $post->post_author,
@@ -205,8 +206,16 @@ function gca_cw_get_feed(WP_REST_Request $req): WP_REST_Response
     $per_page        = min(50, max(1, (int) $req->get_param('per_page')));
     $current_user_id = get_current_user_id();
 
+    $post_types = ['community_post'];
+    if (gca_flag_enabled('community-polls') && function_exists('gca_poll_format')) {
+        $post_types[] = 'community_poll';
+    }
+    if (gca_flag_enabled('community-shoutouts') && function_exists('gca_shoutout_format')) {
+        $post_types[] = 'community_shoutout';
+    }
+
     $query = new WP_Query([
-        'post_type'      => 'community_post',
+        'post_type'      => $post_types,
         'post_status'    => 'publish',
         'posts_per_page' => $per_page,
         'paged'          => $page,
@@ -215,15 +224,22 @@ function gca_cw_get_feed(WP_REST_Request $req): WP_REST_Response
         'no_found_rows'  => false,
     ]);
 
-    $posts = [];
+    $items = [];
     foreach ($query->posts as $post) {
-        if ($post instanceof WP_Post) {
-            $posts[] = gca_cw_format_post($post, $current_user_id);
+        if (!$post instanceof WP_Post) {
+            continue;
+        }
+        if ($post->post_type === 'community_poll') {
+            $items[] = gca_poll_format($post, $current_user_id);
+        } elseif ($post->post_type === 'community_shoutout') {
+            $items[] = gca_shoutout_format($post, $current_user_id);
+        } else {
+            $items[] = gca_cw_format_post($post, $current_user_id);
         }
     }
 
     return new WP_REST_Response([
-        'posts'       => $posts,
+        'items'       => $items,
         'total'       => (int) $query->found_posts,
         'total_pages' => (int) $query->max_num_pages,
         'page'        => $page,
