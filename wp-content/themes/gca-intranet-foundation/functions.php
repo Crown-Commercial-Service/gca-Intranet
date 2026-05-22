@@ -474,6 +474,7 @@ JS
  */
 add_action('wp_enqueue_scripts', function (): void {
     $is_interaction_page = is_singular(['post', 'blog', 'news', 'work_update', 'event'])
+        || (is_page() && gca_flag_enabled('post-saves'))
         || (is_page_template('template-community-wall.php') && gca_flag_enabled('community-hub'));
 
     if (!$is_interaction_page) {
@@ -766,6 +767,7 @@ add_action('wp_enqueue_scripts', function (): void {
         var commentList      = section.querySelector('.gca-lc__list');
         var statusRegion     = section.querySelector('[aria-live="polite"]');
         var mainForm         = section.querySelector('[data-action="submit-comment"]');
+        var saveBtn          = section.querySelector('[data-action="toggle-post-save"]');
         var panelLoaded      = false;
         var listEvtsBound    = false;
 
@@ -786,6 +788,15 @@ add_action('wp_enqueue_scripts', function (): void {
         function updateCommentCount(count) {
             var countEl = section.querySelector('.gca-lc__comment-count');
             if (countEl) { countEl.textContent = count; }
+        }
+
+        function updateSave(saved) {
+            if (!saveBtn) { return; }
+            saveBtn.setAttribute('aria-pressed', saved ? 'true' : 'false');
+            saveBtn.setAttribute('aria-label', (saved ? 'Unsave' : 'Save') + ' post');
+            var label = saveBtn.querySelector('.gca-lc__save-label');
+            if (label) { label.textContent = saved ? 'Saved' : 'Save'; }
+            saveBtn.classList.toggle('gca-lc__save-btn--saved', saved);
         }
 
         // Bind a form (main or reply) submit event once.
@@ -930,6 +941,7 @@ add_action('wp_enqueue_scripts', function (): void {
             apiFetch('GET', '/posts/' + postId + '/interactions')
                 .then(function (data) {
                     updateLike(data.user_has_liked, data.post_like_count);
+                    updateSave(data.user_has_saved);
                     updateCommentCount(data.comment_count);
                     renderList(data.comments, commentList);
                     panelLoaded = true;
@@ -953,6 +965,7 @@ add_action('wp_enqueue_scripts', function (): void {
         // Load counts immediately on page load (without opening panel)
         apiFetch('GET', '/posts/' + postId + '/interactions').then(function (data) {
             updateLike(data.user_has_liked, data.post_like_count);
+            updateSave(data.user_has_saved);
             updateCommentCount(data.comment_count);
         }).catch(function () {});
 
@@ -962,6 +975,19 @@ add_action('wp_enqueue_scripts', function (): void {
                     updateLike(data.liked, data.like_count);
                     announce(data.liked ? 'Post liked.' : 'Post like removed.');
                 });
+            });
+        }
+
+        if (saveBtn) {
+            saveBtn.addEventListener('click', function () {
+                saveBtn.disabled = true;
+                apiFetch('POST', '/posts/' + postId + '/save')
+                    .then(function (data) {
+                        updateSave(data.saved);
+                        announce(data.saved ? 'Post saved.' : 'Post unsaved.');
+                    })
+                    .catch(function () { announce('Could not save post. Please try again.'); })
+                    .finally(function () { saveBtn.disabled = false; });
             });
         }
 
