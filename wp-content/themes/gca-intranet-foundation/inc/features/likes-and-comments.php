@@ -38,31 +38,85 @@ gca_register_feature_flag('post-saves', [
     'tags'        => ['posts', 'profiles'],
 ]);
 
-if (!gca_flag_enabled('likes-and-comments')) {
-    return;
-}
-
 add_action('rest_api_init', function (): void {
 
-    // GET – all interactions (likes + comments) for a post
-    register_rest_route('gca/v1', '/posts/(?P<post_id>\d+)/interactions', [
-        'methods'             => 'GET',
-        'callback'            => 'gca_lc_get_interactions',
-        'permission_callback' => 'is_user_logged_in',
-        'args'                => [
-            'post_id' => ['validate_callback' => fn ($v) => is_numeric($v)],
-        ],
-    ]);
+    // GET – all interactions (likes + comments + saved state) for a post
+    // Registered whenever either flag is on so the save button can initialise its state
+    // even when likes-and-comments is disabled.
+    if (gca_flag_enabled('likes-and-comments') || gca_flag_enabled('post-saves')) {
+        register_rest_route('gca/v1', '/posts/(?P<post_id>\d+)/interactions', [
+            'methods'             => 'GET',
+            'callback'            => 'gca_lc_get_interactions',
+            'permission_callback' => 'is_user_logged_in',
+            'args'                => [
+                'post_id' => ['validate_callback' => fn ($v) => is_numeric($v)],
+            ],
+        ]);
+    }
 
-    // POST – toggle like on a post
-    register_rest_route('gca/v1', '/posts/(?P<post_id>\d+)/like', [
-        'methods'             => 'POST',
-        'callback'            => 'gca_lc_toggle_post_like',
-        'permission_callback' => 'is_user_logged_in',
-        'args'                => [
-            'post_id' => ['validate_callback' => fn ($v) => is_numeric($v)],
-        ],
-    ]);
+    if (gca_flag_enabled('likes-and-comments')) {
+        // POST – toggle like on a post
+        register_rest_route('gca/v1', '/posts/(?P<post_id>\d+)/like', [
+            'methods'             => 'POST',
+            'callback'            => 'gca_lc_toggle_post_like',
+            'permission_callback' => 'is_user_logged_in',
+            'args'                => [
+                'post_id' => ['validate_callback' => fn ($v) => is_numeric($v)],
+            ],
+        ]);
+
+        // POST – add a comment or reply
+        register_rest_route('gca/v1', '/posts/(?P<post_id>\d+)/comments', [
+            'methods'             => 'POST',
+            'callback'            => 'gca_lc_add_comment',
+            'permission_callback' => 'is_user_logged_in',
+            'args'                => [
+                'post_id' => ['validate_callback' => fn ($v) => is_numeric($v)],
+                'content' => [
+                    'required'          => true,
+                    'sanitize_callback' => 'sanitize_textarea_field',
+                    'validate_callback' => fn ($v) => is_string($v) && trim($v) !== '',
+                ],
+                'parent_id' => [
+                    'default'           => 0,
+                    'sanitize_callback' => 'absint',
+                ],
+            ],
+        ]);
+
+        // DELETE – delete own comment
+        register_rest_route('gca/v1', '/comments/(?P<comment_id>\d+)', [
+            'methods'             => 'DELETE',
+            'callback'            => 'gca_lc_delete_comment',
+            'permission_callback' => 'is_user_logged_in',
+            'args'                => [
+                'comment_id' => ['validate_callback' => fn ($v) => is_numeric($v)],
+            ],
+        ]);
+
+        // POST – toggle like on a comment
+        register_rest_route('gca/v1', '/comments/(?P<comment_id>\d+)/like', [
+            'methods'             => 'POST',
+            'callback'            => 'gca_lc_toggle_comment_like',
+            'permission_callback' => 'is_user_logged_in',
+            'args'                => [
+                'comment_id' => ['validate_callback' => fn ($v) => is_numeric($v)],
+            ],
+        ]);
+
+        // GET – user search for @mention autocomplete
+        register_rest_route('gca/v1', '/users/search', [
+            'methods'             => 'GET',
+            'callback'            => 'gca_lc_search_users',
+            'permission_callback' => 'is_user_logged_in',
+            'args'                => [
+                'q' => [
+                    'required'          => true,
+                    'sanitize_callback' => 'sanitize_text_field',
+                ],
+            ],
+        ]);
+    }
 
     // POST – toggle save on a post  [flag: post-saves]
     if (gca_flag_enabled('post-saves')) {
@@ -74,49 +128,8 @@ add_action('rest_api_init', function (): void {
                 'post_id' => ['validate_callback' => fn ($v) => is_numeric($v)],
             ],
         ]);
-    }
 
-    // POST – add a comment or reply
-    register_rest_route('gca/v1', '/posts/(?P<post_id>\d+)/comments', [
-        'methods'             => 'POST',
-        'callback'            => 'gca_lc_add_comment',
-        'permission_callback' => 'is_user_logged_in',
-        'args'                => [
-            'post_id' => ['validate_callback' => fn ($v) => is_numeric($v)],
-            'content' => [
-                'required'          => true,
-                'sanitize_callback' => 'sanitize_textarea_field',
-                'validate_callback' => fn ($v) => is_string($v) && trim($v) !== '',
-            ],
-            'parent_id' => [
-                'default'           => 0,
-                'sanitize_callback' => 'absint',
-            ],
-        ],
-    ]);
-
-    // DELETE – delete own comment
-    register_rest_route('gca/v1', '/comments/(?P<comment_id>\d+)', [
-        'methods'             => 'DELETE',
-        'callback'            => 'gca_lc_delete_comment',
-        'permission_callback' => 'is_user_logged_in',
-        'args'                => [
-            'comment_id' => ['validate_callback' => fn ($v) => is_numeric($v)],
-        ],
-    ]);
-
-    // POST – toggle like on a comment
-    register_rest_route('gca/v1', '/comments/(?P<comment_id>\d+)/like', [
-        'methods'             => 'POST',
-        'callback'            => 'gca_lc_toggle_comment_like',
-        'permission_callback' => 'is_user_logged_in',
-        'args'                => [
-            'comment_id' => ['validate_callback' => fn ($v) => is_numeric($v)],
-        ],
-    ]);
-
-    // Profile tab routes  [flag: post-saves]
-    if (gca_flag_enabled('post-saves')) {
+        // Profile tab routes
         register_rest_route('gca/v1', '/profile/me/saves', [
             'methods'             => 'GET',
             'callback'            => 'gca_profile_get_saves',
@@ -135,19 +148,6 @@ add_action('rest_api_init', function (): void {
             'permission_callback' => 'is_user_logged_in',
         ]);
     }
-
-    // GET – user search for @mention autocomplete
-    register_rest_route('gca/v1', '/users/search', [
-        'methods'             => 'GET',
-        'callback'            => 'gca_lc_search_users',
-        'permission_callback' => 'is_user_logged_in',
-        'args'                => [
-            'q' => [
-                'required'          => true,
-                'sanitize_callback' => 'sanitize_text_field',
-            ],
-        ],
-    ]);
 });
 
 // ---------------------------------------------------------------------------
