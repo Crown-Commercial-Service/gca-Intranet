@@ -22,6 +22,10 @@ $report_form_id = (int) get_option('gca_pf_report_form_id', 0);
 if (!$yes_form_id || !$no_form_id || !$report_form_id) {
     return;
 }
+
+$yes_form    = GFAPI::get_form($yes_form_id);
+$no_form     = GFAPI::get_form($no_form_id);
+$report_form = GFAPI::get_form($report_form_id);
 ?>
 
 <div class="gca-page-useful" id="gca-page-useful">
@@ -49,7 +53,7 @@ if (!$yes_form_id || !$no_form_id || !$report_form_id) {
   <div class="gca-page-useful__panel" id="gca-pf-panel-yes" hidden aria-hidden="true">
     <div class="govuk-width-container">
       <hr class="govuk-section-break govuk-section-break--visible gca-pf-separator">
-      <h2 class="gca-pf-panel-heading">Thanks for letting us know</h2>
+      <h2 class="gca-pf-panel-heading"><?php echo esc_html(!empty($yes_form['title']) ? $yes_form['title'] : 'Thanks for letting us know'); ?></h2>
       <?php gravity_form($yes_form_id, false, false, false, null, true, 1); ?>
     </div>
   </div>
@@ -58,7 +62,7 @@ if (!$yes_form_id || !$no_form_id || !$report_form_id) {
   <div class="gca-page-useful__panel" id="gca-pf-panel-no" hidden aria-hidden="true">
     <div class="govuk-width-container">
       <hr class="govuk-section-break govuk-section-break--visible gca-pf-separator">
-      <h2 class="gca-pf-panel-heading">Thanks for letting us know</h2>
+      <h2 class="gca-pf-panel-heading"><?php echo esc_html(!empty($no_form['title']) ? $no_form['title'] : 'Thanks for letting us know'); ?></h2>
       <?php gravity_form($no_form_id, false, false, false, null, true, 10); ?>
     </div>
   </div>
@@ -67,9 +71,9 @@ if (!$yes_form_id || !$no_form_id || !$report_form_id) {
   <div class="gca-page-useful__panel" id="gca-pf-panel-report" hidden aria-hidden="true">
     <div class="govuk-width-container">
       <hr class="govuk-section-break govuk-section-break--visible gca-pf-separator">
-      <h2 class="gca-pf-panel-heading">Help us improve our intranet</h2>
+      <h2 class="gca-pf-panel-heading"><?php echo esc_html(!empty($report_form['title']) ? $report_form['title'] : 'Help us improve our intranet'); ?></h2>
       <p class="gca-pf-report-hint">
-        Don&rsquo;t include personal or financial information like your National Insurance number or credit card details.
+        <?php echo wp_kses_post(!empty($report_form['description']) ? $report_form['description'] : 'Don&rsquo;t include personal or financial information like your National Insurance number or credit card details.'); ?>
       </p>
       <?php gravity_form($report_form_id, false, false, false, null, true, 20); ?>
     </div>

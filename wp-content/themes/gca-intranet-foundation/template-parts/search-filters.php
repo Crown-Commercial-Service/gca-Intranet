@@ -23,7 +23,6 @@ $is_all = empty($filter_types) && empty($filter_content_types) && empty($filter_
 // Static post type options per requirements: Work Updates, News.
 $post_type_options = [
     ['slug' => 'work_update', 'label' => 'Work Updates'],
-    ['slug' => 'news',        'label' => 'News'],
 ];
 
 if ($flag_on) {
@@ -41,7 +40,7 @@ $content_type_terms = get_terms([
 // Audience options are static per requirements.
 $audience_options = [
     ['value' => 'all_colleagues', 'label' => 'All colleagues'],
-    ['value' => 'line_manager',   'label' => 'Line Manager'],
+    ['value' => 'line_manager',   'label' => 'Line Managers'],
 ];
 ?>
 

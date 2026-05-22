@@ -28,6 +28,21 @@ if (!gca_flag_enabled('page-feedback')) {
 
 add_action('init', 'gca_pf_maybe_create_forms');
 
+add_filter('gform_pre_render', function (array $form): array {
+    $yes_id = (int) get_option('gca_pf_yes_form_id', 0);
+    $no_id  = (int) get_option('gca_pf_no_form_id', 0);
+    if (!in_array((int) $form['id'], [$yes_id, $no_id], true) || empty($form['description'])) {
+        return $form;
+    }
+    foreach ($form['fields'] as $field) {
+        if ($field->type === 'checkbox') {
+            $field->label = $form['description'];
+            break;
+        }
+    }
+    return $form;
+}, 10, 1);
+
 add_filter('gform_field_content', function (string $content, GF_Field $field, $value, $entry_id, int $form_id): string {
     $our_ids = array_filter([
         (int) get_option('gca_pf_yes_form_id', 0),
