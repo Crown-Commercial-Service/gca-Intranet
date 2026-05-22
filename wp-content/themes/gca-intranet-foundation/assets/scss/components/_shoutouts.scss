@@ -1,0 +1,121 @@
+// =============================================================================
+// Community Shout-outs
+// =============================================================================
+
+// ── Award icon (replaces profile avatar in shoutout cards) ───────────────────
+
+.gca-shoutout__icon {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: #fff3cd;
+    border: 1px solid #f5a623;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    color: #b87800;
+
+    svg {
+        width: 22px;
+        height: 22px;
+    }
+}
+
+// ── Recipient headline ────────────────────────────────────────────────────────
+
+.gca-shoutout__shouted-out {
+    @include govuk-font($size: 16);
+    color: govuk-colour('dark-grey');
+    margin: 0 2px;
+}
+
+.gca-shoutout__recipient-name {
+    @include govuk-font($size: 16);
+    font-weight: 700;
+    color: $govuk-text-colour;
+    text-decoration: none;
+
+    &:hover {
+        text-decoration: underline;
+    }
+}
+
+// ── Compose – recipient search ────────────────────────────────────────────────
+
+.gca-shoutout-compose__recipient-wrap {
+    position: relative;
+    margin-bottom: govuk-spacing(3);
+}
+
+#gca-shoutout-suggestions {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    z-index: 100;
+    list-style: none;
+    margin: 0;
+    padding: govuk-spacing(1) 0;
+    background: #fff;
+    border: 1px solid $gca-cw-card-border;
+    border-radius: 0 0 4px 4px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    max-height: 240px;
+    overflow-y: auto;
+
+    &[hidden] { display: none; }
+}
+
+.gca-shoutout-compose__suggestion {
+    display: flex;
+    align-items: center;
+    gap: govuk-spacing(3);
+    padding: govuk-spacing(2) govuk-spacing(4);
+    cursor: pointer;
+
+    &:hover,
+    &:focus {
+        background: #f0f4ff;
+        outline: none;
+    }
+
+    &--empty {
+        cursor: default;
+        @include govuk-font($size: 14);
+        color: govuk-colour('dark-grey');
+
+        &:hover { background: transparent; }
+    }
+}
+
+.gca-shoutout-compose__suggestion-avatar {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    flex-shrink: 0;
+    object-fit: cover;
+}
+
+.gca-shoutout-compose__suggestion-info {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+}
+
+.gca-shoutout-compose__suggestion-name {
+    @include govuk-font($size: 16);
+    font-weight: 600;
+    color: $govuk-text-colour;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.gca-shoutout-compose__suggestion-team {
+    @include govuk-font($size: 14);
+    color: govuk-colour('dark-grey');
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
