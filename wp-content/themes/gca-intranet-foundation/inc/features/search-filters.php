@@ -69,7 +69,7 @@ add_action('pre_get_posts', function (WP_Query $query): void {
     if (!$has_post_type_filter && !$has_content_type_filter && !$has_audience_filter) {
         // Check if only staff was selected — no WP posts needed.
         if (!empty($_GET['filter_post_type'])) {
-            $query->set('posts_per_page', 0);
+            $query->set('post__in', [0]); // WHERE ID IN (0) — returns nothing
         }
         return;
     }
@@ -79,6 +79,7 @@ add_action('pre_get_posts', function (WP_Query $query): void {
 
     if ($has_content_type_filter) {
         $post_types[] = 'page';
+        $post_types[] = 'post';
         $post_types   = array_unique($post_types);
 
         if ($has_post_type_filter) {
@@ -105,11 +106,11 @@ add_action('pre_get_posts', function (WP_Query $query): void {
             // Show everything EXCEPT line-manager-only content.
             $tax_clauses[] = [
                 'relation' => 'OR',
-                ['taxonomy' => 'audience', 'field' => 'slug', 'terms' => ['line-manager'], 'operator' => 'NOT IN'],
+                ['taxonomy' => 'audience', 'field' => 'slug', 'terms' => ['line-managers'], 'operator' => 'NOT IN'],
                 ['taxonomy' => 'audience', 'operator' => 'NOT EXISTS'],
             ];
         } elseif ($has_line_manager) {
-            $tax_clauses[] = ['taxonomy' => 'audience', 'field' => 'slug', 'terms' => ['line-manager'], 'operator' => 'IN'];
+            $tax_clauses[] = ['taxonomy' => 'audience', 'field' => 'slug', 'terms' => ['line-managers'], 'operator' => 'IN'];
         }
     }
 
@@ -124,9 +125,9 @@ add_action('pre_get_posts', function (WP_Query $query): void {
         $query->set('post_type', $post_types);
     } elseif (!$has_audience_filter) {
         // Only staff selected (no other active filter) — no WP posts needed.
-        $query->set('posts_per_page', 0);
+        $query->set('post__in', [0]); // WHERE ID IN (0) — returns nothing
     }
-}, 20);
+}, 25);
 
 /**
  * Enqueue filter interaction JS on search pages.

@@ -28,8 +28,9 @@ get_template_part('template-parts/breadcrumbs');
         <div class="govuk-grid-column-one-quarter archive-layout__filters">
           <?php
           get_template_part('template-parts/archive-filters', null, [
-            'archive_url' => $archive_url,
-            'taxonomies'  => $filter_taxonomies,
+            'archive_url'  => $archive_url,
+            'taxonomies'   => $filter_taxonomies,
+            'current_view' => $current_view,
           ]);
           ?>
         </div>
