@@ -371,7 +371,7 @@ function gca_directory_get_js(): string
 
     function showStaff(directorateName, teamName, staff) {
         if (panelBreadcrumb) { panelBreadcrumb.textContent = directorateName; }
-        if (panelTitle)      { panelTitle.textContent      = teamName + ' Team'; }
+        if (panelTitle)      { panelTitle.textContent      = teamName; }
         if (staffCount) {
             staffCount.textContent = 'Showing ' + staff.length + ' team member' +
                 (staff.length === 1 ? '' : 's') + '.';
