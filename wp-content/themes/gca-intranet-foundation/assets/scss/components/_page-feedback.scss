@@ -27,6 +27,8 @@ $pf-text: #0b0c0c;
     gap: 12px;
     background: $pf-cream;
     padding: 12px 15px;
+    border-top-left-radius: 4px;
+    border-top-right-radius: 4px;
 }
 
 .gca-pf-bar-left {
@@ -84,6 +86,7 @@ $pf-text: #0b0c0c;
     color: $pf-text !important;
     border: 1px solid $pf-olive-border;
     border-bottom-width: medium;
+    border-radius: 5px;
     cursor: pointer;
     font-size: 0.875rem !important;
     font-weight: 400 !important;
