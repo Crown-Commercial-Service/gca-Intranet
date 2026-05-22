@@ -1,0 +1,331 @@
+// =============================================================================
+// Community Polls
+// =============================================================================
+
+// ── Badge ─────────────────────────────────────────────────────────────────────
+
+.gca-poll-badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 3px 10px;
+    border-radius: 3px;
+    font-family: $govuk-font-family;
+    font-size: govuk-px-to-rem(12);
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    line-height: 1.4;
+    white-space: nowrap;
+
+    &--live {
+        background: #dce3fc;
+        color: #1a3ab8;
+        border: 1px solid #b6c2f8;
+    }
+
+    &--closed {
+        background: #f3f2f1;
+        color: #505a5f;
+        border: 1px solid #d9d9d9;
+    }
+}
+
+// ── Poll card (extends .gca-cw-post) ─────────────────────────────────────────
+
+.gca-poll {
+    // inherits all gca-cw-post styles
+}
+
+// ── Title (optional eyebrow above the question) ───────────────────────────────
+
+.gca-poll__title {
+    font-family: $govuk-font-family;
+    font-size: govuk-px-to-rem(12);
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    color: govuk-colour('dark-grey');
+    margin: govuk-spacing(4) 0 govuk-spacing(1);
+}
+
+// ── Question ──────────────────────────────────────────────────────────────────
+
+.gca-poll__question {
+    @include govuk-font($size: 19);
+    font-weight: 700;
+    color: $govuk-text-colour;
+    margin: govuk-spacing(3) 0 govuk-spacing(4);
+    line-height: 1.4;
+
+    // When no title precedes it, restore top spacing
+    .gca-cw-post__header + & {
+        margin-top: govuk-spacing(4);
+    }
+}
+
+// ── Options ───────────────────────────────────────────────────────────────────
+
+.gca-poll__options {
+    display: flex;
+    flex-direction: column;
+    gap: govuk-spacing(3);
+    margin-bottom: govuk-spacing(3);
+}
+
+.gca-poll__option {
+    position: relative;
+    display: flex;
+    align-items: center;
+    width: 100%;
+    padding: govuk-spacing(3) govuk-spacing(4);
+    border: 1px solid #d0d5e0;
+    border-radius: 6px;
+    background: #fff;
+    overflow: hidden;
+    text-align: left;
+    cursor: pointer;
+    transition: border-color 0.15s;
+
+    &:hover {
+        border-color: #4c6ef5;
+    }
+
+    &:focus {
+        @include govuk-focused-text;
+        outline-offset: 2px;
+    }
+
+    &--voted {
+        border-color: #4c6ef5;
+        font-weight: 700;
+
+        .gca-poll__option-fill {
+            background: #dce3fc;
+        }
+    }
+
+    // When rendered as a div (closed poll) — remove button affordances
+    &:not(button) {
+        cursor: default;
+
+        &:hover {
+            border-color: #d0d5e0;
+        }
+    }
+}
+
+.gca-poll__option-fill {
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    background: #eef1fb;
+    border-radius: 4px 0 0 4px;
+    transition: width 0.4s ease;
+    pointer-events: none;
+}
+
+.gca-poll__option-text {
+    position: relative;
+    z-index: 1;
+    flex: 1;
+    @include govuk-font($size: 16);
+    color: $govuk-text-colour;
+}
+
+.gca-poll__option-pct {
+    position: relative;
+    z-index: 1;
+    padding-left: govuk-spacing(4);
+    @include govuk-font($size: 16);
+    font-weight: 700;
+    color: govuk-colour('dark-grey');
+    white-space: nowrap;
+}
+
+// ── Footer (vote count + time left) ──────────────────────────────────────────
+
+.gca-poll__footer {
+    @include govuk-font($size: 14);
+    color: govuk-colour('dark-grey');
+    margin-bottom: govuk-spacing(3);
+}
+
+// ── View voters ───────────────────────────────────────────────────────────────
+
+.gca-poll__voters-btn {
+    @include govuk-font($size: 14);
+    font-weight: 600;
+    color: $gca-action-blue;
+    background: none;
+    border: none;
+    padding: 0;
+    cursor: pointer;
+    text-decoration: underline;
+    margin-bottom: govuk-spacing(3);
+    display: inline-block;
+
+    &:hover {
+        color: darken($gca-action-blue, 10%);
+    }
+
+    &:focus {
+        @include govuk-focused-text;
+    }
+}
+
+.gca-poll__voters-panel {
+    background: #f8f9fc;
+    border: 1px solid $gca-cw-card-border;
+    border-radius: 6px;
+    padding: govuk-spacing(4);
+    margin-bottom: govuk-spacing(3);
+
+    &[hidden] { display: none; }
+}
+
+.gca-poll__voters-group {
+    & + & {
+        margin-top: govuk-spacing(4);
+        padding-top: govuk-spacing(4);
+        border-top: 1px solid $gca-cw-card-border;
+    }
+}
+
+.gca-poll__voters-option-label {
+    @include govuk-font($size: 14);
+    font-weight: 700;
+    color: $govuk-text-colour;
+    margin: 0 0 govuk-spacing(2);
+}
+
+.gca-poll__voters-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: govuk-spacing(2);
+}
+
+.gca-poll__voter {
+    display: flex;
+    align-items: center;
+    gap: govuk-spacing(2);
+}
+
+.gca-poll__voter-avatar {
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    flex-shrink: 0;
+    object-fit: cover;
+}
+
+.gca-poll__voter-name {
+    @include govuk-font($size: 14);
+    font-weight: 600;
+    color: $govuk-text-colour;
+}
+
+.gca-poll__voter-team {
+    @include govuk-font($size: 14);
+    color: govuk-colour('dark-grey');
+
+    &::before {
+        content: '\00b7';
+        margin: 0 4px;
+    }
+}
+
+.gca-poll__voters-empty {
+    @include govuk-font($size: 14);
+    color: govuk-colour('dark-grey');
+    margin: 0;
+}
+
+// ── Poll compose form ─────────────────────────────────────────────────────────
+
+.gca-poll-compose__question {
+    width: 100%;
+    margin-bottom: govuk-spacing(4);
+}
+
+.gca-poll-compose__options-label {
+    @include govuk-font($size: 16);
+    font-weight: 700;
+    color: $govuk-text-colour;
+    display: block;
+    margin-bottom: govuk-spacing(2);
+}
+
+.gca-poll-compose__options-list {
+    display: flex;
+    flex-direction: column;
+    gap: govuk-spacing(2);
+    margin-bottom: govuk-spacing(3);
+}
+
+.gca-poll-compose__option-row {
+    display: flex;
+    align-items: center;
+    gap: govuk-spacing(2);
+}
+
+.gca-poll-compose__option-input {
+    flex: 1;
+}
+
+.gca-poll-compose__option-remove {
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: none;
+    border: 1px solid $gca-cw-card-border;
+    border-radius: 4px;
+    cursor: pointer;
+    color: govuk-colour('dark-grey');
+    font-size: 18px;
+    line-height: 1;
+    flex-shrink: 0;
+
+    &:hover {
+        background: #f3f2f1;
+        color: $govuk-text-colour;
+    }
+}
+
+.gca-poll-compose__add-option {
+    @include govuk-font($size: 16);
+    font-weight: 600;
+    color: $gca-action-blue;
+    background: none;
+    border: none;
+    padding: 0;
+    cursor: pointer;
+    text-decoration: underline;
+    margin-bottom: govuk-spacing(4);
+    display: inline-block;
+
+    &:hover { color: darken($gca-action-blue, 10%); }
+    &:focus { @include govuk-focused-text; }
+}
+
+.gca-poll-compose__deadline {
+    margin-bottom: govuk-spacing(4);
+}
+
+.gca-poll-compose__deadline-label {
+    @include govuk-font($size: 16);
+    font-weight: 700;
+    color: $govuk-text-colour;
+    display: block;
+    margin-bottom: govuk-spacing(1);
+}
+
+.gca-poll-compose__deadline-hint {
+    @include govuk-font($size: 14);
+    color: govuk-colour('dark-grey');
+    display: block;
+    margin-bottom: govuk-spacing(2);
+}
