@@ -78,9 +78,11 @@ get_template_part('template-parts/breadcrumbs');
               <?php the_content(); ?>
             </div>
 
-            <?php get_template_part('template-parts/likes-and-comments', null, [
-                'post_id' => get_the_ID(),
-            ]); ?>
+            <?php if (gca_flag_enabled('likes-and-comments')) : ?>
+                <?php get_template_part('template-parts/likes-and-comments', null, [
+                    'post_id' => get_the_ID(),
+                ]); ?>
+            <?php endif; ?>
 
         <?php endwhile; endif; ?>
     </main>
