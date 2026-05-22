@@ -36,7 +36,8 @@ if ($flag_on) {
     $per_page     = 10;
     $current_page = max(1, (int) (get_query_var('paged') ?: 1));
 
-    $include_staff = empty($filter_types) || in_array('staff', $filter_types, true);
+    $has_any_filter = !empty($filter_types) || !empty($filter_content_types) || !empty($filter_audiences);
+    $include_staff  = !$has_any_filter || in_array('staff', $filter_types, true);
     $staff_results = $include_staff ? gca_search_staff($search_query, 50) : [];
     $all_posts     = $wp_query->posts ?: [];
 
