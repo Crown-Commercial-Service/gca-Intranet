@@ -1351,7 +1351,10 @@ function gca_get_search_autocomplete_items(string $term, int $limit = 5): array
         }
     }
 
-    $post_types = array_keys(get_post_types(['public' => true, 'exclude_from_search' => false]));
+    $post_types = array_values(array_diff(
+        array_keys(get_post_types(['public' => true, 'exclude_from_search' => false])),
+        ['blog', 'news']
+    ));
 
     $posts = get_posts([
         's'                   => $term,
@@ -1553,7 +1556,10 @@ add_action('pre_get_posts', function (WP_Query $query): void {
     if (!is_admin() && $query->is_main_query() && $query->is_search()) {
         $query->set('posts_per_page', 10);
 
-        $post_types = array_keys(get_post_types(['public' => true, 'exclude_from_search' => false]));
+        $post_types = array_values(array_diff(
+            array_keys(get_post_types(['public' => true, 'exclude_from_search' => false])),
+            ['blog', 'news']
+        ));
         $query->set('post_type', $post_types);
     }
 });
