@@ -19,6 +19,7 @@ include('post-types/event.php');
 include('post-types/blog.php');
 include('post-types/work_update.php');
 include('post-types/downloadable.php');
+include('post-types/related-articles.php');
 
 
 
