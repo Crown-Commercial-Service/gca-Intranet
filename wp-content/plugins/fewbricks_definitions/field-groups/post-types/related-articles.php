@@ -15,7 +15,7 @@ $fg = ( new fewacf\field_group( 'Related Articles', '202605200001a', $location, 
 ] ) );
 
 $fg->add_field( new acf_fields\true_false( 'Show related articles', 'related_articles_enabled', '202605200005a', [
-    'instructions'  => 'Toggle to show or hide the related articles section on this post.',
+    'instructions'  => 'Toggle to show or hide the related articles section on this post. When visible: if a taxonomy is selected, the 3 most recent matching posts are shown; if specific articles are chosen, those are shown; if nothing is selected, the 3 most recent posts from any type are shown.',
     'default_value' => 1,
     'ui'            => 1,
     'ui_on_text'    => 'Visible',

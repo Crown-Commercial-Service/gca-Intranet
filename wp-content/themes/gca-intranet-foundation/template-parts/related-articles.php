@@ -53,7 +53,6 @@ if ( empty( $posts ) ) {
             <h2 class="govuk-heading-m" data-testid="related-articles-heading">
                 <?php echo esc_html( $heading ); ?>
             </h2>
-            <hr class="govuk-section-break govuk-section-break--visible govuk-!-margin-bottom-6">
         </div>
     </div>
     <div class="govuk-grid-row" data-testid="related-articles-list">
