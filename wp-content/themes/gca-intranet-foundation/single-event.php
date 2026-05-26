@@ -66,8 +66,6 @@ get_template_part('template-parts/breadcrumbs');
                         <a href="<?php echo esc_url($cta_url); ?>"
                             class="govuk-button event_cta_button govuk-!-margin-bottom-0" data-module="govuk-button" data-testid="event-cta-button">
                                 <?php echo esc_html($cta_label); ?>
-                                <svg class="govuk-!-padding-left-2" xmlns="http://www.w3.org/2000/svg" width="17.5" height="19" viewBox="0 0 33 40" aria-hidden="true" focusable="false">
-                                <path fill="currentColor" d="M0 0h13l20 20-20 20H0l20-20z" />
                             </svg>
                         </a>
                     </div>
