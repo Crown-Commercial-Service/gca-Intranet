@@ -1,0 +1,24 @@
+/* -----------------------------------------------------------------------
+   GCA Author Selector — admin styles
+   ----------------------------------------------------------------------- */
+
+/* Force the Select2 container to fill the meta-box column. */
+.gca-author-selector-wrap .select2-container {
+	width: 100% !important;
+}
+
+/* ---- User option layout (shared between list rows and selected value) ---- */
+.gca-user-option {
+	display:     inline-flex;
+	align-items: center;
+	gap:         8px;
+}
+
+/* Circular avatar thumbnail. */
+.gca-user-option__avatar {
+	width:         24px;
+	height:        24px;
+	border-radius: 50%;
+	object-fit:    cover;
+	flex-shrink:   0;
+}

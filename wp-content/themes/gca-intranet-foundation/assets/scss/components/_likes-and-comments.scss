@@ -1,0 +1,494 @@
+// =============================================================================
+// Likes & Comments
+// =============================================================================
+
+$gca-lc-border:     #b1b4b6;
+$gca-lc-bg:         #f8f8f8;
+$gca-lc-liked:      #ca3535;
+$gca-lc-blue:      #1d70b8;
+$gca-lc-reply-bg:   #f3f2f1;
+$gca-lc-icon-color: #767676;
+
+.gca-lc {
+    font-family: $govuk-font-family;
+}
+
+// ── Like bar ────────────────────────────────────────────────────────────────
+
+.gca-lc__like-bar {
+    display: flex;
+    align-items: center;
+    gap: govuk-spacing(4);
+    margin-bottom: govuk-spacing(4);
+    border-top: 1px solid $gca-lc-border;
+    padding-top: govuk-spacing(3);
+}
+
+.gca-lc__like-btn,
+.gca-lc__comment-toggle-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: govuk-spacing(1);
+    background: none;
+    border: 2px solid transparent;
+    border-radius: 4px;
+    padding: govuk-spacing(1) govuk-spacing(2);
+    cursor: pointer;
+    font-family: $govuk-font-family;
+    font-size: govuk-px-to-rem(19);
+    font-weight: 600;
+    color: $govuk-text-colour;
+    transition: color 0.15s ease, border-color 0.15s ease;
+
+    &:hover {
+        color: $gca-lc-liked;
+        text-decoration: underline;
+    }
+
+    &:focus {
+        @include govuk-focused-text;
+        outline-offset: 0;
+    }
+}
+
+// Pressed/liked state
+.gca-lc__like-btn[aria-pressed="true"] {
+    color: $gca-lc-blue;
+
+    .gca-lc__like-icon {
+        color: $gca-lc-blue;
+    }
+
+    .gca-lc__like-path {
+        fill: $gca-lc-blue;
+        stroke: $gca-lc-blue;
+    }
+}
+
+.gca-lc__like-icon,
+.gca-lc__comment-icon {
+    color: $gca-lc-icon-color;
+}
+
+.gca-lc__like-count {
+    min-width: 1.2em;
+    text-align: left;
+}
+
+// ── Comments panel ──────────────────────────────────────────────────────────
+
+.gca-lc__comments-panel {
+    border-top: 1px solid $gca-lc-border;
+    padding-top: govuk-spacing(4);
+
+    &[hidden] {
+        display: none;
+    }
+}
+
+// ── Comment form ────────────────────────────────────────────────────────────
+
+.gca-lc__form-wrap {
+    display: flex;
+    gap: govuk-spacing(2);
+    margin-bottom: govuk-spacing(5);
+    position: relative;
+}
+
+.gca-lc__form-avatar {
+    flex-shrink: 0;
+    padding-top: govuk-spacing(1);
+}
+
+.gca-lc__avatar {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    display: block;
+    object-fit: cover;
+    flex-shrink: 0;
+}
+
+.gca-lc__form {
+    flex: 1;
+    min-width: 0;
+}
+
+.gca-lc__textarea-group {
+    margin-bottom: govuk-spacing(2);
+    position: relative;
+}
+
+.gca-lc__textarea {
+    width: 100%;
+    resize: vertical;
+    min-height: 80px;
+    font-size: govuk-px-to-rem(19);
+    border: 1px solid $gca-lc-border;
+    border-radius: 5px;
+}
+
+.gca-lc__form-actions {
+    display: flex;
+    align-items: center;
+    gap: govuk-spacing(3);
+
+    .govuk-button {
+        margin-bottom: 0;
+        background-color: #B8CA1C;
+        color: #000000;
+        padding: 6px 14px;
+        border-radius: 8px;
+    }
+}
+
+// ── @mention dropdown ───────────────────────────────────────────────────────
+
+.gca-lc__mention-list {
+    position: absolute;
+    top: calc(100% + 2px);
+    left: 0;
+    right: 0;
+    z-index: 100;
+    background: #fff;
+    border: 2px solid $govuk-focus-colour;
+    border-radius: 4px;
+    list-style: none;
+    margin: 0;
+    padding: govuk-spacing(1) 0;
+    max-height: 220px;
+    overflow-y: auto;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
+
+    &[hidden] {
+        display: none;
+    }
+}
+
+.gca-lc__mention-item {
+    display: flex;
+    align-items: center;
+    gap: govuk-spacing(2);
+    padding: govuk-spacing(1) govuk-spacing(3);
+    cursor: pointer;
+    font-size: govuk-px-to-rem(16);
+
+    &:hover,
+    &[aria-selected="true"] {
+        background: $govuk-focus-colour;
+        color: $govuk-focus-text-colour;
+    }
+
+    img {
+        width: 24px;
+        height: 24px;
+        border-radius: 50%;
+        flex-shrink: 0;
+        object-fit: cover;
+    }
+}
+
+// ── Comments list ───────────────────────────────────────────────────────────
+
+.gca-lc__list {
+    display: flex;
+    flex-direction: column;
+    gap: govuk-spacing(4);
+}
+
+.gca-lc__loading {
+    color: govuk-colour('dark-grey');
+    margin-bottom: 0;
+}
+
+// ── Individual comment ──────────────────────────────────────────────────────
+
+.gca-lc__comment {
+    display: flex;
+    gap: govuk-spacing(2);
+}
+
+.gca-lc__comment--reply {
+    margin-left: govuk-spacing(7);
+    margin-top: govuk-spacing(2);
+
+    @include govuk-media-query($until: tablet) {
+        margin-left: govuk-spacing(4);
+    }
+}
+
+.gca-lc__comment-avatar {
+    flex-shrink: 0;
+    padding-top: 4px;
+
+    img {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        display: block;
+        object-fit: cover;
+    }
+}
+
+.gca-lc__comment-body {
+    flex: 1;
+    min-width: 0;
+    background: $gca-lc-bg;
+    border-radius: 4px;
+    padding: govuk-spacing(2) govuk-spacing(3);
+}
+
+.gca-lc__comment--reply .gca-lc__comment-body {
+    background: $gca-lc-reply-bg;
+}
+
+.gca-lc__comment-header {
+    display: flex;
+    align-items: baseline;
+    flex-wrap: wrap;
+    gap: govuk-spacing(1);
+    margin-bottom: govuk-spacing(1);
+}
+
+.gca-lc__comment-author {
+    font-weight: 700;
+    font-size: govuk-px-to-rem(16);
+    color: $govuk-text-colour;
+    text-decoration: none;
+
+    &:hover {
+        text-decoration: underline;
+    }
+}
+
+.gca-lc__comment-date {
+    font-size: govuk-px-to-rem(14);
+    color: govuk-colour('dark-grey');
+}
+
+.gca-lc__comment-text {
+    margin: 0 0 govuk-spacing(2);
+    font-size: govuk-px-to-rem(19);
+    word-break: break-word;
+    white-space: pre-wrap;
+}
+
+.gca-lc__mention {
+    color: govuk-colour('blue');
+    font-weight: 600;
+    text-decoration: none;
+
+    &:hover {
+        text-decoration: underline;
+    }
+}
+
+// ── Comment actions bar ─────────────────────────────────────────────────────
+
+.gca-lc__comment-actions {
+    display: flex;
+    align-items: center;
+    gap: govuk-spacing(3);
+    flex-wrap: wrap;
+}
+
+.gca-lc__action-btn {
+    background: none;
+    border: none;
+    padding: 0;
+    cursor: pointer;
+    font-family: $govuk-font-family;
+    font-size: govuk-px-to-rem(19);
+    font-weight: 600;
+    color: govuk-colour('dark-grey');
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    border-bottom: 2px solid transparent;
+
+    &:hover {
+        color: $govuk-text-colour;
+        border-bottom-color: $govuk-text-colour;
+        text-decoration: none;
+    }
+
+    &:focus {
+        @include govuk-focused-text;
+    }
+
+    &[aria-pressed="true"] {
+        color: $gca-lc-blue;
+
+        .gca-lc__like-path {
+            fill: $gca-lc-blue;
+            stroke: $gca-lc-blue;
+        }
+    }
+}
+
+.gca-lc__action-btn[data-action="show-reply-form"] {
+    color: #1d70b8;
+
+    &:hover {
+        color: darken(#1d70b8, 10%);
+        border-bottom-color: darken(#1d70b8, 10%);
+    }
+}
+
+.gca-lc__action-btn--delete {
+    color: $gca-lc-liked;
+
+    &:hover {
+        color: #a0280e;
+        border-bottom-color: #a0280e;
+    }
+}
+
+// ── Reply form (inline) ─────────────────────────────────────────────────────
+
+.gca-lc__reply-form-wrap {
+    margin-top: govuk-spacing(3);
+    margin-left: govuk-spacing(7);
+
+    @include govuk-media-query($until: tablet) {
+        margin-left: govuk-spacing(4);
+    }
+}
+
+// ── Notification banner (success/error) ─────────────────────────────────────
+
+.gca-lc__notification {
+    margin-bottom: govuk-spacing(3);
+
+    &[hidden] {
+        display: none;
+    }
+}
+
+// Delete confirmation modal
+.gca-lc-delete-modal {
+    position: fixed;
+    inset: 0;
+    z-index: 9999;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: govuk-spacing(3);
+    font-family: $govuk-font-family;
+}
+
+.gca-lc-delete-modal__overlay {
+    position: absolute;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.5);
+}
+
+.gca-lc-delete-modal__dialog {
+    position: relative;
+    width: min(640px, 100%);
+    background: #fff;
+    color: $govuk-text-colour;
+    border: 10px solid #0b0c0c;
+    border-top-width: 48px;
+    outline: none;
+}
+
+.gca-lc-delete-modal__close {
+    position: absolute;
+    top: -45px;
+    right: -6px;
+    width: 38px;
+    height: 38px;
+    border: 0;
+    background: transparent;
+    color: #fff;
+    cursor: pointer;
+    font-size: 44px;
+    font-weight: 700;
+    line-height: 1;
+    padding: 0;
+
+    &:focus {
+        @include govuk-focused-text;
+    }
+}
+
+.gca-lc-delete-modal__content {
+    padding: 20px 28px 38px;
+}
+
+.gca-lc-delete-modal__title {
+    margin: 0 0 46px;
+    max-width: 560px;
+    font-size: govuk-px-to-rem(36);
+    line-height: 1.5;
+    font-weight: 700;
+    letter-spacing: 0;
+}
+
+.gca-lc-delete-modal__body {
+    margin: 0 0 62px;
+    font-size: govuk-px-to-rem(19);
+    line-height: 1.35;
+}
+
+.gca-lc-delete-modal__actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 13px;
+    align-items: center;
+}
+
+.gca-lc-delete-modal__confirm,
+.gca-lc-delete-modal__cancel {
+    border: 0;
+    border-radius: 5px;
+    cursor: pointer;
+    font-family: $govuk-font-family;
+    font-size: govuk-px-to-rem(19);
+    line-height: 1;
+    padding: 11px 18px;
+
+    &:focus {
+        @include govuk-focused-text;
+    }
+}
+
+.gca-lc-delete-modal__confirm {
+    background: #b8ca1c;
+    color: #000;
+
+    &:hover {
+        background: #a6b719;
+    }
+}
+
+.gca-lc-delete-modal__cancel {
+    background: #c8c8c8;
+    color: #000;
+
+    &:hover {
+        background: #b5b5b5;
+    }
+}
+
+@include govuk-media-query($until: tablet) {
+    .gca-lc-delete-modal {
+        align-items: flex-start;
+        padding-top: 64px;
+    }
+
+    .gca-lc-delete-modal__content {
+        padding: 20px;
+    }
+
+    .gca-lc-delete-modal__title {
+        margin-bottom: 28px;
+        font-size: govuk-px-to-rem(28);
+        line-height: 1.25;
+    }
+
+    .gca-lc-delete-modal__body {
+        margin-bottom: 36px;
+    }
+}

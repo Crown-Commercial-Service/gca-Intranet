@@ -64,6 +64,34 @@ class group_page_content_default extends project_brick
 		$l->add_brick(new component_subpage_cards('subpagecards', '202503100011b'));
 		$fc->add_layout($l);
 
+		// $l = new layout('', 'homehero', '202604100033a');
+		// $l->add_brick(new component_homehero('homehero', '202604100034a'));
+		// $fc->add_layout($l);
+
+		// $l = new layout('', 'latestnews', '202604100035a');
+		// $l->add_brick(new component_latestnews('latestnews', '202604100036a'));
+		// $fc->add_layout($l);
+
+		$l = new layout('', 'takealook', '202604100037a');
+		$l->add_brick(new component_takealook('takealook', '202604100038a'));
+		$fc->add_layout($l);
+
+		$l = new layout('', 'quicklinks', '202604100039a');
+		$l->add_brick(new component_quicklinks('quicklinks', '202604100040a'));
+		$fc->add_layout($l);
+
+		// $l = new layout('', 'workupdates', '202604100041a');
+		// $l->add_brick(new component_workupdates('workupdates', '202604100042a'));
+		// $fc->add_layout($l);
+
+		// $l = new layout('', 'blogs', '202604100043a');
+		// $l->add_brick(new component_blogs('blogs', '202604100044a'));
+		// $fc->add_layout($l);
+
+		$l = new layout('', 'events', '202604100045a');
+		$l->add_brick(new component_events('events', '202604100046a'));
+		$fc->add_layout($l);
+
 		// $l = new layout('', 'sectors', '202002181437a');
 		// $l->add_brick(new component_sectors('sectors', '202002181437b'));
 		// $fc->add_layout($l);

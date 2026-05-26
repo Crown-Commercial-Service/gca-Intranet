@@ -42,5 +42,18 @@ main.govuk-main-wrapper {
     
     img {
         border-radius: 50%;
+        width: 150px;
+        height: 150px;
+        object-fit: cover;
+    }
+}
+
+.blogs-container,
+.work-updates-container {
+    @media (max-width: 1024px) {
+        .govuk-grid-column-one-third,
+        .govuk-grid-column-two-thirds {
+            width: 100%;
+        }
     }
 }

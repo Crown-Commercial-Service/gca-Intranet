@@ -321,7 +321,7 @@ main.govuk-main-wrapper {
       font-size: 48px !important;
     }
 
-    h1, h2, h3 {
+    h1, h2, h3, h4 {
         font-weight: 700 !important;
     }
 
@@ -334,6 +334,10 @@ main.govuk-main-wrapper {
     }
 
     h3, h3.govuk-heading-l {
+        font-size: 22px !important;
+    }
+
+    h4, h4.govuk-heading-l {
         font-size: 19px !important;
     }
 
@@ -370,10 +374,27 @@ main.govuk-main-wrapper {
         &:focus {
             color: $color-active-focus !important;
         }
+
+        &.events-tabs__tab,
+        &.events-tabs__tab--active {
+            &:link,
+            &:visited,
+            &:hover {
+                color: #0b0c0c !important;
+            }
+        }
     }
 }
 
 .gca-richtext {
+    h3 {
+        font-size: 22px !important;
+    }
+
+    h4 {
+        font-size: 19px !important;
+    }
+
     // Combine p, ul li, and ol li since they share the font-size
     p,
     ul li,

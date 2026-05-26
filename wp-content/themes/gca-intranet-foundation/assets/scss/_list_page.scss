@@ -23,6 +23,10 @@
     
         }
     }
+
+    @media (max-width: 640px) {
+        flex-direction: column;
+    }
 }
 
 .blog-box {
@@ -46,6 +50,10 @@
     
         }
     }
+
+    @media (max-width: 640px) {
+        flex-direction: column;
+    }
 }
 
 .date_bottom {
@@ -55,6 +63,54 @@
     gap: 15px;
 }
 
+.events-tabs {
+    display: flex;
+    gap: govuk-spacing(2);
+    margin-bottom: govuk-spacing(6);
+
+    &__tab {
+        text-align: center;
+        padding: govuk-spacing(2) govuk-spacing(4);
+        border-radius: 999px;
+        border: 1px solid $gca-border-mid;
+        text-decoration: none;
+        color: #0b0c0c;
+        font-family: $govuk-font-family;
+        font-size: 16px;
+        white-space: nowrap;
+        background: govuk-colour("white");
+
+        @include govuk-media-query($from: tablet) {
+            padding: govuk-spacing(2) govuk-spacing(5);
+        }
+
+        &:hover {
+            color: $govuk-link-colour;
+            text-decoration: none;
+        }
+
+        &--active {
+            background: #95B4F9;
+            border-color: #95B4F9;
+            color: #0b0c0c;
+            font-weight: 600;
+
+            &:visited,
+            &:hover {
+                color: #0b0c0c !important;
+            }
+        }
+    }
+}
+
+.events-month-heading {
+    margin-top: govuk-spacing(6);
+
+    &:first-child {
+        margin-top: 0;
+    }
+}
+
 .event-card {
     background: #fff;
     padding: govuk-spacing(4);
@@ -62,7 +118,7 @@
     border: 1px solid $gca-border-mid;
     border-radius: 10px;
 
-    h2 a {
+    h3 a {
         color: $govuk-link-colour !important;
 
         &:hover {

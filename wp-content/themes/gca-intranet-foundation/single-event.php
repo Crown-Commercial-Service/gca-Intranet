@@ -1,7 +1,7 @@
 <?php get_header(); ?>
 
 <?php
-$hero_image_url = get_template_directory_uri() . '/assets/img/events.jpg';
+$hero_image_url = gca_get_banner_url('gca_banner_events', 'events.jpg');
 
 get_template_part('template-parts/hero', null, [
   'title'     => 'Event',
@@ -77,6 +77,10 @@ get_template_part('template-parts/breadcrumbs');
             <div class="govuk-body" data-testid="event-content">
               <?php the_content(); ?>
             </div>
+
+            <?php get_template_part('template-parts/likes-and-comments', null, [
+                'post_id' => get_the_ID(),
+            ]); ?>
 
         <?php endwhile; endif; ?>
     </main>

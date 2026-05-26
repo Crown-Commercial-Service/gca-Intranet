@@ -8,7 +8,6 @@
   <meta charset="<?php bloginfo('charset'); ?>">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <?php wp_head(); ?>
-  <script type="text/javascript" src="https://api.useberry.com/integrations/liveUrl/scripts/useberryScript.js"></script>
 </head>
 
 <body <?php body_class('govuk-template__body govuk-frontend-supported'); ?>>
@@ -64,18 +63,29 @@ height="0" width="0" style="display:none;visibility:hidden" title="Google Tag Ma
             </nav>
 
             <?php if (!is_search()) : ?>
-            <form class="site-search" role="search" action="<?php echo esc_url(get_theme_mod('gca_search_url', home_url('/'))); ?>" method="get">
+            <form class="site-search site-search--autocomplete" role="search" action="<?php echo esc_url(get_theme_mod('gca_search_url', home_url('/'))); ?>" method="get" data-autocomplete="header-search">
               <label class="govuk-visually-hidden" for="site-search">Search the intranet</label>
               <div class="search-input-group">
-                <input id="site-search" name="s" type="search" class="govuk-input" placeholder="Search the intranet" autocomplete="off">
-                <button class="govuk-button search-submit" type="submit" aria-label="Search the intranet">
+                <input id="site-search" name="s" type="search" class="govuk-input" placeholder="Search the intranet" autocomplete="off" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="site-search-suggestions">
+                <button class="govuk-button search-submit" type="submit" aria-label="Search">
                   <span class="govuk-visually-hidden">Search</span>
-                  <svg class="gca-search-icon" width="22" height="22" viewBox="0 0 22 22" fill="none" aria-hidden="true" focusable="false" xmlns="http://www.w3.org/2000/svg">
-                    <path d="M19.25 19.25L15.2625 15.2625M17.4167 10.0833C17.4167 14.1334 14.1334 17.4167 10.0833 17.4167C6.03325 17.4167 2.75 14.1334 2.75 10.0833C2.75 6.03325 6.03325 2.75 10.0833 2.75C14.1334 2.75 17.4167 6.03325 17.4167 10.0833Z" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+                  <svg class="gca-search-icon" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 25 25" fill="none" aria-hidden="true" focusable="false">
+                    <path d="M23.25 23.25L17.9333 17.9333M20.8056 11.0278C20.8056 16.4279 16.4279 20.8056 11.0278 20.8056C5.62766 20.8056 1.25 16.4279 1.25 11.0278C1.25 5.62766 5.62766 1.25 11.0278 1.25C16.4279 1.25 20.8056 5.62766 20.8056 11.0278Z" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
                   </svg>
                 </button>
               </div>
+              <div class="gca-search-autocomplete" id="site-search-suggestions" hidden></div>
             </form>
+            <?php endif; ?>
+
+            <?php if (is_user_logged_in() && gca_flag_enabled('staff-profiles')) :
+              $current_user = wp_get_current_user();
+              $profile_url  = home_url('/profile/' . rawurlencode($current_user->user_login) . '/');
+              $avatar_url   = get_avatar_url($current_user->ID, ['size' => 40]);
+            ?>
+            <a href="<?php echo esc_url($profile_url); ?>" class="header-profile-link" aria-label="<?php echo esc_attr('View profile: ' . $current_user->display_name); ?>">
+              <img class="header-profile-avatar" src="<?php echo esc_url($avatar_url); ?>" alt="" width="40" height="40">
+            </a>
             <?php endif; ?>
 
             <button class="global-navigation__toggler" type="button" aria-controls="primaryNav" aria-expanded="false" aria-label="Toggle navigation">

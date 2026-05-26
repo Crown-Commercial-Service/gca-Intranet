@@ -130,6 +130,103 @@ body {
     color: #0b0c0c;
 }
 
+.site-search--autocomplete {
+    position: relative;
+    display: inline-block;
+    width: auto;
+    max-width: 24rem;
+
+    .search-input-group {
+        max-width: none;
+    }
+}
+
+.gca-search-autocomplete {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    z-index: 200;
+    background: #fff;
+    border: 1px solid #b1b4b6;
+    border-top: 0;
+    box-shadow: 0 12px 24px rgba(11, 12, 12, 0.12);
+}
+
+.gca-search-autocomplete__status {
+    padding: 12px 16px;
+    color: #505a5f;
+    font-size: 16px;
+    line-height: 1.4;
+}
+
+.gca-search-autocomplete__list {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.gca-search-autocomplete__item + .gca-search-autocomplete__item {
+    border-top: 1px solid #d8dde0;
+}
+
+.gca-search-autocomplete__option {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    width: 100%;
+    box-sizing: border-box;
+    padding: 12px 16px;
+    background: #fff;
+    color: #0b0c0c;
+    text-decoration: none;
+
+    &:hover,
+    &.is-active {
+        background: #eef3c4;
+    }
+
+    &:focus {
+        position: relative;
+        z-index: 1;
+        outline: 3px solid #fd0;
+        outline-offset: -3px;
+        box-shadow: inset 0 0 0 2px #0b0c0c;
+    }
+}
+
+.gca-search-autocomplete__option-media {
+    flex: 0 0 auto;
+}
+
+.gca-search-autocomplete__option-avatar {
+    display: block;
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    object-fit: cover;
+}
+
+.gca-search-autocomplete__option-body {
+    display: block;
+    min-width: 0;
+    flex: 1 1 auto;
+}
+
+.gca-search-autocomplete__option-title {
+    display: block;
+    font-size: 19px;
+    line-height: 1.2;
+}
+
+.gca-search-autocomplete__option-meta {
+    display: block;
+    margin-top: 4px;
+    color: #505a5f;
+    font-size: 16px;
+    line-height: 1.25;
+}
+
 /* --- Media Queries (Tablet and Up) --- */
 @media (min-width: 768px) {
     .gca-header-main-row {
@@ -149,6 +246,13 @@ body {
 
     .gca-header-logo-col {
         margin-bottom: 0;
+    }
+}
+
+@media (max-width: 768px) {
+    .site-search--autocomplete {
+        display: block;
+        width: 100%;
     }
 }
 
@@ -599,7 +703,7 @@ body {
 @media (max-width: 767.98px) {
     .gca-header-topbar-inner {
         display: grid;
-        grid-template-columns: 1fr auto;
+        grid-template-columns: 1fr auto auto;
         grid-template-rows: auto auto;
         align-items: center;
         row-gap: 10px;
@@ -611,8 +715,13 @@ body {
         grid-row: 1;
     }
 
-    .global-navigation__toggler {
+    .header-profile-link {
         grid-column: 2;
+        grid-row: 1;
+    }
+
+    .global-navigation__toggler {
+        grid-column: 3;
         grid-row: 1;
         justify-self: end;
     }
@@ -622,6 +731,28 @@ body {
         grid-row: 2;
         max-width: 100%;
     }
+}
+
+.header-profile-link {
+    display: flex;
+    align-items: center;
+    flex-shrink: 0;
+    text-decoration: none;
+
+    &:focus-visible {
+        outline: 3px solid #fd0;
+        outline-offset: 3px;
+        border-radius: 50%;
+    }
+}
+
+.header-profile-avatar {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 2px solid #b1b4b6;
+    display: block;
 }
 
 /* --- Mobile Default --- */

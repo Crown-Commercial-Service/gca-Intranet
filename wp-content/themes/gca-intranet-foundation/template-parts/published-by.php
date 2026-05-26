@@ -4,7 +4,13 @@
  * get_template_part('template-parts/published-by');
  */
 
-$author        = get_the_author();
+$last_editor_id = get_post_meta(get_the_ID(), '_edit_last', true);
+if ($last_editor_id) {
+  $last_editor = get_userdata($last_editor_id);
+  $author      = $last_editor ? $last_editor->display_name : get_the_author();
+} else {
+  $author = get_the_author();
+}
 $modified_date = get_the_modified_date('j F Y');
 
 if (!$author && !$modified_date) {
