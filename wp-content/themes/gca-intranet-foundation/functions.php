@@ -7,6 +7,7 @@ if (!defined('ABSPATH')) {
 
 require_once get_template_directory() . '/inc/class-ccs-mega-menu-walker.php';
 require_once get_template_directory() . '/inc/shortcodes.php';
+
 require_once get_template_directory() . '/inc/auth-logic.php';
 
 // Feature flag registrations
@@ -14,6 +15,8 @@ require_once get_template_directory() . '/inc/features.php';
 require_once get_template_directory() . '/inc/rest-api-auth.php';
 require_once get_template_directory() . '/inc/features/likes-and-comments.php';
 require_once get_template_directory() . '/inc/features/community-wall.php';
+
+require_once get_template_directory() . '/inc/rest-api-auth.php';
 
 /**
  * Theme setup
