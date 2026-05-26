@@ -10,8 +10,9 @@
  * "Parent" set to this page under Page Attributes in the page editor.
  */
 
-$heading     = $row['subpagecards_subpagecards_heading'] ?? '';
-$parent_page = $row['subpagecards_subpagecards_parent_page'] ?? null;
+$heading      = $row['subpagecards_subpagecards_heading']      ?? '';
+$parent_page  = $row['subpagecards_subpagecards_parent_page']  ?? null;
+$show_excerpt = (bool) ( $row['subpagecards_subpagecards_show_excerpt'] ?? true );
 
 if ( is_object( $parent_page ) && isset( $parent_page->ID ) ) {
     $parent_id = (int) $parent_page->ID;
@@ -48,9 +49,11 @@ if ( empty( $subpages ) ) {
                     $url   = get_permalink( $subpage->ID );
                     $title = $subpage->post_title;
 
-                    $summary = $subpage->post_excerpt
-                        ? wp_trim_words( $subpage->post_excerpt, 30, '...' )
-                        : wp_trim_words( wp_strip_all_tags( $subpage->post_content ), 30, '...' );
+                    if ( $show_excerpt && $subpage->post_excerpt ) {
+                        $summary = wp_trim_words( $subpage->post_excerpt, 30, '...' );
+                    } else {
+                        $summary = wp_trim_words( wp_strip_all_tags( $subpage->post_content ), 30, '...' );
+                    }
                 ?>
                     <li class="card-list__item">
                         <div class="card-list__item__wrapper subpage-card">

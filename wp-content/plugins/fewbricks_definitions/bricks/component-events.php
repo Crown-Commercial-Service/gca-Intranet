@@ -54,6 +54,12 @@ class component_events extends project_brick
             'instructions'  => 'URL the "more" link points to.',
             'default_value' => '/event/',
         ] ) );
+
+        $this->add_field( new acf_fields\true_false( 'Show excerpt', 'show_excerpt', '202605260001b', [
+            'instructions'  => 'When ticked, shows the event excerpt if one has been entered. When unticked, shows the start of the event content instead.',
+            'default_value' => 1,
+            'ui'            => 1,
+        ] ) );
     }
 
 }
