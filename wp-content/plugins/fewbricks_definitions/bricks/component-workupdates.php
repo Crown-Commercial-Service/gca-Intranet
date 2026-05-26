@@ -55,6 +55,12 @@ class component_workupdates extends project_brick
             'instructions'  => 'URL the "more" link points to.',
             'default_value' => '/work_update/',
         ] ) );
+
+        $this->add_field( new acf_fields\true_false( 'Show excerpt', 'show_excerpt', '202605260001c', [
+            'instructions'  => 'When ticked, shows the work update excerpt if one has been entered. When unticked, shows the start of the content instead.',
+            'default_value' => 1,
+            'ui'            => 1,
+        ] ) );
     }
 
 }

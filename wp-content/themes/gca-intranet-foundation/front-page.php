@@ -22,6 +22,26 @@ get_header();
 <div class="govuk-width-container" data-testid="home-width-container">
   <main class="govuk-main-wrapper" id="main-content" tabindex="-1" data-testid="home-main-wrapper">
 
+    <?php
+    $gca_hour       = (int) current_time('G');
+    $gca_greeting   = $gca_hour < 12 ? __('Good morning', 'gca-intranet') : __('Good afternoon', 'gca-intranet');
+    $gca_first_name = '';
+    if (is_user_logged_in()) {
+      $gca_first_name = trim((string) get_user_meta(get_current_user_id(), 'first_name', true));
+    }
+    ?>
+    <div class="gca-personalised-greeting" data-testid="personalised-greeting">
+      <h2 class="govuk-heading-xl govuk-!-margin-bottom-6" data-testid="personalised-greeting-text">
+        <?php
+        if ($gca_first_name !== '') {
+          echo esc_html($gca_greeting . ', ' . $gca_first_name);
+        } else {
+          echo esc_html($gca_greeting);
+        }
+        ?>
+      </h2>
+    </div>
+
     <div class="govuk-grid-row" data-testid="home-top-row">
 
       <!-- Latest news -->
@@ -495,9 +515,9 @@ get_header();
               'meta_query'     => [
                   [
                       'key'     => 'start_date',
-                      'value'   => date('Y-m-d H:i:s'),
+                      'value'   => date('Y-m-d'),
                       'compare' => '>=',
-                      'type'    => 'DATETIME'
+                      'type'    => 'DATE'
                   ]
               ]
           ]);

@@ -7,12 +7,15 @@ if (!defined('ABSPATH')) {
 
 require_once get_template_directory() . '/inc/class-ccs-mega-menu-walker.php';
 require_once get_template_directory() . '/inc/shortcodes.php';
+
 require_once get_template_directory() . '/inc/auth-logic.php';
 
 // Feature flag registrations
 require_once get_template_directory() . '/inc/features.php';
 require_once get_template_directory() . '/inc/rest-api-auth.php';
 require_once get_template_directory() . '/inc/features/community-wall.php';
+
+require_once get_template_directory() . '/inc/rest-api-auth.php';
 
 /**
  * Theme setup
@@ -1378,7 +1381,7 @@ function gca_get_search_autocomplete_items(string $term, int $limit = 5): array
 
     $post_types = array_values(array_diff(
         array_keys(get_post_types(['public' => true, 'exclude_from_search' => false])),
-        ['news']
+        ['blog', 'news']
     ));
 
     $posts = get_posts([
@@ -1575,7 +1578,7 @@ add_action('pre_get_posts', function (WP_Query $query): void {
 });
 
 /**
- * Limit search results to 10 per page and exclude news and blog post types.
+ * Limit search results to 10 per page.
  */
 add_action('pre_get_posts', function (WP_Query $query): void {
     if (!is_admin() && $query->is_main_query() && $query->is_search()) {
@@ -1583,7 +1586,7 @@ add_action('pre_get_posts', function (WP_Query $query): void {
 
         $post_types = array_values(array_diff(
             array_keys(get_post_types(['public' => true, 'exclude_from_search' => false])),
-            ['news', 'blog']
+            ['blog', 'news']
         ));
         $query->set('post_type', $post_types);
     }
