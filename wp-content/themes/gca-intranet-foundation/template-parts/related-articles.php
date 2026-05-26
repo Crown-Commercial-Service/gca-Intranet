@@ -1,24 +1,33 @@
 <?php
-$heading      = get_field( 'related_articles_heading' ) ?: 'Related articles';
-$manual_posts = get_field( 'related_articles_posts' ) ?: [];
-$current_id   = get_the_ID();
-$post_type    = get_post_type( $current_id );
+$heading          = get_field( 'related_articles_heading' ) ?: 'Related articles';
+$manual_posts     = get_field( 'related_articles_posts' ) ?: [];
+$taxonomy_value   = get_field( 'related_articles_taxonomy' );
+$current_id       = get_the_ID();
+$post_type        = get_post_type( $current_id );
 
 if ( ! empty( $manual_posts ) ) {
     $posts = array_slice(
         array_values( array_filter( $manual_posts, fn ( $p ) => (int) $p->ID !== $current_id ) ),
         0, 3
     );
-} else {
+} elseif ( $taxonomy_value ) {
+    [ $tax_slug, $term_id ] = explode( ':', $taxonomy_value, 2 );
     $posts = get_posts( [
-        'post_type'      => $post_type,
+        'post_type'      => [ 'news', 'blog', 'work_update', 'event' ],
         'post_status'    => 'publish',
         'posts_per_page' => 3,
         'post__not_in'   => [ $current_id ],
         'orderby'        => 'date',
         'order'          => 'DESC',
         'no_found_rows'  => true,
+        'tax_query'      => [ [
+            'taxonomy' => $tax_slug,
+            'field'    => 'term_id',
+            'terms'    => (int) $term_id,
+        ] ],
     ] );
+} else {
+    return;
 }
 
 if ( empty( $posts ) ) {
