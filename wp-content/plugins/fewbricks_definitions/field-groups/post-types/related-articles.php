@@ -14,6 +14,14 @@ $fg = ( new fewacf\field_group( 'Related Articles', '202605200001a', $location, 
     'names_of_items_to_hide_on_screen' => [],
 ] ) );
 
+$fg->add_field( new acf_fields\true_false( 'Show related articles', 'related_articles_enabled', '202605200005a', [
+    'instructions'  => 'Toggle to show or hide the related articles section on this post.',
+    'default_value' => 1,
+    'ui'            => 1,
+    'ui_on_text'    => 'Visible',
+    'ui_off_text'   => 'Hidden',
+] ) );
+
 $fg->add_field( new acf_fields\text( 'Heading', 'related_articles_heading', '202605200002a', [
     'instructions'  => 'Always use the title Related articles.',
     'default_value' => 'Related articles',

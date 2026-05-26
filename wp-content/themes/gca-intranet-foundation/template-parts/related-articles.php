@@ -1,4 +1,8 @@
 <?php
+if ( ! get_field( 'related_articles_enabled' ) ) {
+    return;
+}
+
 $heading          = get_field( 'related_articles_heading' ) ?: 'Related articles';
 $manual_posts     = get_field( 'related_articles_posts' ) ?: [];
 $taxonomy_value   = get_field( 'related_articles_taxonomy' );
@@ -27,7 +31,15 @@ if ( ! empty( $manual_posts ) ) {
         ] ],
     ] );
 } else {
-    return;
+    $posts = get_posts( [
+        'post_type'      => [ 'news', 'blog', 'work_update', 'event' ],
+        'post_status'    => 'publish',
+        'posts_per_page' => 3,
+        'post__not_in'   => [ $current_id ],
+        'orderby'        => 'date',
+        'order'          => 'DESC',
+        'no_found_rows'  => true,
+    ] );
 }
 
 if ( empty( $posts ) ) {
