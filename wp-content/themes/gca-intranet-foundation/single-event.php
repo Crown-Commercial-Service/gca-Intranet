@@ -85,6 +85,8 @@ get_template_part('template-parts/breadcrumbs');
             <?php endif; ?>
 
         <?php endwhile; endif; ?>
+
+        <?php get_template_part( 'template-parts/related-articles' ); ?>
     </main>
 </div>
 

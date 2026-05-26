@@ -3206,4 +3206,21 @@ function gca_show_all_screen_options($hidden, $screen) {
     return $hidden;
 }
 endif;
+
+// ---------------------------------------------------------------------------
+// Related Articles component
+// ---------------------------------------------------------------------------
+
+
+// Ensure Excerpt, Slug, and Author meta boxes are never force-hidden on our
+// post types, regardless of any previously saved Screen Options user-meta.
+add_filter( 'hidden_meta_boxes', function ( $hidden, $screen ) {
+    $types = [ 'news', 'blog', 'work_update', 'event' ];
+    if ( isset( $screen->post_type ) && in_array( $screen->post_type, $types, true ) ) {
+        $hidden = array_values( array_diff( $hidden, [ 'postexcerpt', 'slugdiv', 'authordiv' ] ) );
+    }
+    return $hidden;
+}, 10, 2 );
+
+
 add_filter('default_hidden_meta_boxes', 'gca_show_all_screen_options', 10, 2);
