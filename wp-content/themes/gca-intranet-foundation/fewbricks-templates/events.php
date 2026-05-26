@@ -9,6 +9,7 @@ $count         = max( 1, (int) ( $row['events_events_count']          ?? 3 ) );
 $pinned_ids    = $row['events_events_pinned_events']                  ?? [];
 $see_more_text = $row['events_events_see_more_text']                  ?? 'More events';
 $see_more_url  = $row['events_events_see_more_url']                   ?? '/event/';
+$show_excerpt  = (bool) ( $row['events_events_show_excerpt']          ?? true );
 
 if ( ! is_array( $pinned_ids ) ) {
     $pinned_ids = [];
@@ -82,6 +83,15 @@ if ( ! $events->have_posts() ) {
                             ?>
                         </a>
                     </h4>
+                    <?php
+                    $event_excerpt = $show_excerpt && has_excerpt()
+                        ? get_the_excerpt()
+                        : wp_trim_words( wp_strip_all_tags( get_the_content() ), 20, '...' );
+                    if ( $event_excerpt ) : ?>
+                        <p class="govuk-body-s gca-event-excerpt" data-testid="events-excerpt">
+                            <?php echo esc_html( $event_excerpt ); ?>
+                        </p>
+                    <?php endif; ?>
                     <div class="gca-card-meta">
                         <?php
                         $categories = get_the_category();
