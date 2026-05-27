@@ -29,7 +29,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  *   Email        – work email, e.g. "natalie.cadwallader@gca.gov.uk"
  *   Manager      – manager's full name
  *   ManagerEmail – manager's email address
- *   JobTitle     – e.g. "Procurement Practitioner - Procurement Management"
+ *   BusinessTitle     – e.g. "Procurement Practitioner - Procurement Management"
  *   Team         – e.g. "Procurement Liverpool (Natalie Kenyon)"
  *   Directorate  – e.g. "Commercial & Procurement Operations"
  *
@@ -43,7 +43,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  *
  * User meta mapping:
  *   employee_key  = EmployeeKey
- *   job_title     = JobTitle
+ *   business_title     = BusinessTitle
  *   team          = Team (with trailing "(Manager Name)" stripped)
  *   directorate   = Directorate
  *   manager       = Manager
@@ -398,7 +398,7 @@ class GCA_Sync_Users {
         $meta = [
             self::WORKDAY_ID_META_KEY => $record['ItemInternalId'] ?? '',
             self::EMPLOYEE_KEY_META   => $record['EmployeeKey']    ?? '',
-            'job_title'               => $record['JobTitle']       ?? '',
+            'business_title'          => $record['BusinessTitle']  ?? '',
             'team'                    => $team,
             'directorate'             => $record['Directorate']    ?? '',
             'manager'                 => $record['Manager']        ?? '',
