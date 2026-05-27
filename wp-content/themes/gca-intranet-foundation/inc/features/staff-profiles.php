@@ -169,7 +169,7 @@ function gca_search_staff(string $query, int $limit = 5): array
         }
 
         // Skip system accounts with no real name.
-        if (in_array($user->user_login, ['admin', 'adminuser'], true)) {
+        if (in_array($user->user_login, ['admin', 'adminuser', 'former-employee'], true)) {
             continue;
         }
 
