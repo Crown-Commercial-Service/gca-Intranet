@@ -255,7 +255,7 @@ function gca_directory_format_staff(array $users): array
         $results[] = [
             'id'          => $user->ID,
             'name'        => $user->display_name ?: $user->user_login,
-            'job_title'   => trim((string) get_user_meta($user->ID, 'job_title', true)),
+            'business_title'   => trim((string) get_user_meta($user->ID, 'business_title', true)),
             'directorate' => trim((string) get_user_meta($user->ID, 'directorate', true)),
             'team'        => trim((string) get_user_meta($user->ID, 'team', true)),
             'manager'     => $manager,
@@ -344,8 +344,8 @@ function gca_directory_get_js(): string
                 '</div>' +
                 '<div class="sd-staff-card__body">' +
                     '<p class="sd-staff-card__name">' + esc(person.name) + '</p>' +
-                    (person.job_title
-                        ? '<p class="sd-staff-card__role">' + esc(person.job_title) + '</p>'
+                    (person.business_title
+                        ? '<p class="sd-staff-card__role">' + esc(person.business_title) + '</p>'
                         : '') +
                     managerHtml +
                 '</div>' +
