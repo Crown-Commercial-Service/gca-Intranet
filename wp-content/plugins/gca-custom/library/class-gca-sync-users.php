@@ -253,6 +253,14 @@ class GCA_Sync_Users {
                     );
 
                     self::save_user_meta( $wp_user->ID, $record );
+
+                    // If this user was previously soft-deleted but has returned to
+                    // the Workday feed within the grace period, cancel the deletion.
+                    if ( get_user_meta( $wp_user->ID, self::DELETED_AT_META_KEY, true ) ) {
+                        delete_user_meta( $wp_user->ID, self::DELETED_AT_META_KEY );
+                        $log( sprintf( 'Reinstated user: %s (returned to Workday feed, deletion cancelled).', $email ) );
+                    }
+
                     $stats['updated']++;
                 }
             } else {
