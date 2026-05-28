@@ -362,7 +362,7 @@ add_action('rest_api_init', function (): void {
             'content' => [
                 'required'          => true,
                 'sanitize_callback' => 'sanitize_textarea_field',
-                'validate_callback' => fn ($v) => is_string($v) && mb_strlen(trim($v)) > 0 && mb_strlen($v) <= 1000,
+                'validate_callback' => fn ($v) => is_string($v) && mb_strlen(trim($v)) > 0 && mb_strlen($v) <= 500,
             ],
         ],
     ]);

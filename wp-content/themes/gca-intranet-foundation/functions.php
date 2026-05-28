@@ -1021,7 +1021,13 @@ JS
 });
 
 /**
- * Community Wall – enqueue config + JS on the community wall page template.
+ * Community Hub – enqueue config + JS on the community wall page template.
+ *
+ * Script load order (each depends on the previous for global references):
+ *   1. gca-community-wall  (posts + main feed, defines gcaCommunityData)
+ *   2. gca-shoutouts       (shoutout tab, exposes window.GcaShoutouts)
+ *   3. gca-polls           (polls tab, exposes window.GcaPolls)
+ *   4. gca-qa              (Q&A tab + tab orchestration, exposes window.GcaQa)
  */
 add_action('wp_enqueue_scripts', function (): void {
     if (!is_page_template('template-community-wall.php')) {
@@ -1039,43 +1045,65 @@ add_action('wp_enqueue_scripts', function (): void {
     $avatar_url = $local_avatar
         ?: ($current_user->exists() ? (string) get_avatar_url($current_user->ID, ['size' => 40]) : '');
 
+    $is_community_host = function_exists('gca_cw_is_community_host') && gca_cw_is_community_host();
+    $is_admin          = current_user_can('manage_options');
+
+    // Shared data object – available to all community scripts
+    $community_data = wp_json_encode([
+        'restUrl'           => esc_url_raw(rest_url('gca/v1')),
+        'wpRestBase'        => esc_url_raw(rest_url()),
+        'nonce'             => wp_create_nonce('wp_rest'),
+        'currentUserId'     => get_current_user_id(),
+        'currentUserAvatar' => $avatar_url,
+        'isCommunityHost'   => $is_community_host,
+        'isAdmin'           => $is_admin,
+    ]);
+
+    // ── 1. community-wall.js ─────────────────────────────────────────────
     $cw_js_rel = '/assets/scripts/community-wall.js';
     $cw_js_abs = get_template_directory() . $cw_js_rel;
     $cw_js_ver = file_exists($cw_js_abs) ? (string) filemtime($cw_js_abs) : '1.0.0';
 
-    wp_register_script(
-        'gca-community-wall',
-        get_template_directory_uri() . $cw_js_rel,
-        ['gca-interactions'],
-        $cw_js_ver,
-        true
-    );
+    wp_register_script('gca-community-wall', get_template_directory_uri() . $cw_js_rel, ['gca-interactions'], $cw_js_ver, true);
     wp_enqueue_script('gca-community-wall');
+    wp_add_inline_script('gca-community-wall', 'window.gcaCommunityData = ' . $community_data . ';', 'before');
 
-    wp_add_inline_script(
-        'gca-community-wall',
-        'window.gcaCommunityData = ' . wp_json_encode([
-            'restUrl'           => esc_url_raw(rest_url('gca/v1')),
-            'wpRestBase'        => esc_url_raw(rest_url()),
-            'nonce'             => wp_create_nonce('wp_rest'),
-            'currentUserId'     => get_current_user_id(),
-            'currentUserAvatar' => $avatar_url,
-        ]) . ';',
-        'before'
-    );
+    // ── 2. shoutouts.js ──────────────────────────────────────────────────
+    $so_js_rel = '/assets/scripts/shoutouts.js';
+    $so_js_abs = get_template_directory() . $so_js_rel;
+    if (file_exists($so_js_abs)) {
+        $so_js_ver = (string) filemtime($so_js_abs);
+        wp_register_script('gca-shoutouts', get_template_directory_uri() . $so_js_rel, ['gca-community-wall'], $so_js_ver, true);
+        wp_enqueue_script('gca-shoutouts');
+    }
 
-    // Also load GOV.UK Frontend on the community wall page (normally only on is_singular)
+    // ── 3. polls.js ──────────────────────────────────────────────────────
+    $poll_js_rel = '/assets/scripts/polls.js';
+    $poll_js_abs = get_template_directory() . $poll_js_rel;
+    if (file_exists($poll_js_abs)) {
+        $poll_js_ver = (string) filemtime($poll_js_abs);
+        wp_register_script('gca-polls', get_template_directory_uri() . $poll_js_rel, ['gca-community-wall'], $poll_js_ver, true);
+        wp_enqueue_script('gca-polls');
+    }
+
+    // ── 4. qa.js – also receives gcaQaData (same shape as gcaCommunityData) ─
+    $qa_js_rel = '/assets/scripts/qa.js';
+    $qa_js_abs = get_template_directory() . $qa_js_rel;
+    if (file_exists($qa_js_abs)) {
+        $qa_deps     = array_filter(['gca-community-wall', 'gca-shoutouts', 'gca-polls'], fn ($h) => wp_script_is($h, 'registered'));
+        $qa_js_ver   = (string) filemtime($qa_js_abs);
+        wp_register_script('gca-qa', get_template_directory_uri() . $qa_js_rel, array_values($qa_deps), $qa_js_ver, true);
+        wp_enqueue_script('gca-qa');
+        // qa.js reads window.gcaQaData — point it at the shared object
+        wp_add_inline_script('gca-qa', 'window.gcaQaData = window.gcaCommunityData;', 'before');
+    }
+
+    // ── GOV.UK Frontend (needed for accordion etc. on this page) ─────────
     $govuk_js_rel = '/assets/scripts/all.js';
     $govuk_js_abs = get_template_directory() . $govuk_js_rel;
     $govuk_js_ver = file_exists($govuk_js_abs) ? (string) filemtime($govuk_js_abs) : '1.0.0';
 
-    wp_enqueue_script(
-        'gca-govuk-frontend-cw',
-        get_template_directory_uri() . $govuk_js_rel,
-        [],
-        $govuk_js_ver,
-        true
-    );
+    wp_enqueue_script('gca-govuk-frontend-cw', get_template_directory_uri() . $govuk_js_rel, [], $govuk_js_ver, true);
     wp_add_inline_script(
         'gca-govuk-frontend-cw',
         'document.addEventListener("DOMContentLoaded", function() {
