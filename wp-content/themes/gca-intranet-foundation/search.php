@@ -137,6 +137,8 @@ if (!empty($search_query)) {
     }
 }
 
+$total_count += count($listing_hits);
+
 ?>
 
 <?php
@@ -201,31 +203,31 @@ get_template_part('template-parts/hero', null, [
           </div>
         </form>
 
-        <?php if (!empty($listing_hits)) : ?>
-          <div data-testid="listing-page-results">
-            <?php foreach ($listing_hits as $hit) : ?>
-              <article class="gca-search-result govuk-!-margin-bottom-0" data-testid="search-result">
-                <h2 class="govuk-heading-m govuk-!-margin-bottom-2" data-testid="search-result-title">
-                  <span class="gca-search-result__type">Section - </span>
-                  <a class="govuk-link" href="<?php echo esc_url($hit['url']); ?>" data-testid="search-result-link">
-                    <?php echo esc_html($hit['title']); ?>
-                  </a>
-                </h2>
-              </article>
-              <hr class="govuk-section-break govuk-section-break--m govuk-section-break--visible">
-            <?php endforeach; ?>
-          </div>
-        <?php endif; ?>
-
         <?php if ($flag_on) : ?>
 
-          <?php if ($total_count > 0) : ?>
+          <?php if ($total_count > 0 || !empty($listing_hits)) : ?>
 
             <p class="govuk-body govuk-!-margin-bottom-6" data-testid="search-result-count">
               Found <?php echo esc_html((string) $total_count); ?> result(s)
             </p>
 
             <div data-testid="search-results">
+
+              <?php if (!empty($listing_hits)) : ?>
+                <div data-testid="listing-page-results">
+                  <?php foreach ($listing_hits as $hit) : ?>
+                    <article class="gca-search-result govuk-!-margin-bottom-0" data-testid="search-result">
+                      <h2 class="govuk-heading-m govuk-!-margin-bottom-2" data-testid="search-result-title">
+                        <span class="gca-search-result__type">Section - </span>
+                        <a class="govuk-link" href="<?php echo esc_url($hit['url']); ?>" data-testid="search-result-link">
+                          <?php echo esc_html($hit['title']); ?>
+                        </a>
+                      </h2>
+                    </article>
+                    <hr class="govuk-section-break govuk-section-break--m govuk-section-break--visible">
+                  <?php endforeach; ?>
+                </div>
+              <?php endif; ?>
               <?php foreach ($page_items as $i => $item) : ?>
 
                 <?php if ($item['type'] === 'staff') :
@@ -337,13 +339,30 @@ get_template_part('template-parts/hero', null, [
 
           <?php // Original mode — flag is off, use standard WP loop. ?>
 
-          <?php if (have_posts()) : ?>
+          <?php if (have_posts() || !empty($listing_hits)) : ?>
 
             <p class="govuk-body govuk-!-margin-bottom-6" data-testid="search-result-count">
               Found <?php echo esc_html((string) $total_count); ?> result(s)
             </p>
 
             <div data-testid="search-results">
+
+              <?php if (!empty($listing_hits)) : ?>
+                <div data-testid="listing-page-results">
+                  <?php foreach ($listing_hits as $hit) : ?>
+                    <article class="gca-search-result govuk-!-margin-bottom-0" data-testid="search-result">
+                      <h2 class="govuk-heading-m govuk-!-margin-bottom-2" data-testid="search-result-title">
+                        <span class="gca-search-result__type">Section - </span>
+                        <a class="govuk-link" href="<?php echo esc_url($hit['url']); ?>" data-testid="search-result-link">
+                          <?php echo esc_html($hit['title']); ?>
+                        </a>
+                      </h2>
+                    </article>
+                    <hr class="govuk-section-break govuk-section-break--m govuk-section-break--visible">
+                  <?php endforeach; ?>
+                </div>
+              <?php endif; ?>
+
               <?php
               $result_index = 0;
               $post_count   = $wp_query->post_count;

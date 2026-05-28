@@ -3,12 +3,13 @@
  * Fewbricks Template: Work Updates
  * Fields: workupdates_workupdates_title, _description, _count, _selected_posts, _see_more_text, _see_more_url
  */
-$title         = $row['workupdates_workupdates_title']         ?? 'Work updates';
-$description   = $row['workupdates_workupdates_description']   ?? 'Highlights from across the organisation.';
-$count         = (int) ( $row['workupdates_workupdates_count']         ?? 2 );
-$selected_posts = $row['workupdates_workupdates_selected_posts']       ?? [];
-$see_more_text = $row['workupdates_workupdates_see_more_text'] ?? 'More work updates';
-$see_more_url  = $row['workupdates_workupdates_see_more_url']  ?? '/work_update/';
+$title          = $row['workupdates_workupdates_title']         ?? 'Work updates';
+$description    = $row['workupdates_workupdates_description']   ?? 'Highlights from across the organisation.';
+$count          = (int) ( $row['workupdates_workupdates_count'] ?? 2 );
+$selected_posts = $row['workupdates_workupdates_selected_posts'] ?? [];
+$see_more_text  = $row['workupdates_workupdates_see_more_text'] ?? 'More work updates';
+$see_more_url   = $row['workupdates_workupdates_see_more_url']  ?? '/work_update/';
+$show_excerpt   = (bool) ( $row['workupdates_workupdates_show_excerpt'] ?? true );
 
 $count        = max( 1, $count );
 $title        = trim((string) $title);
@@ -48,6 +49,15 @@ $work_updates = gca_get_selected_or_latest_posts( 'work_update', is_array( $sele
                                     <?php echo esc_html( get_the_title() ); ?>
                                 </a>
                             </h4>
+                            <?php
+                            $wu_excerpt = $show_excerpt && has_excerpt()
+                                ? get_the_excerpt()
+                                : wp_trim_words( wp_strip_all_tags( get_the_content() ), 15, '...' );
+                            if ( $wu_excerpt ) : ?>
+                                <p class="govuk-body-s gca-work-update-excerpt" data-testid="work-update-excerpt">
+                                    <?php echo esc_html( $wu_excerpt ); ?>
+                                </p>
+                            <?php endif; ?>
                             <p class="govuk-body-s" data-testid="work-update-author">
                                 By <?php echo esc_html( get_the_author() ); ?>
                             </p>

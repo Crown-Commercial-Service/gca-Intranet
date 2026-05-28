@@ -32,6 +32,12 @@ class component_subpage_cards extends project_brick {
 			'ui'            => 1,
 		] ) );
 
+		$this->add_field( new acf_fields\true_false( 'Show excerpt', 'show_excerpt', '202605260001a', [
+			'instructions'  => 'When ticked, shows the page excerpt if one has been entered. When unticked, shows the start of the page content instead.',
+			'default_value' => 1,
+			'ui'            => 1,
+		] ) );
+
 	}
 
 	/**
