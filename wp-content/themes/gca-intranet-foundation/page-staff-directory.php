@@ -3,7 +3,7 @@
  * Template Name: Staff Directory
  *
  * Two-panel layout: directorate/team sidebar on the left, staff grid on the right.
- * Driven by user meta synced from Workday (directorate, team, job_title, manager).
+ * Driven by user meta synced from Workday (directorate, team, business_title, manager).
  */
 
 declare(strict_types=1);

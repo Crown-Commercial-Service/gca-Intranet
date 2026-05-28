@@ -1332,7 +1332,7 @@ function gca_get_search_autocomplete_items(string $term, int $limit = 5): array
     ) {
         foreach (gca_search_staff($term, $limit) as $result) {
             $role_line = trim(implode(' | ', array_filter([
-                (string) ($result->job_title ?? ''),
+                (string) ($result->business_title ?? ''),
                 (string) ($result->team ?? ''),
             ])));
 
@@ -1345,7 +1345,7 @@ function gca_get_search_autocomplete_items(string $term, int $limit = 5): array
                 'image'    => (string) ($result->avatar_url ?? ''),
                 'score'    => max(
                     $score_text((string) $result->display_name),
-                    $score_text((string) ($result->job_title ?? '')) > 0 ? 20 : 0,
+                    $score_text((string) ($result->business_title ?? '')) > 0 ? 20 : 0,
                     $score_text((string) ($result->team ?? '')) > 0 ? 10 : 0,
                     10
                 ),
