@@ -19,6 +19,9 @@ include('post-types/event.php');
 include('post-types/blog.php');
 include('post-types/work_update.php');
 include('post-types/downloadable.php');
+if ( function_exists( 'gca_flag_enabled' ) && gca_flag_enabled( 'related-articles' ) ) {
+	include('post-types/related-articles.php');
+}
 
 
 

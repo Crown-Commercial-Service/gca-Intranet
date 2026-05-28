@@ -325,3 +325,32 @@
   gap: 8px;
 }
 
+.gca-related-articles {
+  [data-testid="related-articles-list"] {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: stretch;
+
+    > [class*="govuk-grid-column"] {
+      display: flex;
+      flex-direction: column;
+    }
+  }
+
+  .gca-featured-news {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+
+    > div {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+
+      [data-testid="related-articles-card-date"] {
+        margin-top: auto;
+      }
+    }
+  }
+}
+
