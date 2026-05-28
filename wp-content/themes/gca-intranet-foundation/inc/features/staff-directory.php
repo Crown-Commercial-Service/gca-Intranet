@@ -237,7 +237,7 @@ function gca_directory_format_staff(array $users): array
             continue;
         }
 
-        if (in_array($user->user_login, ['admin', 'adminuser'], true)) {
+        if (in_array($user->user_login, ['admin', 'adminuser', 'former-employee'], true)) {
             continue;
         }
 
