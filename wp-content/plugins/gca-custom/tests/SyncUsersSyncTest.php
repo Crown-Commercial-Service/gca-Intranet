@@ -517,8 +517,8 @@ class SyncUsersSyncTest extends TestCase {
     // =========================================================================
 
     public function test_run_creates_one_and_updates_one_for_two_api_records(): void {
-        $newRecord      = $this->staffRecord(['Email' => 'new@gca.gov.uk',      'EmployeeName' => 'New User']);
-        $existingRecord = $this->staffRecord(['Email' => 'existing@gca.gov.uk', 'EmployeeName' => 'Existing User']);
+        $newRecord      = $this->staffRecord(['Email' => 'new@gca.gov.uk',      'EmployeeName' => 'New User',      'EmployeeKey' => '42']);
+        $existingRecord = $this->staffRecord(['Email' => 'existing@gca.gov.uk', 'EmployeeName' => 'Existing User', 'EmployeeKey' => '43']);
         $existingWpUser = $this->mockWpUser(10, 'existing@gca.gov.uk', 'existing');
 
         $this->mockApiReturning([$newRecord, $existingRecord]);
@@ -614,22 +614,27 @@ class SyncUsersSyncTest extends TestCase {
         $this->mockUpdateUserMeta();
         WP_Mock::passthruFunction('do_action');
 
-        $lookupEmail = null;
-        WP_Mock::userFunction('get_user_by', [
-            'return' => function (string $field, string $value) use ($wpUser, &$lookupEmail): object {
-                $lookupEmail = $value;
-                return $wpUser;
+        // Primary lookup is now by EmployeeKey meta; email fallback is not reached.
+        // Normalisation is verified by checking what user_email is passed to wp_update_user.
+        WP_Mock::userFunction('get_users', [
+            'return' => function (array $args) use ($wpUser): array {
+                return isset( $args['meta_key'] ) ? [ $wpUser ] : [];
             },
         ]);
 
-        WP_Mock::userFunction('wp_update_user', ['return' => 55]);
+        $capturedEmail = null;
+        WP_Mock::userFunction('wp_update_user', [
+            'return' => function (array $data) use (&$capturedEmail): int {
+                $capturedEmail = $data['user_email'] ?? null;
+                return 55;
+            },
+        ]);
 
-        // jane.smith is in the API so the offboard loop skips her.
-        WP_Mock::userFunction('get_users', ['return' => [$wpUser]]);
+        WP_Mock::userFunction('get_user_meta', ['return' => '']);
 
         GCA_Sync_Users::run();
 
-        $this->assertSame('jane.smith@gca.gov.uk', $lookupEmail);
+        $this->assertSame('jane.smith@gca.gov.uk', $capturedEmail);
     }
 
     public function test_run_handles_empty_staff_list_without_errors(): void {
@@ -868,5 +873,73 @@ class SyncUsersSyncTest extends TestCase {
         GCA_Sync_Users::run();
 
         $this->assertTrue(true);
+    }
+
+    // =========================================================================
+    // 12. DUPLICATE RECORDS — same EmployeeKey appears twice in the API feed
+    // =========================================================================
+
+    public function test_run_deduplicates_by_employee_key_keeping_last_record(): void {
+        // The API map is keyed by EmployeeKey, so a second record with the same key
+        // silently overwrites the first.  wp_update_user is therefore called exactly
+        // once, using the data from the last (amended) record.
+        $firstRecord  = $this->staffRecord();
+        $secondRecord = $this->staffRecord(['Team' => 'Engineering (Bob Manager)test']);
+        $wpUser       = $this->mockWpUser(55, 'jane.smith@gca.gov.uk', 'jane.smith');
+
+        $this->mockApiReturning([$firstRecord, $secondRecord]);
+        $this->mockIsWpErrorFalse();
+        $this->mockWpdb();
+        $this->mockUpdateUserMeta();
+        WP_Mock::passthruFunction('do_action');
+
+        WP_Mock::userFunction('get_user_by',   ['return' => $wpUser]);
+        WP_Mock::userFunction('get_users',     ['return' => []]);
+        WP_Mock::userFunction('get_user_meta', ['return' => '']); // no deleted_at
+
+        $updateCount = 0;
+        WP_Mock::userFunction('wp_update_user', [
+            'return' => function (array $data) use (&$updateCount): int {
+                $updateCount++;
+                return 55;
+            },
+        ]);
+
+        GCA_Sync_Users::run();
+
+        $this->assertSame(1, $updateCount, 'duplicate emails must be deduplicated — only one update per email');
+    }
+
+    public function test_run_team_meta_reflects_last_duplicate_record(): void {
+        // Second record appends 'test' to Team — the final stored value must contain it.
+        $firstRecord  = $this->staffRecord();
+        $secondRecord = $this->staffRecord(['Team' => 'Engineering (Bob Manager)test']);
+        $wpUser       = $this->mockWpUser(55, 'jane.smith@gca.gov.uk', 'jane.smith');
+
+        $this->mockApiReturning([$firstRecord, $secondRecord]);
+        $this->mockIsWpErrorFalse();
+        $this->mockWpdb();
+        WP_Mock::passthruFunction('do_action');
+
+        WP_Mock::userFunction('get_user_by',    ['return' => $wpUser]);
+        WP_Mock::userFunction('wp_update_user', ['return' => 55]);
+        WP_Mock::userFunction('get_users',      ['return' => []]);
+        WP_Mock::userFunction('get_user_meta',  ['return' => '']); // no deleted_at
+
+        // Each write overwrites the previous — the last call for 'team' wins.
+        $capturedTeam = null;
+        WP_Mock::userFunction('update_user_meta', [
+            'return' => function (int $userId, string $key, mixed $value) use (&$capturedTeam): bool {
+                if ($key === 'team') {
+                    $capturedTeam = $value;
+                }
+                return true;
+            },
+        ]);
+
+        GCA_Sync_Users::run();
+
+        $this->assertNotNull($capturedTeam, 'team meta must be written');
+        $this->assertStringContainsString('test', $capturedTeam, 'team meta must reflect the last (amended) duplicate record');
     }
 }
