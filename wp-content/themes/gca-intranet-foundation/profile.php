@@ -42,7 +42,7 @@ get_header();
         'user'         => $user,
         'display_name' => $profile_data['display_name'],
         'email'        => $profile_data['email'],
-        'job_title'    => $profile_data['job_title'],
+        'business_title' => $profile_data['business_title'],
         'team'         => $profile_data['team'],
         'avatar_url'   => $profile_data['avatar_url'],
     ]); ?>

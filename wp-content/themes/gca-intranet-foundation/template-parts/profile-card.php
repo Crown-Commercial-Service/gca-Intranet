@@ -6,7 +6,7 @@
  *   user         (WP_User)
  *   display_name (string)
  *   email        (string)
- *   job_title    (string)
+ *   business_title    (string)
  *   team         (string)
  *   avatar_url   (string)  local Google profile picture URL, may be empty
  */
@@ -15,7 +15,7 @@
 $user         = $args['user']         ?? null;
 $display_name = $args['display_name'] ?? '';
 $email        = $args['email']        ?? '';
-$job_title    = $args['job_title']    ?? '';
+$business_title    = $args['business_title']    ?? '';
 $team         = $args['team']         ?? '';
 $avatar_url   = $args['avatar_url']   ?? '';
 
@@ -24,7 +24,7 @@ if (!$user instanceof WP_User) {
 }
 
 // Build role/team line – only include parts that have data.
-$role_parts = array_filter([$job_title, $team]);
+$role_parts = array_filter([$business_title, $team]);
 $role_line  = implode(' | ', $role_parts);
 
 // Fallback to default avatar if no Google picture is stored.

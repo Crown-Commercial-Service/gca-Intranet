@@ -5,7 +5,7 @@
 # ==========================================
 if [ -f .env ]; then
     echo "⚙️ Loading configuration from .env file..."
-    export $(grep -v '^#' .env | xargs)
+    export -- $(grep -v '^#' .env | xargs)
 else
     echo "❌ Error: Cannot find .env file in the current directory."
     exit 1

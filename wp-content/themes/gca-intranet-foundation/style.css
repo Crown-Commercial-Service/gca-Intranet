@@ -705,7 +705,6 @@ nav.navigation.pagination {
   overflow: hidden;
   -webkit-line-clamp: 2;
   line-clamp: 2;
-  color: #1d70b8;
 }
 
 [data-testid='latest-news-featured-excerpt'] {

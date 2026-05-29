@@ -5,8 +5,6 @@
 
 .gca-personalised-greeting {
   padding-top: govuk-spacing(4);
-  border-bottom: 1px solid $gca-border-mid;
-  margin-bottom: govuk-spacing(6);
 }
 
 .gca-featured-news {
@@ -229,6 +227,10 @@
   background: #e9efc6;
   box-shadow: 0 4px 10px rgba(0, 0, 0, 0.12);
   overflow: hidden;
+}
+
+.gca-take-a-look__text {
+  align-self: flex-start;
 }
 
 .gca-homepage-section-title--no-border {

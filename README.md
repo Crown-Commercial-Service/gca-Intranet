@@ -231,6 +231,50 @@ The `purge-events` feature archives rather than hard-deletes old event posts. Ke
 
 ---
 
+## gca-custom plugin development
+
+The `gca-custom` plugin (`wp-content/plugins/gca-custom`) contains PHP classes and a PHPUnit test suite. These run outside Docker using a local PHP and Composer install.
+
+### Prerequisites
+
+- PHP 7.4+
+- [Composer](https://getcomposer.org/)
+
+### Install dependencies
+
+```bash
+cd wp-content/plugins/gca-custom
+composer install
+```
+
+`vendor/` is git-ignored — you must run this after cloning or pulling changes to `composer.json`.
+
+### Run tests
+
+```bash
+cd wp-content/plugins/gca-custom
+./vendor/bin/phpunit
+```
+
+All tests should pass with output ending in `OK (N tests, N assertions)`.
+
+> **Note:** The current test suite only covers the Workday user sync (`GCA_Sync_Users`). Other plugin functionality is not yet tested.
+
+### Workday user sync — offboarding constants
+
+Two constants in `library/class-gca-sync-users.php` control offboarding behaviour:
+
+| Constant | Default | Description |
+|---|---|---|
+| `ENABLE_DELETE` | `true` | Set to `false` to pause hard-deletes without affecting soft-deletes |
+| `SOFT_DELETE_GRACE_DAYS` | `5` | Number of days between soft-delete and hard-delete |
+
+**Soft-delete** (first sync the user is absent from Workday): sets a `deleted_at` usermeta timestamp. The user retains full login access and remains visible in the staff directory and profiles during the grace period.
+
+**Hard-delete** (after the grace period, when `ENABLE_DELETE = true`): reassigns posts and comments to the `former-employee` system user, clears Workday usermeta, then permanently deletes the WP user. The `former-employee` system user (login: `former-employee`, email: `former-employee@gca.co.uk`) is created automatically on first use — do not delete it.
+
+---
+
 ## Theme development notes
 - Themes live directly in this repo under `wp-content/themes/`
 - No symlinks are used
