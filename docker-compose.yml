@@ -35,6 +35,11 @@ services:
       WORKDAY_STAFF_RESOURCE: ${WORKDAY_STAFF_RESOURCE}
       WORKDAY_STAFF_API_PARAMS: ${WORKDAY_STAFF_API_PARAMS}
       WORKDAY_API_SUBSCRIPTION_KEY: ${WORKDAY_API_SUBSCRIPTION_KEY}
+
+      # SendGrid API key (used by WP Mail SMTP plugin via wp-config-extra.php)
+      SMTP_PASSWORD: ${SMTP_PASSWORD}
+      SMTP_FROM_EMAIL: ${SMTP_FROM_EMAIL}
+      SMTP_FROM_NAME: ${SMTP_FROM_NAME}
     volumes:
       # EFS-like: persist only wp-content (uploads, plugins, languages, etc.)
       - wp_content:/var/www/html/wp-content
