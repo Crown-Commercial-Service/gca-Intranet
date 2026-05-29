@@ -692,6 +692,583 @@ $gca-cw-compose-input-bg: #f5f6fa;
     }
 }
 
+// ── Sidebar extras ────────────────────────────────────────────────────────────
+
+.gca-cw-sidebar__section-title {
+    @include govuk-font($size: 14, $weight: bold);
+    color: govuk-colour('dark-grey');
+    margin: govuk-spacing(2) 0 govuk-spacing(1);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+
+.gca-cw-sidebar__link-btn {
+    background: none;
+    border: none;
+    padding: 0;
+    font-family: $govuk-font-family;
+    font-size: govuk-px-to-rem(14);
+    color: $gca-action-blue;
+    cursor: pointer;
+    text-decoration: underline;
+    margin-top: govuk-spacing(1);
+
+    &:hover { text-decoration: none; }
+    &:focus { @include govuk-focused-text; }
+}
+
+// ── Shoutout cards ────────────────────────────────────────────────────────────
+
+.gca-shoutout {
+    background: linear-gradient(135deg, #fffef5 0%, #fff 100%);
+    border-color: #e6b000;
+}
+
+.gca-shoutout__icon {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    background: #fef3c7;
+    color: #92400e;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+
+    svg {
+        width: 26px;
+        height: 26px;
+    }
+}
+
+.gca-cw-post__author-name-row {
+    display: flex;
+    align-items: baseline;
+    flex-wrap: wrap;
+    gap: 4px;
+    @include govuk-font($size: 19, $weight: bold);
+}
+
+.gca-shoutout__shouted-out {
+    font-weight: 400;
+    color: govuk-colour('dark-grey');
+}
+
+.gca-shoutout__recipient-name {
+    font-weight: 700;
+    color: $govuk-text-colour;
+    text-decoration: none;
+
+    &:hover { text-decoration: underline; }
+}
+
+// Shoutout compose – recipient autocomplete
+.gca-shoutout-compose__search-wrap {
+    position: relative;
+}
+
+.gca-shoutout-compose__suggestions {
+    position: absolute;
+    top: calc(100% + 4px);
+    left: 0;
+    right: 0;
+    z-index: 200;
+    background: $gca-cw-card-bg;
+    border: 1px solid $gca-cw-card-border;
+    border-radius: 6px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+    list-style: none;
+    margin: 0;
+    padding: govuk-spacing(1) 0;
+    max-height: 240px;
+    overflow-y: auto;
+
+    &[hidden] { display: none; }
+}
+
+.gca-shoutout-compose__suggestion {
+    display: flex;
+    align-items: center;
+    gap: govuk-spacing(2);
+    padding: govuk-spacing(2) govuk-spacing(3);
+    cursor: pointer;
+
+    &:hover,
+    &:focus {
+        background: $gca-light-grey;
+        outline: none;
+    }
+
+    &--empty {
+        color: govuk-colour('dark-grey');
+        cursor: default;
+        font-style: italic;
+        &:hover { background: none; }
+    }
+}
+
+.gca-shoutout-compose__suggestion-avatar {
+    border-radius: 50%;
+    width: 36px;
+    height: 36px;
+    object-fit: cover;
+    flex-shrink: 0;
+}
+
+.gca-shoutout-compose__suggestion-info {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.gca-shoutout-compose__suggestion-name {
+    font-weight: 600;
+    font-size: govuk-px-to-rem(16);
+}
+
+.gca-shoutout-compose__suggestion-team {
+    font-size: govuk-px-to-rem(13);
+    color: govuk-colour('dark-grey');
+}
+
+// ── Poll cards ────────────────────────────────────────────────────────────────
+
+.gca-poll {
+    // inherits .gca-cw-post
+}
+
+.gca-poll-badge {
+    @include govuk-font($size: 14, $weight: bold);
+    padding: 2px govuk-spacing(2);
+    border-radius: 999px;
+    display: inline-block;
+    flex-shrink: 0;
+
+    &--live {
+        background: #e6f4ea;
+        color: #1a7c38;
+    }
+
+    &--closed {
+        background: $gca-light-grey;
+        color: govuk-colour('dark-grey');
+    }
+}
+
+.gca-poll__title {
+    @include govuk-font($size: 16, $weight: bold);
+    color: govuk-colour('dark-grey');
+    margin: 0 0 govuk-spacing(1);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+
+.gca-poll__question {
+    @include govuk-font($size: 19, $weight: bold);
+    margin: 0 0 govuk-spacing(3);
+}
+
+.gca-poll__options {
+    display: flex;
+    flex-direction: column;
+    gap: govuk-spacing(2);
+    margin-bottom: govuk-spacing(3);
+}
+
+.gca-poll__option {
+    position: relative;
+    border: 2px solid $gca-cw-card-border;
+    border-radius: 6px;
+    padding: govuk-spacing(2) govuk-spacing(3);
+    overflow: hidden;
+    cursor: pointer;
+    background: $gca-cw-card-bg;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: govuk-spacing(2);
+    transition: border-color 0.15s ease;
+
+    &:hover { border-color: $gca-action-blue; }
+    &:focus  { @include govuk-focused-text; outline-offset: 2px; }
+
+    &[data-closed="true"] { cursor: default; &:hover { border-color: $gca-cw-card-border; } }
+    @at-root div#{&} { cursor: default; &:hover { border-color: $gca-cw-card-border; } }
+
+    &--voted {
+        border-color: $gca-action-blue;
+        background: #ebf3fd;
+    }
+}
+
+.gca-poll__option-fill {
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    background: rgba($gca-action-blue, 0.1);
+    border-radius: 4px 0 0 4px;
+    transition: width 0.4s ease;
+    pointer-events: none;
+}
+
+.gca-poll__option-text {
+    position: relative;
+    @include govuk-font($size: 16);
+    flex: 1;
+}
+
+.gca-poll__option-pct {
+    position: relative;
+    @include govuk-font($size: 14, $weight: bold);
+    color: govuk-colour('dark-grey');
+    white-space: nowrap;
+}
+
+.gca-poll__footer {
+    @include govuk-font($size: 14);
+    color: govuk-colour('dark-grey');
+    margin-bottom: govuk-spacing(3);
+}
+
+.gca-poll__voters-btn {
+    @include govuk-font($size: 14);
+    background: none;
+    border: none;
+    color: $gca-action-blue;
+    cursor: pointer;
+    text-decoration: underline;
+    padding: 0;
+    margin-bottom: govuk-spacing(3);
+
+    &:hover { text-decoration: none; }
+    &:focus  { @include govuk-focused-text; }
+    &:disabled { opacity: 0.7; cursor: wait; }
+}
+
+.gca-poll__voters-panel {
+    background: $gca-light-grey;
+    border-radius: 6px;
+    padding: govuk-spacing(3);
+    margin-bottom: govuk-spacing(3);
+
+    &[hidden] { display: none; }
+}
+
+.gca-poll__voters-group { margin-bottom: govuk-spacing(3); &:last-child { margin-bottom: 0; } }
+
+.gca-poll__voters-option-label {
+    @include govuk-font($size: 14, $weight: bold);
+    margin: 0 0 govuk-spacing(1);
+}
+
+.gca-poll__voters-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-wrap: wrap;
+    gap: govuk-spacing(2);
+}
+
+.gca-poll__voter {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.gca-poll__voter-avatar {
+    border-radius: 50%;
+    width: 24px;
+    height: 24px;
+    object-fit: cover;
+    flex-shrink: 0;
+}
+
+.gca-poll__voter-name  { @include govuk-font($size: 14); }
+.gca-poll__voter-team  { @include govuk-font($size: 14); color: govuk-colour('dark-grey'); }
+.gca-poll__voters-empty { @include govuk-font($size: 14); color: govuk-colour('dark-grey'); margin: 0; }
+
+// Poll compose
+.gca-poll-compose__options-list {
+    list-style: none;
+    margin: govuk-spacing(2) 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: govuk-spacing(2);
+}
+
+.gca-poll-compose__option-row {
+    display: flex;
+    align-items: center;
+    gap: govuk-spacing(2);
+}
+
+.gca-poll-compose__option-remove {
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: govuk-colour('dark-grey');
+    font-size: govuk-px-to-rem(18);
+    line-height: 1;
+    padding: 0 govuk-spacing(1);
+    flex-shrink: 0;
+
+    &:hover { color: $gca-cw-liked; }
+    &:focus  { @include govuk-focused-text; }
+}
+
+.gca-poll-compose__add-option-btn {
+    background: none;
+    border: 1px dashed $gca-cw-card-border;
+    border-radius: 4px;
+    padding: govuk-spacing(1) govuk-spacing(3);
+    font-family: $govuk-font-family;
+    font-size: govuk-px-to-rem(16);
+    color: $gca-action-blue;
+    cursor: pointer;
+    width: 100%;
+    text-align: center;
+    margin-top: govuk-spacing(1);
+    transition: border-color 0.15s ease, background 0.15s ease;
+
+    &:hover { border-color: $gca-action-blue; background: #ebf3fd; }
+    &:focus  { @include govuk-focused-text; }
+}
+
+// ── Q&A cards ─────────────────────────────────────────────────────────────────
+
+.gca-qa-pending-banner {
+    background: #fff8e1;
+    border: 1px solid #e6b000;
+    border-radius: 8px;
+    padding: govuk-spacing(4) govuk-spacing(5);
+    margin-bottom: govuk-spacing(4);
+
+    &[hidden] { display: none; }
+}
+
+.gca-qa-pending-banner__intro {
+    color: govuk-colour('dark-grey');
+    margin: 0 0 govuk-spacing(3);
+}
+
+.gca-qa-pending-card {
+    background: $gca-cw-card-bg;
+    border: 1px solid $gca-cw-card-border;
+    border-radius: 6px;
+    padding: govuk-spacing(3) govuk-spacing(4);
+    margin-bottom: govuk-spacing(2);
+}
+
+.gca-qa-pending-card__header {
+    display: flex;
+    align-items: center;
+    gap: govuk-spacing(3);
+    margin-bottom: govuk-spacing(2);
+}
+
+.gca-qa-pending-card__date {
+    @include govuk-font($size: 14);
+    color: govuk-colour('dark-grey');
+}
+
+.gca-qa-pending-card__question {
+    @include govuk-font($size: 16);
+    margin: 0;
+    color: $govuk-text-colour;
+}
+
+.gca-qa-badge {
+    @include govuk-font($size: 14, $weight: bold);
+    padding: 2px govuk-spacing(2);
+    border-radius: 999px;
+    display: inline-block;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+
+    &--pending {
+        background: #fff8e1;
+        color: #92400e;
+        border: 1px solid #e6b000;
+    }
+
+    &--official {
+        background: #e6f4ea;
+        color: #1a7c38;
+    }
+
+    &--sm {
+        font-size: govuk-px-to-rem(11);
+        padding: 1px govuk-spacing(1);
+    }
+}
+
+.gca-qa-card {
+    background: $gca-cw-card-bg;
+    border: 1px solid $gca-cw-card-border;
+    border-radius: 8px;
+    box-shadow: $gca-cw-card-shadow;
+    padding: govuk-spacing(5);
+    position: relative;
+}
+
+.gca-qa-card--answered {
+    border-left: 4px solid #1a7c38;
+}
+
+.gca-qa-card__header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: govuk-spacing(2);
+    margin-bottom: govuk-spacing(3);
+}
+
+.gca-qa-card__answerer-row {
+    display: flex;
+    align-items: center;
+    gap: govuk-spacing(3);
+    flex: 1;
+    min-width: 0;
+}
+
+.gca-qa-card__avatar {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    flex-shrink: 0;
+    object-fit: cover;
+}
+
+.gca-qa-card__answerer-info {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 0;
+}
+
+.gca-qa-card__answerer-title {
+    display: flex;
+    align-items: baseline;
+    flex-wrap: wrap;
+    gap: 4px;
+    @include govuk-font($size: 16);
+}
+
+.gca-qa-card__answerer-name {
+    font-weight: 700;
+    color: $govuk-text-colour;
+    text-decoration: none;
+    &:hover { text-decoration: underline; }
+}
+
+.gca-qa-card__answered-label {
+    color: govuk-colour('dark-grey');
+    font-weight: 400;
+}
+
+.gca-qa-card__meta {
+    @include govuk-font($size: 14);
+    color: govuk-colour('dark-grey');
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    flex-wrap: wrap;
+}
+
+.gca-qa-card__answerer-team {
+    &::after { content: ' •'; margin-left: 2px; }
+}
+
+.gca-qa-card__question-block {
+    background: $gca-light-grey;
+    border-radius: 6px;
+    padding: govuk-spacing(3) govuk-spacing(4);
+    margin-bottom: govuk-spacing(4);
+}
+
+.gca-qa-card__question-label {
+    @include govuk-font($size: 14, $weight: bold);
+    color: govuk-colour('dark-grey');
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    margin: 0 0 govuk-spacing(1);
+}
+
+.gca-qa-card__question-text {
+    @include govuk-font($size: 19);
+    color: $govuk-text-colour;
+    margin: 0;
+    font-style: italic;
+}
+
+.gca-qa-card__answer-block {
+    @include govuk-font($size: 19);
+    color: $govuk-text-colour;
+    line-height: 1.65;
+    margin-bottom: govuk-spacing(3);
+
+    p { margin-bottom: govuk-spacing(2); &:last-child { margin-bottom: 0; } }
+}
+
+// Inline edit form for moderators
+.gca-qa-edit-form {
+    margin-bottom: govuk-spacing(3);
+}
+
+.gca-qa-edit-form__textarea {
+    width: 100%;
+    resize: vertical;
+    min-height: 120px;
+}
+
+.gca-qa-edit-form__actions {
+    display: flex;
+    gap: govuk-spacing(2);
+    margin-top: govuk-spacing(2);
+}
+
+// Sidebar pending items
+.gca-qa-sidebar-pending__list {
+    list-style: none;
+    margin: 0 0 govuk-spacing(2);
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: govuk-spacing(2);
+}
+
+.gca-qa-sidebar-pending__item {
+    background: $gca-cw-card-bg;
+    border: 1px solid $gca-cw-card-border;
+    border-radius: 4px;
+    padding: govuk-spacing(2) govuk-spacing(3);
+}
+
+.gca-qa-sidebar-pending__meta {
+    display: flex;
+    align-items: center;
+    gap: govuk-spacing(2);
+    margin-bottom: govuk-spacing(1);
+}
+
+.gca-qa-sidebar-pending__date {
+    @include govuk-font($size: 14);
+    color: govuk-colour('dark-grey');
+}
+
+.gca-qa-sidebar-pending__text {
+    @include govuk-font($size: 14);
+    margin: 0;
+    color: $govuk-text-colour;
+    overflow: hidden;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+}
+
 // ── Responsive tweaks ─────────────────────────────────────────────────────────
 
 @include govuk-media-query($until: tablet) {

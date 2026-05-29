@@ -104,23 +104,23 @@ if ($flag_on) {
     // -------------------------------------------------------------------------
     // Original mode: standard WP paginated posts only.
     // -------------------------------------------------------------------------
-    $total_count = (int) $wp_query->found_posts;
-    $page_items  = [];
-    $flag_on     = false;
+    $current_page = max(1, (int) (get_query_var('paged') ?: 1));
+    $total_count  = (int) $wp_query->found_posts;
+    $page_items   = [];
+    $flag_on      = false;
 }
 
 $listing_hits = [];
 if (!empty($search_query)) {
-    $s_lower = mb_strtolower(trim($search_query));
-
+    $s_lower        = mb_strtolower(trim($search_query));
     $staff_dir_page = get_page_by_path('staff-directory');
     $staff_dir_url  = ($staff_dir_page instanceof WP_Post) ? get_permalink($staff_dir_page) : null;
 
     $sections = [
-        ['keywords' => ['news'],                        'title' => 'News',           'url' => get_post_type_archive_link('news')],
-        ['keywords' => ['blog', 'blogs'],               'title' => 'Blogs',          'url' => get_post_type_archive_link('blog')],
-        ['keywords' => ['work update', 'work updates'], 'title' => 'Work Updates',   'url' => get_post_type_archive_link('work_update')],
-        ['keywords' => ['event', 'events'],             'title' => 'Events',         'url' => get_post_type_archive_link('event')],
+        ['keywords' => ['news'],                        'title' => 'News',            'url' => get_post_type_archive_link('news')],
+        ['keywords' => ['blog', 'blogs'],               'title' => 'Blogs',           'url' => get_post_type_archive_link('blog')],
+        ['keywords' => ['work update', 'work updates'], 'title' => 'Work Updates',    'url' => get_post_type_archive_link('work_update')],
+        ['keywords' => ['event', 'events'],             'title' => 'Events',          'url' => get_post_type_archive_link('event')],
         ['keywords' => ['staff directory'],             'title' => 'Staff Directory', 'url' => $staff_dir_url],
     ];
 
@@ -128,16 +128,53 @@ if (!empty($search_query)) {
         if (empty($section['url'])) {
             continue;
         }
+        $section_score = 0;
         foreach ($section['keywords'] as $kw) {
-            if ($s_lower === $kw || str_contains($s_lower, $kw) || str_contains($kw, $s_lower)) {
-                $listing_hits[$section['url']] = $section;
+            if ($s_lower === $kw) {
+                $section_score = 100;
                 break;
+            } elseif (str_contains($s_lower, $kw)) {
+                $section_score = max($section_score, 50);
+            } elseif (str_contains($kw, $s_lower)) {
+                $section_score = max($section_score, 20);
             }
+        }
+        if ($section_score > 0) {
+            $listing_hits[$section['url']] = array_merge($section, ['score' => $section_score]);
         }
     }
 }
 
-$total_count += count($listing_hits);
+if ($flag_on) {
+    // Inject listing hits into the sorted pool so they rank by relevancy alongside posts/staff.
+    foreach ($listing_hits as $hit) {
+        $all_items[] = [
+            'type'     => 'section',
+            'data'     => $hit,
+            'score'    => $hit['score'],
+            'sort_key' => $hit['title'],
+        ];
+    }
+    $listing_hits = [];
+
+    usort($all_items, function ($a, $b) {
+        if ($b['score'] !== $a['score']) {
+            return $b['score'] - $a['score'];
+        }
+        return strcasecmp($a['sort_key'], $b['sort_key']);
+    });
+
+    $total_count             = count($all_items);
+    $total_pages             = max(1, (int) ceil($total_count / $per_page));
+    $page_items              = array_slice($all_items, ($current_page - 1) * $per_page, $per_page);
+    $wp_query->max_num_pages = $total_pages;
+} else {
+    if ($current_page === 1) {
+        $total_count += count($listing_hits);
+    } else {
+        $listing_hits = [];
+    }
+}
 
 ?>
 
@@ -213,24 +250,22 @@ get_template_part('template-parts/hero', null, [
 
             <div data-testid="search-results">
 
-              <?php if (!empty($listing_hits)) : ?>
-                <div data-testid="listing-page-results">
-                  <?php foreach ($listing_hits as $hit) : ?>
-                    <article class="gca-search-result govuk-!-margin-bottom-0" data-testid="search-result">
-                      <h2 class="govuk-heading-m govuk-!-margin-bottom-2" data-testid="search-result-title">
-                        <span class="gca-search-result__type">Section - </span>
-                        <a class="govuk-link" href="<?php echo esc_url($hit['url']); ?>" data-testid="search-result-link">
-                          <?php echo esc_html($hit['title']); ?>
-                        </a>
-                      </h2>
-                    </article>
-                    <hr class="govuk-section-break govuk-section-break--m govuk-section-break--visible">
-                  <?php endforeach; ?>
-                </div>
-              <?php endif; ?>
               <?php foreach ($page_items as $i => $item) : ?>
 
-                <?php if ($item['type'] === 'staff') :
+                <?php if ($item['type'] === 'section') :
+                  $hit = $item['data'];
+                ?>
+
+                  <article class="gca-search-result govuk-!-margin-bottom-0" data-testid="search-result">
+                    <h2 class="govuk-heading-m govuk-!-margin-bottom-2" data-testid="search-result-title">
+                      <span class="gca-search-result__type">Section - </span>
+                      <a class="govuk-link" href="<?php echo esc_url($hit['url']); ?>" data-testid="search-result-link">
+                        <?php echo esc_html($hit['title']); ?>
+                      </a>
+                    </h2>
+                  </article>
+
+                <?php elseif ($item['type'] === 'staff') :
                   $result     = $item['data'];
                   $role_parts = array_filter([$result->business_title, $result->team]);
                   $role_line  = implode(' | ', $role_parts);
@@ -347,21 +382,22 @@ get_template_part('template-parts/hero', null, [
 
             <div data-testid="search-results">
 
-              <?php if (!empty($listing_hits)) : ?>
-                <div data-testid="listing-page-results">
-                  <?php foreach ($listing_hits as $hit) : ?>
-                    <article class="gca-search-result govuk-!-margin-bottom-0" data-testid="search-result">
-                      <h2 class="govuk-heading-m govuk-!-margin-bottom-2" data-testid="search-result-title">
-                        <span class="gca-search-result__type">Section - </span>
-                        <a class="govuk-link" href="<?php echo esc_url($hit['url']); ?>" data-testid="search-result-link">
-                          <?php echo esc_html($hit['title']); ?>
-                        </a>
-                      </h2>
-                    </article>
-                    <hr class="govuk-section-break govuk-section-break--m govuk-section-break--visible">
-                  <?php endforeach; ?>
-                </div>
-              <?php endif; ?>
+              <?php
+              // Exact-match section hits (score 100) appear before post results.
+              $listing_hits_top    = array_filter($listing_hits, fn($h) => $h['score'] >= 100);
+              $listing_hits_bottom = array_filter($listing_hits, fn($h) => $h['score'] < 100);
+              ?>
+              <?php foreach ($listing_hits_top as $hit) : ?>
+                <article class="gca-search-result govuk-!-margin-bottom-0" data-testid="search-result">
+                  <h2 class="govuk-heading-m govuk-!-margin-bottom-2" data-testid="search-result-title">
+                    <span class="gca-search-result__type">Section - </span>
+                    <a class="govuk-link" href="<?php echo esc_url($hit['url']); ?>" data-testid="search-result-link">
+                      <?php echo esc_html($hit['title']); ?>
+                    </a>
+                  </h2>
+                </article>
+                <hr class="govuk-section-break govuk-section-break--m govuk-section-break--visible">
+              <?php endforeach; ?>
 
               <?php
               $result_index = 0;
@@ -410,6 +446,18 @@ get_template_part('template-parts/hero', null, [
                 <?php endif; ?>
 
               <?php endwhile; ?>
+
+              <?php foreach ($listing_hits_bottom as $hit) : ?>
+                <hr class="govuk-section-break govuk-section-break--m govuk-section-break--visible">
+                <article class="gca-search-result govuk-!-margin-bottom-0" data-testid="search-result">
+                  <h2 class="govuk-heading-m govuk-!-margin-bottom-2" data-testid="search-result-title">
+                    <span class="gca-search-result__type">Section - </span>
+                    <a class="govuk-link" href="<?php echo esc_url($hit['url']); ?>" data-testid="search-result-link">
+                      <?php echo esc_html($hit['title']); ?>
+                    </a>
+                  </h2>
+                </article>
+              <?php endforeach; ?>
             </div>
 
             <div class="govuk-!-margin-top-6" data-testid="search-pagination">
