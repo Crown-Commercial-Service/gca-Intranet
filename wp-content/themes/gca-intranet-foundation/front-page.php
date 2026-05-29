@@ -22,6 +22,7 @@ get_header();
 <div class="govuk-width-container" data-testid="home-width-container">
   <main class="govuk-main-wrapper" id="main-content" tabindex="-1" data-testid="home-main-wrapper">
 
+    <?php if (gca_flag_enabled('personalised-greeting')) : ?>
     <?php
     $gca_hour       = (int) current_time('G');
     $gca_greeting   = $gca_hour < 12 ? __('Good morning', 'gca-intranet') : __('Good afternoon', 'gca-intranet');
@@ -41,6 +42,7 @@ get_header();
         ?>
       </h2>
     </div>
+    <?php endif; ?>
 
     <div class="govuk-grid-row" data-testid="home-top-row">
 

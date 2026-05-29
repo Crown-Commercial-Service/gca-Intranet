@@ -15,7 +15,7 @@ if (empty($staff_results)) {
 ?>
 
 <?php foreach ($staff_results as $i => $result) :
-    $role_parts = array_filter([$result->job_title, $result->team]);
+    $role_parts = array_filter([$result->business_title, $result->team]);
     $role_line  = implode(' | ', $role_parts);
 ?>
 

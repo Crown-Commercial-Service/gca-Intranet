@@ -59,9 +59,9 @@ add_action('init', function (): void {
  */
 function gca_get_staff_profile_data(WP_User $user): ?array
 {
-    $job_title  = trim((string) get_user_meta($user->ID, 'job_title', true));
-    $team       = trim((string) get_user_meta($user->ID, 'team', true));
-    $avatar_url = trim((string) get_user_meta($user->ID, 'google_profile_picture_local_url', true));
+    $business_title   = trim((string) get_user_meta($user->ID, 'business_title', true));
+    $team             = trim((string) get_user_meta($user->ID, 'team', true));
+    $avatar_url       = trim((string) get_user_meta($user->ID, 'google_profile_picture_local_url', true));
 
     if ($avatar_url === '') {
         $avatar_url = get_avatar_url($user->ID, ['size' => 120]);
@@ -71,7 +71,7 @@ function gca_get_staff_profile_data(WP_User $user): ?array
         'user'         => $user,
         'display_name' => $user->display_name ?: $user->user_login,
         'email'        => $user->user_email,
-        'job_title'    => $job_title,
+        'business_title'    => $business_title,
         'team'         => $team,
         'avatar_url'   => $avatar_url,
         'profile_url'  => home_url('/profile/' . rawurlencode($user->user_login) . '/'),
@@ -110,11 +110,11 @@ function gca_get_staff_user_by_profile_slug(string $slug): ?WP_User
 }
 
 /**
- * Search users by display name, job title, or team.
+ * Search users by display name, business title, or team.
  *
  * @param  string $query  Raw search term.
  * @param  int    $limit  Max results to return.
- * @return array  Array of plain objects with: user, display_name, email, job_title, team, avatar_url, profile_url.
+ * @return array  Array of plain objects with: user, display_name, email, business_title, team, avatar_url, profile_url.
  */
 function gca_search_staff(string $query, int $limit = 5): array
 {
@@ -135,13 +135,13 @@ function gca_search_staff(string $query, int $limit = 5): array
 
     $users = $user_query->get_results();
 
-    // Secondary: if fewer results than limit, also search job_title and team meta.
+    // Secondary: if fewer results than limit, also search business_title and team meta.
     if (count($users) < $limit) {
         $meta_query = new WP_User_Query([
             'meta_query' => [
                 'relation' => 'OR',
                 [
-                    'key'     => 'job_title',
+                    'key'     => 'business_title',
                     'value'   => $query,
                     'compare' => 'LIKE',
                 ],
@@ -169,7 +169,7 @@ function gca_search_staff(string $query, int $limit = 5): array
         }
 
         // Skip system accounts with no real name.
-        if (in_array($user->user_login, ['admin', 'adminuser'], true)) {
+        if (in_array($user->user_login, ['admin', 'adminuser', 'former-employee'], true)) {
             continue;
         }
 

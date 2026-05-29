@@ -44,7 +44,7 @@ if ($flag_on) {
     // Relevance scoring:
     //   100 — title / display name is an exact match (case-insensitive)
     //    50 — title / display name contains the query
-    //    20 — job title contains the query  (staff only)
+    //    20 — business title contains the query  (staff only)
     //    10 — content / team / email match  (catch-all — WP already filtered these in)
     // Sort: score DESC, then alphabetically as tiebreaker.
     $q_lower = mb_strtolower($search_query);
@@ -61,7 +61,7 @@ if ($flag_on) {
     foreach ($staff_results as $result) {
         $s = max(
             $score($result->display_name),
-            $score($result->job_title) > 0 ? 20 : 0,
+            $score($result->business_title) > 0 ? 20 : 0,
             $score($result->team)      > 0 ? 10 : 0,
             10 // floor: WP already confirmed a match exists
         );
@@ -232,7 +232,7 @@ get_template_part('template-parts/hero', null, [
 
                 <?php if ($item['type'] === 'staff') :
                   $result     = $item['data'];
-                  $role_parts = array_filter([$result->job_title, $result->team]);
+                  $role_parts = array_filter([$result->business_title, $result->team]);
                   $role_line  = implode(' | ', $role_parts);
                 ?>
 
