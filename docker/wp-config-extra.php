@@ -43,3 +43,15 @@ if (!defined('WP_MAX_MEMORY_LIMIT')) {
 if (isset($_SERVER['HTTP_X_GCA_TEST_SUITE']) && $_SERVER['HTTP_X_GCA_TEST_SUITE'] === 'true') {
     define('DB_NAME', 'wordpress-test');
 }
+
+/**
+ * WP Mail SMTP — SendGrid native mailer (Web API, not SMTP).
+ * WPMS_ON locks these values so they can't be overridden via the WP admin UI.
+ */
+if (getenv('SMTP_PASSWORD')) {
+    define('WPMS_ON', true);
+    define('WPMS_MAILER', 'sendgrid');
+    define('WPMS_SENDGRID_API_KEY', getenv('SMTP_PASSWORD'));
+    define('WPMS_SET_FROM_NAME', getenv('SMTP_FROM_NAME') ?: 'GCA Intranet');
+    define('WPMS_SET_FROM_EMAIL', getenv('SMTP_FROM_EMAIL'));
+}
