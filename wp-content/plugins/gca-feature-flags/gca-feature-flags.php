@@ -114,6 +114,12 @@ class GCA_Feature_Flags {
 			$options = array();
 		}
 
+		// If this flag has a parent, the parent must also be enabled.
+		$parent = isset( self::$flags[ $id ]['parent'] ) ? sanitize_key( self::$flags[ $id ]['parent'] ) : '';
+		if ( $parent && ! self::is_enabled( $parent ) ) {
+			return false;
+		}
+
 		if ( array_key_exists( $id, $options ) ) {
 			return (bool) $options[ $id ];
 		}
