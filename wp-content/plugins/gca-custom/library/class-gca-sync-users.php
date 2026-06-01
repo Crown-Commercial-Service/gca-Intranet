@@ -507,16 +507,18 @@ class GCA_Sync_Users {
         );
 
         // Reassign comments so they display under the Former Employee account.
-        $wpdb->update(
-            $wpdb->comments,
-            [
-                'user_id'              => $former_employee_id,
-                'comment_author'       => 'Former Employee',
-                'comment_author_email' => self::FORMER_EMPLOYEE_EMAIL,
-            ],
-            [ 'user_id' => $user_id ],
-            [ '%d', '%s', '%s' ],
-            [ '%d' ]
+        // Match on both user_id and comment_author_email so orphaned comments
+        // (user_id = 0 from a prior wp_delete_user call) are also caught.
+        $wpdb->query(
+            $wpdb->prepare(
+                "UPDATE {$wpdb->comments}
+                 SET user_id = %d, comment_author = 'Former Employee', comment_author_email = %s
+                 WHERE user_id = %d OR comment_author_email = %s",
+                $former_employee_id,
+                self::FORMER_EMPLOYEE_EMAIL,
+                $user_id,
+                $email
+            )
         );
 
         // Clear Workday staff meta so no stale data lingers.

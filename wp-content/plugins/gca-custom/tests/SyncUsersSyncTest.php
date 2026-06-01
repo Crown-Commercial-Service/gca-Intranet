@@ -422,7 +422,7 @@ class SyncUsersSyncTest extends TestCase {
             },
         ]);
 
-        // Track every $wpdb->update call so we can assert posts and comments were reassigned.
+        // Track $wpdb->update (posts) and $wpdb->prepare/$wpdb->query (comments).
         global $wpdb;
         $wpdb           = \Mockery::mock('wpdb');
         $wpdb->users    = 'wp_users';
@@ -435,6 +435,15 @@ class SyncUsersSyncTest extends TestCase {
                 $wpdbCalls[] = func_get_args();
                 return 1;
             });
+
+        // Capture the prepare args so we can assert the comment reassignment values.
+        $commentPrepareArgs = null;
+        $wpdb->shouldReceive('prepare')
+            ->andReturnUsing(function (string $sql, ...$args) use (&$commentPrepareArgs): string {
+                $commentPrepareArgs = [$sql, ...$args];
+                return 'PREPARED_COMMENT_SQL';
+            });
+        $wpdb->shouldReceive('query')->andReturn(1);
 
         $deletedId = null;
         WP_Mock::userFunction('wp_delete_user', [
@@ -455,13 +464,12 @@ class SyncUsersSyncTest extends TestCase {
         $this->assertSame(['post_author' => 50],   $postCall[1], 'new post_author');
         $this->assertSame(['post_author' => 99],   $postCall[2], 'where post_author');
 
-        // Comments reassigned: user_id changed from 99 → 50, author fields updated.
-        $commentCall = $wpdbCalls[array_search('wp_comments', array_column($wpdbCalls, 0))];
-        $this->assertSame('wp_comments',            $commentCall[0], 'comments table');
-        $this->assertSame(50,                       $commentCall[1]['user_id'],              'new comment user_id');
-        $this->assertSame('Former Employee',        $commentCall[1]['comment_author'],       'comment_author name');
-        $this->assertSame('former-employee@gca.co.uk', $commentCall[1]['comment_author_email'], 'comment_author_email');
-        $this->assertSame(['user_id' => 99],        $commentCall[2], 'where user_id');
+        // Comments reassigned via raw query: assert prepare was called with the right values.
+        $this->assertNotNull($commentPrepareArgs, 'prepare() was called for comment reassignment');
+        $this->assertSame(50,                       $commentPrepareArgs[1], 'new comment user_id');
+        $this->assertSame('former-employee@gca.co.uk', $commentPrepareArgs[2], 'new comment_author_email');
+        $this->assertSame(99,                       $commentPrepareArgs[3], 'WHERE old user_id');
+        $this->assertSame('leaver@gca.gov.uk',      $commentPrepareArgs[4], 'WHERE comment_author_email');
     }
 
     public function test_run_skips_protected_login_during_purge(): void {
