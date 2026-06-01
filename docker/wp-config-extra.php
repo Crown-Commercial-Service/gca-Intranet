@@ -37,6 +37,11 @@ if (!defined('WP_MAX_MEMORY_LIMIT')) {
 }
 
 /**
+ * Disable built-in pseudo-cron — EventBridge triggers wp-cli instead.
+ */
+define('DISABLE_WP_CRON', true);
+
+/**
  * Playwright Test Database Switcher
  * We check the header and define the constant EARLY.
  */

@@ -223,9 +223,17 @@ class GCA_Cron_Logger {
             return;
         }
 
+        $log_id = self::insert([
+            'hook'         => $hook,
+            'triggered_by' => 'schedule',
+            'duration_ms'  => 0,
+            'status'       => 'success',
+            'output'       => '',
+        ]);
+
         self::$run_state[$hook] = [
             'start'  => microtime(true),
-            'log_id' => null,
+            'log_id' => $log_id,
         ];
         ob_start();
     }
@@ -247,18 +255,20 @@ class GCA_Cron_Logger {
             return;
         }
 
+        global $wpdb;
+
         $output      = ob_get_clean();
         $duration_ms = (int) round((microtime(true) - $state['start']) * 1000);
 
-        $log_id = self::insert([
-            'hook'         => $hook,
-            'triggered_by' => 'schedule',
-            'duration_ms'  => $duration_ms,
-            'status'       => 'success',
-            'output'       => $output ?: '',
-        ]);
+        $wpdb->update(
+            self::table_name(),
+            ['duration_ms' => $duration_ms, 'output' => $output ?: ''],
+            ['id' => $state['log_id']],
+            ['%d', '%s'],
+            ['%d']
+        );
 
-        self::$run_state[$hook]['log_id'] = $log_id;
+        self::$run_state[$hook]['log_id'] = $state['log_id'];
     }
 
     // -------------------------------------------------------------------------
