@@ -15,27 +15,27 @@ $fg = ( new fewacf\field_group( 'Related Articles', '202605200001a', $location, 
 ] ) );
 
 $fg->add_field( new acf_fields\true_false( 'Show related articles', 'related_articles_enabled', '202605200005a', [
-    'instructions'  => 'Toggle to show or hide the related articles section on this post. When visible: if a taxonomy is selected, the 3 most recent matching posts are shown; if specific articles are chosen, those are shown; if nothing is selected, the 3 most recent posts from any type are shown.',
-    'default_value' => 1,
+    'instructions'  => 'Toggle to show related articles. When turned on, the 3 most recent articles will show. If a taxonomy is selected, the 3 most recent within that taxonomy is shown. You can also choose specific articles to display below.',
+    'default_value' => 0,
     'ui'            => 1,
-    'ui_on_text'    => 'Visible',
-    'ui_off_text'   => 'Hidden',
+    'ui_on_text'    => 'On',
+    'ui_off_text'   => 'Off',
 ] ) );
 
 $fg->add_field( new acf_fields\text( 'Heading', 'related_articles_heading', '202605200002a', [
-    'instructions'  => 'Always use the title Related articles.',
+    'instructions'  => 'Enter a heading for the related articles section.',
     'default_value' => 'Related articles',
     'maxlength'     => 50,
 ] ) );
 
 $fg->add_field( new acf_fields\select( 'Filter by taxonomy', 'related_articles_taxonomy', '202605200003a', [
-    'instructions' => 'Select a taxonomy term to use as the fallback filter. If no specific articles are selected below, the 3 most recent posts with this term will be shown. Leave empty to hide the section when no articles are selected.',
+    'instructions' => 'Select a taxonomy to show related articles. If left empty, the 3 most recent articles will show.',
     'allow_null'   => 1,
     'choices'      => [],
 ] ) );
 
 $fg->add_field( new acf_fields\relationship( 'Select specific articles', 'related_articles_posts', '202605200004a', [
-    'instructions'  => 'Maximum of 3 articles. Use search to find articles. If left empty, the 3 most recent articles matching the taxonomy selected above will be shown.',
+    'instructions'  => 'If you want to specify which articles are shown, select a maximum of 3 articles using the search below.',
     'post_type'     => [ 'news', 'blog', 'work_update', 'event' ],
     'max'           => 3,
     'filters'       => [ 'search' ],

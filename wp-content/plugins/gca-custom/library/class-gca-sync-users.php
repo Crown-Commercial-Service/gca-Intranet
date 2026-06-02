@@ -33,6 +33,10 @@ if ( ! defined( 'ABSPATH' ) ) {
  *   Team         – e.g. "Procurement Liverpool (Natalie Kenyon)"
  *   Directorate  – e.g. "Commercial & Procurement Operations"
  *
+ * Each staff member is identified by EmployeeKey (stable across name/email
+ * changes).  Email is used as a fallback only for accounts created before
+ * employee_key meta existed.
+ *
  * WordPress user mapping (both derived from the email prefix, i.e. the part
  * before "@", e.g. "natalie.cadwallader" from "natalie.cadwallader@gca.gov.uk"):
  *   user_login    = email prefix as-is, e.g. "natalie.cadwallader"
@@ -195,30 +199,47 @@ class GCA_Sync_Users {
 
         $log( sprintf( 'Fetched %d staff records from API.', count( $staff ) ) );
 
-        // Build a lookup of API users indexed by normalised email address.
-        $api_users = [];
+        // Build a lookup keyed by EmployeeKey — the stable identifier that
+        // survives name/email changes.  We also track every API email so the
+        // offboard loop can fall back to email for accounts that predate the
+        // employee_key meta (created before this sync was deployed).
+        $api_users  = []; // EmployeeKey (string) => record
+        $api_emails = []; // normalised email     => true
         foreach ( $staff as $record ) {
-            $email = strtolower( trim( $record['Email'] ?? '' ) );
-            if ( '' !== $email ) {
-                $api_users[ $email ] = $record;
+            $email        = strtolower( trim( $record['Email'] ?? '' ) );
+            $employee_key = trim( (string) ( $record['EmployeeKey'] ?? '' ) );
+
+            if ( '' === $email ) {
+                continue;
             }
+
+            if ( '' !== $employee_key ) {
+                $api_users[ $employee_key ] = $record;
+            }
+
+            $api_emails[ $email ] = true;
         }
 
         // --- Upsert: create or update each API user in WordPress ---
-        foreach ( $api_users as $email => $record ) {
-            $wp_user = get_user_by( 'email', $email );
+        foreach ( $api_users as $employee_key => $record ) {
+            $email = strtolower( trim( $record['Email'] ?? '' ) );
 
-            // Fallback: look up by employee_key meta in case the email changed.
-            if ( ! $wp_user && ! empty( $record['EmployeeKey'] ) ) {
-                $users_by_key = get_users( [
-                    'meta_key'   => self::EMPLOYEE_KEY_META,
-                    'meta_value' => $record['EmployeeKey'],
-                    'number'     => 1,
-                ] );
-                if ( ! empty( $users_by_key ) ) {
-                    $wp_user = $users_by_key[0];
-                    $log( sprintf( 'Matched user %s by employee_key (email changed from %s).', $email, $wp_user->user_email ) );
-                }
+            // Primary: look up by EmployeeKey meta — stable across email changes.
+            $users_by_key = get_users( [
+                'meta_key'   => self::EMPLOYEE_KEY_META,
+                'meta_value' => $employee_key,
+                'number'     => 1,
+            ] );
+            $wp_user = ! empty( $users_by_key ) ? $users_by_key[0] : null;
+
+            if ( $wp_user && strtolower( $wp_user->user_email ) !== $email ) {
+                $log( sprintf( 'Matched user %s by employee_key (email changed from %s).', $email, $wp_user->user_email ) );
+            }
+
+            // Fallback: look up by email for accounts created before employee_key
+            // meta existed (first sync after this change is deployed).
+            if ( ! $wp_user ) {
+                $wp_user = get_user_by( 'email', $email );
             }
 
             if ( $wp_user ) {
@@ -296,10 +317,16 @@ class GCA_Sync_Users {
         $former_employee_id = null; // Resolved lazily on first hard-delete.
 
         foreach ( $wp_users as $wp_user ) {
-            $email = strtolower( $wp_user->user_email );
+            $email        = strtolower( $wp_user->user_email );
+            $employee_key = get_user_meta( $wp_user->ID, self::EMPLOYEE_KEY_META, true );
 
-            if ( isset( $api_users[ $email ] ) ) {
-                continue; // Present in API — already handled above.
+            // Present in API — already handled by the upsert loop above.
+            if ( '' !== $employee_key && isset( $api_users[ $employee_key ] ) ) {
+                continue;
+            }
+            // Fallback for accounts without employee_key meta (pre-deployment legacy users).
+            if ( '' === $employee_key && isset( $api_emails[ $email ] ) ) {
+                continue;
             }
 
             // Preserve users whose login is in the protected list.
@@ -507,16 +534,18 @@ class GCA_Sync_Users {
         );
 
         // Reassign comments so they display under the Former Employee account.
-        $wpdb->update(
-            $wpdb->comments,
-            [
-                'user_id'              => $former_employee_id,
-                'comment_author'       => 'Former Employee',
-                'comment_author_email' => self::FORMER_EMPLOYEE_EMAIL,
-            ],
-            [ 'user_id' => $user_id ],
-            [ '%d', '%s', '%s' ],
-            [ '%d' ]
+        // Match on both user_id and comment_author_email so orphaned comments
+        // (user_id = 0 from a prior wp_delete_user call) are also caught.
+        $wpdb->query(
+            $wpdb->prepare(
+                "UPDATE {$wpdb->comments}
+                 SET user_id = %d, comment_author = 'Former Employee', comment_author_email = %s
+                 WHERE user_id = %d OR comment_author_email = %s",
+                $former_employee_id,
+                self::FORMER_EMPLOYEE_EMAIL,
+                $user_id,
+                $email
+            )
         );
 
         // Clear Workday staff meta so no stale data lingers.
