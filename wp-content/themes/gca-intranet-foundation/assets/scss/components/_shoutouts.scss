@@ -31,7 +31,7 @@
 }
 
 .gca-shoutout__recipient-name {
-    @include govuk-font($size: 16);
+    font-size: govuk-px-to-rem(19);
     font-weight: 700;
     color: $govuk-text-colour;
     text-decoration: none;
@@ -39,6 +39,22 @@
     &:hover {
         text-decoration: underline;
     }
+}
+
+
+// ── Category tag (shown on posted card) ──────────────────────────────────────
+
+.gca-shoutout__category-tag {
+    display: inline-block;
+    font-size: govuk-px-to-rem(12);
+    font-weight: 600;
+    color: #7a4f00;
+    background: #fff3cd;
+    border: 1px solid #f5a623;
+    border-radius: 3px;
+    padding: 1px 6px;
+    line-height: 1.4;
+    margin-right: govuk-spacing(1);
 }
 
 // ── Compose – recipient search ────────────────────────────────────────────────

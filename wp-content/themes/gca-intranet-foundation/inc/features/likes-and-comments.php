@@ -517,7 +517,7 @@ function gca_profile_get_posts(): WP_REST_Response
     $user_id = get_current_user_id();
     $posts   = get_posts([
         'author'      => $user_id,
-        'post_type'   => ['post', 'news', 'blog', 'work_update', 'event'],
+        'post_type'   => ['blog', 'work_update'],
         'post_status' => 'publish',
         'numberposts' => 20,
         'orderby'     => 'date',

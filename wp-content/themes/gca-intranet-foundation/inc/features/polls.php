@@ -100,6 +100,13 @@ add_action('admin_menu', function (): void {
     );
 }, 5);
 
+add_action('admin_head', function (): void {
+    $screen = get_current_screen();
+    if ($screen && $screen->post_type === 'community_poll') {
+        echo '<style>.page-title-action { display: none !important; }</style>';
+    }
+});
+
 // ---------------------------------------------------------------------------
 // Admin – list columns
 // ---------------------------------------------------------------------------

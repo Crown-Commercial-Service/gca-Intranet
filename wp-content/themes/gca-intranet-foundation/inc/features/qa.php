@@ -106,6 +106,13 @@ add_action('admin_menu', function (): void {
     );
 }, 5);
 
+add_action('admin_head', function (): void {
+    $screen = get_current_screen();
+    if ($screen && $screen->post_type === 'qa_question') {
+        echo '<style>.page-title-action { display: none !important; }</style>';
+    }
+});
+
 // ---------------------------------------------------------------------------
 // Role + capability setup
 // ---------------------------------------------------------------------------
@@ -139,6 +146,9 @@ function gca_qa_setup_roles(): void
 // ---------------------------------------------------------------------------
 
 add_action('add_meta_boxes', function (): void {
+    remove_meta_box('authordiv', 'qa_question', 'normal');
+    remove_meta_box('authordiv', 'qa_question', 'side');
+
     if (!gca_flag_enabled('community-qa')) {
         return;
     }

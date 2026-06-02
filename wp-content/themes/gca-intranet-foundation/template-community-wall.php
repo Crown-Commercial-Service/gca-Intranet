@@ -266,6 +266,13 @@ endif;
                                     </div>
                                 </div>
 
+                                <div class="govuk-form-group" id="gca-shoutout-category-group" hidden>
+                                    <label class="govuk-label" for="gca-shoutout-category">Category</label>
+                                    <select id="gca-shoutout-category" class="govuk-select" name="category_id">
+                                        <option value="">Select a category (optional)</option>
+                                    </select>
+                                </div>
+
                                 <div class="govuk-form-group gca-cw-compose__textarea-group">
                                     <label class="govuk-label" for="gca-shoutout-content">Your message</label>
                                     <textarea
