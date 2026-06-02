@@ -1,0 +1,439 @@
+<?php
+
+if ( ! class_exists( 'GFForms' ) ) {
+	die();
+}
+
+class GFAsyncUpload {
+
+	public static function upload() {
+
+		GFCommon::log_debug( 'GFAsyncUpload::upload(): Starting.' );
+
+		if ( $_SERVER['REQUEST_METHOD'] !== 'POST' ) { // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotValidated
+			self::die_error();
+		}
+
+		// If the file is bigger than the server can accept then the form_id might not arrive.
+		// This might happen if the file is bigger than the max post size ini setting.
+		// Validation in the browser reduces the risk of this happening.
+		if ( ! isset( $_REQUEST['form_id'] ) ) { // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+			GFCommon::log_debug( 'GFAsyncUpload::upload(): File upload aborted because the form_id was not found. The file may have been bigger than the max post size ini setting.' );
+			self::die_error( 500, __( 'Failed to upload file.', 'gravityforms' ) );
+		}
+
+		$form_unique_id = rgpost( 'gform_unique_id' );
+		if ( ! ctype_alnum( $form_unique_id ) ) {
+			self::die_error();
+		}
+
+		$form_id = absint( $_REQUEST['form_id'] ); // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+		$form    = GFAPI::get_form( $form_id );
+
+		if ( empty( $form ) || ! $form['is_active'] ) {
+			self::die_error();
+		}
+
+		$field_id = absint( rgpost( 'field_id' ) );
+
+		self::die_if_nonce_invalid( $form_id, $field_id );
+
+		if ( GFCommon::form_requires_login( $form ) && ! is_user_logged_in() ) {
+			self::die_error( 401, __( 'You must be logged in to upload files to this form.', 'gravityforms' ) );
+		}
+
+		/**
+		 * Filter the field object that will be associated with the uploaded file.
+		 *
+		 * This is useful when you want to use Gravity Forms' upload system to upload files. Using this filter you can return a one-time-use field object
+		 * to process the file as desired.
+		 *
+		 * @since 2.2.2
+		 *
+		 * @param GF_Field $field The current field object.
+		 * @param array    $form The current form object.
+		 * @param int      $field_id The field ID as passed via the $_POST. Used to fetch the current $field.
+		 */
+		$field = gf_apply_filters( array( 'gform_multifile_upload_field', $form_id, $field_id ), GFFormsModel::get_field( $form, $field_id ), $form, $field_id );
+
+		if ( empty( $field ) || GFFormsModel::get_input_type( $field ) !== 'fileupload' || ! $field->multipleFiles ) {
+			self::die_error();
+		}
+
+		$target_dir = rgar( GFFormsModel::get_tmp_upload_location( $form_id ), 'path' );
+		if ( empty( $target_dir ) || ( ! is_dir( $target_dir ) && ! wp_mkdir_p( $target_dir ) ) ) {
+			GFCommon::log_debug( "GFAsyncUpload::upload(): Couldn't create the tmp folder: " . $target_dir );
+			self::die_error( 500, __( 'Failed to upload file.', 'gravityforms' ) );
+		}
+
+		$time = current_time( 'mysql' );
+		$y    = substr( $time, 0, 4 );
+		$m    = substr( $time, 5, 2 );
+
+		//adding index.html files to all subfolders
+		if ( ! file_exists( GFFormsModel::get_upload_root() . '/index.html' ) ) {
+			GFForms::add_security_files();
+		} else if ( ! file_exists( GFFormsModel::get_upload_path( $form_id ) . '/index.html' ) ) { // nosemgrep audit.php.lang.security.file.phar-deserialization
+			GFCommon::recursive_add_index_file( GFFormsModel::get_upload_path( $form_id ) );
+		} else if ( ! file_exists( GFFormsModel::get_upload_path( $form_id ) . "/$y/index.html" ) ) { // nosemgrep audit.php.lang.security.file.phar-deserialization 
+			GFCommon::recursive_add_index_file( GFFormsModel::get_upload_path( $form_id ) . "/$y" );
+		} else {
+			GFCommon::recursive_add_index_file( GFFormsModel::get_upload_path( $form_id ) . "/$y/$m" );
+		}
+
+		if ( ! file_exists( $target_dir . '/index.html' ) ) { // nosemgrep audit.php.lang.security.file.phar-deserialization
+			GFCommon::recursive_add_index_file( $target_dir );
+		}
+
+		$uploaded_filename = sanitize_file_name( rgar( $_REQUEST, 'original_filename' ) ); // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+		self::die_if_extension_disallowed( $uploaded_filename, 'original_filename' );
+
+		$file_name = sanitize_file_name( rgar( $_REQUEST, 'name' ) ); // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+		self::die_if_extension_disallowed( $file_name, 'name' );
+
+		self::die_if_extensions_different( $uploaded_filename, $file_name );
+
+		$allowed_extensions = $field->get_clean_allowed_extensions();
+		if ( ! empty( $allowed_extensions ) ) {
+			self::die_if_not_allowed_field_extension( $uploaded_filename, 'original_filename', $allowed_extensions );
+			self::die_if_not_allowed_field_extension( $file_name, 'name', $allowed_extensions );
+		}
+
+		$max_upload_size_in_bytes = $field->get_max_file_size_bytes();
+		$max_upload_size_in_mb    = $max_upload_size_in_bytes / 1048576;
+
+		if ( $_FILES['file']['size'] > 0 && $_FILES['file']['size'] > $max_upload_size_in_bytes ) { // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotValidated, WordPress.Security.NonceVerification.Missing
+			// translators: %d: Maximum file size in MB.
+			self::die_error( 104, sprintf( __( 'File exceeds size limit. Maximum file size: %dMB', 'gravityforms' ), $max_upload_size_in_mb ) );
+		}
+
+		$chunk         = isset( $_REQUEST['chunk'] ) ? intval( $_REQUEST['chunk'] ) : 0; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+		$chunks        = isset( $_REQUEST['chunks'] ) ? intval( $_REQUEST['chunks'] ) : 0; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+		$chunk_data    = $chunks && $file_name ? rgar( $_REQUEST, str_replace( '.', '_', $file_name ) ) : array(); // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+		$tmp_file_name = '';
+
+		if ( $chunk ) {
+			if ( empty( $chunk_data['hash'] ) || ( $chunk_data['hash'] !== self::get_chunk_hash( $chunk_data['temp_filename'], ( $chunk - 1 ), $form_id, $field_id, $uploaded_filename ) ) ) {
+				GFCommon::log_debug( __METHOD__ . sprintf( '(): Invalid hash for chunk #%d.', $chunk ) );
+				self::die_error( 105, __( 'Upload unsuccessful', 'gravityforms' ) . ' ' . $uploaded_filename );
+			}
+			$tmp_file_name = $chunk_data['temp_filename'];
+		}
+
+		if ( empty( $tmp_file_name ) ) {
+			$tmp_file_name = $form_unique_id . '_input_' . $field_id . '_' . GFCommon::random_str( 16 ) . '_' . $file_name;
+		}
+
+		$tmp_file_name = sanitize_file_name( $tmp_file_name );
+		$file_path     = $target_dir . $tmp_file_name;
+
+		// Only validate if chunking is disabled, or if the final chunk has been uploaded.
+		$check_chunk = $chunks === 0 || $chunk === ( $chunks - 1 );
+
+		if ( ! $field->is_check_type_and_ext_disabled() && $check_chunk ) {
+
+			$file_array = $_FILES['file']; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized, WordPress.Security.ValidatedSanitizedInput.InputNotValidated, WordPress.Security.NonceVerification.Missing
+
+			if ( $chunks ) {
+				$file_array['tmp_name'] = $file_path;
+			}
+
+			self::die_if_invalid_type_and_ext( $file_array, $uploaded_filename, 'original_filename' );
+			self::die_if_invalid_type_and_ext( $file_array, $file_name, 'name' );
+		}
+
+		$cleanup_target_dir = apply_filters( 'gform_cleanup_target_dir', true ); // Remove old files
+		$max_file_age = 5 * 3600; // Temp file age in seconds
+
+		// Remove old temp files
+		if ( $cleanup_target_dir ) {
+			if ( is_dir( $target_dir ) && ( $dir = opendir( $target_dir ) ) ) {
+				while ( ( $file = readdir( $dir ) ) !== false ) {
+					$tmp_file_path = $target_dir . $file;
+
+					// Remove temp file if it is older than the max age and is not the current file
+					if ( preg_match( '/\.part$/', $file ) && ( filemtime( $tmp_file_path ) < time() - $max_file_age ) && ( $tmp_file_path != "{$file_path}.part" ) ) { // nosemgrep audit.php.lang.security.file.phar-deserialization
+						GFCommon::log_debug( 'GFAsyncUpload::upload(): Deleting file: ' . $tmp_file_path );
+						@unlink( $tmp_file_path ); // nosemgrep audit.php.lang.security.file.phar-deserialization, audit.php.lang.security.file.read-write-delete
+					}
+				}
+				closedir( $dir );
+			} else {
+				GFCommon::log_debug( 'GFAsyncUpload::upload(): Failed to open temp directory: ' . $target_dir );
+				self::die_error( 100, __( 'Failed to open temp directory.', 'gravityforms' ) );
+			}
+		}
+
+		if ( isset( $_SERVER['HTTP_CONTENT_TYPE'] ) ) {
+			$contentType = $_SERVER['HTTP_CONTENT_TYPE']; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized, WordPress.Security.ValidatedSanitizedInput.MissingUnslash
+		}
+
+		if ( isset( $_SERVER['CONTENT_TYPE'] ) ) {
+			$contentType = $_SERVER['CONTENT_TYPE']; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized, WordPress.Security.ValidatedSanitizedInput.MissingUnslash
+		}
+
+		// Handle non multipart uploads older WebKit versions didn't support multipart in HTML5
+		if ( strpos( $contentType, 'multipart' ) !== false ) {
+			if ( isset( $_FILES['file']['tmp_name'] ) && is_uploaded_file( $_FILES['file']['tmp_name'] ) ) { // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized, WordPress.Security.NonceVerification.Missing
+				// Open temp file
+				$out = @fopen( "{$file_path}.part", $chunk == 0 ? 'wb' : 'ab' );
+				if ( $out ) {
+					// Read binary input stream and append it to temp file
+					$in = @fopen( $_FILES['file']['tmp_name'], 'rb' ); // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized, WordPress.Security.NonceVerification.Missing
+
+					if ( $in ) {
+						while ( $buff = fread( $in, 4096 ) ) {
+							fwrite( $out, $buff ); // nosemgrep audit.php.lang.security.file.read-write-delete
+						}
+					} else {
+						self::die_error( 101, __( 'Failed to open input stream.', 'gravityforms' ) );
+					}
+
+					@fclose( $in );
+					@fclose( $out );
+					@unlink( $_FILES['file']['tmp_name'] ); // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized, WordPress.Security.NonceVerification.Missing
+				} else {
+					self::die_error( 102, __( 'Failed to open output stream.', 'gravityforms' ) );
+				}
+			} else {
+				self::die_error( 103, __( 'Failed to move uploaded file.', 'gravityforms' ) );
+			}
+		} else {
+			// Open temp file
+			$out = @fopen( "{$file_path}.part", $chunk == 0 ? 'wb' : 'ab' );
+			if ( $out ) {
+				// Read binary input stream and append it to temp file
+				$in = @fopen( 'php://input', 'rb' );
+
+				if ( $in ) {
+					while ( $buff = fread( $in, 4096 ) ) {
+						fwrite( $out, $buff ); // nosemgrep audit.php.lang.security.file.read-write-delete
+					}
+				} else {
+					self::die_error( 101, __( 'Failed to open input stream.', 'gravityforms' ) );
+				}
+
+				@fclose( $in );
+				@fclose( $out );
+			} else {
+				self::die_error( 102, __( 'Failed to open output stream.', 'gravityforms' ) );
+			}
+		}
+
+		if ( ! $chunks || $chunk == $chunks - 1 ) {
+			// Upload is complete. Strip the temp .part suffix off
+			rename( "{$file_path}.part", $file_path );
+
+			if ( file_exists( $file_path ) ) { // nosemgrep audit.php.lang.security.file.phar-deserialization
+				GFFormsModel::set_permissions( $file_path );
+			} else {
+				self::die_error( 105, __( 'Upload unsuccessful', 'gravityforms' ) . ' ' . $uploaded_filename );
+			}
+
+			self::send_headers( 200 );
+			gf_do_action( array( 'gform_post_multifile_upload', $form['id'] ), $form, $field, $uploaded_filename, $tmp_file_name, $file_path );
+
+			GFCommon::log_debug( sprintf( 'GFAsyncUpload::upload(): File upload complete. temp_filename: %s  uploaded_filename: %s ', $tmp_file_name, $uploaded_filename ) );
+		} else {
+			if ( file_exists( "{$file_path}.part" ) ) {
+				GFFormsModel::set_permissions( "{$file_path}.part" );
+			} else {
+				self::die_error( 105, __( 'Upload unsuccessful', 'gravityforms' ) . ' ' . $uploaded_filename );
+			}
+
+			self::send_headers( 200 );
+			GFCommon::log_debug( sprintf( 'GFAsyncUpload::upload(): Chunk upload complete. temp_filename: %s  uploaded_filename: %s chunk: %d', $tmp_file_name, $uploaded_filename, $chunk ) );
+		}
+
+		$output = array(
+			'status' => 'ok',
+			'data'   => array(
+				'temp_filename'     => $tmp_file_name,
+				'uploaded_filename' => str_replace( "\\'", "'", urldecode( $uploaded_filename ) ) //Decoding filename to prevent file name mismatch.
+			)
+		);
+
+		if ( $chunks && ( $chunk != $chunks - 1 ) ) {
+			$output['data']['hash'] = self::get_chunk_hash( $tmp_file_name, $chunk, $form_id, $field_id, $uploaded_filename );
+		}
+
+		$output = json_encode( $output );
+
+		die( $output ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+	}
+
+	/**
+	 * Ends the request with an error response.
+	 *
+	 * @since unknown
+	 * @since 2.9.20 Made the params optional.
+	 *
+	 * @param int|string $status_code The status code. Optional. Defaults to 400.
+	 * @param string     $message     The error message. Optional. Defaults to 'Invalid request.'.
+	 *
+	 * @return void
+	 */
+	public static function die_error( $status_code = 400, $message = '' ) {
+		self::send_headers( is_int( $status_code ) ? $status_code : 400 );
+		wp_send_json(
+			array(
+				'status' => 'error',
+				'error'  => array(
+					'code'    => $status_code,
+					'message' => $message ?: __( 'Invalid request.', 'gravityforms' ),
+				),
+			)
+		);
+	}
+
+	/**
+	 * Sends the headers for the response.
+	 *
+	 * @since 2.9.20
+	 *
+	 * @param int $status_code The status code.
+	 *
+	 * @return void
+	 */
+	private static function send_headers( $status_code ) {
+		header( 'Content-Type: application/json; charset=' . get_option( 'blog_charset' ) );
+		send_nosniff_header();
+		nocache_headers();
+		status_header( $status_code );
+	}
+
+	/**
+	 * Ends the request with an error response if the nonce is invalid.
+	 *
+	 * @since 2.9.24
+	 *
+	 * @param int $form_id  The form ID.
+	 * @param int $field_id The field ID.
+	 *
+	 * @return void
+	 */
+	private static function die_if_nonce_invalid( $form_id, $field_id ) {
+		$nonce  = rgar( $_REQUEST, "_gform_file_upload_nonce_{$form_id}_{$field_id}" ); // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+		$action = "gform_file_upload_{$form_id}_{$field_id}";
+
+		if ( empty( $nonce ) ) {
+			/**
+			 * The legacy nonce is used by the Chained Selects field in the form editor.
+			 *
+			 * @depecated 2.9.24
+			 * @remove-in 3.0
+			 */
+			$nonce  = rgar( $_REQUEST, "_gform_file_upload_nonce_{$form_id}" ); // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+			$action = "gform_file_upload_{$form_id}";
+		}
+
+		if ( empty( $nonce ) || ! wp_verify_nonce( $nonce, $action ) ) { // nosemgrep scanner.php.wp.security.csrf.nonce-check-not-dying
+			self::die_error( 403, __( 'Your session has expired. Please refresh the page and try again.', 'gravityforms' ) );
+		}
+	}
+
+	/**
+	 * Ends the request with an error response if the file extension is disallowed.
+	 *
+	 * @since 2.9.24
+	 *
+	 * @param string $file_name  The file name.
+	 * @param string $input_name The input name the file name is from.
+	 *
+	 * @return void
+	 */
+	private static function die_if_extension_disallowed( $file_name, $input_name ) {
+		if ( GFCommon::file_name_has_disallowed_extension( $file_name ) ) {
+			GFCommon::log_debug( __METHOD__ . sprintf( '(): Illegal file extension (input: %s): %s', $input_name, $file_name ) );
+			self::die_error( 104, __( 'The uploaded file type is not allowed.', 'gravityforms' ) );
+		}
+	}
+
+	/**
+	 * Ends the request with an error response if the file names have different extensions.
+	 *
+	 * @since 2.9.24
+	 *
+	 * @param string $uploaded_filename The file name from the uploaded_filename input.
+	 * @param string $file_name         The file name from the name input.
+	 *
+	 * @return void
+	 */
+	private static function die_if_extensions_different( $uploaded_filename, $file_name ) {
+		$uploaded_filename_ext = pathinfo( $uploaded_filename, PATHINFO_EXTENSION );
+		$file_name_ext         = pathinfo( $file_name, PATHINFO_EXTENSION );
+		if ( $uploaded_filename_ext !== $file_name_ext ) {
+			GFCommon::log_debug( __METHOD__ . sprintf( '(): File extensions do not match. uploaded_filename: %s; name: %s', $uploaded_filename_ext, $file_name_ext ) );
+			self::die_error( 105, __( 'Upload unsuccessful', 'gravityforms' ) . ' ' . $uploaded_filename );
+		}
+	}
+
+	/**
+	 * Ends the request with an error response if the file extension is not one of the allowed extensions configured on the field.
+	 *
+	 * @since 2.9.24
+	 *
+	 * @param string   $file_name  The file name.
+	 * @param string   $input_name The input name the file name is from.
+	 * @param string[] $extensions The allowed extensions.
+	 *
+	 * @return void
+	 */
+	private static function die_if_not_allowed_field_extension( $file_name, $input_name, $extensions ) {
+		if ( ! GFCommon::match_file_extension( $file_name, $extensions ) ) {
+			GFCommon::log_debug( __METHOD__ . sprintf( '(): The uploaded file type is not allowed (input: %s): %s', $input_name, $file_name ) );
+			// translators: %s: list of allowed extensions.
+			self::die_error( 104, sprintf( __( 'The uploaded file type is not allowed. Must be one of the following: %s', 'gravityforms' ), implode( ', ', $extensions ) ) );
+		}
+	}
+
+	/**
+	 * Ends the request with an error response if the file type and extension are invalid.
+	 *
+	 * @since 2.9.24
+	 *
+	 * @param array  $file       The file details from $_FILES.
+	 * @param string $file_name  The file name.
+	 * @param string $input_name The input name the file name is from.
+	 *
+	 * @return void
+	 */
+	private static function die_if_invalid_type_and_ext( $file, $file_name, $input_name ) {
+		$result = GFCommon::check_type_and_ext( $file, $file_name );
+		if ( is_wp_error( $result ) ) {
+			GFCommon::log_debug( sprintf( '%s(): %s (input: %s); %s; %s', __METHOD__, $file_name, $input_name, $result->get_error_code(), $result->get_error_message() ) );
+			self::die_error( $result->get_error_code(), $result->get_error_message() );
+		}
+	}
+
+	/**
+	 * Returns a hash created using the given arguments.
+	 *
+	 * @since 2.9.24
+	 *
+	 * @param string $tmp_file_name     The temporary file name.
+	 * @param int    $chunk             The chunk number.
+	 * @param int    $form_id           The form ID.
+	 * @param int    $field_id          The field ID.
+	 * @param string $uploaded_filename The uploaded file name.
+	 *
+	 * @return false|string
+	 */
+	private static function get_chunk_hash( $tmp_file_name, $chunk, $form_id, $field_id, $uploaded_filename ) {
+		return wp_hash(
+			implode(
+				'|',
+				array(
+					$tmp_file_name,
+					$chunk,
+					$form_id,
+					$field_id,
+					$uploaded_filename,
+				)
+			)
+		);
+	}
+
+}
+
+GFAsyncUpload::upload();

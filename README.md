@@ -122,6 +122,159 @@ This removes all local data and re-initialises WordPress.
 
 ---
 
+## Feature Flags
+
+The `gca-feature-flags` plugin provides a lightweight feature-flag system for toggling functionality without code deploys.
+
+### How it works
+
+- Flags are **registered in code** (in the theme) and **toggled via the WordPress Admin UI**.
+- The Admin UI lives at **WP Admin → Settings → Feature Flags**.
+- Each flag has a label, optional description, optional tags, and a default on/off state.
+- Flags that have never been saved in the admin fall back to their registered `default`.
+
+### Plugin location
+
+```
+wp-content/plugins/gca-feature-flags/gca-feature-flags.php
+```
+
+This plugin is committed to Git and activated alongside the theme.
+
+### Registering a flag
+
+Each feature lives in its own file under `wp-content/themes/gca-intranet/inc/features/`. All files in that directory are automatically loaded by `inc/features.php`.
+
+Create a new file, e.g. `inc/features/my-feature.php`:
+
+```php
+gca_register_feature_flag('my-feature', [
+    'label'       => 'My Feature',
+    'description' => 'Short description of what this controls.',
+    'default'     => false,          // on or off by default
+    'tags'        => ['ui', 'beta'], // optional — used to filter flags in the admin UI
+]);
+```
+
+The flag slug (`my-feature`) must be a unique, URL-safe string. It is used as the key for checking and storing the flag's state.
+
+### Checking a flag
+
+Call `gca_flag_enabled()` anywhere in template files, theme PHP, or plugins:
+
+```php
+if (gca_flag_enabled('my-feature')) {
+    // render the new feature
+}
+```
+
+### Toggling a flag
+
+1. Go to **WP Admin → Settings → Feature Flags**.
+2. Use the toggle switch next to the flag you want to change.
+3. Click **Save Changes** — changes take effect immediately.
+
+The admin page supports **search** and **tag filtering** to quickly find flags in large lists.
+
+### Example: Environment Banner
+
+The built-in `environment-banner` flag (`inc/features/environment-banner.php`) is a working example:
+
+```php
+gca_register_feature_flag('environment-banner', [
+    'label'       => 'Environment Banner',
+    'description' => 'Shows a yellow banner at the top of every page indicating the current environment. Never shown in production.',
+    'default'     => false,
+    'tags'        => ['ui', 'environment'],
+]);
+
+add_action('wp_body_open', function (): void {
+    if (!gca_flag_enabled('environment-banner')) {
+        return;
+    }
+    // ... render the banner
+});
+```
+
+### Reference
+
+| Function | Description |
+|---|---|
+| `gca_register_feature_flag($id, $args)` | Register a flag (call before any `is_enabled` check) |
+| `gca_flag_enabled($id)` | Returns `true` if the flag is enabled, `false` otherwise |
+
+### Feature inventory
+
+Each feature file lives in `wp-content/themes/gca-intranet-foundation/inc/features/`.
+
+| Flag ID | Label | Description | Cron job |
+|---|---|---|---|
+| `environment-banner` | Environment Banner | Shows a yellow banner at the top of every page indicating the current environment. Never shown in production. | — |
+| `cron-manager` | Cron Manager | Admin interface (Tools → Cron Jobs) to view, create, edit, delete, and manually run WordPress cron jobs. | — |
+| `workday-user-sync` | Workday User Sync | Syncs WordPress users with the Workday staff list API. Schedule via Tools → Cron Jobs or run manually with `wp gca sync-users`. | `gca_sync_workday_users` |
+| `google-profile-picture` | Google Profile Picture Sync | Downloads the user's Google profile picture on each SSO login and uses it as their avatar across the site. Generated letter-avatars (Google's default when no real photo is set) are automatically discarded using GD colour analysis — only genuine photographs are stored. Run `wp gca sync-profile-pictures` to retroactively clean up any letter-avatars stored before this check was added. Requires `GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET` in `.env`. | — |
+| `purge-events` | Purge Events | Archives event posts more than one month after their end date (or start date if no end date is set) by moving them to the `gca_archived` post status. Archived events are hidden from the frontend but remain recoverable in the admin. Schedule via Tools → Cron Jobs or run manually with `wp gca purge-events`. | `gca_purge_events` |
+| `author-selector` | Author Selector | Replaces the default WordPress author meta box on `blog` and `work_update` posts with a searchable Select2 dropdown. Each option shows the user's profile image (Google SSO photo → Gravatar → WP default). All users are pre-loaded as inline JSON — no AJAX required. | — |
+| `directorate-contact` | Directorate Contact Popup | Shows a contact popup in the footer for pages tagged with a `responsible_team` taxonomy term. The popup title, description, and contact items are configured on the term edit screen (Taxonomy → Edit Term → Directorate Contact Popup). The responsible-team pill always renders; the popup is only attached when this flag is enabled. | — |
+| `staff-profiles` | Staff Profiles | Enables public staff profile pages at `/profile/<username>`. Data is pulled from WordPress user meta synced via the Workday User Sync feature. Enabled by default. | — |
+| `page-feedback` | Page Feedback | Shows an "Is this page useful?" feedback widget above the footer on all singular pages. Yes/No panels collect checkbox reasons; Report a Problem collects free-text. Three Gravity Forms are created programmatically on first use and are editable from WP Admin → Forms. Requires Gravity Forms. | — |
+| — *(always on)* | Likes & Comments | REST API endpoints for post and comment interactions. Provides routes to get interactions, toggle post/comment likes, add/delete comments, and search users for @mentions. All routes require authentication. See inline route documentation in `inc/features/likes-and-comments.php`. | — |
+
+### Purge Events — implementation notes
+
+The `purge-events` feature archives rather than hard-deletes old event posts. Key details:
+
+- **Custom post status** — `register_archived_status()` registers `gca_archived` on the WordPress `init` hook with `public: false` and `exclude_from_search: true`, so archived events are invisible on the frontend but visible in the admin under a separate **Archived** status filter.
+- **Archive instead of delete** — `wp_delete_post( $post_id, true )` has been replaced with `wp_update_post( ['ID' => $post_id, 'post_status' => 'gca_archived'] )`, making the operation fully reversible.
+- **No double-processing** — the query that selects events to evaluate is scoped to `['publish', 'private', 'draft']`, so events already in `gca_archived` are naturally excluded from subsequent cron runs.
+- **Stats & logs** — all log messages and the stats array use `archived` (was `deleted`) to reflect the new behaviour.
+
+---
+
+## gca-custom plugin development
+
+The `gca-custom` plugin (`wp-content/plugins/gca-custom`) contains PHP classes and a PHPUnit test suite. These run outside Docker using a local PHP and Composer install.
+
+### Prerequisites
+
+- PHP 7.4+
+- [Composer](https://getcomposer.org/)
+
+### Install dependencies
+
+```bash
+cd wp-content/plugins/gca-custom
+composer install
+```
+
+`vendor/` is git-ignored — you must run this after cloning or pulling changes to `composer.json`.
+
+### Run tests
+
+```bash
+cd wp-content/plugins/gca-custom
+./vendor/bin/phpunit
+```
+
+All tests should pass with output ending in `OK (N tests, N assertions)`.
+
+> **Note:** The current test suite only covers the Workday user sync (`GCA_Sync_Users`). Other plugin functionality is not yet tested.
+
+### Workday user sync — offboarding constants
+
+Two constants in `library/class-gca-sync-users.php` control offboarding behaviour:
+
+| Constant | Default | Description |
+|---|---|---|
+| `ENABLE_DELETE` | `true` | Set to `false` to pause hard-deletes without affecting soft-deletes |
+| `SOFT_DELETE_GRACE_DAYS` | `5` | Number of days between soft-delete and hard-delete |
+
+**Soft-delete** (first sync the user is absent from Workday): sets a `deleted_at` usermeta timestamp. The user retains full login access and remains visible in the staff directory and profiles during the grace period.
+
+**Hard-delete** (after the grace period, when `ENABLE_DELETE = true`): reassigns posts and comments to the `former-employee` system user, clears Workday usermeta, then permanently deletes the WP user. The `former-employee` system user (login: `former-employee`, email: `former-employee@gca.co.uk`) is created automatically on first use — do not delete it.
+
+---
+
 ## Theme development notes
 - Themes live directly in this repo under `wp-content/themes/`
 - No symlinks are used

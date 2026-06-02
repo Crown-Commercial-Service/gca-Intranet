@@ -1,0 +1,343 @@
+// =============================================================================
+// Page Feedback Widget
+// =============================================================================
+
+$pf-cream: #e9edc2;
+$pf-olive: #9caf27;
+$pf-olive-hover: #91a107;
+$pf-olive-border: #7a9020;
+$pf-text: #0b0c0c;
+
+// Ensure hidden attribute always wins — GF injects styles that can fight it
+#gca-page-useful [hidden] {
+    display: none !important;
+}
+
+// Bar
+.gca-pf-bar {
+    padding: 0;
+    background: transparent;
+}
+
+.gca-pf-bar-inner {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 12px;
+    background: $pf-cream;
+    padding: 12px 15px;
+    border-top-left-radius: 4px;
+    border-top-right-radius: 4px;
+}
+
+.gca-pf-bar-left {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 12px;
+}
+
+.gca-pf-question {
+    margin: 0 !important;
+    font-weight: 600 !important;
+    font-size: 1rem !important;
+    white-space: nowrap;
+}
+
+.gca-pf-yesno {
+    display: flex;
+    gap: 6px;
+    align-items: center;
+}
+
+// Yes / No buttons
+.gca-pf-btn-yesno {
+    background: $pf-olive !important;
+    color: $pf-text !important;
+    border: none !important;
+    border-radius: 5px !important;
+    cursor: pointer;
+    font-size: 0.875rem !important;
+    font-weight: 600 !important;
+    line-height: 1 !important;
+    padding: 8px 18px !important;
+    -webkit-appearance: none;
+    appearance: none;
+    margin: 0 !important;
+    box-shadow: none !important;
+    text-decoration: none !important;
+
+    &:hover {
+        background: $pf-olive-hover !important;
+    }
+
+    &:focus {
+        outline: 3px solid #fd0;
+        outline-offset: 0;
+        box-shadow: inset 0 0 0 2px #000 !important;
+        background: $pf-olive !important;
+    }
+}
+
+// Report button
+.gca-pf-btn-report {
+    background: $pf-cream !important;
+    color: $pf-text !important;
+    border: 1px solid $pf-olive-border;
+    border-bottom-width: medium;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 0.875rem !important;
+    font-weight: 400 !important;
+    line-height: 1.4 !important;
+    padding: 7px 14px !important;
+    -webkit-appearance: none;
+    appearance: none;
+    margin: 0 !important;
+    box-shadow: none !important;
+    text-decoration: none !important;
+
+    &:hover {
+        background: #dde2a8 !important;
+    }
+
+    &:focus {
+        outline: 3px solid #fd0;
+        outline-offset: 0;
+        box-shadow: inset 0 0 0 2px #000 !important;
+        background: #fff !important;
+    }
+}
+
+// Panels
+.gca-page-useful__panel {
+    background: #fff;
+    padding: 20px 0;
+}
+
+.gca-pf-separator {
+    margin: 0 0 20px !important;
+}
+
+.gca-pf-panel-heading {
+    font-weight: 700 !important;
+    margin: 0 0 12px !important;
+}
+
+.gca-pf-report-hint {
+    color: #505a5f !important;
+    margin-bottom: 20px !important;
+    font-size: 1.1875rem !important;
+}
+
+// Gravity Forms overrides inside panels
+.gca-page-useful__panel {
+    .gform_wrapper {
+        margin: 0 !important;
+        max-width: 100% !important;
+    }
+
+    .gform_body {
+        margin-bottom: 0 !important;
+    }
+
+    .gfield_label {
+        font-weight: 600 !important;
+        font-size: 1.1875rem !important;
+        margin-bottom: 8px !important;
+    }
+
+    input[type="checkbox"] {
+        width: 19px !important;
+        height: 19px !important;
+    }
+
+    .gchoice label,
+    .gfield-choice-input + label {
+        font-size: 19px !important;
+    }
+
+    .gfield--type-hidden {
+        display: none !important;
+        margin: 0 !important;
+        padding: 0 !important;
+    }
+
+    .gform_footer {
+        display: flex !important;
+        align-items: center !important;
+        gap: 10px !important;
+        margin-top: 16px !important;
+        padding: 0 !important;
+    }
+
+    .gform_button[type="submit"] {
+        background: $pf-olive !important;
+        color: $pf-text !important;
+        border: 2px solid transparent !important;
+        border-radius: 4px !important;
+        cursor: pointer !important;
+        font-size: 1.1875rem !important;
+        font-weight: 700 !important;
+        line-height: 1.2 !important;
+        padding: 7px 14px !important;
+        margin: 0 3px 0 0 !important;
+        -webkit-appearance: none !important;
+        box-shadow: none !important;
+
+        &:hover {
+            background: $pf-olive-hover !important;
+        }
+
+        &:focus {
+            outline: 3px solid #fd0;
+            outline-offset: 0;
+            box-shadow: inset 0 0 0 2px #000 !important;
+            background: $pf-olive !important;
+        }
+    }
+}
+
+// Checkbox group heading — h3 nested inside legend (GDS pattern)
+.gca-pf-checkbox-heading {
+    font-size: 1.1875rem !important;
+    font-weight: 600 !important;
+    margin: 0 !important;
+}
+
+// GF validation errors inside panels — GDS style
+$pf-error: #ca3535;
+
+.gca-page-useful__panel {
+
+    // Hide "(Required)" indicator text
+    .gfield_required,
+    .gfield_required_text,
+    .gfield_required_asterisk {
+        display: none !important;
+    }
+
+    // Error summary box — hidden, inline errors are sufficient
+    .gform_validation_errors {
+        display: none !important;
+    }
+
+    // Field-level error — GDS style
+    .gfield_error {
+        border: none !important;
+        border-left: 4px solid $pf-error !important;
+        padding-left: 15px !important;
+        background-color: transparent !important;
+
+        fieldset {
+            border: none !important;
+            padding: 0 !important;
+            margin: 0 !important;
+        }
+
+        .gfield_label {
+            color: #0b0c0c !important;
+        }
+
+        .validation_message {
+            color: $pf-error !important;
+            font-size: 1rem !important;
+            font-weight: 700 !important;
+            margin: 4px 0 8px !important;
+        }
+
+        input:not([type="checkbox"]),
+        textarea {
+            border: 2px solid $pf-error !important;
+        }
+
+        input[type="checkbox"] {
+            border-color: #0b0c0c !important;
+        }
+
+
+        .gchoice label,
+        .gfield-choice-input + label {
+            color: #0b0c0c !important;
+        }
+    }
+}
+
+// Cancel button (JS-injected)
+.gca-pf-cancel {
+    background: #e0e0e0 !important;
+    color: $pf-text !important;
+    border: 2px solid transparent !important;
+    border-radius: 4px !important;
+    cursor: pointer;
+    font-size: 1.1875rem !important;
+    font-weight: 400 !important;
+    line-height: 1.2 !important;
+    padding: 7px 14px !important;
+    -webkit-appearance: none;
+    margin: 0 !important;
+    box-shadow: none !important;
+
+    &:hover {
+        background: #ccc !important;
+    }
+
+    &:focus {
+        outline: 3px solid #fd0;
+        outline-offset: 0;
+        box-shadow: inset 0 0 0 2px #000 !important;
+        background: #e0e0e0 !important;
+    }
+}
+
+// Report panel – equal-height textareas, consistent width in all states
+#gca-pf-panel-report {
+    textarea {
+        height: 150px !important;
+        min-height: 150px !important;
+        width: 100% !important;
+        max-width: 800px !important;
+        resize: vertical;
+        box-sizing: border-box !important;
+    }
+
+    .gfield_error textarea {
+        height: 150px !important;
+        min-height: 150px !important;
+        width: 100% !important;
+        max-width: 800px !important;
+        box-sizing: border-box !important;
+    }
+}
+
+// Thank you state
+.gca-pf-thankyou {
+    padding: 0;
+    background: transparent;
+}
+
+.gca-pf-thankyou-inner {
+    background: $pf-cream;
+    padding: 14px 15px;
+}
+
+.gca-pf-thankyou-text {
+    margin: 0 !important;
+    font-weight: 700 !important;
+    font-size: 0.9375rem !important;
+    color: $pf-text !important;
+}
+
+// Responsive
+@media (max-width: 640px) {
+    .gca-pf-bar-inner {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .gca-pf-bar-left {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+}

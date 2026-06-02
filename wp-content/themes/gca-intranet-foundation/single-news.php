@@ -1,7 +1,7 @@
 <?php get_header(); ?>
 
 <?php
-$hero_image_url = get_template_directory_uri() . '/assets/img/news.jpg';
+$hero_image_url = gca_get_banner_url('gca_banner_news', 'news.jpg');
 
 get_template_part('template-parts/hero', null, [
     'title'     => 'News',
@@ -70,6 +70,9 @@ get_template_part('template-parts/breadcrumbs');
                             'hide_last_updated' => true,
                         ]); ?>
 
+                        <?php if (gca_flag_enabled('likes-and-comments')) : ?>
+                            <?php get_template_part('template-parts/likes-and-comments'); ?>
+                        <?php endif; ?>
                     </div>
                 </div>
 

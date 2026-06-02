@@ -54,3 +54,7 @@
 .gca-search-query {
   font-weight: inherit;
 }
+
+[data-testid="search-result-excerpt"] strong {
+  background-color: #ffdd00;
+}

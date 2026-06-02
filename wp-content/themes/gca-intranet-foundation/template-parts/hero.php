@@ -1,38 +1,31 @@
 <?php
 /**
- * Hero band (title + optional image)
- *
- * Usage:
- * get_template_part('template-parts/hero', null, [
- *   'title' => 'Page title',
- *   'image_url' => 'https://...'
- * ]);
+ * Hero banner (GCA)
+ * Args:
+ *  - title (string)
+ *  - image_url (string)  // optional
  */
-$title     = $args['title'] ?? '';
-$image_url = $args['image_url'] ?? '';
-$image_alt = $args['image_alt'] ?? '';
+
+$title     = isset($args['title']) ? (string) $args['title'] : '';
+$image_url = isset($args['image_url']) ? (string) $args['image_url'] : '';
+
+if ($title === '') {
+  $title = get_the_title();
+}
 ?>
 
-<section class="gca-hero" aria-label="Page header">
-  <div class="container-xxl">
-    <div class="row align-items-center g-4">
-      <div class="col-12 col-lg-6">
-        <?php if ($title) : ?>
-          <h1 class="gca-hero__title m-0"><?php echo esc_html($title); ?></h1>
-        <?php endif; ?>
-      </div>
-
-      <div class="col-12 col-lg-6 text-lg-end">
-        <?php if ($image_url) : ?>
-          <img
-            class="gca-hero__image"
-            src="<?php echo esc_url($image_url); ?>"
-            alt="<?php echo esc_attr($image_alt); ?>"
-            <?php if (!$image_alt) : ?>aria-hidden="true"<?php endif; ?>
-            loading="lazy"
-          >
-        <?php endif; ?>
-      </div>
+<section class="gca-hero-banner" aria-label="Page banner">
+  <div class="govuk-width-container">
+    <div class="gca-hero-banner__inner">
+      <h1 class="govuk-heading-xl gca-hero-banner__title">
+        <?php echo esc_html($title); ?>
+      </h1>
     </div>
   </div>
+
+  <?php if (!empty($image_url)) : ?>
+    <div class="gca-hero-banner__media" aria-hidden="true">
+      <img src="<?php echo esc_url($image_url); ?>" alt="">
+    </div>
+  <?php endif; ?>
 </section>

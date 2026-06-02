@@ -7,6 +7,14 @@ if (!defined('ABSPATH')) {
 
 require_once get_template_directory() . '/inc/class-ccs-mega-menu-walker.php';
 require_once get_template_directory() . '/inc/shortcodes.php';
+
+require_once get_template_directory() . '/inc/auth-logic.php';
+
+// Feature flag registrations
+require_once get_template_directory() . '/inc/features.php';
+require_once get_template_directory() . '/inc/rest-api-auth.php';
+require_once get_template_directory() . '/inc/features/community-wall.php';
+
 require_once get_template_directory() . '/inc/rest-api-auth.php';
 
 /**
@@ -71,6 +79,17 @@ add_action('wp_enqueue_scripts', function (): void {
         get_template_directory_uri() . $css_rel_path,
         [],
         $css_ver
+    );
+
+    // 2. Theme style.css (contains migrated child theme CSS)
+    $style_abs = get_template_directory() . '/style.css';
+    $style_ver = file_exists($style_abs) ? (string) filemtime($style_abs) : '1.0.0';
+
+    wp_enqueue_style(
+        'gca-theme-style',
+        get_template_directory_uri() . '/style.css',
+        ['gca-theme'],
+        $style_ver
     );
 
     // 2. Cookie banner inline CSS (avoids a separate build step)
@@ -192,6 +211,852 @@ add_action('wp_enqueue_scripts', function (): void {
 })();
 ');
 
+    wp_register_script('gca-search-autocomplete', '', [], false, true);
+    wp_enqueue_script('gca-search-autocomplete');
+    wp_add_inline_script(
+        'gca-search-autocomplete',
+        'window.gcaSearchAutocomplete = ' . wp_json_encode([
+            'ajaxUrl'       => admin_url('admin-ajax.php'),
+            'minChars'      => 3,
+            'maxResults'    => 5,
+            'loadingText'   => __('Searching...', 'gca-intranet'),
+            'noResultsText' => __('No suggestions found', 'gca-intranet'),
+        ]) . ';',
+        'before'
+    );
+    wp_add_inline_script('gca-search-autocomplete', <<<'JS'
+document.addEventListener("DOMContentLoaded", function () {
+    var config = window.gcaSearchAutocomplete || {};
+    var forms = document.querySelectorAll("[data-autocomplete='header-search']");
+
+    forms.forEach(function (form, formIndex) {
+        var input = form.querySelector("input[name='s']");
+        var panel = form.querySelector(".gca-search-autocomplete");
+
+        if (!input || !panel) {
+            return;
+        }
+
+        var listId = panel.id || ("gca-search-autocomplete-" + formIndex);
+        var abortController = null;
+        var debounceTimer = null;
+        var activeIndex = -1;
+        var suggestions = [];
+
+        panel.id = listId;
+        panel.setAttribute("role", "listbox");
+        input.setAttribute("aria-controls", listId);
+
+        function escapeHtml(value) {
+            return String(value).replace(/[&<>"']/g, function (char) {
+                return {
+                    "&": "&amp;",
+                    "<": "&lt;",
+                    ">": "&gt;",
+                    "\"": "&quot;",
+                    "'": "&#039;"
+                }[char];
+            });
+        }
+
+        function closePanel() {
+            activeIndex = -1;
+            suggestions = [];
+            input.removeAttribute("aria-activedescendant");
+            input.setAttribute("aria-expanded", "false");
+            panel.hidden = true;
+            panel.innerHTML = "";
+        }
+
+        function setActive(index) {
+            var options = panel.querySelectorAll(".gca-search-autocomplete__option");
+
+            options.forEach(function (option, optionIndex) {
+                var isActive = optionIndex === index;
+                option.classList.toggle("is-active", isActive);
+                option.setAttribute("aria-selected", isActive ? "true" : "false");
+
+                if (isActive) {
+                    input.setAttribute("aria-activedescendant", option.id);
+                }
+            });
+
+            if (index < 0 || !options[index]) {
+                input.removeAttribute("aria-activedescendant");
+            }
+        }
+
+        function renderStatus(message) {
+            activeIndex = -1;
+            suggestions = [];
+            input.removeAttribute("aria-activedescendant");
+            input.setAttribute("aria-expanded", "true");
+            panel.hidden = false;
+            panel.innerHTML = "<div class=\"gca-search-autocomplete__status\">" + escapeHtml(message) + "</div>";
+        }
+
+        function renderSuggestions(items) {
+            if (!items.length) {
+                renderStatus(config.noResultsText || "No suggestions found");
+                return;
+            }
+
+            suggestions = items;
+            activeIndex = -1;
+            input.removeAttribute("aria-activedescendant");
+            input.setAttribute("aria-expanded", "true");
+            panel.hidden = false;
+
+            var html = "<ul class=\"gca-search-autocomplete__list\">";
+            items.forEach(function (item, index) {
+                var optionId = listId + "-option-" + index;
+                var mediaHtml = item.image
+                    ? "<span class=\"gca-search-autocomplete__option-media\"><img src=\"" + escapeHtml(item.image) + "\" alt=\"\" class=\"gca-search-autocomplete__option-avatar\" loading=\"lazy\" decoding=\"async\"></span>"
+                    : "";
+                var bodyClass = item.image
+                    ? "gca-search-autocomplete__option-body has-avatar"
+                    : "gca-search-autocomplete__option-body";
+                html += "<li class=\"gca-search-autocomplete__item\">" +
+                    "<a href=\"" + escapeHtml(item.url) + "\" id=\"" + optionId + "\" class=\"gca-search-autocomplete__option\" role=\"option\" aria-selected=\"false\" data-index=\"" + index + "\">" +
+                    mediaHtml +
+                    "<span class=\"" + bodyClass + "\">" +
+                    "<span class=\"gca-search-autocomplete__option-title\">" + escapeHtml(item.title) + "</span>" +
+                    (item.meta ? "<span class=\"gca-search-autocomplete__option-meta\">" + escapeHtml(item.meta) + "</span>" : "") +
+                    "</span>" +
+                    "</a>" +
+                    "</li>";
+            });
+            html += "</ul>";
+            panel.innerHTML = html;
+        }
+
+        function fetchSuggestions(term) {
+            if (abortController) {
+                abortController.abort();
+            }
+
+            abortController = new AbortController();
+            renderStatus(config.loadingText || "Searching...");
+
+            var params = new URLSearchParams({
+                action: "gca_search_autocomplete",
+                term: term
+            });
+
+            fetch(config.ajaxUrl + "?" + params.toString(), {
+                method: "GET",
+                credentials: "same-origin",
+                signal: abortController.signal
+            })
+                .then(function (response) {
+                    if (!response.ok) {
+                        throw new Error("Request failed");
+                    }
+
+                    return response.json();
+                })
+                .then(function (payload) {
+                    var items = payload && payload.success && payload.data && payload.data.items
+                        ? payload.data.items
+                        : [];
+
+                    renderSuggestions(items);
+                })
+                .catch(function (error) {
+                    if (error && error.name === "AbortError") {
+                        return;
+                    }
+
+                    closePanel();
+                });
+        }
+
+        input.addEventListener("input", function () {
+            var value = input.value.trim();
+
+            if (value.length < (config.minChars || 3)) {
+                if (abortController) {
+                    abortController.abort();
+                }
+
+                window.clearTimeout(debounceTimer);
+                closePanel();
+                return;
+            }
+
+            window.clearTimeout(debounceTimer);
+            debounceTimer = window.setTimeout(function () {
+                fetchSuggestions(value);
+            }, 180);
+        });
+
+        input.addEventListener("keydown", function (event) {
+            if (panel.hidden || !suggestions.length) {
+                return;
+            }
+
+            if (event.key === "ArrowDown") {
+                event.preventDefault();
+                activeIndex = (activeIndex + 1) % suggestions.length;
+                setActive(activeIndex);
+                return;
+            }
+
+            if (event.key === "ArrowUp") {
+                event.preventDefault();
+                activeIndex = (activeIndex - 1 + suggestions.length) % suggestions.length;
+                setActive(activeIndex);
+                return;
+            }
+
+            if (event.key === "Enter" && activeIndex >= 0 && suggestions[activeIndex]) {
+                event.preventDefault();
+                window.location.href = suggestions[activeIndex].url;
+                return;
+            }
+
+            if (event.key === "Escape") {
+                closePanel();
+            }
+        });
+
+        panel.addEventListener("mousedown", function (event) {
+            if (!event.target.closest(".gca-search-autocomplete__option")) {
+                event.preventDefault();
+            }
+        });
+
+        form.addEventListener("focusout", function () {
+            window.setTimeout(function () {
+                if (!form.contains(document.activeElement)) {
+                    closePanel();
+                }
+            }, 120);
+        });
+
+        document.addEventListener("click", function (event) {
+            if (!form.contains(event.target)) {
+                closePanel();
+            }
+        });
+    });
+});
+JS
+    );
+
+    // GOV.UK Frontend JS
+    if (is_singular()) {
+        $govuk_js_rel = '/assets/scripts/all.js';
+        $govuk_js_abs = get_template_directory() . $govuk_js_rel;
+        $govuk_js_ver = file_exists($govuk_js_abs) ? (string) filemtime($govuk_js_abs) : '1.0.0';
+
+        wp_enqueue_script(
+            'gca-govuk-frontend',
+            get_template_directory_uri() . $govuk_js_rel,
+            [],
+            $govuk_js_ver,
+            true
+        );
+
+        wp_add_inline_script(
+            'gca-govuk-frontend',
+            'document.addEventListener("DOMContentLoaded", function() {
+                if (window.GOVUKFrontend && typeof window.GOVUKFrontend.initAll === "function") {
+                    window.GOVUKFrontend.initAll();
+                    document.documentElement.classList.add("js-enabled");
+                }
+            });',
+            'after'
+        );
+    }
+
+});
+
+/**
+ * Likes & Comments – enqueue config + inline JS on single posts.
+ */
+add_action('wp_enqueue_scripts', function (): void {
+    $is_interaction_page = is_singular(['post', 'blog', 'news', 'work_update', 'event'])
+        || (is_page_template('template-community-wall.php') && gca_flag_enabled('community-hub'));
+
+    if (!$is_interaction_page) {
+        return;
+    }
+
+    wp_register_script('gca-interactions', '', [], false, true);
+    wp_enqueue_script('gca-interactions');
+
+    wp_add_inline_script('gca-interactions', 'window.gcaInteractions = ' . wp_json_encode([
+        'restUrl'       => esc_url_raw(rest_url('gca/v1')),
+        'nonce'         => wp_create_nonce('wp_rest'),
+        'currentUserId' => get_current_user_id(),
+    ]) . ';');
+
+    wp_add_inline_script('gca-interactions', <<<'JS'
+(function () {
+    'use strict';
+
+    var cfg     = window.gcaInteractions || {};
+    var restUrl = cfg.restUrl || '';
+    var nonce   = cfg.nonce  || '';
+
+    function apiFetch(method, path, body) {
+        var opts = {
+            method:  method,
+            headers: { 'X-WP-Nonce': nonce, 'Content-Type': 'application/json' }
+        };
+        if (body !== undefined) {
+            opts.body = JSON.stringify(body);
+        }
+        return fetch(restUrl + path, opts).then(function (r) {
+            if (!r.ok) { throw new Error(r.status); }
+            return r.json();
+        });
+    }
+
+    function esc(str) {
+        var d = document.createElement('div');
+        d.textContent = String(str);
+        return d.innerHTML;
+    }
+
+    function confirmDeleteComment(triggerEl) {
+        return new Promise(function (resolve) {
+            var previouslyFocused = document.activeElement;
+            var modal = document.createElement('div');
+            modal.className = 'gca-lc-delete-modal';
+            modal.setAttribute('role', 'presentation');
+            modal.innerHTML =
+                '<div class="gca-lc-delete-modal__overlay" data-action="cancel-delete-comment"></div>' +
+                '<div class="gca-lc-delete-modal__dialog" role="dialog" aria-modal="true" aria-labelledby="gca-lc-delete-title" aria-describedby="gca-lc-delete-description" tabindex="-1">' +
+                '<button type="button" class="gca-lc-delete-modal__close" data-action="cancel-delete-comment" aria-label="Close delete confirmation">' +
+                '<span aria-hidden="true">&times;</span>' +
+                '</button>' +
+                '<div class="gca-lc-delete-modal__content">' +
+                '<h2 class="gca-lc-delete-modal__title" id="gca-lc-delete-title">Are you sure you want to delete this comment?</h2>' +
+                '<p class="gca-lc-delete-modal__body" id="gca-lc-delete-description">This will permanently delete the comment. You cannot undo this action.</p>' +
+                '<div class="gca-lc-delete-modal__actions">' +
+                '<button type="button" class="gca-lc-delete-modal__confirm" data-action="confirm-delete-comment">Yes, delete it</button>' +
+                '<button type="button" class="gca-lc-delete-modal__cancel" data-action="cancel-delete-comment">Cancel</button>' +
+                '</div>' +
+                '</div>' +
+                '</div>';
+
+            function close(confirmed) {
+                document.removeEventListener('keydown', onKeydown);
+                modal.remove();
+
+                if (previouslyFocused && typeof previouslyFocused.focus === 'function') {
+                    previouslyFocused.focus();
+                } else if (triggerEl && typeof triggerEl.focus === 'function') {
+                    triggerEl.focus();
+                }
+
+                resolve(confirmed);
+            }
+
+            function onKeydown(e) {
+                if (e.key === 'Escape') {
+                    close(false);
+                    return;
+                }
+
+                if (e.key !== 'Tab') {
+                    return;
+                }
+
+                var focusable = modal.querySelectorAll('button');
+                var first = focusable[0];
+                var last = focusable[focusable.length - 1];
+
+                if (!first || !last) {
+                    return;
+                }
+
+                if (e.shiftKey && document.activeElement === first) {
+                    e.preventDefault();
+                    last.focus();
+                } else if (!e.shiftKey && document.activeElement === last) {
+                    e.preventDefault();
+                    first.focus();
+                }
+            }
+
+            modal.addEventListener('click', function (e) {
+                var actionBtn = e.target.closest('[data-action]');
+                if (!actionBtn) {
+                    return;
+                }
+
+                if (actionBtn.dataset.action === 'confirm-delete-comment') {
+                    close(true);
+                }
+
+                if (actionBtn.dataset.action === 'cancel-delete-comment') {
+                    close(false);
+                }
+            });
+
+            document.body.appendChild(modal);
+            document.addEventListener('keydown', onKeydown);
+
+            var cancelBtn = modal.querySelector('[data-action="cancel-delete-comment"].gca-lc-delete-modal__cancel');
+            if (cancelBtn) {
+                setTimeout(function () { cancelBtn.focus(); }, 50);
+            }
+        });
+    }
+
+    // ── Comment rendering ────────────────────────────────────────────────────
+
+    function likeBtnHtml(liked, count, commentId) {
+        return '<button type="button" class="gca-lc__action-btn" aria-pressed="' + (liked ? 'true' : 'false') +
+            '" data-action="toggle-comment-like" data-comment-id="' + commentId + '">' +
+            '<svg width="14" height="14" viewBox="0 0 22 20" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">' +
+            '<path class="gca-lc__like-path" d="M22 9C22 7.89 21.1 7 20 7H13.68L14.64 2.43C14.66 2.33 14.67 2.22 14.67 2.11C14.67 1.7 14.5 1.32 14.23 1.05L13.17 0L6.59 6.58C6.22 6.95 6 7.45 6 8V18C6 18.5304 6.21071 19.0391 6.58579 19.4142C6.96086 19.7893 7.46957 20 8 20H17C17.83 20 18.54 19.5 18.84 18.78L21.86 11.73C21.95 11.5 22 11.26 22 11V9ZM0 20H4V8H0V20Z"' +
+            ' fill="currentColor"/></svg>' +
+            '<span class="gca-lc__like-label">' + (liked ? 'Liked' : 'Like') + '</span>' +
+            ' <span data-like-count="' + commentId + '">' + count + '</span>' +
+            '</button>';
+    }
+
+    function renderComment(c, isReply) {
+        var repliesHtml = (c.replies || []).map(function (r) { return renderComment(r, true); }).join('');
+        var replyFormHtml = !isReply
+            ? '<div class="gca-lc__reply-form-wrap" id="gca-lc-reply-form-' + c.id + '" hidden>' +
+              '<div class="gca-lc__form-wrap">' +
+              '<form class="gca-lc__form gca-lc__reply-form" data-action="submit-comment" data-comment-id="' + c.id + '" novalidate>' +
+              '<input type="hidden" name="parent_id" value="' + c.id + '">' +
+              '<div class="govuk-form-group gca-lc__textarea-group">' +
+              '<label class="govuk-label govuk-visually-hidden" for="gca-lc-reply-ta-' + c.id + '">Reply to comment</label>' +
+              '<textarea id="gca-lc-reply-ta-' + c.id + '" class="govuk-textarea gca-lc__textarea"' +
+              ' name="content" rows="2" placeholder="Write a reply… Use @ to mention someone"' +
+              ' aria-label="Write a reply. Use @ to mention someone" maxlength="2000"></textarea>' +
+              '<ul class="gca-lc__mention-list" role="listbox" aria-label="Mention suggestions" hidden></ul>' +
+              '</div>' +
+              '<div class="gca-lc__form-actions">' +
+              '<button type="submit" class="govuk-button govuk-button--secondary gca-lc__submit-btn">Post reply</button>' +
+              ' <button type="button" class="gca-lc__action-btn" data-action="cancel-reply" data-comment-id="' + c.id + '">Cancel</button>' +
+              '</div></form></div></div>'
+            : '';
+
+        return '<div class="gca-lc__comment' + (isReply ? ' gca-lc__comment--reply' : '') +
+            '" id="gca-lc-comment-' + c.id + '">' +
+            '<div class="gca-lc__comment-avatar">' +
+            '<img src="' + esc(c.author_avatar) + '" alt="" width="40" height="40" class="gca-lc__avatar">' +
+            '</div>' +
+            '<div class="gca-lc__comment-body">' +
+            '<div class="gca-lc__comment-header">' +
+            (c.author_profile
+                ? '<a href="' + esc(c.author_profile) + '" class="gca-lc__comment-author">' + esc(c.author_name) + '</a>'
+                : '<span class="gca-lc__comment-author">' + esc(c.author_name) + '</span>') +
+            '<time class="gca-lc__comment-date" datetime="' + esc(c.date_iso) + '">' + esc(c.date_formatted) + '</time>' +
+            '</div>' +
+            '<p class="gca-lc__comment-text">' + c.content_html + '</p>' +
+            '<div class="gca-lc__comment-actions">' +
+            likeBtnHtml(c.user_has_liked, c.like_count, c.id) +
+            (!isReply ? '<button type="button" class="gca-lc__action-btn" data-action="show-reply-form" data-comment-id="' + c.id + '">Reply</button>' : '') +
+            (c.is_own ? '<button type="button" class="gca-lc__action-btn gca-lc__action-btn--delete" data-action="delete-comment" data-comment-id="' + c.id + '">Delete</button>' : '') +
+            '</div>' +
+            '</div>' +
+            '</div>' +
+            repliesHtml +
+            replyFormHtml;
+    }
+
+    function renderList(comments, container) {
+        if (!comments.length) {
+            container.innerHTML = '<p class="gca-lc__loading govuk-body-s">No comments yet. Be the first!</p>';
+            return;
+        }
+        container.innerHTML = comments.map(function (c) { return renderComment(c, false); }).join('');
+    }
+
+    // ── @mention autocomplete ────────────────────────────────────────────────
+
+    function setupMentions(textarea, mentionList) {
+        var timer = null;
+        var mentionStart = -1;
+        var query = '';
+        var users = [];
+        var selIdx = -1;
+
+        function close() {
+            mentionList.hidden = true;
+            mentionList.innerHTML = '';
+            mentionStart = -1;
+            query = '';
+            users = [];
+            selIdx = -1;
+        }
+
+        function setActive(idx) {
+            var items = mentionList.querySelectorAll('.gca-lc__mention-item');
+            items.forEach(function (li, i) {
+                li.setAttribute('aria-selected', i === idx ? 'true' : 'false');
+            });
+            selIdx = idx;
+        }
+
+        function insert(user) {
+            var val = textarea.value;
+            var token = '@[' + user.display_name + '](' + user.id + ')';
+            textarea.value = val.substring(0, mentionStart) + token + ' ' + val.substring(mentionStart + 1 + query.length);
+            close();
+            textarea.focus();
+        }
+
+        function showUsers(list) {
+            users = list;
+            if (!list.length) { close(); return; }
+            mentionList.innerHTML = list.map(function (u, i) {
+                return '<li class="gca-lc__mention-item" role="option" aria-selected="false" data-idx="' + i + '">' +
+                    '<img src="' + esc(u.avatar) + '" width="24" height="24" alt="">' +
+                    ' <span>' + esc(u.display_name) + '</span></li>';
+            }).join('');
+            mentionList.querySelectorAll('.gca-lc__mention-item').forEach(function (li) {
+                li.addEventListener('mousedown', function (e) {
+                    e.preventDefault();
+                    insert(users[parseInt(li.dataset.idx, 10)]);
+                });
+            });
+            mentionList.hidden = false;
+        }
+
+        textarea.addEventListener('input', function () {
+            var pos   = textarea.selectionStart;
+            var before = textarea.value.substring(0, pos);
+            var at    = before.lastIndexOf('@');
+            if (at === -1) { close(); return; }
+            var seg = before.substring(at + 1);
+            if (/\s/.test(seg) || seg.length > 40) { close(); return; }
+            mentionStart = at;
+            query = seg;
+            if (seg.length < 1) { close(); return; }
+            clearTimeout(timer);
+            timer = setTimeout(function () {
+                fetch(restUrl + '/users/search?q=' + encodeURIComponent(seg), {
+                    headers: { 'X-WP-Nonce': nonce }
+                }).then(function (r) { return r.json(); }).then(showUsers).catch(close);
+            }, 150);
+        });
+
+        textarea.addEventListener('keydown', function (e) {
+            if (mentionList.hidden) { return; }
+            var items = mentionList.querySelectorAll('.gca-lc__mention-item');
+            if (e.key === 'ArrowDown')  { e.preventDefault(); setActive((selIdx + 1) % items.length); }
+            else if (e.key === 'ArrowUp')   { e.preventDefault(); setActive((selIdx - 1 + items.length) % items.length); }
+            else if (e.key === 'Enter' && selIdx >= 0) { e.preventDefault(); insert(users[selIdx]); }
+            else if (e.key === 'Escape') { close(); }
+        });
+
+        textarea.addEventListener('blur', function () { setTimeout(close, 200); });
+    }
+
+    // ── Per-component initialisation ─────────────────────────────────────────
+
+    function initComponent(section) {
+        if (section.dataset.gcaLcInit === '1') { return; }
+        section.dataset.gcaLcInit = '1';
+
+        var postId = section.dataset.postId;
+        if (!postId) { return; }
+
+        var likeBtn          = section.querySelector('[data-action="toggle-post-like"]');
+        var likeCountEl      = section.querySelector('.gca-lc__like-count');
+        var commentToggleBtn = section.querySelector('[data-action="toggle-comments"]');
+        var commentsPanel    = section.querySelector('.gca-lc__comments-panel');
+        var commentList      = section.querySelector('.gca-lc__list');
+        var statusRegion     = section.querySelector('[aria-live="polite"]');
+        var mainForm         = section.querySelector('[data-action="submit-comment"]');
+        var panelLoaded      = false;
+        var listEvtsBound    = false;
+
+        function announce(msg) {
+            if (!statusRegion) { return; }
+            statusRegion.textContent = '';
+            setTimeout(function () { statusRegion.textContent = msg; }, 50);
+        }
+
+        function updateLike(liked, count) {
+            if (!likeBtn) { return; }
+            likeBtn.setAttribute('aria-pressed', liked ? 'true' : 'false');
+            var label = likeBtn.querySelector('.gca-lc__like-label');
+            if (label) { label.textContent = liked ? 'Liked' : 'Like'; }
+            if (likeCountEl) { likeCountEl.textContent = count; }
+        }
+
+        function updateCommentCount(count) {
+            var countEl = section.querySelector('.gca-lc__comment-count');
+            if (countEl) { countEl.textContent = count; }
+        }
+
+        // Bind a form (main or reply) submit event once.
+        function bindForm(form) {
+            if (!form || form.dataset.evtBound) { return; }
+            form.dataset.evtBound = '1';
+            var ta = form.querySelector('.gca-lc__textarea');
+            var ml = form.querySelector('.gca-lc__mention-list');
+            if (ta && ml) { setupMentions(ta, ml); }
+
+            form.addEventListener('submit', function (e) {
+                e.preventDefault();
+                var textarea  = form.querySelector('.gca-lc__textarea');
+                var parentEl  = form.querySelector('[name="parent_id"]');
+                var content   = textarea ? textarea.value.trim() : '';
+                var parentId  = parentEl ? parseInt(parentEl.value, 10) : 0;
+                if (!content) { if (textarea) { textarea.focus(); } return; }
+
+                var btn = form.querySelector('.gca-lc__submit-btn');
+                if (btn) { btn.disabled = true; }
+
+                apiFetch('POST', '/posts/' + postId + '/comments', { content: content, parent_id: parentId })
+                    .then(function (data) {
+                        if (textarea) { textarea.value = ''; }
+                        updateCommentCount(data.comment_count);
+
+                        var tmp = document.createElement('div');
+                        tmp.innerHTML = renderComment(data.comment, parentId > 0);
+
+                        if (parentId > 0) {
+                            var rf = document.getElementById('gca-lc-reply-form-' + parentId);
+                            if (rf) {
+                                while (tmp.firstChild) { rf.parentNode.insertBefore(tmp.firstChild, rf); }
+                                rf.hidden = true;
+                            }
+                        } else {
+                            while (tmp.firstChild) { commentList.appendChild(tmp.firstChild); }
+                        }
+
+                        // Remove "no comments" placeholder if present
+                        var ph = commentList.querySelector('.gca-lc__loading');
+                        if (ph) { ph.remove(); }
+
+                        // Bind any new reply form that was just inserted
+                        var newReplyForm = document.getElementById('gca-lc-reply-form-' + data.comment.id);
+                        if (newReplyForm) {
+                            var nrf = newReplyForm.querySelector('form');
+                            if (nrf) { bindForm(nrf); }
+                        }
+
+                        var newCommentEl = document.getElementById('gca-lc-comment-' + data.comment.id);
+                        if (newCommentEl) { newCommentEl.setAttribute('tabindex', '-1'); newCommentEl.focus(); }
+                        announce('Comment posted successfully.');
+                    })
+                    .catch(function () { announce('Could not post comment. Please try again.'); })
+                    .finally(function () { if (btn) { btn.disabled = false; } });
+            });
+        }
+
+        function bindListEvents() {
+            if (!commentList || listEvtsBound) { return; }
+            listEvtsBound = true;
+            commentList.addEventListener('click', function (e) {
+                var btn = e.target.closest('[data-action]');
+                if (!btn) { return; }
+                var action    = btn.dataset.action;
+                var commentId = btn.dataset.commentId;
+
+                if (action === 'toggle-comment-like') {
+                    e.preventDefault();
+                    e.stopPropagation();
+
+                    apiFetch('POST', '/comments/' + commentId + '/like').then(function (data) {
+                        btn.setAttribute('aria-pressed', data.liked ? 'true' : 'false');
+                        var lbl = btn.querySelector('.gca-lc__like-label');
+                        if (lbl) { lbl.textContent = data.liked ? 'Liked' : 'Like'; }
+                        var cnt = commentList.querySelector('[data-like-count="' + commentId + '"]');
+                        if (cnt) { cnt.textContent = data.like_count; }
+                        announce(data.liked ? 'Comment liked.' : 'Comment like removed.');
+                    });
+                }
+
+                if (action === 'delete-comment') {
+                    e.preventDefault();
+                    e.stopPropagation();
+
+                    confirmDeleteComment(btn).then(function (confirmed) {
+                        if (!confirmed) { return; }
+
+                        var el = document.getElementById('gca-lc-comment-' + commentId);
+                        var rf = document.getElementById('gca-lc-reply-form-' + commentId);
+                        var countEl = section.querySelector('.gca-lc__comment-count');
+                        var currentCount = countEl ? parseInt(countEl.textContent, 10) : NaN;
+
+                        if (el) { el.remove(); }
+                        if (rf) { rf.remove(); }
+                        if (!Number.isNaN(currentCount) && currentCount > 0) {
+                            updateCommentCount(currentCount - 1);
+                        }
+                        announce('Deleting comment...');
+
+                        apiFetch('DELETE', '/comments/' + commentId).then(function (data) {
+                            updateCommentCount(data.comment_count);
+                            announce('Comment deleted.');
+                        }).catch(function (err) {
+                            var message = err && err.message === '403'
+                                ? 'Could not delete comment. You can only delete comments posted from this account.'
+                                : 'Could not delete comment. Please try again.';
+                            announce(message);
+                            reloadPanel();
+                        });
+                    });
+                }
+
+                if (action === 'show-reply-form') {
+                    e.preventDefault();
+                    e.stopPropagation();
+
+                    var rf = document.getElementById('gca-lc-reply-form-' + commentId);
+                    if (!rf) { return; }
+                    rf.hidden = !rf.hidden;
+                    if (!rf.hidden) {
+                        var innerForm = rf.querySelector('form');
+                        bindForm(innerForm);
+                        var ta = rf.querySelector('.gca-lc__textarea');
+                        if (ta) { ta.focus(); }
+                    }
+                }
+
+                if (action === 'cancel-reply') {
+                    e.preventDefault();
+                    e.stopPropagation();
+
+                    var rf = document.getElementById('gca-lc-reply-form-' + commentId);
+                    if (rf) { rf.hidden = true; }
+                }
+            });
+        }
+
+        function loadPanel() {
+            if (panelLoaded) { return; }
+            apiFetch('GET', '/posts/' + postId + '/interactions')
+                .then(function (data) {
+                    updateLike(data.user_has_liked, data.post_like_count);
+                    updateCommentCount(data.comment_count);
+                    renderList(data.comments, commentList);
+                    panelLoaded = true;
+                    bindListEvents();
+                })
+                .catch(function () {
+                    if (commentList) {
+                        commentList.innerHTML = '<p class="gca-lc__loading govuk-body-s">Could not load comments.</p>';
+                    }
+                });
+        }
+
+        function reloadPanel() {
+            panelLoaded = false;
+            if (commentList) {
+                commentList.innerHTML = '<p class="gca-lc__loading govuk-body-s">Loading comments...</p>';
+            }
+            loadPanel();
+        }
+
+        // Load counts immediately on page load (without opening panel)
+        apiFetch('GET', '/posts/' + postId + '/interactions').then(function (data) {
+            updateLike(data.user_has_liked, data.post_like_count);
+            updateCommentCount(data.comment_count);
+        }).catch(function () {});
+
+        if (likeBtn) {
+            likeBtn.addEventListener('click', function () {
+                apiFetch('POST', '/posts/' + postId + '/like').then(function (data) {
+                    updateLike(data.liked, data.like_count);
+                    announce(data.liked ? 'Post liked.' : 'Post like removed.');
+                });
+            });
+        }
+
+        if (commentToggleBtn && commentsPanel) {
+            commentToggleBtn.addEventListener('click', function () {
+                var expanded = commentToggleBtn.getAttribute('aria-expanded') === 'true';
+                commentToggleBtn.setAttribute('aria-expanded', expanded ? 'false' : 'true');
+                commentsPanel.hidden = expanded;
+                if (!expanded) { loadPanel(); }
+            });
+        }
+
+        if (mainForm) { bindForm(mainForm); }
+    }
+
+    // Expose init so community wall JS can wire dynamically created .gca-lc elements
+    window.GcaLc = { init: initComponent };
+
+    document.addEventListener('DOMContentLoaded', function () {
+        document.querySelectorAll('.gca-lc').forEach(initComponent);
+    });
+}());
+JS
+    );
+});
+
+/**
+ * Community Wall – enqueue config + JS on the community wall page template.
+ */
+add_action('wp_enqueue_scripts', function (): void {
+    if (!is_page_template('template-community-wall.php')) {
+        return;
+    }
+
+    if (!gca_flag_enabled('community-hub')) {
+        return;
+    }
+
+    $current_user = wp_get_current_user();
+    $local_avatar = $current_user->exists()
+        ? trim((string) get_user_meta($current_user->ID, 'google_profile_picture_local_url', true))
+        : '';
+    $avatar_url = $local_avatar
+        ?: ($current_user->exists() ? (string) get_avatar_url($current_user->ID, ['size' => 40]) : '');
+
+    $cw_js_rel = '/assets/scripts/community-wall.js';
+    $cw_js_abs = get_template_directory() . $cw_js_rel;
+    $cw_js_ver = file_exists($cw_js_abs) ? (string) filemtime($cw_js_abs) : '1.0.0';
+
+    wp_register_script(
+        'gca-community-wall',
+        get_template_directory_uri() . $cw_js_rel,
+        ['gca-interactions'],
+        $cw_js_ver,
+        true
+    );
+    wp_enqueue_script('gca-community-wall');
+
+    wp_add_inline_script(
+        'gca-community-wall',
+        'window.gcaCommunityData = ' . wp_json_encode([
+            'restUrl'           => esc_url_raw(rest_url('gca/v1')),
+            'wpRestBase'        => esc_url_raw(rest_url()),
+            'nonce'             => wp_create_nonce('wp_rest'),
+            'currentUserId'     => get_current_user_id(),
+            'currentUserAvatar' => $avatar_url,
+        ]) . ';',
+        'before'
+    );
+
+    // Also load GOV.UK Frontend on the community wall page (normally only on is_singular)
+    $govuk_js_rel = '/assets/scripts/all.js';
+    $govuk_js_abs = get_template_directory() . $govuk_js_rel;
+    $govuk_js_ver = file_exists($govuk_js_abs) ? (string) filemtime($govuk_js_abs) : '1.0.0';
+
+    wp_enqueue_script(
+        'gca-govuk-frontend-cw',
+        get_template_directory_uri() . $govuk_js_rel,
+        [],
+        $govuk_js_ver,
+        true
+    );
+    wp_add_inline_script(
+        'gca-govuk-frontend-cw',
+        'document.addEventListener("DOMContentLoaded", function() {
+            if (window.GOVUKFrontend && typeof window.GOVUKFrontend.initAll === "function") {
+                window.GOVUKFrontend.initAll();
+                document.documentElement.classList.add("js-enabled");
+            }
+        });',
+        'after'
+    );
 });
 
 /**
@@ -384,6 +1249,245 @@ function gca_search_truncate(string $str, int $length): string
     return rtrim(mb_substr($str, 0, $length - 1)) . '…';
 }
 
+function gca_search_context_excerpt(string $query, int $context_chars = 60): string
+{
+    $content = wp_strip_all_tags(get_the_content());
+    $content = html_entity_decode($content, ENT_QUOTES, 'UTF-8');
+    $content = trim(preg_replace('/\s+/', ' ', $content) ?: '');
+
+    if ($content === '') {
+        return gca_search_truncate(get_the_excerpt(), 125);
+    }
+
+    $words = array_values(array_filter(array_map('trim', preg_split('/\s+/', trim($query)) ?: [])));
+
+    if (empty($words)) {
+        return gca_search_truncate($content, 125);
+    }
+
+    // Find the earliest position of any query word in the content.
+    $match_pos   = false;
+    $matched_len = 1;
+    foreach ($words as $word) {
+        $pos = mb_stripos($content, $word);
+        if ($pos !== false && ($match_pos === false || $pos < $match_pos)) {
+            $match_pos   = $pos;
+            $matched_len = mb_strlen($word);
+        }
+    }
+
+    if ($match_pos === false) {
+        return gca_search_truncate($content, 125);
+    }
+
+    $start   = max(0, $match_pos - $context_chars);
+    $length  = $context_chars + $matched_len + $context_chars;
+    $snippet = mb_substr($content, $start, $length);
+
+    $prefix = $start > 0 ? '…' : '';
+    $suffix = ($start + $length) < mb_strlen($content) ? '…' : '';
+
+    return $prefix . trim($snippet) . $suffix;
+}
+
+/**
+ * Build a compact autocomplete result set for the header search.
+ *
+ * @return array<int, array{title:string,meta:string,url:string,image?:string}>
+ */
+function gca_get_search_autocomplete_items(string $term, int $limit = 5): array
+{
+    $term = trim($term);
+    if (mb_strlen($term) < 3) {
+        return [];
+    }
+
+    $limit   = max(1, $limit);
+    $results = [];
+    $q_lower = mb_strtolower($term);
+
+    $score_text = static function (string $text) use ($q_lower): int {
+        $text = mb_strtolower(trim($text));
+        if ($text === '') {
+            return 0;
+        }
+        if ($text === $q_lower) {
+            return 100;
+        }
+        if (str_starts_with($text, $q_lower)) {
+            return 75;
+        }
+        if (str_contains($text, $q_lower)) {
+            return 50;
+        }
+
+        return 0;
+    };
+
+    if (
+        function_exists('gca_flag_enabled')
+        && gca_flag_enabled('staff-profiles')
+        && function_exists('gca_search_staff')
+    ) {
+        foreach (gca_search_staff($term, $limit) as $result) {
+            $role_line = trim(implode(' | ', array_filter([
+                (string) ($result->business_title ?? ''),
+                (string) ($result->team ?? ''),
+            ])));
+
+            $results[] = [
+                'title'    => (string) $result->display_name,
+                'meta'     => $role_line !== ''
+                    ? sprintf(__('Staff profile - %s', 'gca-intranet'), $role_line)
+                    : __('Staff profile', 'gca-intranet'),
+                'url'      => (string) $result->profile_url,
+                'image'    => (string) ($result->avatar_url ?? ''),
+                'score'    => max(
+                    $score_text((string) $result->display_name),
+                    $score_text((string) ($result->business_title ?? '')) > 0 ? 20 : 0,
+                    $score_text((string) ($result->team ?? '')) > 0 ? 10 : 0,
+                    10
+                ),
+                'sort_key' => (string) $result->display_name,
+            ];
+        }
+    }
+
+    $post_types = array_values(array_diff(
+        array_keys(get_post_types(['public' => true, 'exclude_from_search' => false])),
+        ['blog', 'news']
+    ));
+
+    $posts = get_posts([
+        's'                   => $term,
+        'post_type'           => $post_types,
+        'post_status'         => 'publish',
+        'posts_per_page'      => max(10, $limit),
+        'orderby'             => 'relevance',
+        'order'               => 'DESC',
+        'suppress_filters'    => false,
+        'ignore_sticky_posts' => true,
+    ]);
+
+    foreach ($posts as $post) {
+        $title = get_the_title($post);
+        if ($title === '') {
+            continue;
+        }
+
+        $post_type = get_post_type($post);
+        $meta      = __('Content', 'gca-intranet');
+
+        if ($post_type === 'page') {
+            $meta = __('Page', 'gca-intranet');
+            $ct_terms = get_the_terms($post->ID, 'content_type');
+            if (!empty($ct_terms) && !is_wp_error($ct_terms)) {
+                $meta = $ct_terms[0]->name;
+            }
+        } else {
+            $post_type_object = get_post_type_object((string) $post_type);
+            if ($post_type_object) {
+                $meta = $post_type_object->labels->singular_name;
+            }
+        }
+
+        $results[] = [
+            'title'    => $title,
+            'meta'     => $meta,
+            'url'      => (string) get_permalink($post),
+            'score'    => max($score_text($title), 10),
+            'sort_key' => $title,
+        ];
+    }
+
+    usort($results, static function (array $a, array $b): int {
+        if ($b['score'] !== $a['score']) {
+            return $b['score'] <=> $a['score'];
+        }
+
+        return strcasecmp($a['sort_key'], $b['sort_key']);
+    });
+
+    $results = array_values(array_reduce($results, static function (array $carry, array $item): array {
+        $key = mb_strtolower($item['title']) . '|' . untrailingslashit($item['url']);
+        if (!isset($carry[$key])) {
+            $carry[$key] = $item;
+        }
+
+        return $carry;
+    }, []));
+
+    return array_map(static function (array $item): array {
+        return [
+            'title' => $item['title'],
+            'meta'  => $item['meta'],
+            'url'   => $item['url'],
+            'image' => $item['image'] ?? '',
+        ];
+    }, array_slice($results, 0, $limit));
+}
+
+/**
+ * Highlight search terms within a plain-text excerpt.
+ */
+function gca_highlight_search_excerpt(string $text, string $query): string
+{
+    $text  = wp_strip_all_tags($text);
+    $query = trim($query);
+
+    if ($text === '' || $query === '') {
+        return esc_html($text);
+    }
+
+    $parts = preg_split('/\s+/', $query) ?: [];
+    $parts = array_values(array_unique(array_filter(array_map('trim', $parts))));
+
+    if ($parts === []) {
+        return esc_html($text);
+    }
+
+    usort($parts, static fn (string $a, string $b): int => mb_strlen($b) <=> mb_strlen($a));
+
+    $pattern = '/(' . implode('|', array_map(static fn (string $part): string => preg_quote($part, '/'), $parts)) . ')/iu';
+    $segments = preg_split($pattern, $text, -1, PREG_SPLIT_DELIM_CAPTURE);
+
+    if ($segments === false) {
+        return esc_html($text);
+    }
+
+    $html = '';
+
+    foreach ($segments as $segment) {
+        if ($segment === '') {
+            continue;
+        }
+
+        if (preg_match($pattern, $segment) === 1) {
+            $html .= '<strong>' . esc_html($segment) . '</strong>';
+            continue;
+        }
+
+        $html .= esc_html($segment);
+    }
+
+    return $html;
+}
+
+/**
+ * AJAX endpoint for header search autocomplete.
+ */
+function gca_ajax_search_autocomplete(): void
+{
+    $term = isset($_GET['term']) ? sanitize_text_field(wp_unslash((string) $_GET['term'])) : '';
+
+    wp_send_json_success([
+        'items' => gca_get_search_autocomplete_items($term, 5),
+    ]);
+}
+
+add_action('wp_ajax_gca_search_autocomplete', 'gca_ajax_search_autocomplete');
+add_action('wp_ajax_nopriv_gca_search_autocomplete', 'gca_ajax_search_autocomplete');
+
 function gca_clean_post_excerpt(int $length = 320): string
 {
     $content = get_the_content();
@@ -401,22 +1505,54 @@ function gca_clean_post_excerpt(int $length = 320): string
 
 add_action('pre_get_posts', function (WP_Query $query): void {
     if (!is_admin() && $query->is_main_query() && $query->is_post_type_archive('event')) {
+        $today         = date('Ymd');
+        $one_month_ago = date('Ymd', strtotime('-1 month'));
+        $yesterday     = date('Ymd', strtotime('-1 day'));
+        $is_past_view  = isset($_GET['view']) && $_GET['view'] === 'past';
+
         $query->set('meta_key', 'start_date');
         $query->set('orderby', 'meta_value');
-        $query->set('order', 'ASC');
-        $query->set('meta_query', [
-            [
-                'key'     => 'start_date',
-                'value'   => date('Ymd'),
-                'compare' => '>=',
-                'type'    => 'DATE',
-            ],
-        ]);
+
+        if ($is_past_view) {
+            $query->set('order', 'DESC');
+            $query->set('meta_query', [
+                'relation' => 'OR',
+                [
+                    'key'     => 'end_date',
+                    'value'   => [$one_month_ago, $yesterday],
+                    'compare' => 'BETWEEN',
+                    'type'    => 'DATE',
+                ],
+                [
+                    'key'     => 'start_date',
+                    'value'   => [$one_month_ago, $yesterday],
+                    'compare' => 'BETWEEN',
+                    'type'    => 'DATE',
+                ],
+            ]);
+        } else {
+            $query->set('order', 'ASC');
+            $query->set('meta_query', [
+                'relation' => 'OR',
+                [
+                    'key'     => 'start_date',
+                    'value'   => $today,
+                    'compare' => '>=',
+                    'type'    => 'DATE',
+                ],
+                [
+                    'key'     => 'end_date',
+                    'value'   => $today,
+                    'compare' => '>=',
+                    'type'    => 'DATE',
+                ],
+            ]);
+        }
     }
 });
 
 /**
- * Limit search results to 10 per page and exclude news post type.
+ * Limit search results to 10 per page.
  */
 add_action('pre_get_posts', function (WP_Query $query): void {
     if (!is_admin() && $query->is_main_query() && $query->is_search()) {
@@ -424,7 +1560,7 @@ add_action('pre_get_posts', function (WP_Query $query): void {
 
         $post_types = array_values(array_diff(
             array_keys(get_post_types(['public' => true, 'exclude_from_search' => false])),
-            ['news']
+            ['blog', 'news']
         ));
         $query->set('post_type', $post_types);
     }
@@ -734,7 +1870,47 @@ add_action('admin_init', function (): void {
         'sanitize_callback' => 'sanitize_text_field',
         'default'           => '1.0',
     ]);
+
+    foreach (['gca_banner_homepage', 'gca_banner_news', 'gca_banner_blogs', 'gca_banner_events', 'gca_banner_work_updates'] as $key) {
+        register_setting('gca_global_settings', $key, [
+            'sanitize_callback' => 'absint',
+            'default'           => 0,
+        ]);
+    }
+
+    register_setting('gca_global_settings', 'gca_announcement_enabled', [
+        'sanitize_callback' => 'absint',
+        'default'           => 0,
+    ]);
+
+    register_setting('gca_global_settings', 'gca_announcement_content', [
+        'sanitize_callback' => 'wp_kses_post',
+        'default'           => '',
+    ]);
 });
+
+add_action('admin_enqueue_scripts', function (string $hook): void {
+    if ($hook !== 'toplevel_page_gca-global-settings') {
+        return;
+    }
+    wp_enqueue_media();
+});
+
+/**
+ * Returns the banner image URL for a given option key, falling back to a
+ * bundled theme image when no upload has been saved.
+ */
+function gca_get_banner_url(string $option_key, string $fallback_filename): string
+{
+    $attachment_id = (int) get_option($option_key, 0);
+    if ($attachment_id > 0) {
+        $url = wp_get_attachment_image_url($attachment_id, 'full');
+        if ($url) {
+            return $url;
+        }
+    }
+    return get_template_directory_uri() . '/assets/img/' . $fallback_filename;
+}
 
 function gca_global_settings_page(): void
 {
@@ -813,6 +1989,170 @@ function gca_global_settings_page(): void
           </tr>
         </table>
 
+        <h2><?php esc_html_e('Banner images', 'gca-intranet'); ?></h2>
+        <p class="description"><?php esc_html_e('Images displayed in the hero banner on listing pages and the homepage. Leave blank to use the default theme image.', 'gca-intranet'); ?></p>
+
+        <?php
+        $banner_fields = [
+            'gca_banner_homepage'     => __('Homepage', 'gca-intranet'),
+            'gca_banner_news'         => __('News', 'gca-intranet'),
+            'gca_banner_blogs'        => __('Blogs', 'gca-intranet'),
+            'gca_banner_events'       => __('Events', 'gca-intranet'),
+            'gca_banner_work_updates' => __('Work updates', 'gca-intranet'),
+        ];
+        ?>
+        <table class="form-table" role="presentation">
+          <?php foreach ($banner_fields as $option_key => $label) :
+            $attachment_id  = (int) get_option($option_key, 0);
+            $preview_url    = $attachment_id > 0 ? wp_get_attachment_image_url($attachment_id, 'medium') : '';
+            $field_id       = esc_attr($option_key);
+          ?>
+          <tr>
+            <th scope="row">
+              <label for="<?php echo $field_id; ?>"><?php echo esc_html($label); ?></label>
+            </th>
+            <td>
+              <input
+                type="hidden"
+                id="<?php echo $field_id; ?>"
+                name="<?php echo $field_id; ?>"
+                value="<?php echo esc_attr($attachment_id ?: ''); ?>"
+                class="gca-banner-input"
+              >
+              <div class="gca-banner-preview" style="margin-bottom:8px;">
+                <?php if ($preview_url) : ?>
+                  <img src="<?php echo esc_url($preview_url); ?>" alt="" style="max-width:300px;max-height:100px;display:block;object-fit:cover;border-radius:4px;">
+                <?php endif; ?>
+              </div>
+              <button type="button" class="button gca-banner-select" data-target="<?php echo $field_id; ?>"><?php esc_html_e('Select image', 'gca-intranet'); ?></button>
+              <button type="button" class="button gca-banner-remove" data-target="<?php echo $field_id; ?>"<?php echo $attachment_id ? '' : ' style="display:none"'; ?>><?php esc_html_e('Remove', 'gca-intranet'); ?></button>
+            </td>
+          </tr>
+          <?php endforeach; ?>
+        </table>
+
+        <h2><?php esc_html_e('Announcement banner', 'gca-intranet'); ?></h2>
+        <p class="description"><?php esc_html_e('Displays a site-wide announcement bar at the top of every page. Requires the "Site-wide Announcement Banner" feature flag to be enabled.', 'gca-intranet'); ?></p>
+
+        <table class="form-table" role="presentation">
+          <tr>
+            <th scope="row">
+              <?php esc_html_e('Enable banner', 'gca-intranet'); ?>
+            </th>
+            <td>
+              <label for="gca_announcement_enabled">
+                <input
+                  type="checkbox"
+                  id="gca_announcement_enabled"
+                  name="gca_announcement_enabled"
+                  value="1"
+                  <?php checked(1, get_option('gca_announcement_enabled', 0)); ?>
+                >
+                <?php esc_html_e('Show the announcement banner across the site', 'gca-intranet'); ?>
+              </label>
+            </td>
+          </tr>
+          <tr>
+            <th scope="row">
+              <label for="gca_announcement_content"><?php esc_html_e('Announcement content', 'gca-intranet'); ?></label>
+            </th>
+            <td>
+              <?php
+                wp_editor(
+                    get_option('gca_announcement_content', ''),
+                    'gca_announcement_content',
+                    [
+                        'textarea_name' => 'gca_announcement_content',
+                        'media_buttons' => false,
+                        'textarea_rows' => 3,
+                        'tinymce'       => [
+                            'toolbar1' => 'bold,italic,link,unlink',
+                            'toolbar2' => '',
+                        ],
+                        'quicktags'     => ['buttons' => 'strong,em,link'],
+                    ]
+                );
+              ?>
+              <p class="description">
+                <?php esc_html_e('Maximum 150 characters of visible text. Use the link tool to add links; they will display underlined in the banner.', 'gca-intranet'); ?>
+              </p>
+              <p id="gca-announcement-char-count" style="margin-top:4px;font-style:italic;color:#646970;">0 / 150</p>
+            </td>
+          </tr>
+        </table>
+
+        <script>
+        (function ($) {
+          var MAX = 150;
+          var countEl = document.getElementById('gca-announcement-char-count');
+
+          function updateCount(text) {
+            var len = (text || '').replace(/^\s+|\s+$/g, '').length;
+            countEl.textContent = len + ' / ' + MAX;
+            countEl.style.color = len > MAX ? '#d63638' : '#646970';
+          }
+
+          function attachEditor(ed) {
+            updateCount(ed.getContent({ format: 'text' }));
+            ed.on('keyup NodeChange', function () {
+              var text = ed.getContent({ format: 'text' }).replace(/^\s+|\s+$/g, '');
+              if (text.length > MAX) {
+                ed.execCommand('Undo');
+                return;
+              }
+              updateCount(text);
+            });
+          }
+
+          // WordPress fires this jQuery event after each TinyMCE editor initialises
+          $(document).on('tinymce-editor-init', function (event, ed) {
+            if (ed.id === 'gca_announcement_content') {
+              attachEditor(ed);
+            }
+          });
+
+          // Code tab (plain textarea)
+          var textarea = document.getElementById('gca_announcement_content');
+          if (textarea) {
+            textarea.addEventListener('input', function () {
+              var text = this.value.replace(/<[^>]+>/g, '').replace(/^\s+|\s+$/g, '');
+              updateCount(text);
+            });
+          }
+        }(jQuery));
+
+        (function ($) {
+          $('.gca-banner-select').on('click', function () {
+            var targetId  = $(this).data('target');
+            var $input    = $('#' + targetId);
+            var $preview  = $input.siblings('.gca-banner-preview');
+            var $remove   = $input.siblings('.gca-banner-remove');
+            var frame = wp.media({
+              title:    '<?php echo esc_js(__('Select banner image', 'gca-intranet')); ?>',
+              button:   { text: '<?php echo esc_js(__('Use this image', 'gca-intranet')); ?>' },
+              multiple: false,
+              library:  { type: 'image' }
+            });
+            frame.on('select', function () {
+              var attachment = frame.state().get('selection').first().toJSON();
+              $input.val(attachment.id);
+              var src = attachment.sizes && attachment.sizes.medium ? attachment.sizes.medium.url : attachment.url;
+              $preview.html('<img src="' + src + '" alt="" style="max-width:300px;max-height:100px;display:block;object-fit:cover;border-radius:4px;">');
+              $remove.show();
+            });
+            frame.open();
+          });
+
+          $('.gca-banner-remove').on('click', function () {
+            var targetId = $(this).data('target');
+            var $input   = $('#' + targetId);
+            $input.val('');
+            $input.siblings('.gca-banner-preview').empty();
+            $(this).hide();
+          });
+        }(jQuery));
+        </script>
+
         <?php submit_button(); ?>
       </form>
     </div>
@@ -865,6 +2205,7 @@ add_filter('tiny_mce_before_init', function($init_array) {
         ['title' => 'Heading 1', 'block' => 'h1'],
         ['title' => 'Heading 2', 'block' => 'h2'],
         ['title' => 'Heading 3', 'block' => 'h3'],
+        ['title' => 'Heading 4', 'block' => 'h4'],
 
         // GDS Custom Styles
         [
@@ -903,3 +2244,943 @@ add_action('admin_head', function() {
     </style>
     <?php
 });
+
+/**
+ * HERO IMAGE META (editable header/hero image, separate from featured image)
+ * Stored as attachment ID in post meta: _gca_hero_image_id
+ */
+add_action('add_meta_boxes', function (): void {
+
+    add_meta_box(
+        'gca_hero_image',
+        __('Hero header image', 'gca-intranet'),
+        function ($post): void {
+            $meta_key = '_gca_hero_image_id';
+            $image_id = (int) get_post_meta($post->ID, $meta_key, true);
+
+            wp_nonce_field('gca_hero_image_save', 'gca_hero_image_nonce');
+
+            $thumb = $image_id
+                ? wp_get_attachment_image($image_id, 'medium', false, ['style' => 'max-width:100%;height:auto;'])
+                : '';
+
+            echo '<p>' . esc_html__(
+                'Choose an image to appear in the page header (oval). This is separate from the featured image used in the content.',
+                'gca-intranet'
+            ) . '</p>';
+
+            echo '<div id="gca-hero-image-preview" style="margin:12px 0;">' . ($thumb ?: '') . '</div>';
+
+            echo '<input type="hidden" id="gca_hero_image_id" name="gca_hero_image_id" value="' . esc_attr((string) $image_id) . '">';
+
+            echo '<p style="display:flex;gap:8px;align-items:center;">';
+            echo '<button type="button" class="button" id="gca-hero-image-select">' . esc_html__('Select image', 'gca-intranet') . '</button>';
+            echo '<button type="button" class="button" id="gca-hero-image-remove" ' . ($image_id ? '' : 'disabled') . '>' . esc_html__('Remove', 'gca-intranet') . '</button>';
+            echo '</p>';
+        },
+        ['page', 'news', 'blog', 'event', 'work_update', 'post'],
+        'side',
+        'default'
+    );
+});
+
+add_action('save_post', function (int $post_id): void {
+
+    if (!isset($_POST['gca_hero_image_nonce']) || !wp_verify_nonce((string) $_POST['gca_hero_image_nonce'], 'gca_hero_image_save')) {
+        return;
+    }
+
+    if (defined('DOING_AUTOSAVE') && DOING_AUTOSAVE) {
+        return;
+    }
+
+    if (!current_user_can('edit_post', $post_id)) {
+        return;
+    }
+
+    $image_id = isset($_POST['gca_hero_image_id']) ? (int) $_POST['gca_hero_image_id'] : 0;
+
+    if ($image_id > 0) {
+        update_post_meta($post_id, '_gca_hero_image_id', $image_id);
+    } else {
+        delete_post_meta($post_id, '_gca_hero_image_id');
+    }
+});
+
+/**
+ * GI-17: Two-column layout left column WYSIWYG
+ * Stored in post meta: _gca_col2_wysiwyg
+ */
+add_action('add_meta_boxes', function (): void {
+    $screens = ['page', 'news', 'blog', 'event', 'work_update'];
+
+    add_meta_box(
+        'gca_col2_content',
+        __('Layout: left column content', 'gca-intranet'),
+        'gca_render_col2_metabox',
+        $screens,
+        'normal',
+        'high'
+    );
+});
+
+if (!function_exists('gca_render_col2_metabox')):
+function gca_render_col2_metabox(\WP_Post $post): void
+{
+    wp_nonce_field('gca_save_layout_col2', 'gca_layout_col2_nonce');
+
+    $value = (string) get_post_meta($post->ID, '_gca_col2_wysiwyg', true);
+
+    wp_editor(
+        $value,
+        'gca_col2_wysiwyg_editor',
+        [
+            'textarea_name' => 'gca_col2_wysiwyg',
+            'media_buttons' => true,
+            'textarea_rows' => 10,
+            'tinymce'       => true,
+            'quicktags'     => true,
+        ]
+    );
+
+    echo '<p class="description">' . esc_html__(
+        'Only used when the "Layout – 2 column" template is selected.',
+        'gca-intranet'
+    ) . '</p>';
+}
+endif;
+
+add_action('save_post', function (int $post_id): void {
+    if (defined('DOING_AUTOSAVE') && DOING_AUTOSAVE) return;
+
+    if (!isset($_POST['gca_layout_col2_nonce']) || !wp_verify_nonce((string) $_POST['gca_layout_col2_nonce'], 'gca_save_layout_col2')) {
+        return;
+    }
+
+    if (!current_user_can('edit_post', $post_id)) return;
+
+    if (isset($_POST['gca_col2_wysiwyg'])) {
+        update_post_meta($post_id, '_gca_col2_wysiwyg', wp_kses_post((string) $_POST['gca_col2_wysiwyg']));
+    }
+});
+
+/**
+ * Featured image display toggle
+ * Applies to: news, blog
+ */
+add_action('add_meta_boxes', function (): void {
+    $screens = ['news', 'blog'];
+
+    add_meta_box(
+        'gca_featured_image_toggle',
+        __('Featured image', 'gca-intranet'),
+        function (\WP_Post $post): void {
+            wp_nonce_field('gca_save_featured_image_toggle', 'gca_featured_image_toggle_nonce');
+
+            $checked = get_post_meta($post->ID, '_gca_hide_featured_image', true) ? 'checked' : '';
+
+            echo '<label style="display:flex;gap:8px;align-items:center;">';
+            echo '<input type="checkbox" name="gca_hide_featured_image" value="1" ' . $checked . ' />';
+            echo esc_html__('Hide featured image on page', 'gca-intranet');
+            echo '</label>';
+
+            echo '<p class="description" style="margin-top:8px;">' . esc_html__(
+                'If checked, the featured image will not show on the page (regardless of template).',
+                'gca-intranet'
+            ) . '</p>';
+        },
+        $screens,
+        'side',
+        'default'
+    );
+});
+
+add_action('save_post', function (int $post_id): void {
+    if (defined('DOING_AUTOSAVE') && DOING_AUTOSAVE) return;
+
+    if (!isset($_POST['gca_featured_image_toggle_nonce']) || !wp_verify_nonce((string) $_POST['gca_featured_image_toggle_nonce'], 'gca_save_featured_image_toggle')) {
+        return;
+    }
+
+    if (!current_user_can('edit_post', $post_id)) return;
+
+    $hide = isset($_POST['gca_hide_featured_image']) ? 1 : 0;
+
+    if ($hide) {
+        update_post_meta($post_id, '_gca_hide_featured_image', 1);
+    } else {
+        delete_post_meta($post_id, '_gca_hide_featured_image');
+    }
+});
+
+/**
+ * Admin JS: hero image media picker + template switcher
+ */
+add_action('admin_enqueue_scripts', function (string $hook): void {
+
+    if ($hook !== 'post.php' && $hook !== 'post-new.php') {
+        return;
+    }
+
+    wp_enqueue_media();
+
+    $js = <<<'JS'
+(function(){
+  function ready(fn){ if(document.readyState!=='loading'){ fn(); } else { document.addEventListener('DOMContentLoaded', fn); } }
+
+  function initHeroImage(){
+    var selectBtn = document.getElementById('gca-hero-image-select');
+    var removeBtn = document.getElementById('gca-hero-image-remove');
+    var input = document.getElementById('gca_hero_image_id');
+    var preview = document.getElementById('gca-hero-image-preview');
+    if(!selectBtn || !input || !preview) return;
+
+    var frame;
+
+    selectBtn.addEventListener('click', function(e){
+      e.preventDefault();
+      if(frame){ frame.open(); return; }
+
+      frame = wp.media({
+        title: 'Select hero header image',
+        button: { text: 'Use this image' },
+        multiple: false
+      });
+
+      frame.on('select', function(){
+        var attachment = frame.state().get('selection').first().toJSON();
+        input.value = attachment.id || '';
+        preview.innerHTML = (attachment.sizes && attachment.sizes.medium)
+          ? '<img src="'+attachment.sizes.medium.url+'" style="max-width:100%;height:auto;" />'
+          : '<img src="'+attachment.url+'" style="max-width:100%;height:auto;" />';
+        if(removeBtn) removeBtn.disabled = false;
+      });
+
+      frame.open();
+    });
+
+    if(removeBtn){
+      removeBtn.addEventListener('click', function(e){
+        e.preventDefault();
+        input.value = '';
+        preview.innerHTML = '';
+        removeBtn.disabled = true;
+      });
+    }
+  }
+
+  function getTemplateValue(){
+    var sel = document.getElementById('page_template');
+    if (sel) return sel.value;
+
+    var input = document.querySelector('input[name="page_template"]');
+    if (input) return input.value;
+
+    return '';
+  }
+
+  function set2ColBoxesVisibility(){
+    var template = getTemplateValue();
+    var shouldShow = (template === 'template-layout-2col.php');
+
+    var col2Box = document.getElementById('gca_col2_content');
+    if (col2Box) col2Box.style.display = shouldShow ? '' : 'none';
+  }
+
+  ready(function(){
+    initHeroImage();
+    set2ColBoxesVisibility();
+
+    var sel = document.getElementById('page_template');
+    if (sel) {
+      sel.addEventListener('change', set2ColBoxesVisibility);
+    }
+
+    setInterval(set2ColBoxesVisibility, 800);
+  });
+})();
+JS;
+
+    wp_add_inline_script('jquery-core', $js, 'after');
+});
+
+/**
+ * Homepage options (Customizer)
+ */
+if (!function_exists('gca_sanitize_takealook_link_text')):
+function gca_sanitize_takealook_link_text($value): string {
+    $value = (string) $value;
+    $value = wp_strip_all_tags($value);
+    $value = preg_replace('/\s+/', ' ', $value);
+    $value = trim((string) $value);
+
+    if (function_exists('mb_substr')) {
+        $value = (string) mb_substr($value, 0, 90);
+    } else {
+        $value = (string) substr($value, 0, 90);
+    }
+
+    return $value;
+}
+endif;
+
+if (!function_exists('gca_sanitize_quicklink_text')):
+function gca_sanitize_quicklink_text($value): string {
+    $value = (string) $value;
+    $value = wp_strip_all_tags($value);
+    $value = preg_replace('/\s+/', ' ', $value);
+    $value = trim((string) $value);
+
+    $max = 48;
+    if (function_exists('mb_substr')) {
+        $value = (string) mb_substr($value, 0, $max);
+    } else {
+        $value = (string) substr($value, 0, $max);
+    }
+
+    return $value;
+}
+endif;
+
+if (!function_exists('gca_sanitize_home_text')):
+function gca_sanitize_home_text($value): string {
+    $value = (string) $value;
+    $value = wp_strip_all_tags($value);
+    $value = preg_replace('/\s+/', ' ', $value);
+    return trim((string) $value);
+}
+endif;
+
+if (!function_exists('gca_sanitize_home_desc_40')):
+function gca_sanitize_home_desc_40($value): string {
+    $value = (string) $value;
+    $value = wp_strip_all_tags($value);
+    $value = preg_replace('/\s+/', ' ', $value);
+    $value = trim((string) $value);
+
+    $max = 40;
+    if (function_exists('mb_substr')) {
+        return (string) mb_substr($value, 0, $max);
+    }
+    return (string) substr($value, 0, $max);
+}
+endif;
+
+if (!function_exists('gca_get_selected_or_latest_posts')):
+function gca_get_selected_or_latest_posts(string $post_type, array $selected_posts, int $count, array $extra_args = []): array {
+    $ordered_posts = [];
+    $seen_ids      = [];
+
+    foreach ($selected_posts as $selected_post) {
+        if ($selected_post instanceof \WP_Post) {
+            $selected_id = (int) $selected_post->ID;
+        } else {
+            $selected_id = absint($selected_post);
+        }
+
+        if ($selected_id > 0 && !in_array($selected_id, $seen_ids, true)) {
+            $seen_ids[] = $selected_id;
+        }
+    }
+
+    if (!empty($seen_ids)) {
+        $selected_posts = get_posts(array_merge($extra_args, [
+            'post_type'              => $post_type,
+            'post_status'            => 'publish',
+            'posts_per_page'         => count($seen_ids),
+            'post__in'               => $seen_ids,
+            'orderby'                => 'post__in',
+            'no_found_rows'          => true,
+            'update_post_meta_cache' => true,
+            'update_post_term_cache' => true,
+        ]));
+
+        $selected_posts_by_id = [];
+        foreach ($selected_posts as $selected_post) {
+            $selected_posts_by_id[$selected_post->ID] = $selected_post;
+        }
+
+        foreach ($seen_ids as $seen_id) {
+            if (isset($selected_posts_by_id[$seen_id])) {
+                $ordered_posts[] = $selected_posts_by_id[$seen_id];
+            }
+        }
+    }
+
+    $remaining = max(0, $count - count($ordered_posts));
+    if ($remaining > 0) {
+        $fallback_posts = get_posts(array_merge($extra_args, [
+            'post_type'              => $post_type,
+            'post_status'            => 'publish',
+            'posts_per_page'         => $remaining,
+            'post__not_in'           => array_map(static fn ($post) => (int) $post->ID, $ordered_posts),
+            'orderby'                => 'date',
+            'order'                  => 'DESC',
+            'no_found_rows'          => true,
+            'update_post_meta_cache' => true,
+            'update_post_term_cache' => true,
+        ]));
+
+        $ordered_posts = array_merge($ordered_posts, $fallback_posts);
+    }
+
+    return array_slice($ordered_posts, 0, $count);
+}
+endif;
+
+add_action('customize_register', function (\WP_Customize_Manager $wp_customize): void {
+
+    $section = 'gca_homepage_options';
+
+    $wp_customize->add_section($section, [
+        'title'       => __('Homepage options', 'gca-intranet'),
+        'priority'    => 30,
+        'description' => __('Controls for homepage components.', 'gca-intranet'),
+    ]);
+
+    $wp_customize->add_setting('gca_latestnews_title', [
+        'default'           => __('Latest news', 'gca-intranet'),
+        'sanitize_callback' => 'gca_sanitize_home_text',
+        'transport'         => 'refresh',
+    ]);
+
+    $wp_customize->add_control('gca_latestnews_title', [
+        'type'     => 'text',
+        'section'  => $section,
+        'label'    => __('Latest news: title', 'gca-intranet'),
+        'priority' => 10,
+    ]);
+
+    $wp_customize->add_setting('gca_latestnews_desc', [
+        'default'           => "What's happening in our organisation",
+        'sanitize_callback' => 'gca_sanitize_home_desc_40',
+        'transport'         => 'refresh',
+    ]);
+
+    $wp_customize->add_control('gca_latestnews_desc', [
+        'type'        => 'textarea',
+        'section'     => $section,
+        'label'       => __('Latest news: description', 'gca-intranet'),
+        'description' => __('Text shown under the "Latest news" heading on the homepage. Max 40 characters (longer text is truncated).', 'gca-intranet'),
+        'input_attrs' => ['maxlength' => 40, 'rows' => 2],
+        'priority'    => 20,
+    ]);
+
+    $wp_customize->add_setting('gca_takealook_enabled', [
+        'default'           => true,
+        'sanitize_callback' => static fn ($v) => (bool) $v,
+        'transport'         => 'refresh',
+    ]);
+
+    $wp_customize->add_control('gca_takealook_enabled', [
+        'type'     => 'checkbox',
+        'section'  => $section,
+        'label'    => __('Show "Take a look" block', 'gca-intranet'),
+        'priority' => 30,
+    ]);
+
+    $wp_customize->add_setting('gca_takealook_title', [
+        'default'           => __('Take a look', 'gca-intranet'),
+        'sanitize_callback' => 'gca_sanitize_home_text',
+        'transport'         => 'refresh',
+    ]);
+
+    $wp_customize->add_control('gca_takealook_title', [
+        'type'     => 'text',
+        'section'  => $section,
+        'label'    => __('Take a look: title', 'gca-intranet'),
+        'priority' => 40,
+    ]);
+
+    $wp_customize->add_setting('gca_takealook_desc', [
+        'default'           => '',
+        'sanitize_callback' => 'gca_sanitize_home_desc_40',
+        'transport'         => 'refresh',
+    ]);
+
+    $wp_customize->add_control('gca_takealook_desc', [
+        'type'        => 'textarea',
+        'section'     => $section,
+        'label'       => __('Take a look: description', 'gca-intranet'),
+        'description' => __('Optional text shown under the title. Max 40 characters (longer text is truncated).', 'gca-intranet'),
+        'input_attrs' => ['maxlength' => 40, 'rows' => 2],
+        'priority'    => 50,
+    ]);
+
+    $wp_customize->add_setting('gca_takealook_link_text', [
+        'default'           => __('Learn more', 'gca-intranet'),
+        'sanitize_callback' => 'gca_sanitize_takealook_link_text',
+        'transport'         => 'refresh',
+    ]);
+
+    $wp_customize->add_control('gca_takealook_link_text', [
+        'type'        => 'textarea',
+        'section'     => $section,
+        'label'       => __('Take a look: link text', 'gca-intranet'),
+        'description' => __('Plain text only. Max 90 characters. No images or HTML.', 'gca-intranet'),
+        'input_attrs' => ['maxlength' => 90, 'rows' => 3],
+        'priority'    => 60,
+    ]);
+
+    $wp_customize->add_setting('gca_takealook_link_url', [
+        'default'           => '',
+        'sanitize_callback' => 'esc_url_raw',
+        'transport'         => 'refresh',
+    ]);
+
+    $wp_customize->add_control('gca_takealook_link_url', [
+        'type'        => 'url',
+        'section'     => $section,
+        'label'       => __('Take a look: link URL', 'gca-intranet'),
+        'description' => __('If empty, the block renders as "not configured".', 'gca-intranet'),
+        'priority'    => 70,
+    ]);
+
+    $wp_customize->add_setting('gca_quicklinks_enabled', [
+        'default'           => true,
+        'sanitize_callback' => static fn ($v) => (bool) $v,
+        'transport'         => 'refresh',
+    ]);
+
+    $wp_customize->add_control('gca_quicklinks_enabled', [
+        'type'     => 'checkbox',
+        'section'  => $section,
+        'label'    => __('Show "Quick links" block', 'gca-intranet'),
+        'priority' => 80,
+    ]);
+
+    $wp_customize->add_setting('gca_quicklinks_title', [
+        'default'           => __('Quick links', 'gca-intranet'),
+        'sanitize_callback' => 'gca_sanitize_home_text',
+        'transport'         => 'refresh',
+    ]);
+
+    $wp_customize->add_control('gca_quicklinks_title', [
+        'type'     => 'text',
+        'section'  => $section,
+        'label'    => __('Quick links: title', 'gca-intranet'),
+        'priority' => 90,
+    ]);
+
+    $wp_customize->add_setting('gca_quicklinks_desc', [
+        'default'           => '',
+        'sanitize_callback' => 'gca_sanitize_home_desc_40',
+        'transport'         => 'refresh',
+    ]);
+
+    $wp_customize->add_control('gca_quicklinks_desc', [
+        'type'        => 'textarea',
+        'section'     => $section,
+        'label'       => __('Quick links: description', 'gca-intranet'),
+        'description' => __('Optional text shown under the title. Max 40 characters (longer text is truncated).', 'gca-intranet'),
+        'input_attrs' => ['maxlength' => 40, 'rows' => 2],
+        'priority'    => 100,
+    ]);
+
+    $priority = 110;
+    for ($i = 1; $i <= 3; $i++) {
+
+        $wp_customize->add_setting("gca_quicklinks_{$i}_text", [
+            'default'           => '',
+            'sanitize_callback' => 'gca_sanitize_quicklink_text',
+            'transport'         => 'refresh',
+        ]);
+
+        $wp_customize->add_control("gca_quicklinks_{$i}_text", [
+            'type'        => 'text',
+            'section'     => $section,
+            'label'       => sprintf(__('Quick link %d: text', 'gca-intranet'), $i),
+            'description' => __('Plain text only.', 'gca-intranet'),
+            'input_attrs' => ['maxlength' => 48],
+            'priority'    => $priority,
+        ]);
+
+        $priority += 10;
+
+        $wp_customize->add_setting("gca_quicklinks_{$i}_url", [
+            'default'           => '',
+            'sanitize_callback' => 'esc_url_raw',
+            'transport'         => 'refresh',
+        ]);
+
+        $wp_customize->add_control("gca_quicklinks_{$i}_url", [
+            'type'        => 'url',
+            'section'     => $section,
+            'label'       => sprintf(__('Quick link %d: URL', 'gca-intranet'), $i),
+            'description' => __('Full URL (e.g. https://…).', 'gca-intranet'),
+            'priority'    => $priority,
+        ]);
+
+        $priority += 10;
+    }
+
+    $wp_customize->add_setting('gca_workupdates_title', [
+        'default'           => __('Work updates', 'gca-intranet'),
+        'sanitize_callback' => 'gca_sanitize_home_text',
+        'transport'         => 'refresh',
+    ]);
+
+    $wp_customize->add_control('gca_workupdates_title', [
+        'type'     => 'text',
+        'section'  => $section,
+        'label'    => __('Work updates: title', 'gca-intranet'),
+        'priority' => 170,
+    ]);
+
+    $wp_customize->add_setting('gca_workupdates_desc', [
+        'default'           => '',
+        'sanitize_callback' => 'gca_sanitize_home_desc_40',
+        'transport'         => 'refresh',
+    ]);
+
+    $wp_customize->add_control('gca_workupdates_desc', [
+        'type'        => 'textarea',
+        'section'     => $section,
+        'label'       => __('Work updates: description', 'gca-intranet'),
+        'description' => __('Text shown under the "Work updates" heading on the homepage. Max 40 characters (longer text is truncated).', 'gca-intranet'),
+        'input_attrs' => ['maxlength' => 40, 'rows' => 2],
+        'priority'    => 180,
+    ]);
+
+    $wp_customize->add_setting('gca_blogs_title', [
+        'default'           => __('Blogs', 'gca-intranet'),
+        'sanitize_callback' => 'gca_sanitize_home_text',
+        'transport'         => 'refresh',
+    ]);
+
+    $wp_customize->add_control('gca_blogs_title', [
+        'type'     => 'text',
+        'section'  => $section,
+        'label'    => __('Blogs: title', 'gca-intranet'),
+        'priority' => 190,
+    ]);
+
+    $wp_customize->add_setting('gca_blogs_desc', [
+        'default'           => '',
+        'sanitize_callback' => 'gca_sanitize_home_desc_40',
+        'transport'         => 'refresh',
+    ]);
+
+    $wp_customize->add_control('gca_blogs_desc', [
+        'type'        => 'textarea',
+        'section'     => $section,
+        'label'       => __('Blogs: description', 'gca-intranet'),
+        'description' => __('Text shown under the "Blogs" heading on the homepage. Max 40 characters (longer text is truncated).', 'gca-intranet'),
+        'input_attrs' => ['maxlength' => 40, 'rows' => 2],
+        'priority'    => 200,
+    ]);
+
+    $wp_customize->add_setting('gca_events_title', [
+        'default'           => __('Events', 'gca-intranet'),
+        'sanitize_callback' => 'gca_sanitize_home_text',
+        'transport'         => 'refresh',
+    ]);
+
+    $wp_customize->add_control('gca_events_title', [
+        'type'     => 'text',
+        'section'  => $section,
+        'label'    => __('Events: title', 'gca-intranet'),
+        'priority' => 210,
+    ]);
+});
+
+add_action('customize_controls_enqueue_scripts', function (): void {
+    $js = <<<'JS'
+(function(){
+  function addCounter(controlId, maxDefault){
+    var control = document.getElementById(controlId);
+    if(!control) return;
+
+    var input = control.querySelector('textarea, input[type="text"]');
+    if(!input) return;
+
+    var max = parseInt(input.getAttribute('maxlength') || String(maxDefault || 0), 10);
+    if(!max) return;
+
+    var counter = document.createElement('div');
+    counter.style.marginTop = '6px';
+    counter.style.fontSize = '12px';
+    counter.style.opacity = '0.85';
+
+    function update(){
+      var val = input.value || '';
+      var len = val.length;
+
+      if(len > max){
+        input.value = val.substring(0, max);
+        len = max;
+      }
+
+      counter.textContent = (max - len) + ' characters remaining';
+    }
+
+    input.parentNode.appendChild(counter);
+    input.addEventListener('input', update);
+    update();
+  }
+
+  function init(){
+    addCounter('customize-control-gca_takealook_link_text', 90);
+    addCounter('customize-control-gca_quicklinks_1_text', 48);
+    addCounter('customize-control-gca_quicklinks_2_text', 48);
+    addCounter('customize-control-gca_quicklinks_3_text', 48);
+    addCounter('customize-control-gca_latestnews_desc', 40);
+    addCounter('customize-control-gca_takealook_desc', 40);
+    addCounter('customize-control-gca_quicklinks_desc', 40);
+    addCounter('customize-control-gca_workupdates_desc', 40);
+    addCounter('customize-control-gca_blogs_desc', 40);
+  }
+
+  document.addEventListener('DOMContentLoaded', init);
+})();
+JS;
+
+    wp_add_inline_script('customize-controls', $js, 'after');
+});
+
+add_action('admin_menu', function (): void {
+    $url = add_query_arg(
+        ['autofocus[section]' => 'gca_homepage_options'],
+        admin_url('customize.php')
+    );
+
+    add_theme_page(
+        __('Homepage options', 'gca-intranet'),
+        __('Homepage options', 'gca-intranet'),
+        'edit_theme_options',
+        $url
+    );
+});
+
+if (defined('WP_CLI') && WP_CLI) {
+
+    if (!class_exists('GCA_Homepage_CLI_Command')) {
+        class GCA_Homepage_CLI_Command {
+
+            public function seed(array $args, array $assoc_args): void {
+                $component = isset($assoc_args['component']) ? strtolower((string) $assoc_args['component']) : 'all';
+
+                if (!in_array($component, ['all', 'takealook', 'quicklinks'], true)) {
+                    \WP_CLI::error('Invalid --component value. Use: takealook, quicklinks, or all.');
+                }
+
+                if ($component === 'all' || $component === 'takealook') {
+                    set_theme_mod('gca_takealook_enabled', true);
+                    set_theme_mod('gca_takealook_title', 'Take a look');
+                    set_theme_mod('gca_takealook_desc', 'Useful featured link');
+                    set_theme_mod('gca_takealook_link_text', 'Read the latest guidance');
+                    set_theme_mod('gca_takealook_link_url', 'https://www.gov.uk/');
+                    \WP_CLI::log('Seeded Take a look test data.');
+                }
+
+                if ($component === 'all' || $component === 'quicklinks') {
+                    set_theme_mod('gca_quicklinks_enabled', true);
+                    set_theme_mod('gca_quicklinks_title', 'Quick links');
+                    set_theme_mod('gca_quicklinks_desc', 'Useful shortcuts');
+                    set_theme_mod('gca_quicklinks_1_text', 'Policies');
+                    set_theme_mod('gca_quicklinks_1_url', 'https://www.gov.uk/government/organisations/crown-commercial-service');
+                    set_theme_mod('gca_quicklinks_2_text', 'Guidance');
+                    set_theme_mod('gca_quicklinks_2_url', 'https://www.gov.uk/guidance');
+                    set_theme_mod('gca_quicklinks_3_text', 'Contact us');
+                    set_theme_mod('gca_quicklinks_3_url', 'https://www.gov.uk/contact');
+                    \WP_CLI::log('Seeded Quick links test data.');
+                }
+
+                \WP_CLI::success('Homepage test data seeded.');
+            }
+
+            public function disable(array $args, array $assoc_args): void {
+                $component = isset($assoc_args['component']) ? strtolower((string) $assoc_args['component']) : '';
+
+                if (!in_array($component, ['takealook', 'quicklinks'], true)) {
+                    \WP_CLI::error('Invalid --component value. Use: takealook or quicklinks.');
+                }
+
+                if ($component === 'takealook') {
+                    set_theme_mod('gca_takealook_enabled', false);
+                    \WP_CLI::success('Take a look disabled.');
+                }
+
+                if ($component === 'quicklinks') {
+                    set_theme_mod('gca_quicklinks_enabled', false);
+                    \WP_CLI::success('Quick links disabled.');
+                }
+            }
+
+            public function reset(array $args, array $assoc_args): void {
+                remove_theme_mod('gca_takealook_enabled');
+                remove_theme_mod('gca_takealook_title');
+                remove_theme_mod('gca_takealook_desc');
+                remove_theme_mod('gca_takealook_link_text');
+                remove_theme_mod('gca_takealook_link_url');
+                remove_theme_mod('gca_quicklinks_enabled');
+                remove_theme_mod('gca_quicklinks_title');
+                remove_theme_mod('gca_quicklinks_desc');
+                remove_theme_mod('gca_quicklinks_1_text');
+                remove_theme_mod('gca_quicklinks_1_url');
+                remove_theme_mod('gca_quicklinks_2_text');
+                remove_theme_mod('gca_quicklinks_2_url');
+                remove_theme_mod('gca_quicklinks_3_text');
+                remove_theme_mod('gca_quicklinks_3_url');
+                \WP_CLI::success('Homepage test data reset.');
+            }
+        }
+    }
+
+    \WP_CLI::add_command('gca homepage', 'GCA_Homepage_CLI_Command');
+}
+
+add_action('acf/input/admin_footer', function() {
+?>
+<script type="text/javascript">
+(function($) {
+    if (typeof acf !== 'undefined') {
+        acf.addAction('ready_field/type=time_picker', function(field) {
+
+            var $input = field.$el.find('input[type="text"]');
+
+            $input.attr('readonly', 'readonly').css('cursor', 'pointer');
+
+            if (!field.$el.find('.gca-clear-time').length) {
+                $input.after('<a href="#" class="gca-clear-time" style="margin-left:10px; color:#cc0000; text-decoration:none; font-size:12px; cursor:pointer;">Clear</a>');
+            }
+
+            field.$el.on('click', '.gca-clear-time', function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+
+                $input.val('');
+                field.$el.find('input[type="hidden"]').val('');
+                field.val('');
+                $input.datepicker('hide');
+                $input.blur();
+                $(this).hide();
+            });
+
+            $input.on('focus change keyup', function() {
+                field.$el.find('.gca-clear-time').toggle(!!$(this).val());
+            }).trigger('change');
+        });
+    }
+})(jQuery);
+</script>
+<?php
+});
+
+if (!function_exists('gca_format_event_time')):
+function gca_format_event_time( $raw_time ) {
+    if ( ! $raw_time ) return '';
+    $ts = strtotime( $raw_time );
+    return date( 'i', $ts ) === '00' ? date( 'ga', $ts ) : date( 'g:ia', $ts );
+}
+endif;
+
+if (!function_exists('gca_get_event_datetime')):
+function gca_get_event_datetime( $return = 'dates', $post_id = null ) {
+    $post_id = $post_id ?: get_the_ID();
+
+    $raw_start_date = get_field('start_date', $post_id);
+    $raw_start_time = get_field('start_time', $post_id);
+    $raw_end_date   = get_field('end_date', $post_id);
+    $raw_end_time   = get_field('end_time', $post_id);
+
+    if ( ! $raw_start_date && in_array($return, ['dates', 'start_date', 'end_date', 'all'])) {
+        return '';
+    }
+
+    $f_start_date = $raw_start_date ? date('j F Y', strtotime($raw_start_date)) : '';
+    $f_end_date   = $raw_end_date   ? date('j F Y', strtotime($raw_end_date))   : '';
+
+    // For spans: if either time has minutes, both must use the full g:ia format for consistency.
+    // e.g. "9:01pm to 10:00pm" not "9:01pm to 10pm"
+    $start_has_mins  = $raw_start_time && date( 'i', strtotime($raw_start_time) ) !== '00';
+    $end_has_mins    = $raw_end_time   && date( 'i', strtotime($raw_end_time) )   !== '00';
+    $use_full_format = $start_has_mins || $end_has_mins;
+
+    $f_start_time = $raw_start_time ? ( $use_full_format ? date('g:ia', strtotime($raw_start_time)) : gca_format_event_time($raw_start_time) ) : '';
+    $f_end_time   = $raw_end_time   ? ( $use_full_format ? date('g:ia', strtotime($raw_end_time))   : gca_format_event_time($raw_end_time) )   : '';
+
+    $time_range = '';
+    if ($f_start_time && $f_end_time) {
+        $time_range = "{$f_start_time} to {$f_end_time}";
+    } elseif ($f_start_time) {
+        $time_range = $f_start_time;
+    } elseif ($f_end_time) {
+        $time_range = "Until {$f_end_time}";
+    }
+
+    $date_range = $f_start_date;
+    if ($f_end_date && $raw_start_date !== $raw_end_date) {
+        $date_range .= " to {$f_end_date}";
+    }
+
+    switch ( $return ) {
+        case 'start_date': return $f_start_date;
+        case 'end_date':   return $f_end_date;
+        case 'start_time': return $f_start_time;
+        case 'end_time':   return $f_end_time;
+        case 'times':      return $time_range;
+        case 'all':        return $time_range ? "{$date_range} {$time_range}" : $date_range;
+        case 'dates':
+        default:           return $date_range;
+    }
+}
+endif;
+
+add_filter('theme_page_templates', function($post_templates, $theme, $post, $post_type) {
+    $target_file = 'template-layout-1col.php';
+
+    foreach ( $post_templates as $file => $name ) {
+        if ( $file === $target_file || substr($file, -strlen($target_file)) === $target_file ) {
+            unset($post_templates[$file]);
+        }
+    }
+
+    return $post_templates;
+}, 9999, 4);
+
+/**
+ * Returns an inline SVG string for the given directorate-contact icon type.
+ * Available types: email, phone, teams, chat, link, document, group, headphones, person.
+ */
+if (!function_exists('dc_icon_paths')):
+function dc_icon_paths(): array {
+    return [
+        'email'      => 'M20 4H4C2.9 4 2 4.9 2 6v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4-8 5-8-5V6l8 5 8-5v2z',
+        'phone'      => 'M6.62 10.79a15.053 15.053 0 0 0 6.59 6.59l2.2-2.2c.27-.27.67-.36 1.02-.24 1.12.37 2.33.57 3.57.57.55 0 1 .45 1 1V20c0 .55-.45 1-1 1-9.39 0-17-7.61-17-17 0-.55.45-1 1-1h3.5c.55 0 1 .45 1 1 0 1.25.2 2.45.57 3.57.11.35.03.74-.25 1.02l-2.2 2.2z',
+        'teams'      => 'M19.5 7h-1A2.5 2.5 0 0 0 16 9.5V16a2 2 0 0 0 2 2h1.5a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2zM14 6.5A2.5 2.5 0 1 1 11.5 4 2.5 2.5 0 0 1 14 6.5zm-1 2H8a2 2 0 0 0-2 2v6a3 3 0 0 0 3 3h4a3 3 0 0 0 3-3v-6a2 2 0 0 0-2-2zm5-4.5a2 2 0 1 1-2-2 2 2 0 0 1 2 2z',
+        'chat'       => 'M20 2H4C2.9 2 2 2.9 2 4v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm-2 12H6v-2h12v2zm0-3H6V9h12v2zm0-3H6V6h12v2z',
+        'link'       => 'M3.9 12c0-1.71 1.39-3.1 3.1-3.1h4V7H7c-2.76 0-5 2.24-5 5s2.24 5 5 5h4v-1.9H7c-1.71 0-3.1-1.39-3.1-3.1zM8 13h8v-2H8v2zm9-6h-4v1.9h4c1.71 0 3.1 1.39 3.1 3.1s-1.39 3.1-3.1 3.1h-4V17h4c2.76 0 5-2.24 5-5s-2.24-5-5-5z',
+        'document'   => 'M14 2H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z',
+        'group'      => 'M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z',
+        'headphones' => 'M12 2C6.48 2 2 6.48 2 12v4.5c0 .83.67 1.5 1.5 1.5H6c.55 0 1-.45 1-1v-4c0-.55-.45-1-1-1H4v-1c0-4.42 3.58-8 8-8s8 3.58 8 8v1h-2c-.55 0-1 .45-1 1v4c0 .55.45 1 1 1h2.5c.83 0 1.5-.67 1.5-1.5V12c0-5.52-4.48-10-10-10z',
+        'person'     => 'M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z',
+    ];
+}
+endif;
+
+if (!function_exists('dc_get_icon_path_d')):
+function dc_get_icon_path_d(string $type): string {
+    $paths = dc_icon_paths();
+    return $paths[$type] ?? $paths['group'];
+}
+endif;
+
+if (!function_exists('dc_get_icon_svg')):
+function dc_get_icon_svg(string $type): string {
+    $paths = dc_icon_paths();
+    $d = $paths[$type] ?? $paths['link'];
+    return '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="' . $d . '"/></svg>';
+}
+endif;
+
+if (!function_exists('gca_show_all_screen_options')):
+function gca_show_all_screen_options($hidden, $screen) {
+    if (isset($screen->base) && $screen->base === 'post') {
+        return [];
+    }
+
+    return $hidden;
+}
+endif;
+add_filter('default_hidden_meta_boxes', 'gca_show_all_screen_options', 10, 2);

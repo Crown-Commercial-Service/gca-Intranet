@@ -1,7 +1,7 @@
 <?php get_header(); ?>
 
 <?php
-$hero_image_url = get_template_directory_uri() . '/assets/img/events.jpg';
+$hero_image_url = gca_get_banner_url('gca_banner_events', 'events.jpg');
 
 get_template_part('template-parts/hero', null, [
   'title'     => 'Event',
@@ -66,8 +66,6 @@ get_template_part('template-parts/breadcrumbs');
                         <a href="<?php echo esc_url($cta_url); ?>"
                             class="govuk-button event_cta_button govuk-!-margin-bottom-0" data-module="govuk-button" data-testid="event-cta-button">
                                 <?php echo esc_html($cta_label); ?>
-                                <svg class="govuk-!-padding-left-2" xmlns="http://www.w3.org/2000/svg" width="17.5" height="19" viewBox="0 0 33 40" aria-hidden="true" focusable="false">
-                                <path fill="currentColor" d="M0 0h13l20 20-20 20H0l20-20z" />
                             </svg>
                         </a>
                     </div>
@@ -77,6 +75,12 @@ get_template_part('template-parts/breadcrumbs');
             <div class="govuk-body" data-testid="event-content">
               <?php the_content(); ?>
             </div>
+
+            <?php if (gca_flag_enabled('likes-and-comments')) : ?>
+                <?php get_template_part('template-parts/likes-and-comments', null, [
+                    'post_id' => get_the_ID(),
+                ]); ?>
+            <?php endif; ?>
 
         <?php endwhile; endif; ?>
     </main>

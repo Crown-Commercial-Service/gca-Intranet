@@ -1,0 +1,157 @@
+// ── Archive filter sidebar ──────────────────────────────────────────────────
+
+// ── Results loading state (AJAX swap) ────────────────────────────────────────
+
+.archive-layout__results {
+    transition: opacity 0.2s ease;
+
+    &.is-loading {
+        opacity: 0.4;
+        pointer-events: none;
+    }
+
+    [data-testid="news-no-posts"] {
+        margin-top: govuk-spacing(9);
+    }
+}
+
+// ── Archive filter sidebar ──────────────────────────────────────────────────
+
+.archive-layout {
+    display: flex;
+    flex-wrap: wrap;
+
+    // Below 900px the 25/75 GDS split becomes too narrow — stack instead
+    @media (max-width: 900px) {
+        flex-direction: column;
+
+        // Override GDS column widths so both sections go full-width
+        > [class*="govuk-grid-column"] {
+            width: 100%;
+        }
+    }
+
+    &__filters {
+        @media (max-width: 900px) {
+            margin-bottom: govuk-spacing(6);
+        }
+    }
+}
+
+.archive-filters {
+    // ── Header row: title + clear link ──
+    &__header {
+        display: flex;
+        justify-content: space-between;
+        align-items: baseline;
+        margin-bottom: 19px;
+    }
+
+    &__heading {
+        margin-bottom: 0;
+    }
+
+    &__clear {
+        font-size: 16px;
+        white-space: nowrap;
+    }
+
+    // ── Each collapsible section ──
+    &__section {
+        background: #f6f6f6;
+        border-radius: 15px;
+        padding: 19px;
+        margin-bottom: 19px;
+    }
+
+    &__section-header {
+        display: flex;
+        flex-direction: column;
+        align-items: flex-start;
+        cursor: pointer;
+    }
+
+    &__section-title {
+        margin-bottom: 8px;
+    }
+
+    // ── Hide/Show toggle button ──
+    &__toggle {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        background: none;
+        border: none;
+        padding: 0;
+        cursor: pointer;
+        font-size: 16px;
+        color: $gca-blue-accessible;
+        text-decoration: none;
+    }
+
+    &__chevron-circle {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 24px;
+        height: 24px;
+        border: 2px solid currentColor;
+        border-radius: 50%;
+        flex-shrink: 0;
+        text-decoration: none;
+        transition: background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease;
+    }
+
+    &__section-header:hover &__toggle {
+        color: $color-hover;
+    }
+
+    &__section-header:hover &__chevron-circle {
+        background-color: #0b0c0c;
+        border-color: #0b0c0c;
+        color: #fff;
+    }
+
+    &__chevron {
+        transition: transform 0.2s ease;
+        flex-shrink: 0;
+
+        .archive-filters__toggle[aria-expanded="true"] & {
+            transform: rotate(180deg);
+        }
+    }
+
+    // ── Checkbox border radius ──
+    .govuk-checkboxes__input,
+    .govuk-checkboxes__label::before {
+        border-radius: 5px !important;
+    }
+
+    // ── Remove GovUK checkbox hover background and border thickness ──
+    .govuk-checkboxes__item:hover .govuk-checkboxes__input:not(:disabled) + .govuk-checkboxes__label::before,
+    .govuk-checkboxes__item:hover .govuk-checkboxes__input:focus + .govuk-checkboxes__label::before {
+        background-color: #fff !important;
+        box-shadow: none !important;
+    }
+
+    // ── Remove GovUK radio hover background and border thickness ──
+    .govuk-radios__item:hover .govuk-radios__input:not(:disabled) + .govuk-radios__label::before,
+    .govuk-radios__item:hover .govuk-radios__input:focus + .govuk-radios__label::before {
+        background-color: #fff !important;
+        box-shadow: none !important;
+    }
+
+    // ── Collapsed state ──
+    &__section-body {
+        overflow: hidden;
+        max-height: 2000px;
+        margin-top: 15px;
+        padding-left: 10px;
+        transition: max-height 0.35s ease, margin-top 0.35s ease;
+
+        &.is-hidden {
+            max-height: 0;
+            margin-top: 0;
+        }
+    }
+}
