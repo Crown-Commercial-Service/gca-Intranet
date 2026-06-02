@@ -22,6 +22,28 @@ get_header();
 <div class="govuk-width-container" data-testid="home-width-container">
   <main class="govuk-main-wrapper" id="main-content" tabindex="-1" data-testid="home-main-wrapper">
 
+    <?php if (gca_flag_enabled('personalised-greeting')) : ?>
+    <?php
+    $gca_hour       = (int) current_time('G');
+    $gca_greeting   = $gca_hour < 12 ? __('Good morning', 'gca-intranet') : __('Good afternoon', 'gca-intranet');
+    $gca_first_name = '';
+    if (is_user_logged_in()) {
+      $gca_first_name = trim((string) get_user_meta(get_current_user_id(), 'first_name', true));
+    }
+    ?>
+    <div class="gca-personalised-greeting" data-testid="personalised-greeting">
+      <h2 class="govuk-heading-xl govuk-!-margin-bottom-6" data-testid="personalised-greeting-text">
+        <?php
+        if ($gca_first_name !== '') {
+          echo esc_html($gca_greeting . ', ' . $gca_first_name);
+        } else {
+          echo esc_html($gca_greeting);
+        }
+        ?>
+      </h2>
+    </div>
+    <?php endif; ?>
+
     <div class="govuk-grid-row" data-testid="home-top-row">
 
       <!-- Latest news -->
@@ -341,7 +363,7 @@ get_header();
                         </a>
                       </h4>
 
-                      <p class="govuk-body-s" data-testid="work-update-author">
+                      <p class="govuk-body-s" data-testid="work-update-author" style="margin-bottom: 15px;">
                         By <?php echo esc_html(get_the_author()); ?>
                       </p>
 
@@ -397,7 +419,7 @@ get_header();
             </p>
           </div>
 
-          <div class="govuk-grid-row" data-testid="blogs-section">
+          <div class="govuk-grid-row gca-equal-height-row" data-testid="blogs-section">
             <div class="govuk-grid-column-full gca-work-update-card" data-testid="blogs-card">
               <div class="govuk-grid-row gca-work-updates" data-testid="blogs-row">
                 <?php
@@ -443,21 +465,21 @@ get_header();
                 ?>
               </div>
             </div>
-          </div>
 
-          <div class="see-more-link-homepage" data-testid="blogs-see-more">
-            <svg data-testid="blogs-see-more-icon" xmlns="http://www.w3.org/2000/svg" width="16" height="22"
-              fill="currentColor" class="bi bi-chevron-right" viewBox="0 0 16 16"
-              style="stroke: currentColor; padding-top: 9px;" aria-hidden="true" focusable="false">
-              <path fill-rule="evenodd"
-                d="M4.646 1.646a.5.5 0 0 1 .708 0l6 6a.5.5 0 0 1 0 .708l-6 6a.5.5 0 0 1-.708-.708L10.293 8 4.646 2.354a.5.5 0 0 1 0-.708" />
-            </svg>
+            <div class="see-more-link-homepage" data-testid="blogs-see-more">
+              <svg data-testid="blogs-see-more-icon" xmlns="http://www.w3.org/2000/svg" width="16" height="22"
+                fill="currentColor" class="bi bi-chevron-right" viewBox="0 0 16 16"
+                style="stroke: currentColor; padding-top: 9px;" aria-hidden="true" focusable="false">
+                <path fill-rule="evenodd"
+                  d="M4.646 1.646a.5.5 0 0 1 .708 0l6 6a.5.5 0 0 1 0 .708l-6 6a.5.5 0 0 1-.708-.708L10.293 8 4.646 2.354a.5.5 0 0 1 0-.708" />
+              </svg>
 
-            <p data-testid="blogs-see-more-text">
-              <a class="govuk-link" data-testid="blogs-see-more-link" href="/blog/">
-                More blogs
-              </a>
-            </p>
+              <p data-testid="blogs-see-more-text">
+                <a class="govuk-link" data-testid="blogs-see-more-link" href="/blog/">
+                  More blogs
+                </a>
+              </p>
+            </div>
           </div>
 
         </div>
@@ -495,9 +517,9 @@ get_header();
               'meta_query'     => [
                   [
                       'key'     => 'start_date',
-                      'value'   => date('Y-m-d H:i:s'),
+                      'value'   => date('Y-m-d'),
                       'compare' => '>=',
-                      'type'    => 'DATETIME'
+                      'type'    => 'DATE'
                   ]
               ]
           ]);

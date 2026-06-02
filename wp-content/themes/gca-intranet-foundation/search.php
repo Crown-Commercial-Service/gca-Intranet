@@ -36,14 +36,15 @@ if ($flag_on) {
     $per_page     = 10;
     $current_page = max(1, (int) (get_query_var('paged') ?: 1));
 
-    $include_staff = empty($filter_types) || in_array('staff', $filter_types, true);
+    $has_any_filter = !empty($filter_types) || !empty($filter_content_types) || !empty($filter_audiences);
+    $include_staff  = !$has_any_filter || in_array('staff', $filter_types, true);
     $staff_results = $include_staff ? gca_search_staff($search_query, 50) : [];
     $all_posts     = $wp_query->posts ?: [];
 
     // Relevance scoring:
     //   100 — title / display name is an exact match (case-insensitive)
     //    50 — title / display name contains the query
-    //    20 — job title contains the query  (staff only)
+    //    20 — business title contains the query  (staff only)
     //    10 — content / team / email match  (catch-all — WP already filtered these in)
     // Sort: score DESC, then alphabetically as tiebreaker.
     $q_lower = mb_strtolower($search_query);
@@ -60,7 +61,7 @@ if ($flag_on) {
     foreach ($staff_results as $result) {
         $s = max(
             $score($result->display_name),
-            $score($result->job_title) > 0 ? 20 : 0,
+            $score($result->business_title) > 0 ? 20 : 0,
             $score($result->team)      > 0 ? 10 : 0,
             10 // floor: WP already confirmed a match exists
         );
@@ -107,6 +108,36 @@ if ($flag_on) {
     $page_items  = [];
     $flag_on     = false;
 }
+
+$listing_hits = [];
+if (!empty($search_query)) {
+    $s_lower = mb_strtolower(trim($search_query));
+
+    $staff_dir_page = get_page_by_path('staff-directory');
+    $staff_dir_url  = ($staff_dir_page instanceof WP_Post) ? get_permalink($staff_dir_page) : null;
+
+    $sections = [
+        ['keywords' => ['news'],                        'title' => 'News',           'url' => get_post_type_archive_link('news')],
+        ['keywords' => ['blog', 'blogs'],               'title' => 'Blogs',          'url' => get_post_type_archive_link('blog')],
+        ['keywords' => ['work update', 'work updates'], 'title' => 'Work Updates',   'url' => get_post_type_archive_link('work_update')],
+        ['keywords' => ['event', 'events'],             'title' => 'Events',         'url' => get_post_type_archive_link('event')],
+        ['keywords' => ['staff directory'],             'title' => 'Staff Directory', 'url' => $staff_dir_url],
+    ];
+
+    foreach ($sections as $section) {
+        if (empty($section['url'])) {
+            continue;
+        }
+        foreach ($section['keywords'] as $kw) {
+            if ($s_lower === $kw || str_contains($s_lower, $kw) || str_contains($kw, $s_lower)) {
+                $listing_hits[$section['url']] = $section;
+                break;
+            }
+        }
+    }
+}
+
+$total_count += count($listing_hits);
 
 ?>
 
@@ -174,18 +205,34 @@ get_template_part('template-parts/hero', null, [
 
         <?php if ($flag_on) : ?>
 
-          <?php if ($total_count > 0) : ?>
+          <?php if ($total_count > 0 || !empty($listing_hits)) : ?>
 
             <p class="govuk-body govuk-!-margin-bottom-6" data-testid="search-result-count">
               Found <?php echo esc_html((string) $total_count); ?> result(s)
             </p>
 
             <div data-testid="search-results">
+
+              <?php if (!empty($listing_hits)) : ?>
+                <div data-testid="listing-page-results">
+                  <?php foreach ($listing_hits as $hit) : ?>
+                    <article class="gca-search-result govuk-!-margin-bottom-0" data-testid="search-result">
+                      <h2 class="govuk-heading-m govuk-!-margin-bottom-2" data-testid="search-result-title">
+                        <span class="gca-search-result__type">Section - </span>
+                        <a class="govuk-link" href="<?php echo esc_url($hit['url']); ?>" data-testid="search-result-link">
+                          <?php echo esc_html($hit['title']); ?>
+                        </a>
+                      </h2>
+                    </article>
+                    <hr class="govuk-section-break govuk-section-break--m govuk-section-break--visible">
+                  <?php endforeach; ?>
+                </div>
+              <?php endif; ?>
               <?php foreach ($page_items as $i => $item) : ?>
 
                 <?php if ($item['type'] === 'staff') :
                   $result     = $item['data'];
-                  $role_parts = array_filter([$result->job_title, $result->team]);
+                  $role_parts = array_filter([$result->business_title, $result->team]);
                   $role_line  = implode(' | ', $role_parts);
                 ?>
 
@@ -292,13 +339,30 @@ get_template_part('template-parts/hero', null, [
 
           <?php // Original mode — flag is off, use standard WP loop. ?>
 
-          <?php if (have_posts()) : ?>
+          <?php if (have_posts() || !empty($listing_hits)) : ?>
 
             <p class="govuk-body govuk-!-margin-bottom-6" data-testid="search-result-count">
               Found <?php echo esc_html((string) $total_count); ?> result(s)
             </p>
 
             <div data-testid="search-results">
+
+              <?php if (!empty($listing_hits)) : ?>
+                <div data-testid="listing-page-results">
+                  <?php foreach ($listing_hits as $hit) : ?>
+                    <article class="gca-search-result govuk-!-margin-bottom-0" data-testid="search-result">
+                      <h2 class="govuk-heading-m govuk-!-margin-bottom-2" data-testid="search-result-title">
+                        <span class="gca-search-result__type">Section - </span>
+                        <a class="govuk-link" href="<?php echo esc_url($hit['url']); ?>" data-testid="search-result-link">
+                          <?php echo esc_html($hit['title']); ?>
+                        </a>
+                      </h2>
+                    </article>
+                    <hr class="govuk-section-break govuk-section-break--m govuk-section-break--visible">
+                  <?php endforeach; ?>
+                </div>
+              <?php endif; ?>
+
               <?php
               $result_index = 0;
               $post_count   = $wp_query->post_count;

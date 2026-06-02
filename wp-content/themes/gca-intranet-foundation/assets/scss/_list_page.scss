@@ -65,28 +65,22 @@
 
 .events-tabs {
     display: flex;
-    border: 1px solid $gca-border-mid;
-    border-radius: 999px;
-    padding: 4px;
+    gap: govuk-spacing(2);
     margin-bottom: govuk-spacing(6);
 
-    @include govuk-media-query($from: tablet) {
-        display: inline-flex;
-    }
-
     &__tab {
-        flex: 1;
         text-align: center;
         padding: govuk-spacing(2) govuk-spacing(4);
         border-radius: 999px;
+        border: 1px solid $gca-border-mid;
         text-decoration: none;
-        color: $govuk-text-colour;
+        color: #0b0c0c;
         font-family: $govuk-font-family;
         font-size: 16px;
         white-space: nowrap;
+        background: govuk-colour("white");
 
         @include govuk-media-query($from: tablet) {
-            flex: unset;
             padding: govuk-spacing(2) govuk-spacing(5);
         }
 
@@ -96,10 +90,15 @@
         }
 
         &--active {
-            background: govuk-colour("white");
-            color: $govuk-link-colour;
-            font-weight: bold;
-            box-shadow: 0 1px 4px rgba(0, 0, 0, 0.12);
+            background: #95B4F9;
+            border-color: #95B4F9;
+            color: #0b0c0c;
+            font-weight: 600;
+
+            &:visited,
+            &:hover {
+                color: #0b0c0c !important;
+            }
         }
     }
 }

@@ -64,7 +64,9 @@ get_template_part('template-parts/breadcrumbs');
                   <?php the_content(); ?>
                 </div>
 
-                <?php get_template_part('template-parts/likes-and-comments'); ?>
+                <?php if (gca_flag_enabled('likes-and-comments')) : ?>
+                    <?php get_template_part('template-parts/likes-and-comments'); ?>
+                <?php endif; ?>
             </div>
         </div>
 

@@ -53,11 +53,15 @@ $gca-lc-icon-color: #767676;
 
 // Pressed/liked state
 .gca-lc__like-btn[aria-pressed="true"] {
-    color: $gca-lc-liked;
+    color: $gca-lc-blue;
+
+    .gca-lc__like-icon {
+        color: $gca-lc-blue;
+    }
 
     .gca-lc__like-path {
-        fill: $gca-lc-liked;
-        stroke: $gca-lc-liked;
+        fill: $gca-lc-blue;
+        stroke: $gca-lc-blue;
     }
 }
 
@@ -119,7 +123,7 @@ $gca-lc-icon-color: #767676;
     width: 100%;
     resize: vertical;
     min-height: 80px;
-    font-size: govuk-px-to-rem(16);
+    font-size: govuk-px-to-rem(19);
     border: 1px solid $gca-lc-border;
     border-radius: 5px;
 }
@@ -264,7 +268,7 @@ $gca-lc-icon-color: #767676;
 
 .gca-lc__comment-text {
     margin: 0 0 govuk-spacing(2);
-    font-size: govuk-px-to-rem(16);
+    font-size: govuk-px-to-rem(19);
     word-break: break-word;
     white-space: pre-wrap;
 }
@@ -358,5 +362,133 @@ $gca-lc-icon-color: #767676;
 
     &[hidden] {
         display: none;
+    }
+}
+
+// Delete confirmation modal
+.gca-lc-delete-modal {
+    position: fixed;
+    inset: 0;
+    z-index: 9999;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: govuk-spacing(3);
+    font-family: $govuk-font-family;
+}
+
+.gca-lc-delete-modal__overlay {
+    position: absolute;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.5);
+}
+
+.gca-lc-delete-modal__dialog {
+    position: relative;
+    width: min(640px, 100%);
+    background: #fff;
+    color: $govuk-text-colour;
+    border: 10px solid #0b0c0c;
+    border-top-width: 48px;
+    outline: none;
+}
+
+.gca-lc-delete-modal__close {
+    position: absolute;
+    top: -45px;
+    right: -6px;
+    width: 38px;
+    height: 38px;
+    border: 0;
+    background: transparent;
+    color: #fff;
+    cursor: pointer;
+    font-size: 44px;
+    font-weight: 700;
+    line-height: 1;
+    padding: 0;
+
+    &:focus {
+        @include govuk-focused-text;
+    }
+}
+
+.gca-lc-delete-modal__content {
+    padding: 20px 28px 38px;
+}
+
+.gca-lc-delete-modal__title {
+    margin: 0 0 46px;
+    max-width: 560px;
+    font-size: govuk-px-to-rem(36);
+    line-height: 1.5;
+    font-weight: 700;
+    letter-spacing: 0;
+}
+
+.gca-lc-delete-modal__body {
+    margin: 0 0 62px;
+    font-size: govuk-px-to-rem(19);
+    line-height: 1.35;
+}
+
+.gca-lc-delete-modal__actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 13px;
+    align-items: center;
+}
+
+.gca-lc-delete-modal__confirm,
+.gca-lc-delete-modal__cancel {
+    border: 0;
+    border-radius: 5px;
+    cursor: pointer;
+    font-family: $govuk-font-family;
+    font-size: govuk-px-to-rem(19);
+    line-height: 1;
+    padding: 11px 18px;
+
+    &:focus {
+        @include govuk-focused-text;
+    }
+}
+
+.gca-lc-delete-modal__confirm {
+    background: #b8ca1c;
+    color: #000;
+
+    &:hover {
+        background: #a6b719;
+    }
+}
+
+.gca-lc-delete-modal__cancel {
+    background: #c8c8c8;
+    color: #000;
+
+    &:hover {
+        background: #b5b5b5;
+    }
+}
+
+@include govuk-media-query($until: tablet) {
+    .gca-lc-delete-modal {
+        align-items: flex-start;
+        padding-top: 64px;
+    }
+
+    .gca-lc-delete-modal__content {
+        padding: 20px;
+    }
+
+    .gca-lc-delete-modal__title {
+        margin-bottom: 28px;
+        font-size: govuk-px-to-rem(28);
+        line-height: 1.25;
+    }
+
+    .gca-lc-delete-modal__body {
+        margin-bottom: 36px;
     }
 }

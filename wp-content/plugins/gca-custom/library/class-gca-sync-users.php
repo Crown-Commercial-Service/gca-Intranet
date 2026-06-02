@@ -29,9 +29,13 @@ if ( ! defined( 'ABSPATH' ) ) {
  *   Email        – work email, e.g. "natalie.cadwallader@gca.gov.uk"
  *   Manager      – manager's full name
  *   ManagerEmail – manager's email address
- *   JobTitle     – e.g. "Procurement Practitioner - Procurement Management"
+ *   BusinessTitle     – e.g. "Procurement Practitioner - Procurement Management"
  *   Team         – e.g. "Procurement Liverpool (Natalie Kenyon)"
  *   Directorate  – e.g. "Commercial & Procurement Operations"
+ *
+ * Each staff member is identified by EmployeeKey (stable across name/email
+ * changes).  Email is used as a fallback only for accounts created before
+ * employee_key meta existed.
  *
  * WordPress user mapping (both derived from the email prefix, i.e. the part
  * before "@", e.g. "natalie.cadwallader" from "natalie.cadwallader@gca.gov.uk"):
@@ -43,7 +47,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  *
  * User meta mapping:
  *   employee_key  = EmployeeKey
- *   job_title     = JobTitle
+ *   business_title     = BusinessTitle
  *   team          = Team (with trailing "(Manager Name)" stripped)
  *   directorate   = Directorate
  *   manager       = Manager
@@ -57,10 +61,11 @@ class GCA_Sync_Users {
     const EMPLOYEE_KEY_META   = 'employee_key';
 
     /**
-     * Whether the sync is allowed to delete WordPress users that are absent
-     * from the API. Set to true only when you are ready to enable purging.
+     * Whether the sync is allowed to hard-delete WordPress users whose
+     * soft-delete grace period has elapsed. Set to true only when you are
+     * ready to enable hard purging.
      */
-    const ENABLE_DELETE = false;
+    const ENABLE_DELETE = true;
 
     /**
      * WordPress user logins that will never be deleted during a sync,
@@ -70,7 +75,13 @@ class GCA_Sync_Users {
      */
     const PROTECTED_LOGINS = [
         'admin',
+        'former-employee',
     ];
+
+    const DELETED_AT_META_KEY    = 'deleted_at';
+    const FORMER_EMPLOYEE_LOGIN  = 'former-employee';
+    const FORMER_EMPLOYEE_EMAIL  = 'former-employee@gca.co.uk';
+    const SOFT_DELETE_GRACE_DAYS = 5;
 
     // -------------------------------------------------------------------------
     // Bootstrap
@@ -106,9 +117,10 @@ class GCA_Sync_Users {
             } );
 
             WP_CLI::success( sprintf(
-                'Sync complete. Created: %d, Updated: %d, Deleted: %d, Skipped: %d, Errors: %d.',
+                'Sync complete. Created: %d, Updated: %d, Soft-deleted: %d, Deleted: %d, Skipped: %d, Errors: %d.',
                 $stats['created'],
                 $stats['updated'],
+                $stats['soft_deleted'],
                 $stats['deleted'],
                 $stats['skipped'],
                 $stats['errors']
@@ -140,9 +152,10 @@ class GCA_Sync_Users {
             } );
 
             $summary = sprintf(
-                'Complete. Created: %d, Updated: %d, Deleted: %d, Skipped: %d, Errors: %d.',
+                'Complete. Created: %d, Updated: %d, Soft-deleted: %d, Deleted: %d, Skipped: %d, Errors: %d.',
                 $stats['created'],
                 $stats['updated'],
+                $stats['soft_deleted'],
                 $stats['deleted'],
                 $stats['skipped'],
                 $stats['errors']
@@ -173,11 +186,12 @@ class GCA_Sync_Users {
         };
 
         $stats = [
-            'created' => 0,
-            'updated' => 0,
-            'deleted' => 0,
-            'skipped' => 0,
-            'errors'  => 0,
+            'created'      => 0,
+            'updated'      => 0,
+            'soft_deleted' => 0,
+            'deleted'      => 0,
+            'skipped'      => 0,
+            'errors'       => 0,
         ];
 
         $api   = new GCA_Workday_API();
@@ -185,30 +199,47 @@ class GCA_Sync_Users {
 
         $log( sprintf( 'Fetched %d staff records from API.', count( $staff ) ) );
 
-        // Build a lookup of API users indexed by normalised email address.
-        $api_users = [];
+        // Build a lookup keyed by EmployeeKey — the stable identifier that
+        // survives name/email changes.  We also track every API email so the
+        // offboard loop can fall back to email for accounts that predate the
+        // employee_key meta (created before this sync was deployed).
+        $api_users  = []; // EmployeeKey (string) => record
+        $api_emails = []; // normalised email     => true
         foreach ( $staff as $record ) {
-            $email = strtolower( trim( $record['Email'] ?? '' ) );
-            if ( '' !== $email ) {
-                $api_users[ $email ] = $record;
+            $email        = strtolower( trim( $record['Email'] ?? '' ) );
+            $employee_key = trim( (string) ( $record['EmployeeKey'] ?? '' ) );
+
+            if ( '' === $email ) {
+                continue;
             }
+
+            if ( '' !== $employee_key ) {
+                $api_users[ $employee_key ] = $record;
+            }
+
+            $api_emails[ $email ] = true;
         }
 
         // --- Upsert: create or update each API user in WordPress ---
-        foreach ( $api_users as $email => $record ) {
-            $wp_user = get_user_by( 'email', $email );
+        foreach ( $api_users as $employee_key => $record ) {
+            $email = strtolower( trim( $record['Email'] ?? '' ) );
 
-            // Fallback: look up by employee_key meta in case the email changed.
-            if ( ! $wp_user && ! empty( $record['EmployeeKey'] ) ) {
-                $users_by_key = get_users( [
-                    'meta_key'   => self::EMPLOYEE_KEY_META,
-                    'meta_value' => $record['EmployeeKey'],
-                    'number'     => 1,
-                ] );
-                if ( ! empty( $users_by_key ) ) {
-                    $wp_user = $users_by_key[0];
-                    $log( sprintf( 'Matched user %s by employee_key (email changed from %s).', $email, $wp_user->user_email ) );
-                }
+            // Primary: look up by EmployeeKey meta — stable across email changes.
+            $users_by_key = get_users( [
+                'meta_key'   => self::EMPLOYEE_KEY_META,
+                'meta_value' => $employee_key,
+                'number'     => 1,
+            ] );
+            $wp_user = ! empty( $users_by_key ) ? $users_by_key[0] : null;
+
+            if ( $wp_user && strtolower( $wp_user->user_email ) !== $email ) {
+                $log( sprintf( 'Matched user %s by employee_key (email changed from %s).', $email, $wp_user->user_email ) );
+            }
+
+            // Fallback: look up by email for accounts created before employee_key
+            // meta existed (first sync after this change is deployed).
+            if ( ! $wp_user ) {
+                $wp_user = get_user_by( 'email', $email );
             }
 
             if ( $wp_user ) {
@@ -243,6 +274,14 @@ class GCA_Sync_Users {
                     );
 
                     self::save_user_meta( $wp_user->ID, $record );
+
+                    // If this user was previously soft-deleted but has returned to
+                    // the Workday feed within the grace period, cancel the deletion.
+                    if ( get_user_meta( $wp_user->ID, self::DELETED_AT_META_KEY, true ) ) {
+                        delete_user_meta( $wp_user->ID, self::DELETED_AT_META_KEY );
+                        $log( sprintf( 'Reinstated user: %s (returned to Workday feed, deletion cancelled).', $email ) );
+                    }
+
                     $stats['updated']++;
                 }
             } else {
@@ -273,19 +312,21 @@ class GCA_Sync_Users {
             }
         }
 
-        // --- Purge: remove WP users absent from the API ---
-        if ( ! self::ENABLE_DELETE ) {
-            $log( 'Deletion is disabled (ENABLE_DELETE = false). Skipping purge step.' );
-            return $stats;
-        }
-
-        $wp_users = get_users( [ 'fields' => [ 'ID', 'user_email', 'user_login' ] ] );
+        // --- Offboard: soft-delete or hard-delete users absent from the API ---
+        $wp_users           = get_users( [ 'fields' => [ 'ID', 'user_email', 'user_login' ] ] );
+        $former_employee_id = null; // Resolved lazily on first hard-delete.
 
         foreach ( $wp_users as $wp_user ) {
-            $email = strtolower( $wp_user->user_email );
+            $email        = strtolower( $wp_user->user_email );
+            $employee_key = get_user_meta( $wp_user->ID, self::EMPLOYEE_KEY_META, true );
 
-            if ( isset( $api_users[ $email ] ) ) {
-                continue; // Present in API — already handled above.
+            // Present in API — already handled by the upsert loop above.
+            if ( '' !== $employee_key && isset( $api_users[ $employee_key ] ) ) {
+                continue;
+            }
+            // Fallback for accounts without employee_key meta (pre-deployment legacy users).
+            if ( '' === $employee_key && isset( $api_emails[ $email ] ) ) {
+                continue;
             }
 
             // Preserve users whose login is in the protected list.
@@ -301,13 +342,22 @@ class GCA_Sync_Users {
                 continue;
             }
 
-            // Reassign content to the first administrator before deletion.
-            $admins      = get_users( [ 'role' => 'administrator', 'number' => 1, 'fields' => 'ID' ] );
-            $reassign_to = $admins[0] ?? null;
+            $deleted_at = get_user_meta( $wp_user->ID, self::DELETED_AT_META_KEY, true );
 
-            wp_delete_user( $wp_user->ID, $reassign_to );
-            $log( sprintf( 'Deleted user: %s', $email ) );
-            $stats['deleted']++;
+            if ( $deleted_at ) {
+                // Phase 2: hard-delete if ENABLE_DELETE and grace period elapsed.
+                if ( self::ENABLE_DELETE ) {
+                    $former_employee_id ??= self::get_or_create_former_employee_user();
+                    if ( self::maybe_hard_delete_user( $wp_user->ID, $email, $deleted_at, $former_employee_id, $log ) ) {
+                        $stats['deleted']++;
+                    }
+                }
+                continue;
+            }
+
+            // Phase 1: first sync absent from API — soft-delete (timestamp flag only).
+            self::soft_delete_user( $wp_user->ID, $email, $log );
+            $stats['soft_deleted']++;
         }
 
         return $stats;
@@ -398,7 +448,7 @@ class GCA_Sync_Users {
         $meta = [
             self::WORKDAY_ID_META_KEY => $record['ItemInternalId'] ?? '',
             self::EMPLOYEE_KEY_META   => $record['EmployeeKey']    ?? '',
-            'job_title'               => $record['JobTitle']       ?? '',
+            'business_title'          => $record['BusinessTitle']  ?? '',
             'team'                    => $team,
             'directorate'             => $record['Directorate']    ?? '',
             'manager'                 => $record['Manager']        ?? '',
@@ -408,5 +458,112 @@ class GCA_Sync_Users {
         foreach ( $meta as $key => $value ) {
             update_user_meta( $user_id, $key, $value );
         }
+    }
+
+    /**
+     * Returns the ID of the permanent "Former Employee" system user, creating
+     * it if it does not yet exist.
+     *
+     * @throws RuntimeException If the user cannot be created.
+     */
+    private static function get_or_create_former_employee_user(): int {
+        $user = get_user_by( 'login', self::FORMER_EMPLOYEE_LOGIN );
+        if ( $user && isset( $user->ID ) ) {
+            return (int) $user->ID;
+        }
+
+        $result = wp_insert_user( [
+            'user_login'   => self::FORMER_EMPLOYEE_LOGIN,
+            'user_email'   => self::FORMER_EMPLOYEE_EMAIL,
+            'display_name' => 'Former Employee',
+            'first_name'   => 'Former',
+            'last_name'    => 'Employee',
+            'user_pass'    => wp_generate_password( 32, true, true ),
+            'role'         => 'subscriber',
+        ] );
+
+        if ( is_wp_error( $result ) ) {
+            throw new RuntimeException(
+                'Could not create former-employee system user: ' . $result->get_error_message()
+            );
+        }
+
+        return $result;
+    }
+
+    /**
+     * Phase 1 offboard: record the soft-delete timestamp. The user account,
+     * posts, and directory entry are left unchanged until hard-delete.
+     */
+    private static function soft_delete_user( int $user_id, string $email, callable $log ): void {
+        update_user_meta( $user_id, self::DELETED_AT_META_KEY, current_time( 'mysql' ) );
+        $log( sprintf(
+            'Soft-deleted user: %s (will be hard-deleted after %d days).',
+            $email,
+            self::SOFT_DELETE_GRACE_DAYS
+        ) );
+    }
+
+    /**
+     * Phase 2 offboard: reassign content, clear staff meta, then permanently
+     * delete the user. Returns true if the user was deleted, false if the
+     * grace period has not yet elapsed.
+     */
+    private static function maybe_hard_delete_user(
+        int      $user_id,
+        string   $email,
+        string   $deleted_at,
+        int      $former_employee_id,
+        callable $log
+    ): bool {
+        $days = (int) floor( ( time() - (int) strtotime( $deleted_at ) ) / DAY_IN_SECONDS );
+
+        if ( $days < self::SOFT_DELETE_GRACE_DAYS ) {
+            return false;
+        }
+
+        global $wpdb;
+
+        // Reassign posts (blog, work_update, standard post, etc.) to the former-employee user.
+        $wpdb->update(
+            $wpdb->posts,
+            [ 'post_author' => $former_employee_id ],
+            [ 'post_author' => $user_id ],
+            [ '%d' ],
+            [ '%d' ]
+        );
+
+        // Reassign comments so they display under the Former Employee account.
+        // Match on both user_id and comment_author_email so orphaned comments
+        // (user_id = 0 from a prior wp_delete_user call) are also caught.
+        $wpdb->query(
+            $wpdb->prepare(
+                "UPDATE {$wpdb->comments}
+                 SET user_id = %d, comment_author = 'Former Employee', comment_author_email = %s
+                 WHERE user_id = %d OR comment_author_email = %s",
+                $former_employee_id,
+                self::FORMER_EMPLOYEE_EMAIL,
+                $user_id,
+                $email
+            )
+        );
+
+        // Clear Workday staff meta so no stale data lingers.
+        foreach ( [
+            self::WORKDAY_ID_META_KEY,
+            self::EMPLOYEE_KEY_META,
+            'job_title',
+            'team',
+            'directorate',
+            'manager',
+            'manager_email',
+        ] as $key ) {
+            update_user_meta( $user_id, $key, '' );
+        }
+
+        wp_delete_user( $user_id );
+        $log( sprintf( 'Hard-deleted user: %s (%d days since soft-delete).', $email, $days ) );
+
+        return true;
     }
 }

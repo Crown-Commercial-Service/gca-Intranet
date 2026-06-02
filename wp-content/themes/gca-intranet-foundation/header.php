@@ -12,6 +12,11 @@
 
 <body <?php body_class('govuk-template__body govuk-frontend-supported'); ?>>
 <?php wp_body_open(); ?>
+<!-- Google Tag Manager (noscript) -->
+<noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-P9TZ7BPX"
+height="0" width="0" style="display:none;visibility:hidden" title="Google Tag Manager"></iframe></noscript>
+<!-- End Google Tag Manager (noscript) -->
+<?php get_template_part('template-parts/cookie-banner'); ?>
 
 <header class="site-header" role="banner">
   <a href="#main-content" class="govuk-skip-link" data-module="govuk-skip-link">Skip to main content</a>
@@ -45,29 +50,43 @@
 
           <div class="gca-header-topbar-inner">
 
-            <nav class="utility-nav" aria-label="Utility navigation">
-              <ul class="utility-nav-list">
-                <li>
-                  <a class="govuk-link" href="<?php echo esc_url(get_theme_mod('gca_definition_finder_url', '#')); ?>">Definition finder</a>
-                </li>
-                <li>
-                  <a class="govuk-link" href="<?php echo esc_url(get_theme_mod('gca_staff_directory_url', '#')); ?>">Staff directory</a>
-                </li>
-              </ul>
+            <nav class="utility-nav" aria-label="Top bar navigation">
+              <?php
+                wp_nav_menu([
+                  'theme_location' => 'top_bar',
+                  'container'      => false,
+                  'menu_class'     => 'utility-nav-list',
+                  'fallback_cb'    => false,
+                  'depth'          => 1,
+                ]);
+              ?>
             </nav>
 
-            <form class="site-search" role="search" action="<?php echo esc_url(get_theme_mod('gca_search_url', home_url('/'))); ?>" method="get">
+            <?php if (!is_search()) : ?>
+            <form class="site-search site-search--autocomplete" role="search" action="<?php echo esc_url(get_theme_mod('gca_search_url', home_url('/'))); ?>" method="get" data-autocomplete="header-search">
               <label class="govuk-visually-hidden" for="site-search">Search the intranet</label>
               <div class="search-input-group">
-                <input id="site-search" name="s" type="search" class="govuk-input" placeholder="Search the intranet" autocomplete="off">
+                <input id="site-search" name="s" type="search" class="govuk-input" placeholder="Search the intranet" autocomplete="off" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="site-search-suggestions">
                 <button class="govuk-button search-submit" type="submit" aria-label="Search">
                   <span class="govuk-visually-hidden">Search</span>
-                  <svg class="gca-search-icon" width="20" height="20" viewBox="0 0 16 16" aria-hidden="true" focusable="false">
-                    <path fill="currentColor" d="M11.742 10.344l3.387 3.387-.998.998-3.387-3.387a6 6 0 1 1 .998-.998zM6.5 11.5a5 5 0 0 0 0-10 5 5 0 0 0 0 10z"></path>
+                  <svg class="gca-search-icon" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 25 25" fill="none" aria-hidden="true" focusable="false">
+                    <path d="M23.25 23.25L17.9333 17.9333M20.8056 11.0278C20.8056 16.4279 16.4279 20.8056 11.0278 20.8056C5.62766 20.8056 1.25 16.4279 1.25 11.0278C1.25 5.62766 5.62766 1.25 11.0278 1.25C16.4279 1.25 20.8056 5.62766 20.8056 11.0278Z" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
                   </svg>
                 </button>
               </div>
+              <div class="gca-search-autocomplete" id="site-search-suggestions" hidden></div>
             </form>
+            <?php endif; ?>
+
+            <?php if (is_user_logged_in() && gca_flag_enabled('staff-profiles')) :
+              $current_user = wp_get_current_user();
+              $profile_url  = home_url('/profile/' . rawurlencode($current_user->user_login) . '/');
+              $avatar_url   = get_avatar_url($current_user->ID, ['size' => 40]);
+            ?>
+            <a href="<?php echo esc_url($profile_url); ?>" class="header-profile-link" aria-label="<?php echo esc_attr('View profile: ' . $current_user->display_name); ?>">
+              <img class="header-profile-avatar" src="<?php echo esc_url($avatar_url); ?>" alt="" width="40" height="40">
+            </a>
+            <?php endif; ?>
 
             <button class="global-navigation__toggler" type="button" aria-controls="primaryNav" aria-expanded="false" aria-label="Toggle navigation">
               Menu
@@ -76,8 +95,13 @@
           </div>
         </div>
 
-      </div> 
-      <div class="nav-wrapper govuk-width-container">
+      </div>
+
+    </div>
+  </div>
+
+  <div class="bg-white gca-header-bg">
+    <div class="nav-wrapper govuk-width-container">
         <nav class="global-navigation" id="primaryNav" aria-label="Primary navigation">
         <?php
           $args = [
@@ -97,7 +121,5 @@
         ?>
         </nav>
       </div>
-
-    </div>
   </div>
 </header>

@@ -69,6 +69,11 @@ RUN chmod +x /usr/local/bin/wp-init.sh
 # Add the custom WordPress config bridge
 COPY docker/wp-config-extra.php /opt/wp-config-extra.php
 
+# Health check endpoint - returns 200 directly without triggering the HTTPS
+# redirect that FORCE_SSL_ADMIN applies to all other WordPress URLs. Used by
+# both the Dockerfile HEALTHCHECK below and the ECS task definition healthcheck.
+COPY docker/health.php /var/www/html/health.php
+
 # WP-CLI global config (path + url so `wp` works without flags)
 COPY wp-cli.yml /var/www/html/wp-cli.yml
 ENV WORDPRESS_CONFIG_EXTRA="require '/opt/wp-config-extra.php';"
@@ -77,9 +82,13 @@ ENV WORDPRESS_CONFIG_EXTRA="require '/opt/wp-config-extra.php';"
 COPY docker/wordpress-init.sh /usr/local/bin/wordpress-init.sh
 RUN chmod +x /usr/local/bin/wordpress-init.sh
 
-# Tell AWS ECS how to verify the container is healthy
-HEALTHCHECK --interval=30s --timeout=5s --start-period=30s --retries=3 \
-  CMD curl -fsS http://localhost:8080/wp-login.php >/dev/null || exit 1
+# Tell AWS ECS how to verify the container is healthy.
+# Uses /health.php which returns HTTP 200 directly - avoids the HTTPS redirect
+# that wp-login.php triggers via FORCE_SSL_ADMIN, which curl inside the container
+# cannot follow (it resolves to an external URL). Increased start-period to give
+# WordPress time to initialise before checks begin.
+HEALTHCHECK --interval=30s --timeout=10s --start-period=120s --retries=5 \
+  CMD curl -fsS http://localhost:8080/health.php >/dev/null || exit 1
 
 # Run the init script, then start Apache
 ENTRYPOINT ["wordpress-init.sh"]
