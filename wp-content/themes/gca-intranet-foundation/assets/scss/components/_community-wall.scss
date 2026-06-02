@@ -236,6 +236,13 @@ $gca-cw-compose-input-bg: #f5f6fa;
     resize: vertical;
     min-height: 100px;
     font-size: govuk-px-to-rem(19);
+    border: 1px solid #b1b4b6 !important;
+    border-radius: 4px;
+}
+
+.gca-cw-compose__form .govuk-input {
+    border: 1px solid #b1b4b6 !important;
+    border-radius: 4px;
 }
 
 .gca-cw-compose__char-hint {
