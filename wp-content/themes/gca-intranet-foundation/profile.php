@@ -33,10 +33,17 @@ if ($profile_data === null) {
 
 $is_own_profile = is_user_logged_in() && get_current_user_id() === $user->ID;
 
+add_filter('body_class', function (array $classes): array {
+    $classes[] = 'gca-profile-page';
+    return $classes;
+});
+
 get_header();
 ?>
 
-<div class="govuk-width-container govuk-!-padding-top-6 govuk-!-padding-bottom-9">
+<div class="gca-profile-banner" aria-hidden="true"></div>
+
+<div class="govuk-width-container gca-profile-content govuk-!-padding-bottom-9">
   <main id="main-content" tabindex="-1">
     <?php get_template_part('template-parts/profile-card', null, [
         'user'         => $user,
