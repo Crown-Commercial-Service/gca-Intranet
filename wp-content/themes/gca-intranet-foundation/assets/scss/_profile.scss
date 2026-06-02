@@ -3,11 +3,25 @@
 // =============================================================================
 
 .gca-profile-banner {
+  position: relative;
   background: $gca-hero-blue;
   height: 160px;
+
+  &::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    height: 8px;
+    width: 100%;
+    background: #699aff;
+    z-index: 3;
+  }
 }
 
 .gca-profile-content {
+  position: relative;
+  z-index: 1;
   margin-top: -100px;
   padding-top: govuk-spacing(6);
 }

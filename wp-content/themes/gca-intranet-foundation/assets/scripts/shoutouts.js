@@ -114,6 +114,10 @@
             ? '<a href="' + esc(s.recipient_profile) + '" class="gca-shoutout__recipient-name">' + esc(s.recipient_name) + '</a>'
             : '<strong class="gca-shoutout__recipient-name">' + esc(s.recipient_name) + '</strong>';
 
+        var categoryHtml = s.category
+            ? '<span class="gca-shoutout__category-tag">' + esc(s.category) + '</span>'
+            : '';
+
         var teamHtml = s.giver_team
             ? '<span class="gca-cw-post__author-team">' + esc(s.giver_team) + '</span>'
             : '';
@@ -149,7 +153,7 @@
             '<span class="gca-shoutout__shouted-out"> shouted out </span>' +
             recipientHtml +
             '</div>' +
-            '<div class="gca-cw-post__author-meta">' + teamHtml +
+            '<div class="gca-cw-post__author-meta">' + categoryHtml + teamHtml +
             '<span class="gca-cw-post__meta-dot"><time datetime="' + esc(s.date_iso) + '">' + esc(relativeTime(s.date_iso)) + '</time></span>' +
             '</div></div></div>' +
             moreHtml +
@@ -347,19 +351,33 @@
     var autocomplete;
 
     function setupShoutoutCompose() {
-        var triggerBtn   = document.getElementById('gca-shoutout-trigger');
-        var formArea     = document.getElementById('gca-shoutout-form-area');
-        var cancelBtn    = document.getElementById('gca-shoutout-cancel');
-        var form         = document.getElementById('gca-shoutout-form');
-        var submitBtn    = document.getElementById('gca-shoutout-submit');
-        var searchInput  = document.getElementById('gca-shoutout-recipient-search');
-        var hiddenId     = document.getElementById('gca-shoutout-recipient-id');
-        var suggestions  = document.getElementById('gca-shoutout-suggestions');
-        var textarea     = document.getElementById('gca-shoutout-content');
-        var charsLeft    = document.getElementById('gca-shoutout-chars-left');
-        var errorEl      = document.getElementById('gca-shoutout-error');
+        var triggerBtn     = document.getElementById('gca-shoutout-trigger');
+        var formArea       = document.getElementById('gca-shoutout-form-area');
+        var cancelBtn      = document.getElementById('gca-shoutout-cancel');
+        var form           = document.getElementById('gca-shoutout-form');
+        var submitBtn      = document.getElementById('gca-shoutout-submit');
+        var searchInput    = document.getElementById('gca-shoutout-recipient-search');
+        var hiddenId       = document.getElementById('gca-shoutout-recipient-id');
+        var suggestions    = document.getElementById('gca-shoutout-suggestions');
+        var textarea       = document.getElementById('gca-shoutout-content');
+        var charsLeft      = document.getElementById('gca-shoutout-chars-left');
+        var errorEl        = document.getElementById('gca-shoutout-error');
+        var categoryGroup  = document.getElementById('gca-shoutout-category-group');
+        var categorySelect = document.getElementById('gca-shoutout-category');
 
         if (!form) { return; }
+
+        // Populate category dropdown
+        apiFetch('GET', '/shoutouts/categories').then(function (categories) {
+            if (!categories || !categories.length || !categorySelect) { return; }
+            categories.forEach(function (cat) {
+                var opt = document.createElement('option');
+                opt.value = cat.id;
+                opt.textContent = cat.name;
+                categorySelect.appendChild(opt);
+            });
+            if (categoryGroup) { categoryGroup.hidden = false; }
+        });
 
         autocomplete = setupRecipientAutocomplete(searchInput, suggestions, hiddenId);
 
@@ -370,12 +388,13 @@
         }
 
         function closeForm() {
-            if (triggerBtn) { triggerBtn.setAttribute('aria-expanded', 'false'); }
-            if (formArea)   { formArea.hidden = true; }
-            if (form)       { form.reset(); }
-            if (charsLeft)  { charsLeft.textContent = '500'; }
-            if (errorEl)    { errorEl.hidden = true; }
-            if (autocomplete) { autocomplete.reset(); }
+            if (triggerBtn)    { triggerBtn.setAttribute('aria-expanded', 'false'); }
+            if (formArea)      { formArea.hidden = true; }
+            if (form)          { form.reset(); }
+            if (charsLeft)     { charsLeft.textContent = '1000'; }
+            if (errorEl)       { errorEl.hidden = true; }
+            if (categorySelect){ categorySelect.value = ''; }
+            if (autocomplete)  { autocomplete.reset(); }
         }
 
         if (triggerBtn) { triggerBtn.addEventListener('click', openForm); }
@@ -410,16 +429,18 @@
                 return;
             }
 
-            var content = textarea ? textarea.value.trim() : '';
+            var content    = textarea ? textarea.value.trim() : '';
             if (!content) {
                 if (textarea) { textarea.focus(); }
                 return;
             }
 
+            var categoryId = categorySelect ? parseInt(categorySelect.value, 10) || 0 : 0;
+
             if (submitBtn) { submitBtn.disabled = true; submitBtn.textContent = 'Posting…'; }
             if (errorEl)   { errorEl.hidden = true; }
 
-            apiFetch('POST', '/shoutouts', { recipient_id: recipientId, content: content })
+            apiFetch('POST', '/shoutouts', { recipient_id: recipientId, content: content, category_id: categoryId })
                 .then(function (shoutout) {
                     closeForm();
 
