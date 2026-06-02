@@ -95,7 +95,7 @@ function gca_cw_get_user_info(int $user_id, int $avatar_size = 48): array
         'author_name'    => $author->display_name,
         'author_avatar'  => $avatar_url,
         'author_profile' => $profile_url,
-        'author_team'    => trim((string) get_user_meta($author->ID, 'team', true)),
+        'author_team'    => trim((string) get_user_meta($author->ID, 'business_title', true)),
     ];
 }
 
