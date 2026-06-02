@@ -58,7 +58,13 @@ class GCA_Cron_Manager {
             self::redirect(['error' => 'empty_hook']);
         }
 
-        $timestamp = $time_str ? strtotime($time_str) : false;
+        $timestamp = false;
+        if ($time_str) {
+            $dt = DateTime::createFromFormat('Y-m-d\TH:i', $time_str, wp_timezone());
+            if ($dt) {
+                $timestamp = $dt->getTimestamp();
+            }
+        }
         if (!$timestamp || $timestamp < time()) {
             $timestamp = time() + 300; // fallback: 5 minutes from now
         }
@@ -206,7 +212,13 @@ class GCA_Cron_Manager {
             self::redirect(['error' => 'invalid_edit']);
         }
 
-        $new_timestamp = $new_time ? strtotime($new_time) : false;
+        $new_timestamp = false;
+        if ($new_time) {
+            $dt = DateTime::createFromFormat('Y-m-d\TH:i', $new_time, wp_timezone());
+            if ($dt) {
+                $new_timestamp = $dt->getTimestamp();
+            }
+        }
         if (!$new_timestamp) {
             self::redirect(['error' => 'invalid_time']);
         }
