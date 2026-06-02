@@ -7,7 +7,7 @@
  */
 ?>
 
-<?php if (is_singular(['page'])) : ?>
+<?php if (is_singular(['page']) && !is_page_template('template-community-wall.php')) : ?>
   <div class="gca-published-by-wrapper" role="region" aria-label="Page information">
     <div class="govuk-width-container">
       <?php
