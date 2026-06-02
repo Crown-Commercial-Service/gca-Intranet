@@ -71,11 +71,6 @@ endif;
                         class="gca-cw__sidebar-btn gca-cw__sidebar-btn--question"
                         aria-label="Ask a question"
                     >
-                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false">
-                            <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2"/>
-                            <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-                            <circle cx="12" cy="17" r="0.5" fill="currentColor" stroke="currentColor" stroke-width="1"/>
-                        </svg>
                         Ask a question
                     </button>
 
@@ -84,9 +79,6 @@ endif;
                         class="gca-cw__sidebar-btn gca-cw__sidebar-btn--shoutout"
                         aria-label="Shout-out a colleague"
                     >
-                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false">
-                            <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/>
-                        </svg>
                         Shout-out a colleague
                     </button>
 
@@ -115,29 +107,16 @@ endif;
                         </li>
                         <li>
                             <button type="button" class="gca-cw-tabs__btn" data-tab="shoutouts" aria-pressed="false">
-                                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" aria-hidden="true" focusable="false">
-                                    <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/>
-                                </svg>
                                 Shout-outs
                             </button>
                         </li>
                         <li>
                             <button type="button" class="gca-cw-tabs__btn" data-tab="qa" aria-pressed="false">
-                                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" aria-hidden="true" focusable="false">
-                                    <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2"/>
-                                    <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-                                    <circle cx="12" cy="17" r="0.5" fill="currentColor" stroke="currentColor" stroke-width="1"/>
-                                </svg>
                                 Questions &amp; answers
                             </button>
                         </li>
                         <li>
                             <button type="button" class="gca-cw-tabs__btn" data-tab="polls" aria-pressed="false">
-                                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" aria-hidden="true" focusable="false">
-                                    <line x1="18" y1="20" x2="18" y2="10" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-                                    <line x1="12" y1="20" x2="12" y2="4"  stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-                                    <line x1="6"  y1="20" x2="6"  y2="14" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-                                </svg>
                                 Polls
                             </button>
                         </li>
