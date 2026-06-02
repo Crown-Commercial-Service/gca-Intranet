@@ -223,9 +223,20 @@ class GCA_Cron_Logger {
             return;
         }
 
+        // Insert the row immediately so handle_run_completed (which fires inside
+        // the hook at default priority) can find a log_id to update.
+        $log_id = self::insert([
+            'hook'         => $hook,
+            'triggered_by' => 'schedule',
+            'duration_ms'  => 0,
+            'status'       => 'success',
+            'output'       => '',
+        ]);
+
         self::$run_state[$hook] = [
-            'start'  => microtime(true),
-            'log_id' => null,
+            'start'     => microtime(true),
+            'log_id'    => $log_id,
+            'finalized' => false,
         ];
         ob_start();
     }
@@ -247,18 +258,26 @@ class GCA_Cron_Logger {
             return;
         }
 
+        global $wpdb;
         $output      = ob_get_clean();
         $duration_ms = (int) round((microtime(true) - $state['start']) * 1000);
 
-        $log_id = self::insert([
-            'hook'         => $hook,
-            'triggered_by' => 'schedule',
-            'duration_ms'  => $duration_ms,
-            'status'       => 'success',
-            'output'       => $output ?: '',
-        ]);
+        // Always update duration. Only update output if handle_run_completed
+        // didn't already write structured output from the cooperative action.
+        $data    = ['duration_ms' => $duration_ms];
+        $formats = ['%d'];
+        if (!($state['finalized'] ?? false)) {
+            $data['output'] = $output ?: '';
+            $formats[]      = '%s';
+        }
 
-        self::$run_state[$hook]['log_id'] = $log_id;
+        $wpdb->update(
+            self::table_name(),
+            $data,
+            ['id' => $state['log_id']],
+            $formats,
+            ['%d']
+        );
     }
 
     // -------------------------------------------------------------------------
@@ -284,7 +303,7 @@ class GCA_Cron_Logger {
         $status     = null === $stats ? 'error' : 'success';
 
         if ($log_id) {
-            // Update the row already inserted by after_scheduled_run / handle_run_now_bg.
+            // Update the row already inserted by before_scheduled_run / handle_run_now_bg.
             $wpdb->update(
                 $table,
                 ['stats' => $stats_json, 'output' => $output, 'status' => $status],
@@ -292,6 +311,7 @@ class GCA_Cron_Logger {
                 ['%s', '%s', '%s'],
                 ['%d']
             );
+            self::$run_state[$hook]['finalized'] = true;
         }
         // If there's no existing row (e.g., the hook wasn't in WATCHED_HOOKS or
         // this fired outside the sandwich context) we don't insert here — the
