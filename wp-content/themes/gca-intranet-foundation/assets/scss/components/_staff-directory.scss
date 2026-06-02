@@ -60,6 +60,8 @@
 // Directorate dropdown — full-width within sidebar
 .sd-directory__directorate-select {
     width: 100%;
+    border: 1px solid #b1b4b6 !important;
+    border-radius: 4px;
 }
 
 .sd-directory__nav-list {
@@ -196,7 +198,9 @@
     padding-right: govuk-spacing(9) !important;
     margin-bottom: 0;
     width: 100%;
-    font-size: 19px;
+    font-size: 19px !important;
+    border: 1px solid #b1b4b6 !important;
+    border-radius: 4px;
 }
 
 .sd-directory__search-btn {
