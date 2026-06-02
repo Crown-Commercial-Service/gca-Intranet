@@ -527,14 +527,80 @@ function gca_profile_get_posts(): WP_REST_Response
     $results = array_map(function (WP_Post $post): array {
         $post_type_obj = get_post_type_object($post->post_type);
         return [
+            'type'            => 'post',
             'id'              => $post->ID,
             'title'           => get_the_title($post),
             'url'             => get_permalink($post),
             'post_type'       => $post->post_type,
             'post_type_label' => $post_type_obj ? $post_type_obj->labels->singular_name : ucfirst($post->post_type),
             'date'            => get_the_date('c', $post),
+            'content_html'    => '',
         ];
     }, $posts);
+
+    // Community wall posts authored by the current user
+    if (post_type_exists('community_post')) {
+        $community_posts = get_posts([
+            'author'      => $user_id,
+            'post_type'   => 'community_post',
+            'post_status' => 'publish',
+            'numberposts' => 20,
+            'orderby'     => 'date',
+            'order'       => 'DESC',
+        ]);
+
+        foreach ($community_posts as $post) {
+            $results[] = [
+                'type'            => 'post',
+                'id'              => $post->ID,
+                'title'           => '',
+                'url'             => '',
+                'post_type'       => 'community_post',
+                'post_type_label' => 'Community update',
+                'date'            => get_the_date('c', $post),
+                'content_html'    => nl2br(esc_html($post->post_content)),
+            ];
+        }
+    }
+
+    // Shoutouts given by the current user
+    if (post_type_exists('community_shoutout')) {
+        $shoutout_meta_key = defined('GCA_SHOUTOUT_RECIPIENT_META') ? GCA_SHOUTOUT_RECIPIENT_META : '_gca_shoutout_recipient_id';
+
+        $shoutout_posts = get_posts([
+            'author'      => $user_id,
+            'post_type'   => 'community_shoutout',
+            'post_status' => 'publish',
+            'numberposts' => 20,
+            'orderby'     => 'date',
+            'order'       => 'DESC',
+        ]);
+
+        foreach ($shoutout_posts as $post) {
+            $recipient_id  = (int) get_post_meta($post->ID, $shoutout_meta_key, true);
+            $recipient     = $recipient_id ? get_userdata($recipient_id) : null;
+            $recip_profile = ($recipient && gca_flag_enabled('staff-profiles'))
+                ? esc_url(home_url('/profile/' . $recipient->user_nicename))
+                : '';
+
+            $results[] = [
+                'type'              => 'shoutout',
+                'id'                => $post->ID,
+                'title'             => $recipient ? $recipient->display_name : '',
+                'url'               => $recip_profile,
+                'post_type'         => 'community_shoutout',
+                'post_type_label'   => 'Shout-out',
+                'date'              => get_the_date('c', $post),
+                'content_html'      => nl2br(esc_html($post->post_content)),
+                'recipient_name'    => $recipient ? $recipient->display_name : '',
+                'recipient_profile' => $recip_profile,
+            ];
+        }
+    }
+
+    usort($results, function (array $a, array $b): int {
+        return strcmp($b['date'], $a['date']);
+    });
 
     return new WP_REST_Response($results);
 }
@@ -560,6 +626,7 @@ function gca_profile_get_mentions(): WP_REST_Response
         $post      = get_post($comment->comment_post_ID);
         $commenter = get_userdata((int) $comment->user_id);
         return [
+            'type'           => 'mention',
             'comment_id'     => (int) $comment->comment_ID,
             'post_id'        => (int) $comment->comment_post_ID,
             'post_title'     => $post ? get_the_title($post) : '',
@@ -571,6 +638,55 @@ function gca_profile_get_mentions(): WP_REST_Response
             'date'           => get_comment_date('c', $comment),
         ];
     }, $mentions);
+
+    // Shoutouts received by the current user
+    if (gca_flag_enabled('community-shoutouts') && post_type_exists('community_shoutout')) {
+        $shoutout_meta_key = defined('GCA_SHOUTOUT_RECIPIENT_META') ? GCA_SHOUTOUT_RECIPIENT_META : '_gca_shoutout_recipient_id';
+
+        $shoutout_query = new WP_Query([
+            'post_type'      => 'community_shoutout',
+            'post_status'    => 'publish',
+            'posts_per_page' => 50,
+            'orderby'        => 'date',
+            'order'          => 'DESC',
+            'no_found_rows'  => true,
+            'meta_query'     => [[
+                'key'     => $shoutout_meta_key,
+                'value'   => $user_id,
+                'type'    => 'NUMERIC',
+                'compare' => '=',
+            ]],
+        ]);
+
+        foreach ($shoutout_query->posts as $post) {
+            if (!$post instanceof WP_Post) {
+                continue;
+            }
+            $giver   = get_userdata((int) $post->post_author);
+            $local   = $giver ? trim((string) get_user_meta($giver->ID, 'google_profile_picture_local_url', true)) : '';
+            $avatar  = $local ?: ($giver ? (string) get_avatar_url($giver->ID, ['size' => 40]) : '');
+            $profile = ($giver && gca_flag_enabled('staff-profiles'))
+                ? esc_url(home_url('/profile/' . $giver->user_nicename))
+                : '';
+
+            $results[] = [
+                'type'           => 'shoutout',
+                'comment_id'     => null,
+                'post_id'        => $post->ID,
+                'post_title'     => '',
+                'post_url'       => '',
+                'author_name'    => $giver ? $giver->display_name : '',
+                'author_avatar'  => $avatar,
+                'author_profile' => $profile,
+                'content_html'   => nl2br(esc_html($post->post_content)),
+                'date'           => (string) get_post_time('c', true, $post),
+            ];
+        }
+
+        usort($results, function (array $a, array $b): int {
+            return strcmp($b['date'], $a['date']);
+        });
+    }
 
     return new WP_REST_Response($results);
 }

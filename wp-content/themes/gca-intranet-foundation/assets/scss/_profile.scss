@@ -1,4 +1,18 @@
 // =============================================================================
+// Profile page — blue banner + overlap layout
+// =============================================================================
+
+.gca-profile-banner {
+  background: $gca-hero-blue;
+  height: 160px;
+}
+
+.gca-profile-content {
+  margin-top: -100px;
+  padding-top: govuk-spacing(6);
+}
+
+// =============================================================================
 // Staff Profile Card  +  Staff Search Results
 // Follows GOV.UK Frontend conventions and the GCA token system.
 // =============================================================================
@@ -138,6 +152,12 @@
 
 .gca-profile-tabs {
   font-family: $govuk-font-family;
+  background: #fff;
+  border: 1px solid $gca-border-mid;
+  border-radius: $border-radius;
+  padding: govuk-spacing(5) govuk-spacing(6) govuk-spacing(6);
+  padding-top:5px;
+  overflow: hidden;
 }
 
 // ── Tab nav ──────────────────────────────────────────────────────────────────
@@ -147,6 +167,15 @@
   gap: 0;
   border-bottom: 2px solid $gca-border-mid;
   margin-bottom: govuk-spacing(5);
+  margin-left: govuk-spacing(6) * -1;
+  margin-right: govuk-spacing(6) * -1;
+  padding-left: govuk-spacing(6);
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+
+  // Hide scrollbar visually while keeping scroll functionality
+  scrollbar-width: none;
+  &::-webkit-scrollbar { display: none; }
 }
 
 .gca-profile-tabs__btn {

@@ -23,7 +23,6 @@ $nonce    = esc_js($args['nonce']    ?? '');
       id="gca-tab-btn-saves"
       data-tab="saves"
     >
-      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true" focusable="false"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
       My Saves
     </button>
 
@@ -35,7 +34,6 @@ $nonce    = esc_js($args['nonce']    ?? '');
       id="gca-tab-btn-mentions"
       data-tab="mentions"
     >
-      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true" focusable="false"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg>
       Mentions
       <span class="gca-profile-tabs__badge" id="gca-mentions-badge" hidden></span>
     </button>
@@ -48,7 +46,6 @@ $nonce    = esc_js($args['nonce']    ?? '');
       id="gca-tab-btn-posts"
       data-tab="posts"
     >
-      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true" focusable="false"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><polyline points="14 2 14 8 20 8" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg>
       My Posts
     </button>
   </nav>
@@ -193,13 +190,35 @@ $nonce    = esc_js($args['nonce']    ?? '');
         }
 
         listEl.innerHTML = items.map(function (item) {
+            var rel = item.date ? relativeTime(item.date) : null;
+
+            if (item.type === 'shoutout') {
+                var giverLink = item.author_profile
+                    ? '<a href="' + esc(item.author_profile) + '" class="gca-profile-item__author">' + esc(item.author_name) + '</a>'
+                    : '<strong>' + esc(item.author_name) + '</strong>';
+                var avatarHtml = item.author_avatar
+                    ? '<img class="gca-profile-item__avatar" src="' + esc(item.author_avatar) + '" alt="" aria-hidden="true">'
+                    : '<span class="gca-profile-item__avatar gca-profile-item__avatar--initial" aria-hidden="true">' + esc((item.author_name || '?').charAt(0).toUpperCase()) + '</span>';
+                return '<li class="gca-profile-item gca-profile-item--mention">' +
+                    avatarHtml +
+                    '<div class="gca-profile-item__body">' +
+                        '<span class="gca-profile-item__mention-meta">' +
+                            giverLink + ' gave you a Shout-out' +
+                            (rel ? ' &bull; ' + rel : '') +
+                        '</span>' +
+                        '<p class="gca-profile-item__comment-text">' + item.content_html + '</p>' +
+                    '</div>' +
+                '</li>';
+            }
+
+            // Comment @mention
             return '<li class="gca-profile-item gca-profile-item--mention">' +
                 '<img class="gca-profile-item__avatar" src="' + esc(item.author_avatar) + '" alt="" aria-hidden="true">' +
                 '<div class="gca-profile-item__body">' +
                     '<span class="gca-profile-item__mention-meta">' +
                         '<a href="' + esc(item.author_profile) + '" class="gca-profile-item__author">' + esc(item.author_name) + '</a>' +
                         ' mentioned you in <a href="' + esc(item.post_url) + '" class="gca-profile-item__post-link">' + esc(item.post_title) + '</a>' +
-                        (item.date ? ' &bull; ' + relativeTime(item.date) : '') +
+                        (rel ? ' &bull; ' + rel : '') +
                     '</span>' +
                     '<p class="gca-profile-item__comment-text">' + item.content_html + '</p>' +
                 '</div>' +
@@ -223,6 +242,32 @@ $nonce    = esc_js($args['nonce']    ?? '');
 
         listEl.innerHTML = items.map(function (item) {
             var rel = relativeTime(item.date);
+
+            if (item.type === 'shoutout') {
+                var recipLink = item.recipient_profile
+                    ? '<a href="' + esc(item.recipient_profile) + '" class="gca-profile-item__post-link">' + esc(item.recipient_name) + '</a>'
+                    : '<strong>' + esc(item.recipient_name) + '</strong>';
+                return '<li class="gca-profile-item">' +
+                    '<div class="gca-profile-item__body">' +
+                        '<span class="gca-profile-item__label">Shout-out</span>' +
+                        '<span class="gca-profile-item__mention-meta">You gave a shout-out to ' + recipLink +
+                            (rel ? ' &bull; ' + rel : '') +
+                        '</span>' +
+                        '<p class="gca-profile-item__comment-text">' + item.content_html + '</p>' +
+                    '</div>' +
+                '</li>';
+            }
+
+            if (item.post_type === 'community_post') {
+                return '<li class="gca-profile-item">' +
+                    '<div class="gca-profile-item__body">' +
+                        '<span class="gca-profile-item__label">Community update</span>' +
+                        (rel ? '<span class="gca-profile-item__meta">' + rel + '</span>' : '') +
+                        '<p class="gca-profile-item__comment-text">' + item.content_html + '</p>' +
+                    '</div>' +
+                '</li>';
+            }
+
             return '<li class="gca-profile-item">' +
                 '<div class="gca-profile-item__body">' +
                     '<span class="gca-profile-item__label">' + esc(item.post_type_label) + '</span>' +
