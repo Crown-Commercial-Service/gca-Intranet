@@ -74,6 +74,7 @@
     position: relative;
     display: flex;
     align-items: center;
+    box-sizing: border-box;
     width: 100%;
     padding: govuk-spacing(3) govuk-spacing(4);
     border: 1px solid #d0d5e0;
@@ -127,6 +128,7 @@
     position: relative;
     z-index: 1;
     flex: 1;
+    min-width: 0;
     @include govuk-font($size: 16);
     color: $govuk-text-colour;
 }
