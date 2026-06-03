@@ -40,15 +40,18 @@ class GCA_Workflow_Roles {
     ];
 
     private const PUBLISHER_ADMIN_CAPS = [
-        'manage_options'    => true,
-        'manage_categories' => true,
+        'manage_options'     => true,
+        'manage_categories'  => true,
         'edit_theme_options' => true,
-        'list_users'        => true,
-        'edit_users'        => true,
-        'promote_users'     => true,
-        'install_plugins'   => true,
-        'activate_plugins'  => true,
-        'update_plugins'    => true,
+        'list_users'         => true,
+        'edit_users'         => true,
+        'promote_users'      => true,
+        // install_plugins intentionally omitted: WordPress core auto-grants
+        // install_languages to any user with install_plugins, and update-core.php
+        // allows access if install_languages is true. Plugins page only needs
+        // activate_plugins.
+        'activate_plugins'   => true,
+        'pp_manage_settings' => true,
     ];
 
     private const COMMUNITY_HOST_CAPS = [
