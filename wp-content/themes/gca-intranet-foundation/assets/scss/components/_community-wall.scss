@@ -657,7 +657,7 @@ $gca-cw-compose-input-bg: #f5f6fa;
     display: flex;
     align-items: center;
     gap: govuk-spacing(2);
-    padding-top: govuk-spacing(3);
+    padding-top: govuk-spacing(2);
     border-top: 1px solid $gca-light-grey;
     flex-wrap: wrap;
 }
@@ -691,14 +691,12 @@ $gca-cw-compose-input-bg: #f5f6fa;
 }
 
 .gca-cw-post__bookmark-btn {
-    margin-left: auto;
-    opacity: 0.5;
-    cursor: default;
+    display: none;
+}
 
-    &:hover {
-        background: none;
-        color: govuk-colour('dark-grey');
-    }
+// Hide save/bookmark button inside community wall posts
+.gca-cw-feed .gca-lc__save-btn {
+    display: none;
 }
 
 // ── Sidebar extras ────────────────────────────────────────────────────────────
