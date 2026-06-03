@@ -328,6 +328,11 @@ class GCA_Sync_Users {
             if ( '' === $employee_key && isset( $api_emails[ $email ] ) ) {
                 continue;
             }
+            // No employee_key means this is an internal/manually-created user — leave intact.
+            if ( '' === $employee_key ) {
+                $stats['skipped']++;
+                continue;
+            }
 
             // Preserve users whose login is in the protected list.
             if ( in_array( $wp_user->user_login, self::PROTECTED_LOGINS, true ) ) {
@@ -552,7 +557,7 @@ class GCA_Sync_Users {
         foreach ( [
             self::WORKDAY_ID_META_KEY,
             self::EMPLOYEE_KEY_META,
-            'job_title',
+            'business_title',
             'team',
             'directorate',
             'manager',
