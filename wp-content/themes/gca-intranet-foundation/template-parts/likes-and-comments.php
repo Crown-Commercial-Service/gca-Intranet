@@ -45,7 +45,7 @@ if (!is_user_logged_in() || $post_id <= 0) {
         <button
             type="button"
             class="gca-lc__comment-toggle-btn"
-            aria-expanded="false"
+            aria-expanded="true"
             aria-controls="gca-lc-comments-<?php echo esc_attr((string) $post_id); ?>"
             data-action="toggle-comments"
         >
@@ -78,7 +78,6 @@ if (!is_user_logged_in() || $post_id <= 0) {
     <div
         class="gca-lc__comments-panel"
         id="gca-lc-comments-<?php echo esc_attr((string) $post_id); ?>"
-        hidden
     >
         <?php /* Comment form */ ?>
         <div class="gca-lc__form-wrap">

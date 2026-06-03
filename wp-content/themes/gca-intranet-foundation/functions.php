@@ -1006,6 +1006,11 @@ add_action('wp_enqueue_scripts', function (): void {
             });
         }
 
+        // Auto-load comments if the panel is already visible on page load (article pages)
+        if (commentsPanel && !commentsPanel.hidden) {
+            loadPanel();
+        }
+
         if (mainForm) { bindForm(mainForm); }
     }
 
