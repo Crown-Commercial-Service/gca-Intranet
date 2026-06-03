@@ -42,3 +42,7 @@ wp-content/upgrade/
 wp-content/cache/
 
 local.db.latest.sql
+
+# gca-publishing-workflow plugin — generated/local files
+wp-content/plugins/gca-publishing-workflow/vendor/
+wp-content/plugins/gca-publishing-workflow/.phpunit.result.cache
