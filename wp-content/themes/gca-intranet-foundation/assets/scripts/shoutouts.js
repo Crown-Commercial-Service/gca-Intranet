@@ -391,7 +391,7 @@
             if (triggerBtn)    { triggerBtn.setAttribute('aria-expanded', 'false'); }
             if (formArea)      { formArea.hidden = true; }
             if (form)          { form.reset(); }
-            if (charsLeft)     { charsLeft.textContent = '1000'; }
+            if (charsLeft)     { charsLeft.textContent = '500'; }
             if (errorEl)       { errorEl.hidden = true; }
             if (categorySelect){ categorySelect.value = ''; }
             if (autocomplete)  { autocomplete.reset(); }

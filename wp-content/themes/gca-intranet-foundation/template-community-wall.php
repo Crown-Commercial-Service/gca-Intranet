@@ -281,13 +281,13 @@ endif;
                                         name="content"
                                         rows="3"
                                         placeholder="What would you like to celebrate?"
-                                        maxlength="1000"
+                                        maxlength="500"
                                         aria-describedby="gca-shoutout-char-hint"
                                     ></textarea>
                                 </div>
 
                                 <p class="gca-cw-compose__char-hint" id="gca-shoutout-char-hint" aria-live="polite">
-                                    <span id="gca-shoutout-chars-left">1000</span> characters remaining
+                                    <span id="gca-shoutout-chars-left">500</span> characters remaining
                                 </p>
 
                                 <div class="gca-cw-compose__actions gca-lc-delete-modal__actions">
@@ -349,13 +349,13 @@ endif;
                                         name="content"
                                         rows="3"
                                         placeholder="What would you like to ask?"
-                                        maxlength="1000"
+                                        maxlength="500"
                                         aria-describedby="gca-qa-char-hint"
                                     ></textarea>
                                 </div>
 
                                 <p class="gca-cw-compose__char-hint" id="gca-qa-char-hint" aria-live="polite">
-                                    <span id="gca-qa-chars-left">1000</span> characters remaining
+                                    <span id="gca-qa-chars-left">500</span> characters remaining
                                 </p>
 
                                 <div class="gca-cw-compose__actions gca-lc-delete-modal__actions">
