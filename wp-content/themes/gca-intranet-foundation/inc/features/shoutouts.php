@@ -308,8 +308,9 @@ add_action('rest_api_init', function (): void {
             'callback'            => 'gca_shoutout_list',
             'permission_callback' => 'is_user_logged_in',
             'args'                => [
-                'page'     => ['default' => 1,  'sanitize_callback' => 'absint'],
-                'per_page' => ['default' => 15, 'sanitize_callback' => 'absint'],
+                'page'         => ['default' => 1,  'sanitize_callback' => 'absint'],
+                'per_page'     => ['default' => 15, 'sanitize_callback' => 'absint'],
+                'recipient_id' => ['default' => 0,  'sanitize_callback' => 'absint'],
             ],
         ],
         [
@@ -398,11 +399,12 @@ function gca_shoutout_search_users(WP_REST_Request $req): WP_REST_Response
 
 function gca_shoutout_list(WP_REST_Request $req): WP_REST_Response
 {
-    $page     = max(1, (int) $req->get_param('page'));
-    $per_page = min(50, max(1, (int) $req->get_param('per_page')));
-    $uid      = get_current_user_id();
+    $page         = max(1, (int) $req->get_param('page'));
+    $per_page     = min(50, max(1, (int) $req->get_param('per_page')));
+    $uid          = get_current_user_id();
+    $recipient_id = (int) $req->get_param('recipient_id');
 
-    $query = new WP_Query([
+    $query_args = [
         'post_type'      => 'community_shoutout',
         'post_status'    => 'publish',
         'posts_per_page' => $per_page,
@@ -410,7 +412,18 @@ function gca_shoutout_list(WP_REST_Request $req): WP_REST_Response
         'orderby'        => 'date',
         'order'          => 'DESC',
         'no_found_rows'  => false,
-    ]);
+    ];
+
+    if ($recipient_id > 0) {
+        $query_args['meta_query'] = [[
+            'key'     => GCA_SHOUTOUT_RECIPIENT_META,
+            'value'   => $recipient_id,
+            'type'    => 'NUMERIC',
+            'compare' => '=',
+        ]];
+    }
+
+    $query = new WP_Query($query_args);
 
     $shoutouts = [];
     foreach ($query->posts as $post) {

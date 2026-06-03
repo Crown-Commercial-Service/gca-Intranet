@@ -165,14 +165,6 @@
         }
 
         var votersHtml = '';
-        if (poll.can_see_voters && poll.total_votes > 0) {
-            votersHtml = (
-                '<button type="button" class="gca-poll__voters-btn" data-poll-id="' + poll.id + '">' +
-                'View voters' +
-                '</button>' +
-                '<div class="gca-poll__voters-panel" id="gca-poll-voters-' + poll.id + '" hidden></div>'
-            );
-        }
 
         return (
             '<article class="gca-cw-post gca-poll" id="gca-poll-' + poll.id + '">' +
@@ -248,64 +240,9 @@
         });
     }
 
-    // ── Voter list panel ──────────────────────────────────────────────────────
+    // ── Three-dot menu ────────────────────────────────────────────────────────
 
-    function setupVoterButtons(containerEl) {
-        containerEl.addEventListener('click', function (e) {
-            var btn = e.target.closest('.gca-poll__voters-btn');
-            if (!btn) { return; }
-
-            var pollId = btn.dataset.pollId;
-            var panel  = document.getElementById('gca-poll-voters-' + pollId);
-            if (!panel) { return; }
-
-            if (!panel.hidden) {
-                panel.hidden = true;
-                btn.textContent = 'View voters';
-                return;
-            }
-
-            btn.disabled = true;
-            btn.textContent = 'Loading…';
-
-            apiFetch('GET', '/polls/' + pollId + '/votes')
-                .then(function (data) {
-                    var html = '';
-                    data.options.forEach(function (opt) {
-                        if (!opt.voters.length) { return; }
-                        html += '<div class="gca-poll__voters-group">';
-                        html += '<p class="gca-poll__voters-option-label">' + esc(opt.option_text) + '</p>';
-                        html += '<ul class="gca-poll__voters-list">';
-                        opt.voters.forEach(function (v) {
-                            html += '<li class="gca-poll__voter">';
-                            if (v.avatar) {
-                                html += '<img src="' + esc(v.avatar) + '" alt="" width="24" height="24" class="gca-poll__voter-avatar">';
-                            }
-                            html += '<span class="gca-poll__voter-name">' + esc(v.name) + '</span>';
-                            if (v.team) {
-                                html += '<span class="gca-poll__voter-team">' + esc(v.team) + '</span>';
-                            }
-                            html += '</li>';
-                        });
-                        html += '</ul></div>';
-                    });
-
-                    if (!html) { html = '<p class="gca-poll__voters-empty">No voters to show.</p>'; }
-
-                    panel.innerHTML = html;
-                    panel.hidden = false;
-                    btn.textContent = 'Hide voters';
-                })
-                .catch(function () {
-                    btn.textContent = 'View voters';
-                    alert('Could not load voter list.');
-                })
-                .finally(function () {
-                    btn.disabled = false;
-                });
-        });
-
-        // Three-dot menu
+    function setupPollMenus(containerEl) {
         containerEl.addEventListener('click', function (e) {
             var moreBtn = e.target.closest('.gca-cw-post__more-btn[data-poll-id]');
             if (moreBtn) {
@@ -624,7 +561,7 @@
         if (!pollFeedEl) { return; }
 
         setupPollCompose();
-        setupVoterButtons(document.body);
+        setupPollMenus(document.body);
 
         if (pollLoadMoreBtn) {
             pollLoadMoreBtn.addEventListener('click', function () {
