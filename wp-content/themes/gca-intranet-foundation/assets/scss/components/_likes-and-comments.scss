@@ -23,10 +23,10 @@ $gca-lc-icon-color: #767676;
 .gca-lc__like-bar {
     display: flex;
     align-items: center;
-    gap: govuk-spacing(4);
-    margin-bottom: govuk-spacing(4);
+    gap: govuk-spacing(3);
+    margin-bottom: govuk-spacing(1);
     border-top: 1px solid $gca-lc-border;
-    padding-top: govuk-spacing(3);
+    padding-top: govuk-spacing(2);
 }
 
 .gca-lc__like-btn,
@@ -41,7 +41,7 @@ $gca-lc-icon-color: #767676;
     padding: govuk-spacing(1) govuk-spacing(2);
     cursor: pointer;
     font-family: $govuk-font-family;
-    font-size: govuk-px-to-rem(19);
+    font-size: govuk-px-to-rem(14);
     font-weight: 600;
     color: $govuk-text-colour;
     transition: color 0.15s ease, border-color 0.15s ease;
@@ -95,6 +95,13 @@ $gca-lc-icon-color: #767676;
 .gca-lc__comment-icon,
 .gca-lc__save-icon {
     color: $gca-lc-icon-color;
+    display: inline-flex;
+    align-items: center;
+
+    svg {
+        width: 14px;
+        height: 13px;
+    }
 }
 
 .gca-lc__like-count {
@@ -325,7 +332,7 @@ $gca-lc-icon-color: #767676;
     padding: 0;
     cursor: pointer;
     font-family: $govuk-font-family;
-    font-size: govuk-px-to-rem(19);
+    font-size: govuk-px-to-rem(14);
     font-weight: 600;
     color: govuk-colour('dark-grey');
     display: inline-flex;
@@ -354,20 +361,20 @@ $gca-lc-icon-color: #767676;
 }
 
 .gca-lc__action-btn[data-action="show-reply-form"] {
-    color: #1d70b8;
+    color: govuk-colour('dark-grey');
 
     &:hover {
-        color: darken(#1d70b8, 10%);
-        border-bottom-color: darken(#1d70b8, 10%);
+        color: $govuk-text-colour;
+        border-bottom-color: $govuk-text-colour;
     }
 }
 
 .gca-lc__action-btn--delete {
-    color: $gca-lc-liked;
+    color: govuk-colour('dark-grey');
 
     &:hover {
-        color: #a0280e;
-        border-bottom-color: #a0280e;
+        color: $govuk-text-colour;
+        border-bottom-color: $govuk-text-colour;
     }
 }
 

@@ -106,6 +106,13 @@ add_action('admin_menu', function (): void {
     );
 }, 5);
 
+add_action('admin_head', function (): void {
+    $screen = get_current_screen();
+    if ($screen && $screen->post_type === 'qa_question') {
+        echo '<style>.page-title-action { display: none !important; }</style>';
+    }
+});
+
 // ---------------------------------------------------------------------------
 // Role + capability setup
 // ---------------------------------------------------------------------------
@@ -139,6 +146,9 @@ function gca_qa_setup_roles(): void
 // ---------------------------------------------------------------------------
 
 add_action('add_meta_boxes', function (): void {
+    remove_meta_box('authordiv', 'qa_question', 'normal');
+    remove_meta_box('authordiv', 'qa_question', 'side');
+
     if (!gca_flag_enabled('community-qa')) {
         return;
     }
@@ -235,6 +245,11 @@ function gca_qa_answer_metabox(WP_Post $post): void
 
 // Save metabox answer
 add_action('save_post_qa_question', function (int $post_id): void {
+    static $updating = false;
+    if ($updating) {
+        return;
+    }
+
     if (
         !isset($_POST['gca_qa_answer_nonce'])
         || !wp_verify_nonce(sanitize_text_field(wp_unslash($_POST['gca_qa_answer_nonce'])), 'gca_qa_save_answer')
@@ -251,6 +266,14 @@ add_action('save_post_qa_question', function (int $post_id): void {
         update_post_meta($post_id, GCA_QA_ANSWER_META, $answer);
         update_post_meta($post_id, GCA_QA_ANSWERED_BY_META, get_current_user_id());
         update_post_meta($post_id, GCA_QA_ANSWERED_AT_META, (string) current_time('mysql'));
+
+        $updating = true;
+        wp_update_post([
+            'ID'            => $post_id,
+            'post_date'     => current_time('mysql'),
+            'post_date_gmt' => current_time('mysql', true),
+        ]);
+        $updating = false;
     } else {
         delete_post_meta($post_id, GCA_QA_ANSWER_META);
         delete_post_meta($post_id, GCA_QA_ANSWERED_BY_META);
@@ -567,6 +590,12 @@ function gca_qa_save_answer_rest(WP_REST_Request $req): WP_REST_Response
     update_post_meta($question_id, GCA_QA_ANSWER_META, $answer);
     update_post_meta($question_id, GCA_QA_ANSWERED_BY_META, $uid);
     update_post_meta($question_id, GCA_QA_ANSWERED_AT_META, (string) current_time('mysql'));
+
+    wp_update_post([
+        'ID'            => $question_id,
+        'post_date'     => current_time('mysql'),
+        'post_date_gmt' => current_time('mysql', true),
+    ]);
 
     $post = get_post($question_id);
     return new WP_REST_Response(gca_qa_format_question($post, $uid));

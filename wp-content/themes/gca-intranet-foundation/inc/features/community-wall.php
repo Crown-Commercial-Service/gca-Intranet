@@ -95,7 +95,7 @@ function gca_cw_get_user_info(int $user_id, int $avatar_size = 48): array
         'author_name'    => $author->display_name,
         'author_avatar'  => $avatar_url,
         'author_profile' => $profile_url,
-        'author_team'    => trim((string) get_user_meta($author->ID, 'team', true)),
+        'author_team'    => trim((string) get_user_meta($author->ID, 'business_title', true)),
     ];
 }
 
@@ -196,10 +196,9 @@ function gca_cw_format_item(WP_Post $post, int $current_user_id): array
             );
         case 'qa_question':
             if (!function_exists('gca_qa_format_question')) { return []; }
-            return array_merge(
-                gca_qa_format_question($post, $current_user_id),
-                ['kind' => 'qa', 'can_delete' => $can_delete]
-            );
+            $qa = gca_qa_format_question($post, $current_user_id);
+            if (($qa['status'] ?? '') !== 'answered') { return []; }
+            return array_merge($qa, ['kind' => 'qa', 'can_delete' => $can_delete]);
         default:
             return gca_cw_format_post($post, $current_user_id);
     }

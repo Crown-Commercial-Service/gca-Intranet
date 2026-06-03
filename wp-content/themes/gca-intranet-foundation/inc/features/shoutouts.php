@@ -37,6 +37,25 @@ add_action('init', function (): void {
         return;
     }
 
+    register_taxonomy('shoutout_category', 'community_shoutout', [
+        'label'        => 'Shout-out Categories',
+        'labels'       => [
+            'name'          => 'Shout-out Categories',
+            'singular_name' => 'Shout-out Category',
+            'add_new_item'  => 'Add New Category',
+            'edit_item'     => 'Edit Category',
+            'search_items'  => 'Search Categories',
+            'not_found'     => 'No categories found',
+        ],
+        'hierarchical' => false,
+        'public'       => false,
+        'show_ui'      => true,
+        'show_in_menu' => 'edit.php?post_type=community_shoutout',
+        'show_in_rest' => false,
+        'rewrite'      => false,
+        'query_var'    => false,
+    ]);
+
     register_post_type('community_shoutout', [
         'label'  => 'Shout-outs',
         'labels' => [
@@ -94,6 +113,13 @@ add_action('admin_menu', function (): void {
         24
     );
 }, 5);
+
+add_action('admin_head', function (): void {
+    $screen = get_current_screen();
+    if ($screen && $screen->post_type === 'community_shoutout') {
+        echo '<style>.page-title-action { display: none !important; }</style>';
+    }
+});
 
 // ---------------------------------------------------------------------------
 // Admin – list columns
@@ -207,6 +233,9 @@ function gca_shoutout_format(WP_Post $post, int $current_user_id): array
         $giver_team = trim((string) get_user_meta($giver->ID, 'team', true));
     }
 
+    $cat_terms    = wp_get_post_terms($post->ID, 'shoutout_category');
+    $category     = (!is_wp_error($cat_terms) && !empty($cat_terms)) ? $cat_terms[0]->name : '';
+
     $likes_meta   = defined('GCA_LC_POST_LIKES_META') ? GCA_LC_POST_LIKES_META : '_gca_lc_post_likes';
     $comment_type = defined('GCA_LC_COMMENT_TYPE')    ? GCA_LC_COMMENT_TYPE    : 'gca_comment';
 
@@ -234,6 +263,7 @@ function gca_shoutout_format(WP_Post $post, int $current_user_id): array
         'recipient_profile' => $recipient_profile,
         'date_iso'          => (string) get_post_time('c', true, $post),
         'date_formatted'    => (string) get_post_time('j F Y', false, $post),
+        'category'          => $category,
         'is_own'            => (int) $post->post_author === $current_user_id,
         'like_count'        => count($liked_by),
         'user_has_liked'    => in_array($current_user_id, $liked_by, true),
@@ -249,6 +279,13 @@ add_action('rest_api_init', function (): void {
     if (!gca_flag_enabled('community-shoutouts')) {
         return;
     }
+
+    // Category list
+    register_rest_route('gca/v1', '/shoutouts/categories', [
+        'methods'             => 'GET',
+        'callback'            => 'gca_shoutout_get_categories',
+        'permission_callback' => 'is_user_logged_in',
+    ]);
 
     // User search for autocomplete
     register_rest_route('gca/v1', '/shoutouts/users', [
@@ -271,8 +308,9 @@ add_action('rest_api_init', function (): void {
             'callback'            => 'gca_shoutout_list',
             'permission_callback' => 'is_user_logged_in',
             'args'                => [
-                'page'     => ['default' => 1,  'sanitize_callback' => 'absint'],
-                'per_page' => ['default' => 15, 'sanitize_callback' => 'absint'],
+                'page'         => ['default' => 1,  'sanitize_callback' => 'absint'],
+                'per_page'     => ['default' => 15, 'sanitize_callback' => 'absint'],
+                'recipient_id' => ['default' => 0,  'sanitize_callback' => 'absint'],
             ],
         ],
         [
@@ -289,6 +327,11 @@ add_action('rest_api_init', function (): void {
                     'required'          => true,
                     'sanitize_callback' => 'sanitize_textarea_field',
                     'validate_callback' => fn ($v) => is_string($v) && mb_strlen(trim($v)) > 0 && mb_strlen($v) <= 500,
+                ],
+                'category_id' => [
+                    'required'          => false,
+                    'default'           => 0,
+                    'sanitize_callback' => 'absint',
                 ],
             ],
         ],
@@ -307,6 +350,18 @@ add_action('rest_api_init', function (): void {
 // ---------------------------------------------------------------------------
 // Callbacks
 // ---------------------------------------------------------------------------
+
+function gca_shoutout_get_categories(): WP_REST_Response
+{
+    $terms = get_terms(['taxonomy' => 'shoutout_category', 'hide_empty' => false]);
+    if (is_wp_error($terms)) {
+        return new WP_REST_Response([]);
+    }
+    return new WP_REST_Response(array_map(
+        fn (WP_Term $t) => ['id' => $t->term_id, 'name' => $t->name],
+        $terms
+    ));
+}
 
 function gca_shoutout_search_users(WP_REST_Request $req): WP_REST_Response
 {
@@ -344,11 +399,12 @@ function gca_shoutout_search_users(WP_REST_Request $req): WP_REST_Response
 
 function gca_shoutout_list(WP_REST_Request $req): WP_REST_Response
 {
-    $page     = max(1, (int) $req->get_param('page'));
-    $per_page = min(50, max(1, (int) $req->get_param('per_page')));
-    $uid      = get_current_user_id();
+    $page         = max(1, (int) $req->get_param('page'));
+    $per_page     = min(50, max(1, (int) $req->get_param('per_page')));
+    $uid          = get_current_user_id();
+    $recipient_id = (int) $req->get_param('recipient_id');
 
-    $query = new WP_Query([
+    $query_args = [
         'post_type'      => 'community_shoutout',
         'post_status'    => 'publish',
         'posts_per_page' => $per_page,
@@ -356,7 +412,18 @@ function gca_shoutout_list(WP_REST_Request $req): WP_REST_Response
         'orderby'        => 'date',
         'order'          => 'DESC',
         'no_found_rows'  => false,
-    ]);
+    ];
+
+    if ($recipient_id > 0) {
+        $query_args['meta_query'] = [[
+            'key'     => GCA_SHOUTOUT_RECIPIENT_META,
+            'value'   => $recipient_id,
+            'type'    => 'NUMERIC',
+            'compare' => '=',
+        ]];
+    }
+
+    $query = new WP_Query($query_args);
 
     $shoutouts = [];
     foreach ($query->posts as $post) {
@@ -378,6 +445,7 @@ function gca_shoutout_create(WP_REST_Request $req): WP_REST_Response
     $uid          = get_current_user_id();
     $recipient_id = (int) $req->get_param('recipient_id');
     $content      = (string) $req->get_param('content');
+    $category_id  = (int) $req->get_param('category_id');
 
     $recipient = get_userdata($recipient_id);
     if (!$recipient instanceof WP_User) {
@@ -401,6 +469,10 @@ function gca_shoutout_create(WP_REST_Request $req): WP_REST_Response
     }
 
     update_post_meta($post_id, GCA_SHOUTOUT_RECIPIENT_META, $recipient_id);
+
+    if ($category_id > 0) {
+        wp_set_post_terms($post_id, [$category_id], 'shoutout_category');
+    }
 
     $post = get_post($post_id);
     if (!$post instanceof WP_Post) {
@@ -426,4 +498,201 @@ function gca_shoutout_delete(WP_REST_Request $req): WP_REST_Response
 
     wp_delete_post($shoutout_id, true);
     return new WP_REST_Response(['deleted' => true]);
+}
+
+// ---------------------------------------------------------------------------
+// Gravity Forms integration — Shout-out Category management
+// ---------------------------------------------------------------------------
+
+if (class_exists('GFForms')) {
+
+    /**
+     * Returns the ID of the "Shout-out Categories" GF form, creating it once
+     * if it hasn't been created yet.
+     */
+    function gca_shoutout_category_form_id(): int
+    {
+        static $cached = null;
+        if ($cached !== null) {
+            return $cached;
+        }
+
+        $stored = (int) get_option('gca_shoutout_category_form_id', 0);
+        if ($stored > 0 && GFAPI::get_form($stored) !== false) {
+            $cached = $stored;
+            return $cached;
+        }
+
+        $form_id = GFAPI::add_form([
+            'title'  => 'Shout-out Categories',
+            'fields' => [
+                [
+                    'type'              => 'text',
+                    'id'                => 1,
+                    'label'             => 'Category name',
+                    'isRequired'        => true,
+                    'allowsPrepopulate' => true,
+                    'inputName'         => 'shoutout_term_name',
+                ],
+                [
+                    'type'              => 'hidden',
+                    'id'                => 2,
+                    'label'             => 'Term ID',
+                    'defaultValue'      => '0',
+                    'allowsPrepopulate' => true,
+                    'inputName'         => 'shoutout_term_id',
+                ],
+            ],
+            'button'        => ['type' => 'text', 'text' => 'Save category'],
+            'confirmations' => [
+                1 => [
+                    'id'        => 1,
+                    'name'      => 'Default Confirmation',
+                    'isDefault' => true,
+                    'type'      => 'message',
+                    'message'   => 'Category saved.',
+                ],
+            ],
+        ]);
+
+        if (is_wp_error($form_id)) {
+            $cached = 0;
+            return $cached;
+        }
+
+        update_option('gca_shoutout_category_form_id', $form_id);
+        $cached = (int) $form_id;
+        return $cached;
+    }
+
+    // Populate the name field when editing an existing term via ?shoutout_term_id=N
+    add_filter('gform_field_value_shoutout_term_name', function (): string {
+        $term_id = absint($_GET['shoutout_term_id'] ?? 0);
+        if (!$term_id) {
+            return '';
+        }
+        $term = get_term($term_id, 'shoutout_category');
+        return ($term instanceof WP_Term) ? $term->name : '';
+    });
+
+    // Populate the hidden term ID field when editing
+    add_filter('gform_field_value_shoutout_term_id', function (): string {
+        return (string) absint($_GET['shoutout_term_id'] ?? 0);
+    });
+
+    // Create or update term on submission
+    add_action('gform_after_submission', function (array $entry, array $form): void {
+        $category_form_id = (int) get_option('gca_shoutout_category_form_id', 0);
+        if ($category_form_id === 0 || (int) $form['id'] !== $category_form_id) {
+            return;
+        }
+
+        if (!current_user_can('manage_categories')) {
+            return;
+        }
+
+        $name    = sanitize_text_field((string) rgar($entry, '1'));
+        $term_id = (int) rgar($entry, '2');
+
+        if ($name === '') {
+            return;
+        }
+
+        if ($term_id > 0 && get_term($term_id, 'shoutout_category') instanceof WP_Term) {
+            wp_update_term($term_id, 'shoutout_category', [
+                'name' => $name,
+                'slug' => sanitize_title($name),
+            ]);
+        } else {
+            wp_insert_term($name, 'shoutout_category');
+        }
+    }, 10, 2);
+
+    // Admin submenu page
+    add_action('admin_menu', function (): void {
+        if (!gca_flag_enabled('community-shoutouts')) {
+            return;
+        }
+        add_submenu_page(
+            'edit.php?post_type=community_shoutout',
+            'Shout-out Categories',
+            'Categories',
+            'manage_categories',
+            'gca-shoutout-categories',
+            'gca_shoutout_category_admin_page'
+        );
+    });
+
+    function gca_shoutout_category_admin_page(): void
+    {
+        $base_url = admin_url('admin.php?page=gca-shoutout-categories');
+
+        // Handle delete
+        if (
+            isset($_GET['action'], $_GET['term_id'], $_GET['_wpnonce'])
+            && $_GET['action'] === 'delete'
+            && wp_verify_nonce(sanitize_key((string) $_GET['_wpnonce']), 'gca_del_scat_' . (int) $_GET['term_id'])
+            && current_user_can('manage_categories')
+        ) {
+            wp_delete_term((int) $_GET['term_id'], 'shoutout_category');
+            echo '<div class="notice notice-success is-dismissible"><p>Category deleted.</p></div>';
+        }
+
+        $terms        = get_terms(['taxonomy' => 'shoutout_category', 'hide_empty' => false]);
+        $form_id      = gca_shoutout_category_form_id();
+        $edit_term_id = absint($_GET['shoutout_term_id'] ?? 0);
+        ?>
+        <div class="wrap">
+            <h1 class="wp-heading-inline">Shout-out Categories</h1>
+            <hr class="wp-header-end">
+
+            <?php if (!empty($terms) && !is_wp_error($terms)) : ?>
+            <table class="wp-list-table widefat fixed striped" style="margin-top:16px;margin-bottom:32px">
+                <thead>
+                    <tr>
+                        <th>Name</th>
+                        <th style="width:80px">Used</th>
+                        <th style="width:160px">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <?php foreach ($terms as $term) :
+                        $edit_url   = esc_url(add_query_arg('shoutout_term_id', $term->term_id, $base_url));
+                        $delete_url = esc_url(wp_nonce_url(
+                            add_query_arg(['action' => 'delete', 'term_id' => $term->term_id], $base_url),
+                            'gca_del_scat_' . $term->term_id
+                        ));
+                    ?>
+                    <tr>
+                        <td><strong><?php echo esc_html($term->name); ?></strong></td>
+                        <td><?php echo (int) $term->count; ?></td>
+                        <td>
+                            <a href="<?php echo $edit_url; ?>">Edit</a>
+                            &nbsp;|&nbsp;
+                            <a href="<?php echo $delete_url; ?>"
+                               style="color:#b32d2e"
+                               onclick="return confirm('Delete &ldquo;<?php echo esc_js($term->name); ?>&rdquo;? Existing shout-outs will lose this category.')">Delete</a>
+                        </td>
+                    </tr>
+                    <?php endforeach; ?>
+                </tbody>
+            </table>
+            <?php else : ?>
+            <p style="color:#646970;margin-top:16px">No categories yet — add one below.</p>
+            <?php endif; ?>
+
+            <h2><?php echo $edit_term_id > 0 ? 'Edit Category' : 'Add New Category'; ?></h2>
+
+            <?php if ($edit_term_id > 0) : ?>
+            <p><a href="<?php echo esc_url($base_url); ?>">&larr; Cancel and add new instead</a></p>
+            <?php endif; ?>
+
+            <?php if ($form_id > 0) :
+                echo do_shortcode('[gravityforms id="' . $form_id . '" field_values="shoutout_term_id=' . $edit_term_id . '" ajax="true"]');
+            else : ?>
+                <p>Gravity Forms is not active &mdash; please activate it to manage categories here.</p>
+            <?php endif; ?>
+        </div>
+        <?php
+    }
 }

@@ -32,8 +32,8 @@ _docker-wp-content/
 /wp-content/themes/gca-intranet-foundation/node_modules
 /wp-content/themes/gca-intranet-foundation/node_modules/
 /wp-content/themes/gca-intranet-foundation/assets/dist/
-/wp-content/themes/gca-intranet-foundation/assets/scripts/
-!/wp-content/themes/gca-intranet-foundation/assets/scripts/community-wall.js
+/wp-content/themes/gca-intranet-foundation/assets/scripts/all.js
+/wp-content/themes/gca-intranet-foundation/assets/scripts/all.min.js
 /wp-content/themes/gca-intranet-foundation/assets/vendor/
 
 # Ignore WordPress uploads and upgrades

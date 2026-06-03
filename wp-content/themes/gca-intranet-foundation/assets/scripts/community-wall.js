@@ -112,12 +112,6 @@
             '<span class="gca-lc__comment-count-label"><span class="gca-lc__comment-count">' + esc(commentCount) + '</span> comments</span>' +
             '</button>' +
 
-            '<button type="button" class="gca-cw-post__interact-btn gca-cw-post__bookmark-btn"' +
-            ' aria-label="Bookmark (coming soon)" disabled>' +
-            '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true" focusable="false">' +
-            '<path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>' +
-            '</svg>' +
-            '</button>' +
             '</div>' +
 
             '<div class="gca-lc__comments-panel" id="gca-lc-comments-' + postId + '" hidden>' +
