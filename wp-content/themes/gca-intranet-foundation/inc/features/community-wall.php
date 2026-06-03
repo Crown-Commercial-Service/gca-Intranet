@@ -196,10 +196,9 @@ function gca_cw_format_item(WP_Post $post, int $current_user_id): array
             );
         case 'qa_question':
             if (!function_exists('gca_qa_format_question')) { return []; }
-            return array_merge(
-                gca_qa_format_question($post, $current_user_id),
-                ['kind' => 'qa', 'can_delete' => $can_delete]
-            );
+            $qa = gca_qa_format_question($post, $current_user_id);
+            if (($qa['status'] ?? '') !== 'answered') { return []; }
+            return array_merge($qa, ['kind' => 'qa', 'can_delete' => $can_delete]);
         default:
             return gca_cw_format_post($post, $current_user_id);
     }
