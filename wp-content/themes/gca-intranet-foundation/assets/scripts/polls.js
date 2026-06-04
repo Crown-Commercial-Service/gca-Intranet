@@ -135,7 +135,7 @@
         var badgeLabel = poll.is_open ? 'Live poll' : 'Poll closed';
 
         var moreHtml = '';
-        if (poll.is_own) {
+        if (poll.can_delete) {
             moreHtml = (
                 '<div class="gca-cw-post__more-wrap">' +
                 '<button type="button" class="gca-cw-post__more-btn" aria-label="More options"' +

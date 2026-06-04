@@ -399,13 +399,14 @@ function gca_poll_format(WP_Post $post, int $current_user_id): array
         'time_left'       => gca_poll_time_left($deadline_ts),
         'user_vote'       => $user_vote,
         'author_id'       => (int) $post->post_author,
-        'author_name'     => $author instanceof WP_User ? $author->display_name : '',
+        'author_name'     => $author instanceof WP_User ? html_entity_decode($author->display_name, ENT_QUOTES | ENT_HTML5, 'UTF-8') : '',
         'author_avatar'   => $avatar_url,
         'author_profile'  => $profile_url,
         'author_team'     => $team,
         'date_iso'        => (string) get_post_time('c', true, $post),
         'date_formatted'  => (string) get_post_time('j F Y', false, $post),
         'is_own'          => (int) $post->post_author === $current_user_id,
+        'can_delete'      => (int) $post->post_author === $current_user_id || current_user_can('manage_options'),
         'can_see_voters'  => $can_see_voters,
         'like_count'      => count($liked_by),
         'user_has_liked'  => in_array($current_user_id, $liked_by, true),
@@ -667,7 +668,7 @@ function gca_poll_get_voters_rest(WP_REST_Request $req): WP_REST_Response
 
         if ($user instanceof WP_User && isset($voters_by_opt[$opt_idx])) {
             $voters_by_opt[$opt_idx][] = [
-                'name'     => $user->display_name,
+                'name'     => html_entity_decode($user->display_name, ENT_QUOTES | ENT_HTML5, 'UTF-8'),
                 'team'     => trim((string) get_user_meta($user->ID, 'team', true)),
                 'avatar'   => (string) get_avatar_url($user->ID, ['size' => 32]),
                 'voted_at' => $v['at'] ?? '',

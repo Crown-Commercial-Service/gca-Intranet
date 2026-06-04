@@ -92,7 +92,7 @@ function gca_cw_get_user_info(int $user_id, int $avatar_size = 48): array
 
     return [
         'author_id'      => $user_id,
-        'author_name'    => $author->display_name,
+        'author_name'    => html_entity_decode($author->display_name, ENT_QUOTES | ENT_HTML5, 'UTF-8'),
         'author_avatar'  => $avatar_url,
         'author_profile' => $profile_url,
         'author_team'    => trim((string) get_user_meta($author->ID, 'business_title', true)),

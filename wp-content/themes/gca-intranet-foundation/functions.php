@@ -1507,7 +1507,7 @@ function gca_get_search_autocomplete_items(string $term, int $limit = 5): array
             ])));
 
             $results[] = [
-                'title'    => (string) $result->display_name,
+                'title'    => html_entity_decode((string) $result->display_name, ENT_QUOTES | ENT_HTML5, 'UTF-8'),
                 'meta'     => $role_line !== ''
                     ? sprintf(__('Staff profile - %s', 'gca-intranet'), $role_line)
                     : __('Staff profile', 'gca-intranet'),
@@ -1576,7 +1576,7 @@ function gca_get_search_autocomplete_items(string $term, int $limit = 5): array
     ]);
 
     foreach ($posts as $post) {
-        $title = get_the_title($post);
+        $title = html_entity_decode(get_the_title($post), ENT_QUOTES | ENT_HTML5, 'UTF-8');
         if ($title === '') {
             continue;
         }

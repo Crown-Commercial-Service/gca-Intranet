@@ -123,7 +123,7 @@
             : '';
 
         var moreHtml = '';
-        if (s.is_own) {
+        if (s.can_delete) {
             moreHtml = (
                 '<div class="gca-cw-post__more-wrap">' +
                 '<button type="button" class="gca-cw-post__more-btn" aria-label="More options"' +

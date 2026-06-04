@@ -213,7 +213,7 @@ function gca_shoutout_format(WP_Post $post, int $current_user_id): array
     $recipient_id = (int) get_post_meta($post->ID, GCA_SHOUTOUT_RECIPIENT_META, true);
     $recipient    = $recipient_id ? get_userdata($recipient_id) : null;
 
-    $recipient_name    = $recipient instanceof WP_User ? $recipient->display_name : '';
+    $recipient_name    = $recipient instanceof WP_User ? html_entity_decode($recipient->display_name, ENT_QUOTES | ENT_HTML5, 'UTF-8') : '';
     $recipient_profile = '';
     if ($recipient instanceof WP_User && gca_flag_enabled('staff-profiles')) {
         $recipient_profile = esc_url(home_url('/profile/' . $recipient->user_nicename));
@@ -254,7 +254,7 @@ function gca_shoutout_format(WP_Post $post, int $current_user_id): array
         'content_html'      => nl2br(esc_html($post->post_content)),
         'content_raw'       => $post->post_content,
         'giver_id'          => (int) $post->post_author,
-        'giver_name'        => $giver instanceof WP_User ? $giver->display_name : '',
+        'giver_name'        => $giver instanceof WP_User ? html_entity_decode($giver->display_name, ENT_QUOTES | ENT_HTML5, 'UTF-8') : '',
         'giver_avatar'      => $avatar_url,
         'giver_profile'     => $profile_url,
         'giver_team'        => $giver_team,
@@ -265,6 +265,7 @@ function gca_shoutout_format(WP_Post $post, int $current_user_id): array
         'date_formatted'    => (string) get_post_time('j F Y', false, $post),
         'category'          => $category,
         'is_own'            => (int) $post->post_author === $current_user_id,
+        'can_delete'        => (int) $post->post_author === $current_user_id || current_user_can('manage_options'),
         'like_count'        => count($liked_by),
         'user_has_liked'    => in_array($current_user_id, $liked_by, true),
         'comment_count'     => $comment_count,
@@ -388,7 +389,7 @@ function gca_shoutout_search_users(WP_REST_Request $req): WP_REST_Response
 
         $results[] = [
             'id'     => $user->ID,
-            'name'   => $user->display_name,
+            'name'   => html_entity_decode($user->display_name, ENT_QUOTES | ENT_HTML5, 'UTF-8'),
             'team'   => $team,
             'avatar' => $avatar_url,
         ];

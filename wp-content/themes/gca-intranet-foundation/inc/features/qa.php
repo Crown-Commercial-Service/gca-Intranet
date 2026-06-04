@@ -424,7 +424,7 @@ function gca_qa_format_question(WP_Post $post, int $current_user_id): array
     $is_answered = !empty(trim($answer));
 
     $asker      = get_userdata((int) $post->post_author);
-    $asker_name = $asker instanceof WP_User ? $asker->display_name : '';
+    $asker_name = $asker instanceof WP_User ? html_entity_decode($asker->display_name, ENT_QUOTES | ENT_HTML5, 'UTF-8') : '';
 
     $answerer_id      = (int) get_post_meta($post->ID, GCA_QA_ANSWERED_BY_META, true);
     $answered_at      = (string) get_post_meta($post->ID, GCA_QA_ANSWERED_AT_META, true);
@@ -436,7 +436,7 @@ function gca_qa_format_question(WP_Post $post, int $current_user_id): array
     if ($is_answered && $answerer_id) {
         $answerer = get_userdata($answerer_id);
         if ($answerer instanceof WP_User) {
-            $answerer_name   = $answerer->display_name;
+            $answerer_name   = html_entity_decode($answerer->display_name, ENT_QUOTES | ENT_HTML5, 'UTF-8');
             $local           = trim((string) get_user_meta($answerer_id, 'google_profile_picture_local_url', true));
             $answerer_avatar = $local ?: (string) get_avatar_url($answerer_id, ['size' => 48]);
             $answerer_team   = trim((string) get_user_meta($answerer_id, 'team', true));

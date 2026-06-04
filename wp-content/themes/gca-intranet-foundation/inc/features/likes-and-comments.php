@@ -381,7 +381,7 @@ function gca_lc_add_comment(WP_REST_Request $req): WP_REST_Response
         'comment_count' => count($all_comments),
         'comment'       => [
             'id'             => $comment_id,
-            'author_name'    => $user->display_name,
+            'author_name'    => html_entity_decode($user->display_name, ENT_QUOTES | ENT_HTML5, 'UTF-8'),
             'author_id'      => $current_user_id,
             'author_avatar'  => $avatar_url ?: '',
             'author_profile' => $profile_url,
@@ -470,7 +470,7 @@ function gca_lc_search_users(WP_REST_Request $req): WP_REST_Response
     $results = array_map(function ($u): array {
         return [
             'id'           => (int) $u->ID,
-            'display_name' => $u->display_name,
+            'display_name' => html_entity_decode($u->display_name, ENT_QUOTES | ENT_HTML5, 'UTF-8'),
             'nicename'     => $u->user_nicename,
             'avatar'       => get_avatar_url((int) $u->ID, ['size' => 32]),
         ];
@@ -586,13 +586,13 @@ function gca_profile_get_posts(): WP_REST_Response
             $results[] = [
                 'type'              => 'shoutout',
                 'id'                => $post->ID,
-                'title'             => $recipient ? $recipient->display_name : '',
+                'title'             => $recipient ? html_entity_decode($recipient->display_name, ENT_QUOTES | ENT_HTML5, 'UTF-8') : '',
                 'url'               => $recip_profile,
                 'post_type'         => 'community_shoutout',
                 'post_type_label'   => 'Shout-out',
                 'date'              => get_the_date('c', $post),
                 'content_html'      => nl2br(esc_html($post->post_content)),
-                'recipient_name'    => $recipient ? $recipient->display_name : '',
+                'recipient_name'    => $recipient ? html_entity_decode($recipient->display_name, ENT_QUOTES | ENT_HTML5, 'UTF-8') : '',
                 'recipient_profile' => $recip_profile,
             ];
         }
@@ -675,7 +675,7 @@ function gca_profile_get_mentions(): WP_REST_Response
                 'post_id'        => $post->ID,
                 'post_title'     => '',
                 'post_url'       => '',
-                'author_name'    => $giver ? $giver->display_name : '',
+                'author_name'    => $giver ? html_entity_decode($giver->display_name, ENT_QUOTES | ENT_HTML5, 'UTF-8') : '',
                 'author_avatar'  => $avatar,
                 'author_profile' => $profile,
                 'content_html'   => nl2br(esc_html($post->post_content)),
