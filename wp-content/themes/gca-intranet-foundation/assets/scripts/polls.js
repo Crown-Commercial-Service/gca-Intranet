@@ -403,6 +403,7 @@
                     inp.value = '';
                 }
             });
+            updateAddOptionBtn();
         }
 
         var MAX_OPTIONS = 5;

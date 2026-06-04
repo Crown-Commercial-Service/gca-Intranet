@@ -458,7 +458,12 @@ function gca_qa_format_question(WP_Post $post, int $current_user_id): array
         'count'   => true,
     ]) : 0;
 
-    $answered_at_iso = $answered_at ? (string) wp_date('c', (int) strtotime($answered_at)) : null;
+    if ($answered_at) {
+        $dt              = DateTimeImmutable::createFromFormat('Y-m-d H:i:s', $answered_at, wp_timezone());
+        $answered_at_iso = $dt ? $dt->format('c') : null;
+    } else {
+        $answered_at_iso = null;
+    }
 
     return [
         'id'               => $post->ID,

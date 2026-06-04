@@ -1043,8 +1043,15 @@ $gca-cw-compose-input-bg: #f5f6fa;
     margin-top: govuk-spacing(1);
     transition: border-color 0.15s ease, background 0.15s ease;
 
-    &:hover { border-color: $gca-action-blue; background: #ebf3fd; }
+    &:hover  { border-color: $gca-action-blue; background: #ebf3fd; }
     &:focus  { @include govuk-focused-text; }
+    &:disabled {
+        color: govuk-colour("mid-grey");
+        border-color: govuk-colour("mid-grey");
+        cursor: not-allowed;
+        background: none;
+        &:hover { border-color: govuk-colour("mid-grey"); background: none; }
+    }
 }
 
 // ── Q&A cards ─────────────────────────────────────────────────────────────────
