@@ -489,7 +489,7 @@
             var deadlineInput  = document.getElementById('gca-poll-deadline');
             var titleInput     = document.getElementById('gca-poll-title');
             var teamInput      = document.getElementById('gca-poll-team');
-            var deadline   = deadlineInput && deadlineInput.value ? deadlineInput.value : null;
+            var deadline   = deadlineInput && deadlineInput.value ? new Date(deadlineInput.value).toISOString() : null;
             var poll_title = titleInput  ? titleInput.value.trim()  : '';
             var poll_team  = teamInput   ? teamInput.value.trim()   : '';
 
