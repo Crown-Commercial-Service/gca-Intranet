@@ -558,7 +558,7 @@ function gca_profile_get_posts(): WP_REST_Response
                 'post_type'       => 'community_post',
                 'post_type_label' => 'Community update',
                 'date'            => get_the_date('c', $post),
-                'content_html'    => nl2br(esc_html($post->post_content)),
+                'content_html'    => nl2br(htmlspecialchars($post->post_content, ENT_NOQUOTES, 'UTF-8', false)),
             ];
         }
     }
@@ -591,7 +591,7 @@ function gca_profile_get_posts(): WP_REST_Response
                 'post_type'         => 'community_shoutout',
                 'post_type_label'   => 'Shout-out',
                 'date'              => get_the_date('c', $post),
-                'content_html'      => nl2br(esc_html($post->post_content)),
+                'content_html'      => nl2br(htmlspecialchars($post->post_content, ENT_NOQUOTES, 'UTF-8', false)),
                 'recipient_name'    => $recipient ? html_entity_decode($recipient->display_name, ENT_QUOTES | ENT_HTML5, 'UTF-8') : '',
                 'recipient_profile' => $recip_profile,
             ];
@@ -678,7 +678,7 @@ function gca_profile_get_mentions(): WP_REST_Response
                 'author_name'    => $giver ? html_entity_decode($giver->display_name, ENT_QUOTES | ENT_HTML5, 'UTF-8') : '',
                 'author_avatar'  => $avatar,
                 'author_profile' => $profile,
-                'content_html'   => nl2br(esc_html($post->post_content)),
+                'content_html'   => nl2br(htmlspecialchars($post->post_content, ENT_NOQUOTES, 'UTF-8', false)),
                 'date'           => (string) get_post_time('c', true, $post),
             ];
         }

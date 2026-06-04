@@ -462,14 +462,14 @@ function gca_qa_format_question(WP_Post $post, int $current_user_id): array
 
     return [
         'id'               => $post->ID,
-        'question_html'    => nl2br(esc_html($post->post_content)),
+        'question_html'    => nl2br(htmlspecialchars($post->post_content, ENT_NOQUOTES, 'UTF-8', false)),
         'question_raw'     => $post->post_content,
         'status'           => $is_answered ? 'answered' : 'pending',
         'author_id'        => (int) $post->post_author,
         'author_name'      => $asker_name,
         'date_iso'         => (string) get_post_time('c', true, $post),
         'date_formatted'   => (string) get_post_time('j F Y', false, $post),
-        'answer_html'      => $is_answered ? nl2br(esc_html($answer)) : null,
+        'answer_html'      => $is_answered ? nl2br(htmlspecialchars($answer, ENT_NOQUOTES, 'UTF-8', false)) : null,
         'answer_raw'       => $is_answered ? $answer : null,
         'answered_at_iso'  => $answered_at_iso,
         'answerer_id'      => $answerer_id ?: null,

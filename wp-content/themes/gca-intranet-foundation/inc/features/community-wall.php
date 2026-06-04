@@ -128,7 +128,7 @@ function gca_cw_get_lc_data(int $post_id, int $current_user_id): array
  */
 function gca_cw_render_content(string $raw): string
 {
-    $html = nl2br(esc_html($raw));
+    $html = nl2br(htmlspecialchars($raw, ENT_NOQUOTES, 'UTF-8', false));
 
     $html = (string) preg_replace_callback(
         '/@\[([^\]]+)\]\((\d+)\)/',

@@ -251,7 +251,7 @@ function gca_shoutout_format(WP_Post $post, int $current_user_id): array
     return [
         'id'                => $post->ID,
         'type'              => 'shoutout',
-        'content_html'      => nl2br(esc_html($post->post_content)),
+        'content_html'      => nl2br(htmlspecialchars($post->post_content, ENT_NOQUOTES, 'UTF-8', false)),
         'content_raw'       => $post->post_content,
         'giver_id'          => (int) $post->post_author,
         'giver_name'        => $giver instanceof WP_User ? html_entity_decode($giver->display_name, ENT_QUOTES | ENT_HTML5, 'UTF-8') : '',
