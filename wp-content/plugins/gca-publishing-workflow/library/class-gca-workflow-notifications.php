@@ -12,6 +12,10 @@ class GCA_Workflow_Notifications {
         // Intercept trash attempts by contributors before WordPress processes the cap check.
         // This is necessary because when delete_pages is denied, wp_trash_post never fires.
         add_action( 'admin_init', [ __CLASS__, 'intercept_contributor_retirement_request' ] );
+        // Revisionary uses 'pending-revision' status (not 'pending'), so transition_post_status
+        // never matches our checks. Hook Revisionary's own actions instead.
+        add_action( 'revisionary_submit_revision', [ __CLASS__, 'on_revision_submitted' ] );
+        add_action( 'rvy_after_revision_approve',  [ __CLASS__, 'on_revision_approved' ], 10, 2 );
     }
 
     // -------------------------------------------------------------------------
@@ -162,14 +166,61 @@ class GCA_Workflow_Notifications {
             return;
         }
 
-        $page_title = get_the_title( $post );
-        $page_url   = get_permalink( $post->ID );
+        // If this is a Revisionary revision, resolve to the parent page so the
+        // contributor's link points to the live page, not the now-merged revision.
+        $parent_id  = $post->post_parent ?: $post->ID;
+        $page_title = get_the_title( $parent_id );
+        $page_url   = get_permalink( $parent_id );
 
         $subject = sprintf( 'Your page "%s" is now live', $page_title );
         $body    = sprintf(
             "Your page has been reviewed and published.\n\nPage: %s\nURL: %s",
             $page_title,
-            $page_url ?: admin_url( 'post.php?post=' . $post->ID . '&action=edit' )
+            $page_url ?: admin_url( 'post.php?post=' . $parent_id . '&action=edit' )
+        );
+
+        wp_mail( $author->user_email, $subject, $body );
+    }
+
+    public static function on_revision_submitted( WP_Post $revision ): void {
+        $reviewer_email = get_option( GCA_Workflow_Settings::OPTION_REVIEWER_EMAIL, '' );
+        if ( ! $reviewer_email ) {
+            return;
+        }
+
+        $parent_id  = $revision->post_parent ?: $revision->ID;
+        $page_title = get_the_title( $parent_id );
+        $admin_link = admin_url( 'post.php?post=' . $revision->ID . '&action=edit' );
+
+        $subject = sprintf( 'Update submitted for %s for review', $page_title );
+        $body    = sprintf(
+            "A revision of the page \"%s\" has been submitted for review.\n\nReview the changes here:\n%s",
+            $page_title,
+            $admin_link
+        );
+
+        wp_mail( $reviewer_email, $subject, $body );
+    }
+
+    public static function on_revision_approved( int $post_id, int $revision_id ): void {
+        $revision = get_post( $revision_id );
+        if ( ! $revision ) {
+            return;
+        }
+
+        $author = get_userdata( (int) $revision->post_author );
+        if ( ! $author || ! $author->user_email ) {
+            return;
+        }
+
+        $page_title = get_the_title( $post_id );
+        $page_url   = get_permalink( $post_id );
+
+        $subject = sprintf( 'Your page "%s" is now live', $page_title );
+        $body    = sprintf(
+            "Your page has been reviewed and published.\n\nPage: %s\nURL: %s",
+            $page_title,
+            $page_url ?: admin_url( 'post.php?post=' . $post_id . '&action=edit' )
         );
 
         wp_mail( $author->user_email, $subject, $body );

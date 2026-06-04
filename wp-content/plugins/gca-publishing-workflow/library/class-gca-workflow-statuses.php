@@ -16,6 +16,15 @@ class GCA_Workflow_Statuses {
         // Surface gca_archived in the page editor status dropdown.
         add_filter( 'display_post_states', [ __CLASS__, 'add_archived_state_label' ], 10, 2 );
 
+        // Inject the status into the classic editor dropdown — WordPress does not
+        // do this automatically for custom statuses.
+        add_action( 'admin_footer-post.php', [ __CLASS__, 'inject_archived_status_js' ] );
+
+        // WordPress forces post_status back to 'publish' when the Update button
+        // (name="publish") is clicked, overriding the dropdown selection. Restore
+        // the intended gca_archived status before the row is written.
+        add_filter( 'wp_insert_post_data', [ __CLASS__, 'preserve_archived_status' ], 10, 2 );
+
         // Prevent archived pages from appearing on the frontend.
         add_action( 'pre_get_posts', [ __CLASS__, 'exclude_archived_from_frontend' ] );
     }
@@ -36,6 +45,38 @@ class GCA_Workflow_Statuses {
                 'gca'
             ),
         ] );
+    }
+
+    public static function inject_archived_status_js(): void {
+        global $post;
+        if ( ! $post || ! in_array( $post->post_type, [ 'page', 'post' ], true ) ) {
+            return;
+        }
+        $is_archived = self::ARCHIVED_STATUS === $post->post_status;
+        $label       = esc_js( _x( 'Archived', 'post status', 'gca' ) );
+        $status      = esc_js( self::ARCHIVED_STATUS );
+        ?>
+        <script>
+        jQuery(function($) {
+            var $select = $('#post_status');
+            if ($select.find('option[value="<?php echo $status; ?>"]').length === 0) {
+                $select.append('<option value="<?php echo $status; ?>"><?php echo $label; ?></option>');
+            }
+            <?php if ( $is_archived ) : ?>
+            $select.val('<?php echo $status; ?>');
+            $('#post-status-display').text('<?php echo $label; ?>');
+            <?php endif; ?>
+        });
+        </script>
+        <?php
+    }
+
+    public static function preserve_archived_status( array $data, array $postarr ): array {
+        $intended = isset( $_POST['post_status'] ) ? sanitize_key( $_POST['post_status'] ) : '';
+        if ( self::ARCHIVED_STATUS === $intended && current_user_can( 'publish_pages' ) ) {
+            $data['post_status'] = self::ARCHIVED_STATUS;
+        }
+        return $data;
     }
 
     public static function add_archived_state_label( array $states, WP_Post $post ): array {
