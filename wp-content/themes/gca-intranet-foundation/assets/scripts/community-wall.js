@@ -515,11 +515,20 @@
         if (!feedEl) { return; }
 
         feedEl.addEventListener('click', function (e) {
+            // ── Three-dot toggle (all content types) ──────────────────────────
             var moreBtn = e.target.closest('.gca-cw-post__more-btn');
             if (moreBtn) {
                 e.stopPropagation();
-                var pid      = moreBtn.dataset.postId;
-                var dropdown = document.getElementById('gca-cw-dd-' + pid);
+                var dropdown;
+                if (moreBtn.dataset.postId) {
+                    dropdown = document.getElementById('gca-cw-dd-'       + moreBtn.dataset.postId);
+                } else if (moreBtn.dataset.shoutoutId) {
+                    dropdown = document.getElementById('gca-shoutout-dd-' + moreBtn.dataset.shoutoutId);
+                } else if (moreBtn.dataset.pollId) {
+                    dropdown = document.getElementById('gca-poll-dd-'     + moreBtn.dataset.pollId);
+                } else if (moreBtn.dataset.qaId) {
+                    dropdown = document.getElementById('gca-qa-dd-'       + moreBtn.dataset.qaId);
+                }
                 if (!dropdown) { return; }
                 var opening = dropdown.hidden;
                 closeAllDropdowns();
@@ -530,18 +539,59 @@
                 return;
             }
 
-            var deleteBtn = e.target.closest('[data-action="delete-post"]');
-            if (deleteBtn) {
-                var postId = deleteBtn.dataset.postId;
+            // ── Delete community post ─────────────────────────────────────────
+            var deletePostBtn = e.target.closest('[data-action="delete-post"]');
+            if (deletePostBtn) {
+                var postId = deletePostBtn.dataset.postId;
                 if (!confirm('Are you sure you want to delete this post?')) { return; }
                 apiFetch('DELETE', '/community/posts/' + postId)
                     .then(function () {
                         var postEl = document.getElementById('gca-cw-post-' + postId);
                         if (postEl) { postEl.remove(); }
                     })
-                    .catch(function () {
-                        alert('Could not delete post. Please try again.');
-                    });
+                    .catch(function () { alert('Could not delete post. Please try again.'); });
+                return;
+            }
+
+            // ── Delete shoutout ───────────────────────────────────────────────
+            var deleteShoutoutBtn = e.target.closest('[data-shoutout-action="delete"]');
+            if (deleteShoutoutBtn) {
+                var shoutoutId = deleteShoutoutBtn.dataset.shoutoutId;
+                if (!confirm('Delete this shout-out?')) { return; }
+                apiFetch('DELETE', '/shoutouts/' + shoutoutId)
+                    .then(function () {
+                        document.querySelectorAll('#gca-shoutout-' + shoutoutId).forEach(function (el) { el.remove(); });
+                    })
+                    .catch(function () { alert('Could not delete shout-out. Please try again.'); });
+                return;
+            }
+
+            // ── Delete poll ───────────────────────────────────────────────────
+            var deletePollBtn = e.target.closest('[data-poll-action="delete"]');
+            if (deletePollBtn) {
+                var pollId = deletePollBtn.dataset.pollId;
+                if (!confirm('Delete this poll? This cannot be undone.')) { return; }
+                apiFetch('DELETE', '/polls/' + pollId)
+                    .then(function () {
+                        var pollEl = document.getElementById('gca-poll-' + pollId);
+                        if (pollEl) { pollEl.remove(); }
+                    })
+                    .catch(function () { alert('Could not delete poll. Please try again.'); });
+                return;
+            }
+
+            // ── Delete Q&A question ───────────────────────────────────────────
+            var deleteQaBtn = e.target.closest('[data-qa-action="delete-question"]');
+            if (deleteQaBtn) {
+                var qaId = deleteQaBtn.dataset.qaId;
+                if (!confirm('Are you sure you want to delete this question?')) { return; }
+                apiFetch('DELETE', '/qa/questions/' + qaId)
+                    .then(function () {
+                        var qaEl = document.getElementById('gca-qa-q-' + qaId);
+                        if (qaEl) { qaEl.remove(); }
+                    })
+                    .catch(function () { alert('Could not delete question. Please try again.'); });
+                return;
             }
         });
 
