@@ -34,6 +34,10 @@ _docker-wp-content/
 /wp-content/themes/gca-intranet-foundation/assets/dist/
 /wp-content/themes/gca-intranet-foundation/assets/scripts/all.js
 /wp-content/themes/gca-intranet-foundation/assets/scripts/all.min.js
+/wp-content/themes/gca-intranet-foundation/assets/scripts/ccs.min.js
+/wp-content/themes/gca-intranet-foundation/assets/scripts/govuk-frontend.js
+/wp-content/themes/gca-intranet-foundation/assets/scripts/govuk.min.js
+/wp-content/themes/gca-intranet-foundation/assets/scripts/admin/
 /wp-content/themes/gca-intranet-foundation/assets/vendor/
 
 # Ignore WordPress uploads and upgrades
@@ -42,6 +46,9 @@ wp-content/upgrade/
 wp-content/cache/
 
 local.db.latest.sql
+
+# Playwright test output
+/test-results/
 
 # gca-publishing-workflow plugin — generated/local files
 wp-content/plugins/gca-publishing-workflow/vendor/
