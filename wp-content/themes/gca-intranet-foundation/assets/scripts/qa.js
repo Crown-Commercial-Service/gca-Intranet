@@ -118,7 +118,7 @@
             : '';
 
         var moreMenuHtml = '';
-        if (q.can_moderate || q.is_own) {
+        if (q.can_moderate || q.can_delete) {
             moreMenuHtml = (
                 '<div class="gca-cw-post__more-wrap">' +
                 '<button type="button" class="gca-cw-post__more-btn" aria-label="More options"' +
@@ -131,9 +131,11 @@
                     ? '<li role="none"><button type="button" role="menuitem" class="gca-cw-post__dropdown-btn"' +
                       ' data-qa-action="edit-answer" data-qa-id="' + q.id + '">Edit answer</button></li>'
                     : '') +
-                '<li role="none"><button type="button" role="menuitem"' +
-                ' class="gca-cw-post__dropdown-btn gca-cw-post__dropdown-btn--delete"' +
-                ' data-qa-action="delete-question" data-qa-id="' + q.id + '">Delete question</button></li>' +
+                (q.can_delete
+                    ? '<li role="none"><button type="button" role="menuitem"' +
+                      ' class="gca-cw-post__dropdown-btn gca-cw-post__dropdown-btn--delete"' +
+                      ' data-qa-action="delete-question" data-qa-id="' + q.id + '">Delete question</button></li>'
+                    : '') +
                 '</ul></div>'
             );
         }
@@ -350,6 +352,7 @@
             if (charsLeft)  { charsLeft.textContent = '500'; }
             if (charHint)   { charHint.classList.remove('gca-cw-compose__char-hint--warning'); }
             if (errorEl)    { errorEl.hidden = true; }
+            if (textarea)   { textarea.removeAttribute('aria-invalid'); }
         };
 
         if (triggerBtn) { triggerBtn.addEventListener('click', openAskForm); }
@@ -368,7 +371,11 @@
         form.addEventListener('submit', function (e) {
             e.preventDefault();
             var content = textarea ? textarea.value.trim() : '';
-            if (!content) { if (textarea) { textarea.focus(); } return; }
+            if (!content) {
+                if (textarea) { textarea.setAttribute('aria-invalid', 'true'); textarea.focus(); }
+                return;
+            }
+            if (textarea) { textarea.removeAttribute('aria-invalid'); }
 
             if (submitBtn) { submitBtn.disabled = true; submitBtn.textContent = 'Submitting…'; }
 
@@ -396,7 +403,9 @@
                     if (errorEl) {
                         errorEl.textContent = 'Could not submit question. Please try again.';
                         errorEl.hidden = false;
+                        errorEl.focus();
                     }
+                    if (textarea) { textarea.setAttribute('aria-invalid', 'true'); }
                 })
                 .finally(function () {
                     if (submitBtn) {

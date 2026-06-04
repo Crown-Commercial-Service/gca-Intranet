@@ -158,10 +158,12 @@ endif;
                                         class="govuk-textarea gca-cw-compose__textarea"
                                         name="content"
                                         rows="4"
-                                        placeholder="What would you like to share with the agency?"
+                                        placeholder="What would you like to share with the agency? Use @ to mention someone"
                                         maxlength="500"
-                                        aria-describedby="gca-cw-char-hint"
+                                        aria-describedby="gca-cw-char-hint gca-cw-error"
+                                        aria-label="Share an update. Use @ to mention someone"
                                     ></textarea>
+                                    <ul class="gca-lc__mention-list" id="gca-cw-mention-list" role="listbox" aria-label="Mention suggestions" hidden></ul>
                                 </div>
 
                                 <p class="gca-cw-compose__char-hint" id="gca-cw-char-hint" aria-live="polite">
@@ -206,7 +208,7 @@ endif;
                                 </div>
 
                             </form>
-                            <div class="gca-cw-compose__error" id="gca-cw-error" role="alert" hidden></div>
+                            <div class="gca-cw-compose__error" id="gca-cw-error" role="alert" tabindex="-1" hidden></div>
                         </div>
 
                     </div>
@@ -260,6 +262,7 @@ endif;
                                             aria-autocomplete="list"
                                             aria-expanded="false"
                                             aria-controls="gca-shoutout-suggestions"
+                                            aria-describedby="gca-shoutout-error"
                                         >
                                         <input type="hidden" id="gca-shoutout-recipient-id" name="recipient_id">
                                         <ul id="gca-shoutout-suggestions" class="gca-shoutout-compose__suggestions" role="listbox" aria-label="Colleague suggestions" hidden></ul>
@@ -282,7 +285,7 @@ endif;
                                         rows="3"
                                         placeholder="What would you like to celebrate?"
                                         maxlength="500"
-                                        aria-describedby="gca-shoutout-char-hint"
+                                        aria-describedby="gca-shoutout-char-hint gca-shoutout-error"
                                     ></textarea>
                                 </div>
 
@@ -296,7 +299,7 @@ endif;
                                 </div>
 
                             </form>
-                            <div class="gca-cw-compose__error" id="gca-shoutout-error" role="alert" hidden></div>
+                            <div class="gca-cw-compose__error" id="gca-shoutout-error" role="alert" tabindex="-1" hidden></div>
                         </div>
                     </div>
 
@@ -350,7 +353,7 @@ endif;
                                         rows="3"
                                         placeholder="What would you like to ask?"
                                         maxlength="500"
-                                        aria-describedby="gca-qa-char-hint"
+                                        aria-describedby="gca-qa-char-hint gca-qa-error"
                                     ></textarea>
                                 </div>
 
@@ -364,7 +367,7 @@ endif;
                                 </div>
 
                             </form>
-                            <div class="gca-cw-compose__error" id="gca-qa-error" role="alert" hidden></div>
+                            <div class="gca-cw-compose__error" id="gca-qa-error" role="alert" tabindex="-1" hidden></div>
                         </div>
                     </div>
 
@@ -412,10 +415,10 @@ endif;
 
                                 <div class="govuk-form-group">
                                     <label class="govuk-label" for="gca-poll-question">Question</label>
-                                    <input type="text" id="gca-poll-question" class="govuk-input" placeholder="What would you like to ask?" maxlength="200" required>
+                                    <input type="text" id="gca-poll-question" class="govuk-input" placeholder="What would you like to ask?" maxlength="200" required aria-describedby="gca-poll-error">
                                 </div>
 
-                                <fieldset class="govuk-fieldset">
+                                <fieldset class="govuk-fieldset" aria-describedby="gca-poll-error">
                                     <legend class="govuk-fieldset__legend govuk-fieldset__legend--s">Answer options</legend>
                                     <ul id="gca-poll-options-list" class="gca-poll-compose__options-list">
                                         <li class="gca-poll-compose__option-row">
@@ -439,7 +442,7 @@ endif;
                                 </div>
 
                             </form>
-                            <div class="gca-cw-compose__error" id="gca-poll-error" role="alert" hidden></div>
+                            <div class="gca-cw-compose__error" id="gca-poll-error" role="alert" tabindex="-1" hidden></div>
                         </div>
                     </div>
                     <?php endif; ?>

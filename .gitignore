@@ -50,6 +50,7 @@ local.db.latest.sql
 # Playwright test output
 /test-results/
 
+
 # gca-publishing-workflow plugin — generated/local files
 wp-content/plugins/gca-publishing-workflow/vendor/
 wp-content/plugins/gca-publishing-workflow/.phpunit.result.cache

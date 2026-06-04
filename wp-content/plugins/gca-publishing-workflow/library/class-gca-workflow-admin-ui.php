@@ -9,7 +9,6 @@ class GCA_Workflow_Admin_UI {
     public static function init(): void {
         add_action( 'admin_menu', [ __CLASS__, 'restrict_contributor_menu' ], 999 );
         add_action( 'admin_init',  [ __CLASS__, 'redirect_contributor_dashboard' ] );
-        add_action( 'admin_init',  [ __CLASS__, 'redirect_stale_revision' ] );
     }
 
     /**
@@ -49,30 +48,6 @@ class GCA_Workflow_Admin_UI {
         foreach ( $slugs as $slug ) {
             remove_menu_page( $slug );
         }
-    }
-
-    /**
-     * Redirects anyone landing on a stale Revisionary revision edit page (e.g. via
-     * the browser back button after approval) to the parent page editor instead.
-     */
-    public static function redirect_stale_revision(): void {
-        global $pagenow;
-        if ( 'post.php' !== $pagenow ) {
-            return;
-        }
-        $post_id = isset( $_GET['post'] ) ? (int) $_GET['post'] : 0;
-        if ( ! $post_id || ( $_GET['action'] ?? '' ) !== 'edit' ) {
-            return;
-        }
-        $post = get_post( $post_id );
-        if ( ! $post || 'revision' !== $post->post_type || ! $post->post_parent ) {
-            return;
-        }
-        if ( ! current_user_can( 'edit_post', $post->post_parent ) ) {
-            return;
-        }
-        wp_safe_redirect( admin_url( 'post.php?post=' . $post->post_parent . '&action=edit' ) );
-        exit;
     }
 
     /**

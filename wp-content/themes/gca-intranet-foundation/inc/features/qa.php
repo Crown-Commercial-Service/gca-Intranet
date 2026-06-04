@@ -424,7 +424,7 @@ function gca_qa_format_question(WP_Post $post, int $current_user_id): array
     $is_answered = !empty(trim($answer));
 
     $asker      = get_userdata((int) $post->post_author);
-    $asker_name = $asker instanceof WP_User ? $asker->display_name : '';
+    $asker_name = $asker instanceof WP_User ? html_entity_decode($asker->display_name, ENT_QUOTES | ENT_HTML5, 'UTF-8') : '';
 
     $answerer_id      = (int) get_post_meta($post->ID, GCA_QA_ANSWERED_BY_META, true);
     $answered_at      = (string) get_post_meta($post->ID, GCA_QA_ANSWERED_AT_META, true);
@@ -436,10 +436,10 @@ function gca_qa_format_question(WP_Post $post, int $current_user_id): array
     if ($is_answered && $answerer_id) {
         $answerer = get_userdata($answerer_id);
         if ($answerer instanceof WP_User) {
-            $answerer_name   = $answerer->display_name;
+            $answerer_name   = html_entity_decode($answerer->display_name, ENT_QUOTES | ENT_HTML5, 'UTF-8');
             $local           = trim((string) get_user_meta($answerer_id, 'google_profile_picture_local_url', true));
             $answerer_avatar = $local ?: (string) get_avatar_url($answerer_id, ['size' => 48]);
-            $answerer_team   = trim((string) get_user_meta($answerer_id, 'team', true));
+            $answerer_team   = trim((string) get_user_meta($answerer_id, 'business_title', true));
             if (gca_flag_enabled('staff-profiles')) {
                 $answerer_profile = esc_url(home_url('/profile/' . $answerer->user_nicename));
             }
@@ -458,18 +458,23 @@ function gca_qa_format_question(WP_Post $post, int $current_user_id): array
         'count'   => true,
     ]) : 0;
 
-    $answered_at_iso = $answered_at ? (string) wp_date('c', (int) strtotime($answered_at)) : null;
+    if ($answered_at) {
+        $dt              = DateTimeImmutable::createFromFormat('Y-m-d H:i:s', $answered_at, wp_timezone());
+        $answered_at_iso = $dt ? $dt->format('c') : null;
+    } else {
+        $answered_at_iso = null;
+    }
 
     return [
         'id'               => $post->ID,
-        'question_html'    => nl2br(esc_html($post->post_content)),
+        'question_html'    => nl2br(htmlspecialchars($post->post_content, ENT_NOQUOTES, 'UTF-8', false)),
         'question_raw'     => $post->post_content,
         'status'           => $is_answered ? 'answered' : 'pending',
         'author_id'        => (int) $post->post_author,
         'author_name'      => $asker_name,
         'date_iso'         => (string) get_post_time('c', true, $post),
         'date_formatted'   => (string) get_post_time('j F Y', false, $post),
-        'answer_html'      => $is_answered ? nl2br(esc_html($answer)) : null,
+        'answer_html'      => $is_answered ? nl2br(htmlspecialchars($answer, ENT_NOQUOTES, 'UTF-8', false)) : null,
         'answer_raw'       => $is_answered ? $answer : null,
         'answered_at_iso'  => $answered_at_iso,
         'answerer_id'      => $answerer_id ?: null,
@@ -479,6 +484,7 @@ function gca_qa_format_question(WP_Post $post, int $current_user_id): array
         'answerer_profile' => $answerer_profile,
         'is_own'           => (int) $post->post_author === $current_user_id,
         'can_moderate'     => current_user_can('qa_answer_questions'),
+        'can_delete'       => $is_answered && current_user_can('manage_options'),
         'like_count'       => count($liked_by),
         'user_has_liked'   => in_array($current_user_id, $liked_by, true),
         'comment_count'    => $comment_count,
@@ -611,8 +617,13 @@ function gca_qa_delete_question(WP_REST_Request $req): WP_REST_Response
         return new WP_REST_Response(['error' => 'Question not found'], 404);
     }
 
-    if ((int) $post->post_author !== $uid && !current_user_can('delete_others_posts')) {
+    if (!current_user_can('manage_options')) {
         return new WP_REST_Response(['error' => 'Forbidden'], 403);
+    }
+
+    $answer = trim((string) get_post_meta($question_id, GCA_QA_ANSWER_META, true));
+    if (empty($answer)) {
+        return new WP_REST_Response(['error' => 'Only answered questions can be deleted from the front end'], 403);
     }
 
     wp_delete_post($question_id, true);

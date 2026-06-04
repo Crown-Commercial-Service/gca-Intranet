@@ -92,7 +92,7 @@ function gca_cw_get_user_info(int $user_id, int $avatar_size = 48): array
 
     return [
         'author_id'      => $user_id,
-        'author_name'    => $author->display_name,
+        'author_name'    => html_entity_decode($author->display_name, ENT_QUOTES | ENT_HTML5, 'UTF-8'),
         'author_avatar'  => $avatar_url,
         'author_profile' => $profile_url,
         'author_team'    => trim((string) get_user_meta($author->ID, 'business_title', true)),
@@ -124,11 +124,27 @@ function gca_cw_get_lc_data(int $post_id, int $current_user_id): array
 }
 
 /**
- * Escape content for display: nl2br + linkify #hashtags.
+ * Escape content for display: nl2br + linkify @mentions and #hashtags.
  */
 function gca_cw_render_content(string $raw): string
 {
-    $html = nl2br(esc_html($raw));
+    $html = nl2br(htmlspecialchars($raw, ENT_NOQUOTES, 'UTF-8', false));
+
+    $html = (string) preg_replace_callback(
+        '/@\[([^\]]+)\]\((\d+)\)/',
+        function (array $m): string {
+            $display = $m[1]; // already HTML-escaped by esc_html above
+            $user_id = (int) $m[2];
+            $user    = get_userdata($user_id);
+            if (!$user) {
+                return '@' . $display;
+            }
+            $url = esc_url(home_url('/profile/' . $user->user_nicename));
+            return '<a href="' . $url . '" class="gca-lc__mention">@' . $display . '</a>';
+        },
+        $html
+    );
+
     return (string) preg_replace_callback(
         '/#([a-zA-Z0-9_]+)/',
         fn ($m) => '<span class="gca-cw__hashtag">#' . esc_html($m[1]) . '</span>',
@@ -198,7 +214,7 @@ function gca_cw_format_item(WP_Post $post, int $current_user_id): array
             if (!function_exists('gca_qa_format_question')) { return []; }
             $qa = gca_qa_format_question($post, $current_user_id);
             if (($qa['status'] ?? '') !== 'answered') { return []; }
-            return array_merge($qa, ['kind' => 'qa', 'can_delete' => $can_delete]);
+            return array_merge($qa, ['kind' => 'qa']);
         default:
             return gca_cw_format_post($post, $current_user_id);
     }
@@ -311,8 +327,7 @@ function gca_cw_get_feed(WP_REST_Request $req): WP_REST_Response
         'post_status'    => 'publish',
         'posts_per_page' => $per_page,
         'paged'          => $page,
-        'orderby'        => 'date',
-        'order'          => 'DESC',
+        'orderby'        => ['date' => 'DESC', 'ID' => 'DESC'],
         'no_found_rows'  => false,
     ]);
 
@@ -325,6 +340,11 @@ function gca_cw_get_feed(WP_REST_Request $req): WP_REST_Response
             }
         }
     }
+
+    // Re-sort: items filtered post-fetch (e.g. unanswered Q&As) can disrupt DB page ordering.
+    usort($items, function (array $a, array $b): int {
+        return strcmp($b['date_iso'] ?? '', $a['date_iso'] ?? '');
+    });
 
     return new WP_REST_Response([
         'posts'       => $items,

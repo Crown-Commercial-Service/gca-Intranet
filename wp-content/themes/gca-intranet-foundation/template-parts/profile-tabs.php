@@ -1,20 +1,29 @@
 <?php
 /**
- * Profile tabs — My Saves, Mentions, My Posts.
- * Only rendered when the logged-in user is viewing their own profile.
+ * Profile tabs — My Saves, Shout-outs, Mentions, My Posts.
+ * My Saves / Mentions / My Posts only rendered when the logged-in user is viewing their own profile.
+ * Shout-outs tab is visible to all logged-in users on any profile.
  *
  * Args:
- *   rest_url  (string) – base REST URL, e.g. /wp-json/gca/v1
- *   nonce     (string) – WP REST nonce
+ *   rest_url        (string) – base REST URL, e.g. /wp-json/gca/v1
+ *   nonce           (string) – WP REST nonce
+ *   is_own_profile  (bool)   – true when logged-in user is viewing their own profile
+ *   profile_user_id (int)    – WP user ID of the profile being viewed
  */
 
-$rest_url = esc_js($args['rest_url'] ?? '');
-$nonce    = esc_js($args['nonce']    ?? '');
+$rest_url        = esc_js($args['rest_url']         ?? '');
+$nonce           = esc_js($args['nonce']            ?? '');
+$is_own_profile  = (bool) ($args['is_own_profile']  ?? false);
+$profile_user_id = (int)  ($args['profile_user_id'] ?? 0);
+$show_saves_tabs = $is_own_profile && function_exists('gca_flag_enabled') && gca_flag_enabled('post-saves');
+$show_shoutouts  = function_exists('gca_flag_enabled') && gca_flag_enabled('community-shoutouts');
 ?>
 
 <div class="gca-profile-tabs govuk-!-margin-top-6" id="gca-profile-tabs">
 
-  <nav class="gca-profile-tabs__nav" role="tablist" aria-label="Your activity">
+  <nav class="gca-profile-tabs__nav" role="tablist" aria-label="<?php echo $is_own_profile ? 'Your activity' : 'Profile activity'; ?>">
+
+    <?php if ($show_saves_tabs) : ?>
     <button
       class="gca-profile-tabs__btn gca-profile-tabs__btn--active"
       role="tab"
@@ -25,7 +34,22 @@ $nonce    = esc_js($args['nonce']    ?? '');
     >
       My Saves
     </button>
+    <?php endif; ?>
 
+    <?php if ($show_shoutouts) : ?>
+    <button
+      class="gca-profile-tabs__btn<?php echo !$show_saves_tabs ? ' gca-profile-tabs__btn--active' : ''; ?>"
+      role="tab"
+      aria-selected="<?php echo !$show_saves_tabs ? 'true' : 'false'; ?>"
+      aria-controls="gca-tab-shoutouts"
+      id="gca-tab-btn-shoutouts"
+      data-tab="shoutouts"
+    >
+      Shout-outs
+    </button>
+    <?php endif; ?>
+
+    <?php if ($show_saves_tabs) : ?>
     <button
       class="gca-profile-tabs__btn"
       role="tab"
@@ -48,15 +72,29 @@ $nonce    = esc_js($args['nonce']    ?? '');
     >
       My Posts
     </button>
+    <?php endif; ?>
+
   </nav>
 
+  <?php if ($show_saves_tabs) : ?>
   <!-- My Saves -->
   <div class="gca-profile-tabs__panel" role="tabpanel" id="gca-tab-saves" aria-labelledby="gca-tab-btn-saves">
     <p class="gca-profile-tabs__loading" id="gca-saves-loading">Loading&hellip;</p>
     <ul class="gca-profile-item-list" id="gca-saves-list" hidden></ul>
     <p class="gca-profile-tabs__empty" id="gca-saves-empty" hidden>You haven&rsquo;t saved anything yet.</p>
   </div>
+  <?php endif; ?>
 
+  <?php if ($show_shoutouts) : ?>
+  <!-- Shout-outs -->
+  <div class="gca-profile-tabs__panel" role="tabpanel" id="gca-tab-shoutouts" aria-labelledby="gca-tab-btn-shoutouts"<?php echo $show_saves_tabs ? ' hidden' : ''; ?>>
+    <p class="gca-profile-tabs__loading" id="gca-shoutouts-loading"<?php echo $show_saves_tabs ? ' hidden' : ''; ?>>Loading&hellip;</p>
+    <ul class="gca-profile-item-list gca-profile-item-list--mentions" id="gca-shoutouts-list" hidden></ul>
+    <p class="gca-profile-tabs__empty" id="gca-shoutouts-empty" hidden>No shout-outs yet.</p>
+  </div>
+  <?php endif; ?>
+
+  <?php if ($show_saves_tabs) : ?>
   <!-- Mentions -->
   <div class="gca-profile-tabs__panel" role="tabpanel" id="gca-tab-mentions" aria-labelledby="gca-tab-btn-mentions" hidden>
     <p class="gca-profile-tabs__loading" id="gca-mentions-loading" hidden>Loading&hellip;</p>
@@ -70,6 +108,7 @@ $nonce    = esc_js($args['nonce']    ?? '');
     <ul class="gca-profile-item-list" id="gca-posts-list" hidden></ul>
     <p class="gca-profile-tabs__empty" id="gca-posts-empty" hidden>You haven&rsquo;t published any posts yet.</p>
   </div>
+  <?php endif; ?>
 
 </div>
 
@@ -77,8 +116,11 @@ $nonce    = esc_js($args['nonce']    ?? '');
 (function () {
     'use strict';
 
-    var REST  = '<?php echo $rest_url; ?>';
-    var NONCE = '<?php echo $nonce; ?>';
+    var REST             = '<?php echo $rest_url; ?>';
+    var NONCE            = '<?php echo $nonce; ?>';
+    var PROFILE_USER_ID  = <?php echo $profile_user_id; ?>;
+    var IS_OWN_PROFILE   = <?php echo $is_own_profile ? 'true' : 'false'; ?>;
+    var SHOW_SHOUTOUTS   = <?php echo $show_shoutouts ? 'true' : 'false'; ?>;
     var cache = {};
 
     // ── Utilities ──────────────────────────────────────────────────────────
@@ -169,6 +211,47 @@ $nonce    = esc_js($args['nonce']    ?? '');
                 }).catch(function () { btn.disabled = false; });
             });
         });
+    }
+
+    function renderShoutouts(data) {
+        var loadingEl = document.getElementById('gca-shoutouts-loading');
+        var listEl    = document.getElementById('gca-shoutouts-list');
+        var emptyEl   = document.getElementById('gca-shoutouts-empty');
+
+        if (loadingEl) { hide(loadingEl); }
+
+        var shoutouts = data.shoutouts || [];
+
+        if (!shoutouts.length) {
+            show(emptyEl);
+            return;
+        }
+
+        listEl.innerHTML = shoutouts.map(function (s) {
+            var rel = relativeTime(s.date_iso);
+            var avatarHtml = s.giver_avatar
+                ? '<img class="gca-profile-item__avatar" src="' + esc(s.giver_avatar) + '" alt="" aria-hidden="true">'
+                : '<span class="gca-profile-item__avatar gca-profile-item__avatar--initial" aria-hidden="true">' + esc((s.giver_name || '?').charAt(0).toUpperCase()) + '</span>';
+            var giverHtml = s.giver_profile
+                ? '<a href="' + esc(s.giver_profile) + '" class="gca-profile-item__author">' + esc(s.giver_name) + '</a>'
+                : '<strong class="gca-profile-item__author">' + esc(s.giver_name) + '</strong>';
+            var teamHtml = s.giver_team ? '<span class="gca-profile-item__meta-text">' + esc(s.giver_team) + '</span>' : '';
+            var catHtml  = s.category   ? ' &bull; <span class="gca-profile-item__label">' + esc(s.category) + '</span>' : '';
+            return '<li class="gca-profile-item gca-profile-item--mention">' +
+                avatarHtml +
+                '<div class="gca-profile-item__body">' +
+                    '<span class="gca-profile-item__mention-meta">' +
+                        giverHtml +
+                        (teamHtml ? ' &bull; ' + teamHtml : '') +
+                        catHtml +
+                        (rel ? ' &bull; ' + rel : '') +
+                    '</span>' +
+                    '<p class="gca-profile-item__comment-text">' + s.content_html + '</p>' +
+                '</div>' +
+            '</li>';
+        }).join('');
+
+        show(listEl);
     }
 
     function renderMentions(items) {
@@ -293,6 +376,13 @@ $nonce    = esc_js($args['nonce']    ?? '');
                 hide(document.getElementById('gca-saves-loading'));
                 show(document.getElementById('gca-saves-empty'));
             });
+        } else if (tab === 'shoutouts') {
+            var shoutoutsLoadingEl = document.getElementById('gca-shoutouts-loading');
+            if (shoutoutsLoadingEl) { show(shoutoutsLoadingEl); }
+            apiFetch('/shoutouts?recipient_id=' + PROFILE_USER_ID + '&per_page=20').then(renderShoutouts).catch(function () {
+                if (shoutoutsLoadingEl) { hide(shoutoutsLoadingEl); }
+                show(document.getElementById('gca-shoutouts-empty'));
+            });
         } else if (tab === 'mentions') {
             show(document.getElementById('gca-mentions-loading'));
             apiFetch('/profile/me/mentions').then(renderMentions).catch(function () {
@@ -331,17 +421,20 @@ $nonce    = esc_js($args['nonce']    ?? '');
         });
     });
 
-    // Load saves immediately (default tab)
-    loadTab('saves');
-
-    // Pre-fetch mention count for badge
-    apiFetch('/profile/me/mentions').then(function (items) {
-        var badge = document.getElementById('gca-mentions-badge');
-        if (badge && items.length) {
-            badge.textContent = '(' + items.length + ')';
-            show(badge);
-        }
-    });
+    // Load the default tab
+    if (IS_OWN_PROFILE) {
+        loadTab('saves');
+        // Pre-fetch mention count for badge
+        apiFetch('/profile/me/mentions').then(function (items) {
+            var badge = document.getElementById('gca-mentions-badge');
+            if (badge && items.length) {
+                badge.textContent = '(' + items.length + ')';
+                show(badge);
+            }
+        });
+    } else if (SHOW_SHOUTOUTS) {
+        loadTab('shoutouts');
+    }
 
 }());
 </script>

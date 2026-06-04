@@ -21,7 +21,6 @@ require_once GCA_WORKFLOW_DIR . 'library/class-gca-workflow-statuses.php';
 require_once GCA_WORKFLOW_DIR . 'library/class-gca-workflow-notifications.php';
 require_once GCA_WORKFLOW_DIR . 'library/class-gca-workflow-rejection.php';
 require_once GCA_WORKFLOW_DIR . 'library/class-gca-workflow-revisions.php';
-require_once GCA_WORKFLOW_DIR . 'library/class-gca-workflow-category-permissions.php';
 
 // Register feature flag (available regardless of flag state so it appears in the admin UI).
 add_action( 'init', function (): void {
@@ -41,7 +40,6 @@ add_action( 'init', function (): void {
     GCA_Workflow_Settings::init();
     GCA_Workflow_Roles::init();
     GCA_Workflow_Admin_UI::init();
-    GCA_Workflow_Category_Permissions::init();
 }, 10 );
 
 // Workflow features are gated behind the feature flag.
