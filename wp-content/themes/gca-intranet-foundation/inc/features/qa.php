@@ -439,7 +439,7 @@ function gca_qa_format_question(WP_Post $post, int $current_user_id): array
             $answerer_name   = html_entity_decode($answerer->display_name, ENT_QUOTES | ENT_HTML5, 'UTF-8');
             $local           = trim((string) get_user_meta($answerer_id, 'google_profile_picture_local_url', true));
             $answerer_avatar = $local ?: (string) get_avatar_url($answerer_id, ['size' => 48]);
-            $answerer_team   = trim((string) get_user_meta($answerer_id, 'team', true));
+            $answerer_team   = trim((string) get_user_meta($answerer_id, 'business_title', true));
             if (gca_flag_enabled('staff-profiles')) {
                 $answerer_profile = esc_url(home_url('/profile/' . $answerer->user_nicename));
             }
