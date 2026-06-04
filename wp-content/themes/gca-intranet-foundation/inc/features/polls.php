@@ -367,7 +367,7 @@ function gca_poll_format(WP_Post $post, int $current_user_id): array
         if (gca_flag_enabled('staff-profiles')) {
             $profile_url = esc_url(home_url('/profile/' . $author->user_nicename));
         }
-        $author_team = trim((string) get_user_meta($author->ID, 'team', true));
+        $author_team = trim((string) get_user_meta($author->ID, 'business_title', true));
     }
 
     // poll_team overrides author's profile team if set

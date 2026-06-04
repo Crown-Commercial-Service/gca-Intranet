@@ -230,7 +230,7 @@ function gca_shoutout_format(WP_Post $post, int $current_user_id): array
         if (gca_flag_enabled('staff-profiles')) {
             $profile_url = esc_url(home_url('/profile/' . $giver->user_nicename));
         }
-        $giver_team = trim((string) get_user_meta($giver->ID, 'team', true));
+        $giver_team = trim((string) get_user_meta($giver->ID, 'business_title', true));
     }
 
     $cat_terms    = wp_get_post_terms($post->ID, 'shoutout_category');
