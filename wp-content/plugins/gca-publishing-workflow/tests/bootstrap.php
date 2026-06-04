@@ -20,3 +20,4 @@ require_once dirname(__DIR__) . '/library/class-gca-workflow-statuses.php';
 require_once dirname(__DIR__) . '/library/class-gca-workflow-notifications.php';
 require_once dirname(__DIR__) . '/library/class-gca-workflow-rejection.php';
 require_once dirname(__DIR__) . '/library/class-gca-workflow-revisions.php';
+require_once dirname(__DIR__) . '/library/class-gca-workflow-category-permissions.php';

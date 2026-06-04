@@ -56,3 +56,32 @@ export function deletePostLock(id: number): void {
         wpCli(`post meta delete ${id} _edit_lock`);
     } catch { /* ignore — lock may not be set */ }
 }
+
+export function setPostTerms(postId: number, termIds: number[], taxonomy: string): void {
+    wpCli(`post term set ${postId} ${taxonomy} ${termIds.join(' ')} --by=id`);
+}
+
+/**
+ * Assign responsible_team directorates to a contributor via user meta.
+ * Pass 'all' for unrestricted access, or an array of term IDs to scope them.
+ */
+export function setContributorTeams(userLogin: string, teamIds: number[] | 'all'): void {
+    const userId = getUserId(userLogin);
+    const value  = teamIds === 'all'
+        ? JSON.stringify(['all'])
+        : JSON.stringify(teamIds.map(Number));
+    wpCli(`user meta update ${userId} _gca_contributor_teams '${value}' --format=json`);
+}
+
+/**
+ * Returns up to `count` term IDs from the responsible_team taxonomy.
+ * Throws if fewer than `count` terms exist.
+ */
+export function getResponsibleTeamTermIds(count = 2): number[] {
+    const out = wpCli(`term list responsible_team --field=term_id --format=csv --number=${count}`);
+    const ids  = out.split('\n').map(s => parseInt(s.trim(), 10)).filter(id => id > 0);
+    if (ids.length < count) {
+        throw new Error(`Need ${count} responsible_team terms but found ${ids.length}`);
+    }
+    return ids;
+}

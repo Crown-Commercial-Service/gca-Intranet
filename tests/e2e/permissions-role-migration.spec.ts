@@ -33,7 +33,7 @@ test.describe('Role migration (PERM-4.x)', () => {
 
     test('PERM-4.4 — GCA Publisher role exists and appears in role filter', async ({ page }) => {
         await page.goto('/wp-admin/users.php');
-        await expect(page.locator('a[href*="role=gca_publisher"]')).toBeVisible();
+        await expect(page.locator('a[href="users.php?role=gca_publisher"]')).toBeVisible();
     });
 
     test('PERM-4.5 — Legacy editor role is renamed with [Deprecated] prefix', async ({ page }) => {
@@ -51,10 +51,10 @@ test.describe('Role migration (PERM-4.x)', () => {
 
     test('PERM-4.6 — GCA custom roles appear in the user role filter tabs', async ({ page }) => {
         await page.goto('/wp-admin/users.php');
-        await expect(page.locator('a[href*="role=gca_contributor"]')).toBeVisible();
-        await expect(page.locator('a[href*="role=gca_publisher"]')).toBeVisible();
-        await expect(page.locator('a[href*="role=gca_publisher_admin"]')).toBeVisible();
-        await expect(page.locator('a[href*="role=gca_community_host"]')).toBeVisible();
+        await expect(page.locator('a[href="users.php?role=gca_contributor"]')).toBeVisible();
+        await expect(page.locator('a[href="users.php?role=gca_publisher"]')).toBeVisible();
+        await expect(page.locator('a[href="users.php?role=gca_publisher_admin"]')).toBeVisible();
+        await expect(page.locator('a[href="users.php?role=gca_community_host"]')).toBeVisible();
     });
 
 });

@@ -56,7 +56,7 @@ export default defineConfig({
                 storageState: '.auth/admin.json',
             },
             dependencies: ['setup', 'setup-publisher'],
-            testIgnore: /auth\.(setup|contributor|publisher|publisher-admin)\.ts/,
+            testIgnore: /auth\.(setup|contributor|publisher|publisher-admin)\.ts|permissions-category\.spec\.ts/,
         },
         {
             name: 'chromium-contributor',
@@ -84,6 +84,15 @@ export default defineConfig({
             },
             dependencies: ['setup-publisher-admin'],
             testMatch: /permissions-publisher-admin\.spec\.ts/,
+        },
+        {
+            name: 'chromium-category',
+            use: {
+                ...devices['Desktop Chrome'],
+                storageState: '.auth/contributor.json',
+            },
+            dependencies: ['setup-contributor', 'setup-publisher-admin', 'setup-publisher'],
+            testMatch: /permissions-category\.spec\.ts/,
         },
     ],
 });
