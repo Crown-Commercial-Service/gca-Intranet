@@ -384,10 +384,11 @@
         }
 
         function closeForm() {
-            if (triggerBtn) { triggerBtn.setAttribute('aria-expanded', 'false'); }
-            if (formArea)   { formArea.hidden = true; }
-            if (form)       { form.reset(); }
-            if (errorEl)    { errorEl.hidden = true; }
+            if (triggerBtn)  { triggerBtn.setAttribute('aria-expanded', 'false'); }
+            if (formArea)    { formArea.hidden = true; }
+            if (form)        { form.reset(); }
+            if (errorEl)     { errorEl.hidden = true; }
+            if (questionEl)  { questionEl.removeAttribute('aria-invalid'); }
             // Reset options to 2
             resetOptions();
         }
@@ -404,8 +405,12 @@
             });
         }
 
+        var MAX_OPTIONS = 5;
+
         function updateAddOptionBtn() {
-            // No upper limit — button always visible
+            if (!addOptBtn || !optionsList) { return; }
+            var count = optionsList.querySelectorAll('.gca-poll-compose__option-input').length;
+            addOptBtn.disabled = count >= MAX_OPTIONS;
         }
 
         if (triggerBtn) { triggerBtn.addEventListener('click', openForm); }
@@ -429,6 +434,7 @@
             addOptBtn.addEventListener('click', function () {
                 if (!optionsList) { return; }
                 var count = optionsList.querySelectorAll('.gca-poll-compose__option-input').length;
+                if (count >= MAX_OPTIONS) { return; }
 
                 var idx = count + 1;
                 var row = document.createElement('div');
@@ -458,9 +464,10 @@
 
             var question = questionEl ? questionEl.value.trim() : '';
             if (!question) {
-                if (questionEl) { questionEl.focus(); }
+                if (questionEl) { questionEl.setAttribute('aria-invalid', 'true'); questionEl.focus(); }
                 return;
             }
+            if (questionEl) { questionEl.removeAttribute('aria-invalid'); }
 
             var options = [];
             if (optionsList) {
@@ -474,6 +481,7 @@
                 if (errorEl) {
                     errorEl.textContent = 'Please add at least 2 options.';
                     errorEl.hidden = false;
+                    errorEl.focus();
                 }
                 return;
             }
@@ -530,6 +538,7 @@
                     if (errorEl) {
                         errorEl.textContent = (err && err.error) ? err.error : 'Could not create poll. Please try again.';
                         errorEl.hidden = false;
+                        errorEl.focus();
                     }
                 })
                 .finally(function () {

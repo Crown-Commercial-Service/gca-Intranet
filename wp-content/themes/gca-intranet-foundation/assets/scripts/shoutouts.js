@@ -395,6 +395,8 @@
             if (errorEl)       { errorEl.hidden = true; }
             if (categorySelect){ categorySelect.value = ''; }
             if (autocomplete)  { autocomplete.reset(); }
+            if (searchInput)   { searchInput.removeAttribute('aria-invalid'); }
+            if (textarea)      { textarea.removeAttribute('aria-invalid'); }
         }
 
         if (triggerBtn) { triggerBtn.addEventListener('click', openForm); }
@@ -425,15 +427,17 @@
                     errorEl.textContent = 'Please select a colleague to shout out.';
                     errorEl.hidden = false;
                 }
-                if (searchInput) { searchInput.focus(); }
+                if (searchInput) { searchInput.setAttribute('aria-invalid', 'true'); searchInput.focus(); }
                 return;
             }
+            if (searchInput) { searchInput.removeAttribute('aria-invalid'); }
 
             var content    = textarea ? textarea.value.trim() : '';
             if (!content) {
-                if (textarea) { textarea.focus(); }
+                if (textarea) { textarea.setAttribute('aria-invalid', 'true'); textarea.focus(); }
                 return;
             }
+            if (textarea) { textarea.removeAttribute('aria-invalid'); }
 
             var categoryId = categorySelect ? parseInt(categorySelect.value, 10) || 0 : 0;
 
@@ -471,6 +475,7 @@
                     if (errorEl) {
                         errorEl.textContent = (err && err.error) ? err.error : 'Could not post shout-out. Please try again.';
                         errorEl.hidden = false;
+                        errorEl.focus();
                     }
                 })
                 .finally(function () {

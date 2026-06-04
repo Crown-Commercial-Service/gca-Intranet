@@ -444,7 +444,7 @@ add_action('rest_api_init', function (): void {
                 ],
                 'options' => [
                     'required'          => true,
-                    'validate_callback' => fn ($v) => is_array($v) && count($v) >= 2,
+                    'validate_callback' => fn ($v) => is_array($v) && count($v) >= 2 && count($v) <= 5,
                 ],
                 'deadline' => [
                     'default'           => null,
@@ -542,6 +542,9 @@ function gca_poll_create(WP_REST_Request $req): WP_REST_Response
 
     if (count($options) < 2) {
         return new WP_REST_Response(['error' => 'At least 2 non-empty options are required'], 422);
+    }
+    if (count($options) > 5) {
+        return new WP_REST_Response(['error' => 'A poll can have at most 5 options'], 422);
     }
 
     $post_id = wp_insert_post([

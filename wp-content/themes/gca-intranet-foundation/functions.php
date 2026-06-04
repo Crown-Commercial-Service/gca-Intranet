@@ -684,6 +684,7 @@ add_action('wp_enqueue_scripts', function (): void {
         var query = '';
         var users = [];
         var selIdx = -1;
+        var mentionMap = {};
 
         function close() {
             mentionList.hidden = true;
@@ -704,10 +705,19 @@ add_action('wp_enqueue_scripts', function (): void {
 
         function insert(user) {
             var val = textarea.value;
-            var token = '@[' + user.display_name + '](' + user.id + ')';
-            textarea.value = val.substring(0, mentionStart) + token + ' ' + val.substring(mentionStart + 1 + query.length);
+            mentionMap[user.display_name] = '@[' + user.display_name + '](' + user.id + ')';
+            var displayText = '@' + user.display_name;
+            textarea.value = val.substring(0, mentionStart) + displayText + ' ' + val.substring(mentionStart + 1 + query.length);
             close();
             textarea.focus();
+        }
+
+        function encode(text) {
+            var names = Object.keys(mentionMap).sort(function (a, b) { return b.length - a.length; });
+            names.forEach(function (name) {
+                text = text.split('@' + name).join(mentionMap[name]);
+            });
+            return text;
         }
 
         function showUsers(list) {
@@ -755,6 +765,8 @@ add_action('wp_enqueue_scripts', function (): void {
         });
 
         textarea.addEventListener('blur', function () { setTimeout(close, 200); });
+
+        return encode;
     }
 
     // ── Per-component initialisation ─────────────────────────────────────────
@@ -811,13 +823,13 @@ add_action('wp_enqueue_scripts', function (): void {
             form.dataset.evtBound = '1';
             var ta = form.querySelector('.gca-lc__textarea');
             var ml = form.querySelector('.gca-lc__mention-list');
-            if (ta && ml) { setupMentions(ta, ml); }
+            var encodeMentions = (ta && ml) ? setupMentions(ta, ml) : null;
 
             form.addEventListener('submit', function (e) {
                 e.preventDefault();
                 var textarea  = form.querySelector('.gca-lc__textarea');
                 var parentEl  = form.querySelector('[name="parent_id"]');
-                var content   = textarea ? textarea.value.trim() : '';
+                var content   = textarea ? (encodeMentions ? encodeMentions(textarea.value.trim()) : textarea.value.trim()) : '';
                 var parentId  = parentEl ? parseInt(parentEl.value, 10) : 0;
                 if (!content) { if (textarea) { textarea.focus(); } return; }
 
@@ -1015,7 +1027,7 @@ add_action('wp_enqueue_scripts', function (): void {
     }
 
     // Expose init so community wall JS can wire dynamically created .gca-lc elements
-    window.GcaLc = { init: initComponent };
+    window.GcaLc = { init: initComponent, setupMentions: setupMentions };
 
     document.addEventListener('DOMContentLoaded', function () {
         document.querySelectorAll('.gca-lc').forEach(initComponent);
@@ -1512,6 +1524,41 @@ function gca_get_search_autocomplete_items(string $term, int $limit = 5): array
         }
     }
 
+    $staff_dir_page = get_page_by_path('staff-directory');
+    $staff_dir_url  = ($staff_dir_page instanceof WP_Post) ? get_permalink($staff_dir_page) : null;
+
+    $sections = [
+        ['keywords' => ['news'],                        'title' => __('News', 'gca-intranet'),            'url' => get_post_type_archive_link('news')],
+        ['keywords' => ['blog', 'blogs'],               'title' => __('Blogs', 'gca-intranet'),           'url' => get_post_type_archive_link('blog')],
+        ['keywords' => ['work update', 'work updates'], 'title' => __('Work Updates', 'gca-intranet'),    'url' => get_post_type_archive_link('work_update')],
+        ['keywords' => ['event', 'events'],             'title' => __('Events', 'gca-intranet'),          'url' => get_post_type_archive_link('event')],
+        ['keywords' => ['staff directory'],             'title' => __('Staff Directory', 'gca-intranet'), 'url' => $staff_dir_url],
+    ];
+
+    foreach ($sections as $section) {
+        if (empty($section['url'])) {
+            continue;
+        }
+        $section_score = 0;
+        foreach ($section['keywords'] as $kw) {
+            if ($q_lower === $kw) {
+                $section_score = 100;
+                break;
+            } elseif (str_contains($q_lower, $kw) || str_contains($kw, $q_lower)) {
+                $section_score = max($section_score, 50);
+            }
+        }
+        if ($section_score > 0) {
+            $results[] = [
+                'title'    => $section['title'],
+                'meta'     => __('Section', 'gca-intranet'),
+                'url'      => (string) $section['url'],
+                'score'    => $section_score,
+                'sort_key' => $section['title'],
+            ];
+        }
+    }
+
     $post_types = array_values(array_diff(
         array_keys(get_post_types(['public' => true, 'exclude_from_search' => false])),
         ['blog', 'news']
@@ -1521,7 +1568,7 @@ function gca_get_search_autocomplete_items(string $term, int $limit = 5): array
         's'                   => $term,
         'post_type'           => $post_types,
         'post_status'         => 'publish',
-        'posts_per_page'      => max(10, $limit),
+        'posts_per_page'      => max(30, $limit * 6),
         'orderby'             => 'relevance',
         'order'               => 'DESC',
         'suppress_filters'    => false,
@@ -1568,7 +1615,7 @@ function gca_get_search_autocomplete_items(string $term, int $limit = 5): array
     });
 
     $results = array_values(array_reduce($results, static function (array $carry, array $item): array {
-        $key = mb_strtolower($item['title']) . '|' . untrailingslashit($item['url']);
+        $key = mb_strtolower($item['title']) . '|' . mb_strtolower($item['meta']);
         if (!isset($carry[$key])) {
             $carry[$key] = $item;
         }

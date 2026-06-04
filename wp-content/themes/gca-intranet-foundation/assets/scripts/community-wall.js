@@ -327,11 +327,16 @@
         var textarea   = document.getElementById('gca-cw-content');
         var charsLeft  = document.getElementById('gca-cw-chars-left');
         var charHint   = document.getElementById('gca-cw-char-hint');
-        var fileInput  = document.getElementById('gca-cw-file-input');
-        var mediaPrev  = document.getElementById('gca-cw-media-preview');
-        var errorEl    = document.getElementById('gca-cw-error');
+        var fileInput    = document.getElementById('gca-cw-file-input');
+        var mediaPrev    = document.getElementById('gca-cw-media-preview');
+        var errorEl      = document.getElementById('gca-cw-error');
+        var mentionList  = document.getElementById('gca-cw-mention-list');
 
         if (!triggerBtn || !formArea || !form) { return; }
+
+        var encodeMentions = (textarea && mentionList && window.GcaLc && window.GcaLc.setupMentions)
+            ? window.GcaLc.setupMentions(textarea, mentionList)
+            : null;
 
         function openForm() {
             triggerBtn.setAttribute('aria-expanded', 'true');
@@ -347,6 +352,7 @@
             if (charHint)  { charHint.classList.remove('gca-cw-compose__char-hint--warning'); }
             if (mediaPrev) { mediaPrev.innerHTML = ''; mediaPrev.hidden = true; }
             if (errorEl)   { errorEl.hidden = true; }
+            if (textarea)  { textarea.removeAttribute('aria-invalid'); }
             pendingMediaIds = [];
             activeUploads   = 0;
             setPostBtnState();
@@ -458,8 +464,13 @@
 
         form.addEventListener('submit', function (e) {
             e.preventDefault();
-            var content = textarea ? textarea.value.trim() : '';
-            if (!content) { if (textarea) { textarea.focus(); } return; }
+            var raw     = textarea ? textarea.value.trim() : '';
+            var content = (raw && encodeMentions) ? encodeMentions(raw) : raw;
+            if (!content) {
+                if (textarea) { textarea.setAttribute('aria-invalid', 'true'); textarea.focus(); }
+                return;
+            }
+            if (textarea) { textarea.removeAttribute('aria-invalid'); }
 
             if (submitBtn) { submitBtn.disabled = true; submitBtn.textContent = 'Posting…'; }
 
@@ -485,7 +496,9 @@
                     if (errorEl) {
                         errorEl.textContent = (err && err.error) ? err.error : 'Could not post update. Please try again.';
                         errorEl.hidden = false;
+                        errorEl.focus();
                     }
+                    if (textarea) { textarea.setAttribute('aria-invalid', 'true'); }
                 })
                 .finally(function () {
                     if (submitBtn) {

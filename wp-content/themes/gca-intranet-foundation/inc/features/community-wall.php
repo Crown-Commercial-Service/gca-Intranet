@@ -124,11 +124,27 @@ function gca_cw_get_lc_data(int $post_id, int $current_user_id): array
 }
 
 /**
- * Escape content for display: nl2br + linkify #hashtags.
+ * Escape content for display: nl2br + linkify @mentions and #hashtags.
  */
 function gca_cw_render_content(string $raw): string
 {
     $html = nl2br(esc_html($raw));
+
+    $html = (string) preg_replace_callback(
+        '/@\[([^\]]+)\]\((\d+)\)/',
+        function (array $m): string {
+            $display = $m[1]; // already HTML-escaped by esc_html above
+            $user_id = (int) $m[2];
+            $user    = get_userdata($user_id);
+            if (!$user) {
+                return '@' . $display;
+            }
+            $url = esc_url(home_url('/profile/' . $user->user_nicename));
+            return '<a href="' . $url . '" class="gca-lc__mention">@' . $display . '</a>';
+        },
+        $html
+    );
+
     return (string) preg_replace_callback(
         '/#([a-zA-Z0-9_]+)/',
         fn ($m) => '<span class="gca-cw__hashtag">#' . esc_html($m[1]) . '</span>',
