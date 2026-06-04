@@ -214,7 +214,7 @@ function gca_cw_format_item(WP_Post $post, int $current_user_id): array
             if (!function_exists('gca_qa_format_question')) { return []; }
             $qa = gca_qa_format_question($post, $current_user_id);
             if (($qa['status'] ?? '') !== 'answered') { return []; }
-            return array_merge($qa, ['kind' => 'qa', 'can_delete' => $can_delete]);
+            return array_merge($qa, ['kind' => 'qa']);
         default:
             return gca_cw_format_post($post, $current_user_id);
     }
@@ -327,8 +327,7 @@ function gca_cw_get_feed(WP_REST_Request $req): WP_REST_Response
         'post_status'    => 'publish',
         'posts_per_page' => $per_page,
         'paged'          => $page,
-        'orderby'        => 'date',
-        'order'          => 'DESC',
+        'orderby'        => ['date' => 'DESC', 'ID' => 'DESC'],
         'no_found_rows'  => false,
     ]);
 
@@ -341,6 +340,11 @@ function gca_cw_get_feed(WP_REST_Request $req): WP_REST_Response
             }
         }
     }
+
+    // Re-sort: items filtered post-fetch (e.g. unanswered Q&As) can disrupt DB page ordering.
+    usort($items, function (array $a, array $b): int {
+        return strcmp($b['date_iso'] ?? '', $a['date_iso'] ?? '');
+    });
 
     return new WP_REST_Response([
         'posts'       => $items,

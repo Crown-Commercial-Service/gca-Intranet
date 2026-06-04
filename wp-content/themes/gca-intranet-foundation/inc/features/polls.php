@@ -636,7 +636,7 @@ function gca_poll_delete(WP_REST_Request $req): WP_REST_Response
         return new WP_REST_Response(['error' => 'Poll not found'], 404);
     }
 
-    if ((int) $post->post_author !== $uid && !current_user_can('delete_others_posts')) {
+    if ((int) $post->post_author !== $uid && !current_user_can('manage_options')) {
         return new WP_REST_Response(['error' => 'Forbidden'], 403);
     }
 

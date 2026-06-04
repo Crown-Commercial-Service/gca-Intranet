@@ -479,6 +479,7 @@ function gca_qa_format_question(WP_Post $post, int $current_user_id): array
         'answerer_profile' => $answerer_profile,
         'is_own'           => (int) $post->post_author === $current_user_id,
         'can_moderate'     => current_user_can('qa_answer_questions'),
+        'can_delete'       => $is_answered && current_user_can('manage_options'),
         'like_count'       => count($liked_by),
         'user_has_liked'   => in_array($current_user_id, $liked_by, true),
         'comment_count'    => $comment_count,
@@ -611,8 +612,13 @@ function gca_qa_delete_question(WP_REST_Request $req): WP_REST_Response
         return new WP_REST_Response(['error' => 'Question not found'], 404);
     }
 
-    if ((int) $post->post_author !== $uid && !current_user_can('delete_others_posts')) {
+    if (!current_user_can('manage_options')) {
         return new WP_REST_Response(['error' => 'Forbidden'], 403);
+    }
+
+    $answer = trim((string) get_post_meta($question_id, GCA_QA_ANSWER_META, true));
+    if (empty($answer)) {
+        return new WP_REST_Response(['error' => 'Only answered questions can be deleted from the front end'], 403);
     }
 
     wp_delete_post($question_id, true);
