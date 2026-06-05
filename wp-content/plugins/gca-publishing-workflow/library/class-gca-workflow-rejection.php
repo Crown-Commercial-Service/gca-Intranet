@@ -25,8 +25,13 @@ class GCA_Workflow_Rejection {
     // -------------------------------------------------------------------------
 
     public static function register_meta_boxes(): void {
-        // Reviewer meta box — visible only to users who can publish pages.
-        if ( current_user_can( 'publish_pages' ) ) {
+        $user_id     = get_current_user_id();
+        $is_reviewer = GCA_Workflow_Roles::user_has_role( $user_id, GCA_Workflow_Roles::PUBLISHER )
+                    || GCA_Workflow_Roles::user_has_role( $user_id, GCA_Workflow_Roles::PUBLISHER_ADMIN )
+                    || current_user_can( 'manage_options' );
+
+        // Reviewer meta box — visible only to publishers and above.
+        if ( $is_reviewer ) {
             add_meta_box(
                 'gca_rejection_comments',
                 'Rejection Comments',
