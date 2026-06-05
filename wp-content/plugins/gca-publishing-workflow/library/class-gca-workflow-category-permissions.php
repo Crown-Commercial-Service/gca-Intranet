@@ -208,13 +208,18 @@ class GCA_Workflow_Category_Permissions {
             return;
         }
 
+        $teams = self::get_contributor_teams( $user_id );
+
+        // No teams assigned — keep the default author=me restriction.
+        if ( empty( $teams ) ) {
+            return;
+        }
+
         // Lift the default "author = me" restriction so contributors can see all
         // pages within their assigned team, not just their own authored pages.
         $query->set( 'author', '' );
 
-        $teams = self::get_contributor_teams( $user_id );
-
-        if ( empty( $teams ) || in_array( 'all', $teams, true ) ) {
+        if ( in_array( 'all', $teams, true ) ) {
             return;
         }
 
