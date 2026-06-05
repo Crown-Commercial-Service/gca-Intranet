@@ -404,42 +404,82 @@
     var autocomplete;
 
     function setupShoutoutCompose() {
-        var triggerBtn     = document.getElementById('gca-shoutout-trigger');
-        var formArea       = document.getElementById('gca-shoutout-form-area');
-        var cancelBtn      = document.getElementById('gca-shoutout-cancel');
-        var form           = document.getElementById('gca-shoutout-form');
-        var submitBtn      = document.getElementById('gca-shoutout-submit');
-        var searchInput    = document.getElementById('gca-shoutout-recipient-search');
-        var hiddenId       = document.getElementById('gca-shoutout-recipient-id');
-        var suggestions    = document.getElementById('gca-shoutout-suggestions');
-        var textarea       = document.getElementById('gca-shoutout-content');
-        var charsLeft      = document.getElementById('gca-shoutout-chars-left');
-        var errorEl        = document.getElementById('gca-shoutout-error');
-        var categoryGroup  = document.getElementById('gca-shoutout-category-group');
-        var categorySelect = document.getElementById('gca-shoutout-category');
+        var formId     = parseInt(((window.gcaCommunityData || {}).shoutoutFormId || 0), 10);
+        var form       = formId ? document.getElementById('gform_' + formId) : null;
+        var triggerBtn = document.getElementById('gca-shoutout-trigger');
+        var formArea   = document.getElementById('gca-shoutout-form-area');
+        var errorEl    = document.getElementById('gca-shoutout-error');
 
         if (!form) { return; }
 
-        // Populate category dropdown
-        apiFetch('GET', '/shoutouts/categories').then(function (categories) {
-            if (!categorySelect) { return; }
-            categorySelect.innerHTML = '<option value="">Select a category</option>';
-            if (categories && categories.length) {
-                categories.forEach(function (cat) {
-                    var opt = document.createElement('option');
-                    opt.value = cat.id;
-                    opt.textContent = cat.name;
-                    categorySelect.appendChild(opt);
-                });
-            }
-            categorySelect.disabled = false;
-        });
+        var searchInput    = document.getElementById('input_' + formId + '_1');
+        var hiddenId       = document.getElementById('input_' + formId + '_2');
+        var categorySelect = document.getElementById('input_' + formId + '_3');
+        var textarea       = document.getElementById('input_' + formId + '_4');
+        var submitBtn      = document.getElementById('gform_submit_button_' + formId);
 
+        // ── Apply govuk / compose classes to GF-rendered fields ─────────
+        if (searchInput)    { searchInput.classList.add('govuk-input'); }
+        if (categorySelect) { categorySelect.classList.add('govuk-select'); }
+        if (textarea) {
+            textarea.classList.add('govuk-textarea', 'gca-cw-compose__textarea');
+            textarea.setAttribute('maxlength', '500');
+        }
+        if (submitBtn) { submitBtn.classList.add('gca-lc-delete-modal__confirm'); }
+
+        // ── Inject autocomplete suggestions list ────────────────────────
+        var suggestions = document.createElement('ul');
+        suggestions.id        = 'gca-shoutout-suggestions';
+        suggestions.className = 'gca-shoutout-compose__suggestions';
+        suggestions.setAttribute('role', 'listbox');
+        suggestions.setAttribute('aria-label', 'Colleague suggestions');
+        suggestions.hidden = true;
+
+        if (searchInput) {
+            searchInput.setAttribute('role', 'combobox');
+            searchInput.setAttribute('aria-autocomplete', 'list');
+            searchInput.setAttribute('aria-expanded', 'false');
+            searchInput.setAttribute('aria-controls', 'gca-shoutout-suggestions');
+            searchInput.setAttribute('autocomplete', 'off');
+            var recipientContainer = searchInput.parentNode;
+            if (recipientContainer) {
+                recipientContainer.classList.add('gca-shoutout-compose__search-wrap');
+                recipientContainer.appendChild(suggestions);
+            }
+        }
+
+        // ── Inject char counter after textarea ──────────────────────────
+        var charsLeft;
+        if (textarea && textarea.parentNode) {
+            var charHint = document.createElement('p');
+            charHint.className = 'gca-cw-compose__char-hint';
+            charHint.id = 'gca-shoutout-char-hint';
+            charHint.setAttribute('aria-live', 'polite');
+            charHint.innerHTML = '<span id="gca-shoutout-chars-left">500</span> characters remaining';
+            textarea.setAttribute('aria-describedby', 'gca-shoutout-char-hint gca-shoutout-error');
+            textarea.parentNode.insertBefore(charHint, textarea.nextSibling);
+            charsLeft = document.getElementById('gca-shoutout-chars-left');
+        }
+
+        // ── Inject Cancel button + style footer ─────────────────────────
+        var cancelBtn;
+        if (submitBtn && submitBtn.parentNode) {
+            submitBtn.parentNode.classList.add('gca-cw-compose__actions', 'gca-lc-delete-modal__actions');
+            cancelBtn = document.createElement('button');
+            cancelBtn.type = 'button';
+            cancelBtn.className = 'gca-lc-delete-modal__cancel';
+            cancelBtn.id = 'gca-shoutout-cancel';
+            cancelBtn.textContent = 'Cancel';
+            submitBtn.parentNode.insertBefore(cancelBtn, submitBtn.nextSibling);
+        }
+
+        // ── Autocomplete ────────────────────────────────────────────────
         autocomplete = setupRecipientAutocomplete(searchInput, suggestions, hiddenId);
 
+        // ── Open / Close ────────────────────────────────────────────────
         function openForm() {
-            if (triggerBtn) { triggerBtn.setAttribute('aria-expanded', 'true'); }
-            if (formArea)   { formArea.hidden = false; }
+            if (triggerBtn)  { triggerBtn.setAttribute('aria-expanded', 'true'); }
+            if (formArea)    { formArea.hidden = false; }
             if (searchInput) { searchInput.focus(); }
         }
 
@@ -458,7 +498,6 @@
         if (triggerBtn) { triggerBtn.addEventListener('click', openForm); }
         if (cancelBtn)  { cancelBtn.addEventListener('click', closeForm); }
 
-        // Sidebar button and "Shout-out a colleague" in compose footer
         var sidebarBtn = document.querySelector('.gca-cw__sidebar-btn--shoutout');
         if (sidebarBtn) {
             sidebarBtn.addEventListener('click', function () {
@@ -474,8 +513,10 @@
             });
         }
 
+        // ── Form submit (capture phase overrides GF's default POST) ─────
         form.addEventListener('submit', function (e) {
             e.preventDefault();
+            e.stopImmediatePropagation();
 
             var recipientId = autocomplete ? autocomplete.getSelectedId() : null;
             if (!recipientId) {
@@ -488,7 +529,7 @@
             }
             if (searchInput) { searchInput.removeAttribute('aria-invalid'); }
 
-            var content    = textarea ? textarea.value.trim() : '';
+            var content = textarea ? textarea.value.trim() : '';
             if (!content) {
                 if (textarea) { textarea.setAttribute('aria-invalid', 'true'); textarea.focus(); }
                 return;
@@ -506,7 +547,7 @@
             }
             if (categorySelect) { categorySelect.removeAttribute('aria-invalid'); }
 
-            if (submitBtn) { submitBtn.disabled = true; submitBtn.textContent = 'Posting…'; }
+            if (submitBtn) { submitBtn.disabled = true; submitBtn.value = 'Posting…'; }
             if (errorEl)   { errorEl.hidden = true; }
 
             apiFetch('POST', '/shoutouts', { recipient_id: recipientId, content: content, category_id: categoryId })
@@ -530,7 +571,6 @@
 
                     prependTo(shoutoutFeedEl);
 
-                    // Also push to main feed if it's currently visible
                     var mainFeedPanel = document.getElementById('gca-panel-feed');
                     if (mainFeedPanel && !mainFeedPanel.hidden) {
                         prependTo(document.getElementById('gca-cw-feed'));
@@ -546,10 +586,10 @@
                 .finally(function () {
                     if (submitBtn) {
                         submitBtn.disabled = false;
-                        submitBtn.textContent = 'Post shout-out';
+                        submitBtn.value = 'Post shout-out';
                     }
                 });
-        });
+        }, true); // capture phase — fires before GF's default form handler
     }
 
     // ── Event delegation (delete, dropdowns) ──────────────────────────────────
