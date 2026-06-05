@@ -238,18 +238,29 @@ class GCA_Sync_Profile_Pictures {
         // letter-avatars to be misclassified as real photos. Rounding to the
         // nearest 16 collapses those blended pixels back into their dominant
         // colour while still leaving real photographs with many distinct values.
-        $unique = [];
+        //
+        // Greyscale photos have R=G=B for every pixel, producing at most 16
+        // quantised RGB values — below the colour threshold. We also track
+        // quantised luminance: a real B&W photo spans the full brightness range
+        // (≥ 10 distinct 4-bit luma levels), whereas a letter-avatar has only
+        // 2–3 (background + white initial).
+        $unique_rgb  = [];
+        $unique_luma = [];
         for ( $x = 0; $x < 20; $x++ ) {
             for ( $y = 0; $y < 20; $y++ ) {
                 $c = imagecolorat( $sample, $x, $y );
-                $quantised = ( ( ( $c >> 16 ) & 0xFF ) >> 4 ) << 8
-                           | ( ( ( $c >> 8  ) & 0xFF ) >> 4 ) << 4
-                           | ( (   $c         & 0xFF ) >> 4 );
-                $unique[ $quantised ] = true;
+                $r = ( $c >> 16 ) & 0xFF;
+                $g = ( $c >> 8  ) & 0xFF;
+                $b =   $c         & 0xFF;
+
+                $unique_rgb[ ( ( $r >> 4 ) << 8 ) | ( ( $g >> 4 ) << 4 ) | ( $b >> 4 ) ] = true;
+
+                $luma                        = (int) ( 0.299 * $r + 0.587 * $g + 0.114 * $b );
+                $unique_luma[ $luma >> 4 ]   = true;
             }
         }
         imagedestroy( $sample );
 
-        return count( $unique ) < 30;
+        return count( $unique_rgb ) < 30 && count( $unique_luma ) < 10;
     }
 }
