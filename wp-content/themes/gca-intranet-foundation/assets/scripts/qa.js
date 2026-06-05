@@ -473,9 +473,7 @@
     }
 
     function setupQaFeedEvents() {
-        if (!qaFeedEl) { return; }
-
-        qaFeedEl.addEventListener('click', function (e) {
+        document.body.addEventListener('click', function (e) {
 
             // Delete question
             var deleteBtn = e.target.closest('[data-qa-action="delete-question"]');
