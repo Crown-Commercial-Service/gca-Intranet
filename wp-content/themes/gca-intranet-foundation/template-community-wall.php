@@ -270,10 +270,10 @@ endif;
                                     </div>
                                 </div>
 
-                                <div class="govuk-form-group" id="gca-shoutout-category-group" hidden>
+                                <div class="govuk-form-group" id="gca-shoutout-category-group">
                                     <label class="govuk-label" for="gca-shoutout-category">Category</label>
-                                    <select id="gca-shoutout-category" class="govuk-select" name="category_id">
-                                        <option value="">Select a category (optional)</option>
+                                    <select id="gca-shoutout-category" class="govuk-select" name="category_id" disabled>
+                                        <option value="">Loading categories&hellip;</option>
                                     </select>
                                 </div>
 

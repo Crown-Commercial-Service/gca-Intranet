@@ -330,9 +330,9 @@ add_action('rest_api_init', function (): void {
                     'validate_callback' => fn ($v) => is_string($v) && mb_strlen(trim($v)) > 0 && mb_strlen($v) <= 500,
                 ],
                 'category_id' => [
-                    'required'          => false,
-                    'default'           => 0,
+                    'required'          => true,
                     'sanitize_callback' => 'absint',
+                    'validate_callback' => fn ($v) => is_numeric($v) && (int) $v > 0,
                 ],
             ],
         ],

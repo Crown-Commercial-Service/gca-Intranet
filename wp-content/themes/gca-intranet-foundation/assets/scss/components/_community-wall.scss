@@ -246,6 +246,14 @@ $gca-cw-compose-input-bg: #f5f6fa;
     font-size: govuk-px-to-rem(19);
 }
 
+.gca-cw-compose__form .govuk-select {
+    border: 1px solid #b1b4b6 !important;
+    border-radius: 4px;
+    background-color: #f3f2f1;
+    font-size: govuk-px-to-rem(19);
+    width: 100%;
+}
+
 .gca-cw-compose__char-hint {
     @include govuk-font($size: 14);
     color: govuk-colour('dark-grey');

@@ -422,14 +422,17 @@
 
         // Populate category dropdown
         apiFetch('GET', '/shoutouts/categories').then(function (categories) {
-            if (!categories || !categories.length || !categorySelect) { return; }
-            categories.forEach(function (cat) {
-                var opt = document.createElement('option');
-                opt.value = cat.id;
-                opt.textContent = cat.name;
-                categorySelect.appendChild(opt);
-            });
-            if (categoryGroup) { categoryGroup.hidden = false; }
+            if (!categorySelect) { return; }
+            categorySelect.innerHTML = '<option value="">Select a category</option>';
+            if (categories && categories.length) {
+                categories.forEach(function (cat) {
+                    var opt = document.createElement('option');
+                    opt.value = cat.id;
+                    opt.textContent = cat.name;
+                    categorySelect.appendChild(opt);
+                });
+            }
+            categorySelect.disabled = false;
         });
 
         autocomplete = setupRecipientAutocomplete(searchInput, suggestions, hiddenId);
@@ -446,7 +449,7 @@
             if (form)          { form.reset(); }
             if (charsLeft)     { charsLeft.textContent = '500'; }
             if (errorEl)       { errorEl.hidden = true; }
-            if (categorySelect){ categorySelect.value = ''; }
+            if (categorySelect){ categorySelect.value = ''; categorySelect.removeAttribute('aria-invalid'); }
             if (autocomplete)  { autocomplete.reset(); }
             if (searchInput)   { searchInput.removeAttribute('aria-invalid'); }
             if (textarea)      { textarea.removeAttribute('aria-invalid'); }
@@ -493,6 +496,15 @@
             if (textarea) { textarea.removeAttribute('aria-invalid'); }
 
             var categoryId = categorySelect ? parseInt(categorySelect.value, 10) || 0 : 0;
+            if (!categoryId) {
+                if (errorEl) {
+                    errorEl.textContent = 'Please select a category.';
+                    errorEl.hidden = false;
+                }
+                if (categorySelect) { categorySelect.setAttribute('aria-invalid', 'true'); categorySelect.focus(); }
+                return;
+            }
+            if (categorySelect) { categorySelect.removeAttribute('aria-invalid'); }
 
             if (submitBtn) { submitBtn.disabled = true; submitBtn.textContent = 'Posting…'; }
             if (errorEl)   { errorEl.hidden = true; }
