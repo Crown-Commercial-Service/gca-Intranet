@@ -259,6 +259,7 @@ endif;
                                             class="govuk-input"
                                             placeholder="Search for a colleague&hellip;"
                                             autocomplete="off"
+                                            role="combobox"
                                             aria-autocomplete="list"
                                             aria-expanded="false"
                                             aria-controls="gca-shoutout-suggestions"
@@ -327,7 +328,14 @@ endif;
                 <div id="gca-panel-qa" hidden>
 
                     <div id="gca-qa-pending-banner" class="gca-qa-pending-banner" hidden>
-                        <p class="gca-qa-pending-banner__intro govuk-body-s">Your submitted questions — we&rsquo;ll answer them as soon as we can.</p>
+                        <div class="gca-qa-pending-banner__header">
+                            <p class="gca-qa-pending-banner__intro govuk-body-s">Your submitted questions — we&rsquo;ll answer them as soon as we can.</p>
+                            <button type="button" class="gca-qa-pending-banner__close" id="gca-qa-pending-close" aria-label="Close my submissions">
+                                <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true" focusable="false">
+                                    <path d="M2 2l12 12M14 2L2 14" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                                </svg>
+                            </button>
+                        </div>
                         <div id="gca-qa-pending-list"></div>
                     </div>
 

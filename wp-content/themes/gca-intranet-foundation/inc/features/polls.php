@@ -406,7 +406,8 @@ function gca_poll_format(WP_Post $post, int $current_user_id): array
         'date_iso'        => (string) get_post_time('c', true, $post),
         'date_formatted'  => (string) get_post_time('j F Y', false, $post),
         'is_own'          => (int) $post->post_author === $current_user_id,
-        'can_delete'      => (int) $post->post_author === $current_user_id || current_user_can('manage_options'),
+        'can_delete'      => current_user_can('manage_options') ||
+            (gca_cw_is_community_host($current_user_id) && (int) $post->post_author === $current_user_id),
         'can_see_voters'  => $can_see_voters,
         'like_count'      => count($liked_by),
         'user_has_liked'  => in_array($current_user_id, $liked_by, true),
@@ -636,7 +637,8 @@ function gca_poll_delete(WP_REST_Request $req): WP_REST_Response
         return new WP_REST_Response(['error' => 'Poll not found'], 404);
     }
 
-    if ((int) $post->post_author !== $uid && !current_user_can('manage_options')) {
+    if (!current_user_can('manage_options') &&
+        !(gca_cw_is_community_host($uid) && (int) $post->post_author === $uid)) {
         return new WP_REST_Response(['error' => 'Forbidden'], 403);
     }
 

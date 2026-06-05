@@ -33,6 +33,59 @@
         return d.innerHTML;
     }
 
+    function confirmDelete(triggerEl, title, body) {
+        return new Promise(function (resolve) {
+            var previouslyFocused = document.activeElement;
+            var modal = document.createElement('div');
+            modal.className = 'gca-lc-delete-modal';
+            modal.setAttribute('role', 'presentation');
+            modal.innerHTML =
+                '<div class="gca-lc-delete-modal__overlay" data-action="cancel-delete"></div>' +
+                '<div class="gca-lc-delete-modal__dialog" role="dialog" aria-modal="true" aria-labelledby="gca-qa-delete-title" aria-describedby="gca-qa-delete-description" tabindex="-1">' +
+                '<button type="button" class="gca-lc-delete-modal__close" data-action="cancel-delete" aria-label="Close delete confirmation">' +
+                '<span aria-hidden="true">&times;</span>' +
+                '</button>' +
+                '<div class="gca-lc-delete-modal__content">' +
+                '<h2 class="gca-lc-delete-modal__title" id="gca-qa-delete-title">' + esc(title) + '</h2>' +
+                '<p class="gca-lc-delete-modal__body" id="gca-qa-delete-description">' + esc(body) + '</p>' +
+                '<div class="gca-lc-delete-modal__actions">' +
+                '<button type="button" class="gca-lc-delete-modal__confirm" data-action="confirm-delete">Yes, delete it</button>' +
+                '<button type="button" class="gca-lc-delete-modal__cancel" data-action="cancel-delete">Cancel</button>' +
+                '</div>' +
+                '</div>' +
+                '</div>';
+            function close(confirmed) {
+                document.removeEventListener('keydown', onKeydown);
+                modal.remove();
+                if (previouslyFocused && typeof previouslyFocused.focus === 'function') {
+                    previouslyFocused.focus();
+                } else if (triggerEl && typeof triggerEl.focus === 'function') {
+                    triggerEl.focus();
+                }
+                resolve(confirmed);
+            }
+            function onKeydown(e) {
+                if (e.key === 'Escape') { close(false); return; }
+                if (e.key !== 'Tab') { return; }
+                var focusable = modal.querySelectorAll('button');
+                var first = focusable[0]; var last = focusable[focusable.length - 1];
+                if (!first || !last) { return; }
+                if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
+                else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
+            }
+            modal.addEventListener('click', function (e) {
+                var btn = e.target.closest('[data-action]');
+                if (!btn) { return; }
+                if (btn.dataset.action === 'confirm-delete') { close(true); }
+                if (btn.dataset.action === 'cancel-delete')  { close(false); }
+            });
+            document.body.appendChild(modal);
+            document.addEventListener('keydown', onKeydown);
+            var cancelBtn = modal.querySelector('[data-action="cancel-delete"].gca-lc-delete-modal__cancel');
+            if (cancelBtn) { setTimeout(function () { cancelBtn.focus(); }, 50); }
+        });
+    }
+
     function relativeTime(iso) {
         if (!iso) { return ''; }
         var then = new Date(iso);
@@ -57,7 +110,7 @@
     function buildLcHtml(postId, likeCount, userHasLiked, commentCount) {
         var liked = userHasLiked ? 'true' : 'false';
         return (
-            '<section class="gca-lc" data-post-id="' + postId + '" aria-label="Likes and comments">' +
+            '<section class="gca-lc" data-post-id="' + postId + '" aria-label="Likes and comments, post ' + postId + '">' +
             '<div class="govuk-visually-hidden" aria-live="polite" aria-atomic="true" id="gca-lc-status-' + postId + '"></div>' +
             '<div class="gca-lc__like-bar">' +
 
@@ -118,7 +171,7 @@
             : '';
 
         var moreMenuHtml = '';
-        if (q.can_moderate || q.can_delete) {
+        if (q.can_delete) {
             moreMenuHtml = (
                 '<div class="gca-cw-post__more-wrap">' +
                 '<button type="button" class="gca-cw-post__more-btn" aria-label="More options"' +
@@ -127,15 +180,9 @@
                 '<circle cx="12" cy="5" r="1.5"/><circle cx="12" cy="12" r="1.5"/><circle cx="12" cy="19" r="1.5"/>' +
                 '</svg></button>' +
                 '<ul class="gca-cw-post__dropdown" id="gca-qa-dd-' + q.id + '" role="menu" hidden>' +
-                (q.can_moderate
-                    ? '<li role="none"><button type="button" role="menuitem" class="gca-cw-post__dropdown-btn"' +
-                      ' data-qa-action="edit-answer" data-qa-id="' + q.id + '">Edit answer</button></li>'
-                    : '') +
-                (q.can_delete
-                    ? '<li role="none"><button type="button" role="menuitem"' +
-                      ' class="gca-cw-post__dropdown-btn gca-cw-post__dropdown-btn--delete"' +
-                      ' data-qa-action="delete-question" data-qa-id="' + q.id + '">Delete question</button></li>'
-                    : '') +
+                '<li role="none"><button type="button" role="menuitem"' +
+                ' class="gca-cw-post__dropdown-btn gca-cw-post__dropdown-btn--delete"' +
+                ' data-qa-action="delete-question" data-qa-id="' + q.id + '">Delete question</button></li>' +
                 '</ul></div>'
             );
         }
@@ -220,7 +267,7 @@
     function populatePending(myPending) {
         if (!myPending || !myPending.length) { return; }
 
-        if (qaPendingBannerEl) { qaPendingBannerEl.hidden = false; }
+        // Banner stays hidden until user clicks "View all my submissions"
         if (qaPendingListEl) {
             qaPendingListEl.innerHTML = myPending.map(renderPendingCard).join('');
         }
@@ -416,7 +463,7 @@
         });
     }
 
-    // ── Feed event delegation (dropdown menu, delete, edit-answer) ─────────────
+    // ── Feed event delegation (dropdown menu + delete) ────────────────────────
 
     function closeAllQaDropdowns() {
         document.querySelectorAll('[id^="gca-qa-dd-"]').forEach(function (d) { d.hidden = true; });
@@ -430,122 +477,28 @@
 
         qaFeedEl.addEventListener('click', function (e) {
 
-            // Three-dot toggle
-            var moreBtn = e.target.closest('.gca-cw-post__more-btn[data-qa-id]');
-            if (moreBtn) {
-                e.stopPropagation();
-                var qid      = moreBtn.dataset.qaId;
-                var dropdown = document.getElementById('gca-qa-dd-' + qid);
-                if (!dropdown) { return; }
-                var opening = dropdown.hidden;
-                closeAllQaDropdowns();
-                if (opening) {
-                    dropdown.hidden = false;
-                    moreBtn.setAttribute('aria-expanded', 'true');
-                }
-                return;
-            }
-
             // Delete question
             var deleteBtn = e.target.closest('[data-qa-action="delete-question"]');
             if (deleteBtn) {
                 var delId = deleteBtn.dataset.qaId;
-                if (!confirm('Are you sure you want to delete this question?')) { return; }
-                apiFetch('DELETE', '/qa/questions/' + delId)
-                    .then(function () {
-                        var cardEl = document.getElementById('gca-qa-q-' + delId);
-                        if (cardEl) { cardEl.remove(); }
-                    })
-                    .catch(function () {
-                        alert('Could not delete question. Please try again.');
+                confirmDelete(deleteBtn, 'Are you sure you want to delete this question?', 'This will permanently delete the question. You cannot undo this action.')
+                    .then(function (confirmed) {
+                        if (!confirmed) { return; }
+                        var positions = [];
+                        document.querySelectorAll('#gca-qa-q-' + delId).forEach(function (el) {
+                            positions.push({ el: el, parent: el.parentNode, next: el.nextSibling });
+                            el.remove();
+                        });
+                        if (window.gcaShowDeleteToast) { window.gcaShowDeleteToast('Question deleted successfully.'); }
+                        apiFetch('DELETE', '/qa/questions/' + delId)
+                            .catch(function () {
+                                positions.forEach(function (p) { if (p.parent) { p.parent.insertBefore(p.el, p.next); } });
+                                alert('Could not delete question. Please try again.');
+                            });
                     });
                 return;
             }
 
-            // Edit answer (moderator inline edit)
-            var editBtn = e.target.closest('[data-qa-action="edit-answer"]');
-            if (editBtn) {
-                closeAllQaDropdowns();
-                var editId  = editBtn.dataset.qaId;
-                var cardEl  = document.getElementById('gca-qa-q-' + editId);
-                if (!cardEl) { return; }
-
-                var answerBlock = cardEl.querySelector('.gca-qa-card__answer-block');
-                if (!answerBlock) { return; }
-
-                var currentText = answerBlock.innerText || '';
-
-                // Replace answer block with inline edit form
-                var editForm = document.createElement('div');
-                editForm.className = 'gca-qa-edit-form';
-                editForm.innerHTML = (
-                    '<textarea class="govuk-textarea gca-qa-edit-form__textarea" rows="6" maxlength="5000">' + esc(currentText.trim()) + '</textarea>' +
-                    '<div class="gca-qa-edit-form__actions gca-lc-delete-modal__actions">' +
-                    '<button type="button" class="gca-lc-delete-modal__confirm" data-qa-edit-save="' + editId + '">Save answer</button>' +
-                    '<button type="button" class="gca-lc-delete-modal__cancel" data-qa-edit-cancel="' + editId + '">Cancel</button>' +
-                    '</div>'
-                );
-                answerBlock.replaceWith(editForm);
-                editForm.querySelector('textarea').focus();
-            }
-        });
-
-        // Edit answer – save / cancel (delegated on document since editForm is created dynamically)
-        document.addEventListener('click', function (e) {
-            var saveBtn = e.target.closest('[data-qa-edit-save]');
-            if (saveBtn) {
-                var saveId   = saveBtn.dataset.qaEditSave;
-                var editForm = saveBtn.closest('.gca-qa-edit-form');
-                var textarea = editForm ? editForm.querySelector('textarea') : null;
-                var newText  = textarea ? textarea.value.trim() : '';
-
-                if (!newText) { return; }
-
-                saveBtn.disabled = true;
-                saveBtn.textContent = 'Saving…';
-
-                apiFetch('POST', '/qa/questions/' + saveId + '/answer', { answer: newText })
-                    .then(function (q) {
-                        var cardEl = document.getElementById('gca-qa-q-' + saveId);
-                        if (!cardEl) { return; }
-                        // Rebuild the answer block
-                        var newAnswerBlock = document.createElement('div');
-                        newAnswerBlock.className = 'gca-qa-card__answer-block';
-                        newAnswerBlock.innerHTML = q.answer_html;
-                        if (editForm) { editForm.replaceWith(newAnswerBlock); }
-                    })
-                    .catch(function () {
-                        saveBtn.disabled = false;
-                        saveBtn.textContent = 'Save answer';
-                        alert('Could not save answer. Please try again.');
-                    });
-                return;
-            }
-
-            var cancelBtn = e.target.closest('[data-qa-edit-cancel]');
-            if (cancelBtn) {
-                var cancelId  = cancelBtn.dataset.qaEditCancel;
-                var editForm2 = cancelBtn.closest('.gca-qa-edit-form');
-                if (!editForm2) { return; }
-                // Restore original answer (reload the card's answer block from the DOM we already have)
-                // Simplest: reload question from API
-                apiFetch('GET', '/qa/questions?per_page=1&page=1').then(function () {
-                    // noop — just close the form, user can refresh for latest text
-                }).catch(function () {});
-                // Replace edit form with a placeholder telling user to refresh
-                var restoredBlock = document.createElement('div');
-                restoredBlock.className = 'gca-qa-card__answer-block';
-                restoredBlock.innerHTML = '<p style="color:#666;font-style:italic">Reload to see current answer.</p>';
-                editForm2.replaceWith(restoredBlock);
-            }
-        });
-
-        // Close dropdowns on outside click / Escape
-        document.addEventListener('click', function (e) {
-            if (!e.target.closest('.gca-cw-post__more-wrap')) { closeAllQaDropdowns(); }
-        });
-        document.addEventListener('keydown', function (e) {
-            if (e.key === 'Escape') { closeAllQaDropdowns(); }
         });
     }
 
@@ -565,13 +518,25 @@
             });
         }
 
-        // "View all my submissions" link → switch to Q&A tab
+        // "View all my submissions" link → switch to Q&A tab and reveal pending banner
         var viewAllBtn = document.getElementById('gca-qa-view-all-btn');
         if (viewAllBtn) {
             viewAllBtn.addEventListener('click', function () {
                 switchToTab('qa');
                 var pendingBanner = document.getElementById('gca-qa-pending-banner');
-                if (pendingBanner) { pendingBanner.scrollIntoView({ behavior: 'smooth', block: 'start' }); }
+                if (pendingBanner) {
+                    pendingBanner.hidden = false;
+                    pendingBanner.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                }
+            });
+        }
+
+        // Close button inside pending banner → hide it again
+        var pendingCloseBtn = document.getElementById('gca-qa-pending-close');
+        if (pendingCloseBtn) {
+            pendingCloseBtn.addEventListener('click', function () {
+                var pendingBanner = document.getElementById('gca-qa-pending-banner');
+                if (pendingBanner) { pendingBanner.hidden = true; }
             });
         }
     }

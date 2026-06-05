@@ -1,4 +1,4 @@
-/* global window, document, fetch, FormData, URL, URLSearchParams, confirm */
+/* global window, document, fetch, FormData, URL, URLSearchParams */
 (function () {
     'use strict';
 
@@ -36,6 +36,83 @@
         d.textContent = String(str == null ? '' : str);
         return d.innerHTML;
     }
+
+    function confirmDelete(triggerEl, title, body) {
+        return new Promise(function (resolve) {
+            var previouslyFocused = document.activeElement;
+            var modal = document.createElement('div');
+            modal.className = 'gca-lc-delete-modal';
+            modal.setAttribute('role', 'presentation');
+            modal.innerHTML =
+                '<div class="gca-lc-delete-modal__overlay" data-action="cancel-delete"></div>' +
+                '<div class="gca-lc-delete-modal__dialog" role="dialog" aria-modal="true" aria-labelledby="gca-cw-delete-title" aria-describedby="gca-cw-delete-description" tabindex="-1">' +
+                '<button type="button" class="gca-lc-delete-modal__close" data-action="cancel-delete" aria-label="Close delete confirmation">' +
+                '<span aria-hidden="true">&times;</span>' +
+                '</button>' +
+                '<div class="gca-lc-delete-modal__content">' +
+                '<h2 class="gca-lc-delete-modal__title" id="gca-cw-delete-title">' + esc(title) + '</h2>' +
+                '<p class="gca-lc-delete-modal__body" id="gca-cw-delete-description">' + esc(body) + '</p>' +
+                '<div class="gca-lc-delete-modal__actions">' +
+                '<button type="button" class="gca-lc-delete-modal__confirm" data-action="confirm-delete">Yes, delete it</button>' +
+                '<button type="button" class="gca-lc-delete-modal__cancel" data-action="cancel-delete">Cancel</button>' +
+                '</div>' +
+                '</div>' +
+                '</div>';
+
+            function close(confirmed) {
+                document.removeEventListener('keydown', onKeydown);
+                modal.remove();
+                if (previouslyFocused && typeof previouslyFocused.focus === 'function') {
+                    previouslyFocused.focus();
+                } else if (triggerEl && typeof triggerEl.focus === 'function') {
+                    triggerEl.focus();
+                }
+                resolve(confirmed);
+            }
+
+            function onKeydown(e) {
+                if (e.key === 'Escape') { close(false); return; }
+                if (e.key !== 'Tab') { return; }
+                var focusable = modal.querySelectorAll('button');
+                var first = focusable[0];
+                var last  = focusable[focusable.length - 1];
+                if (!first || !last) { return; }
+                if (e.shiftKey && document.activeElement === first) {
+                    e.preventDefault(); last.focus();
+                } else if (!e.shiftKey && document.activeElement === last) {
+                    e.preventDefault(); first.focus();
+                }
+            }
+
+            modal.addEventListener('click', function (e) {
+                var actionBtn = e.target.closest('[data-action]');
+                if (!actionBtn) { return; }
+                if (actionBtn.dataset.action === 'confirm-delete') { close(true); }
+                if (actionBtn.dataset.action === 'cancel-delete')  { close(false); }
+            });
+
+            document.body.appendChild(modal);
+            document.addEventListener('keydown', onKeydown);
+
+            var cancelBtn = modal.querySelector('[data-action="cancel-delete"].gca-lc-delete-modal__cancel');
+            if (cancelBtn) { setTimeout(function () { cancelBtn.focus(); }, 50); }
+        });
+    }
+
+    function showDeleteToast(message) {
+        var toast = document.createElement('div');
+        toast.className = 'gca-cw-toast';
+        toast.setAttribute('role', 'status');
+        toast.setAttribute('aria-live', 'polite');
+        toast.textContent = message;
+        document.body.appendChild(toast);
+        setTimeout(function () {
+            toast.classList.add('gca-cw-toast--fading');
+            setTimeout(function () { toast.remove(); }, 300);
+        }, 3000);
+    }
+
+    window.gcaShowDeleteToast = showDeleteToast;
 
     // ── Relative time ─────────────────────────────────────────────────────────
     // < 1 min    → "just now"
@@ -90,7 +167,7 @@
     function buildLcHtml(postId, likeCount, userHasLiked, commentCount) {
         var liked = userHasLiked ? 'true' : 'false';
         return (
-            '<section class="gca-lc" data-post-id="' + postId + '" aria-label="Likes and comments">' +
+            '<section class="gca-lc" data-post-id="' + postId + '" aria-label="Likes and comments, post ' + postId + '">' +
             '<div class="govuk-visually-hidden" aria-live="polite" aria-atomic="true" id="gca-lc-status-' + postId + '"></div>' +
 
             '<div class="gca-lc__like-bar">' +
@@ -514,21 +591,11 @@
     function setupFeedEvents() {
         if (!feedEl) { return; }
 
-        feedEl.addEventListener('click', function (e) {
-            // ── Three-dot toggle (all content types) ──────────────────────────
+        // ── Single document handler: three-dot toggle (all tabs) + outside-click close
+        document.addEventListener('click', function (e) {
             var moreBtn = e.target.closest('.gca-cw-post__more-btn');
             if (moreBtn) {
-                e.stopPropagation();
-                var dropdown;
-                if (moreBtn.dataset.postId) {
-                    dropdown = document.getElementById('gca-cw-dd-'       + moreBtn.dataset.postId);
-                } else if (moreBtn.dataset.shoutoutId) {
-                    dropdown = document.getElementById('gca-shoutout-dd-' + moreBtn.dataset.shoutoutId);
-                } else if (moreBtn.dataset.pollId) {
-                    dropdown = document.getElementById('gca-poll-dd-'     + moreBtn.dataset.pollId);
-                } else if (moreBtn.dataset.qaId) {
-                    dropdown = document.getElementById('gca-qa-dd-'       + moreBtn.dataset.qaId);
-                }
+                var dropdown = moreBtn.parentElement.querySelector('.gca-cw-post__dropdown');
                 if (!dropdown) { return; }
                 var opening = dropdown.hidden;
                 closeAllDropdowns();
@@ -538,64 +605,6 @@
                 }
                 return;
             }
-
-            // ── Delete community post ─────────────────────────────────────────
-            var deletePostBtn = e.target.closest('[data-action="delete-post"]');
-            if (deletePostBtn) {
-                var postId = deletePostBtn.dataset.postId;
-                if (!confirm('Are you sure you want to delete this post?')) { return; }
-                apiFetch('DELETE', '/community/posts/' + postId)
-                    .then(function () {
-                        var postEl = document.getElementById('gca-cw-post-' + postId);
-                        if (postEl) { postEl.remove(); }
-                    })
-                    .catch(function () { alert('Could not delete post. Please try again.'); });
-                return;
-            }
-
-            // ── Delete shoutout ───────────────────────────────────────────────
-            var deleteShoutoutBtn = e.target.closest('[data-shoutout-action="delete"]');
-            if (deleteShoutoutBtn) {
-                var shoutoutId = deleteShoutoutBtn.dataset.shoutoutId;
-                if (!confirm('Delete this shout-out?')) { return; }
-                apiFetch('DELETE', '/shoutouts/' + shoutoutId)
-                    .then(function () {
-                        document.querySelectorAll('#gca-shoutout-' + shoutoutId).forEach(function (el) { el.remove(); });
-                    })
-                    .catch(function () { alert('Could not delete shout-out. Please try again.'); });
-                return;
-            }
-
-            // ── Delete poll ───────────────────────────────────────────────────
-            var deletePollBtn = e.target.closest('[data-poll-action="delete"]');
-            if (deletePollBtn) {
-                var pollId = deletePollBtn.dataset.pollId;
-                if (!confirm('Delete this poll? This cannot be undone.')) { return; }
-                apiFetch('DELETE', '/polls/' + pollId)
-                    .then(function () {
-                        var pollEl = document.getElementById('gca-poll-' + pollId);
-                        if (pollEl) { pollEl.remove(); }
-                    })
-                    .catch(function () { alert('Could not delete poll. Please try again.'); });
-                return;
-            }
-
-            // ── Delete Q&A question ───────────────────────────────────────────
-            var deleteQaBtn = e.target.closest('[data-qa-action="delete-question"]');
-            if (deleteQaBtn) {
-                var qaId = deleteQaBtn.dataset.qaId;
-                if (!confirm('Are you sure you want to delete this question?')) { return; }
-                apiFetch('DELETE', '/qa/questions/' + qaId)
-                    .then(function () {
-                        var qaEl = document.getElementById('gca-qa-q-' + qaId);
-                        if (qaEl) { qaEl.remove(); }
-                    })
-                    .catch(function () { alert('Could not delete question. Please try again.'); });
-                return;
-            }
-        });
-
-        document.addEventListener('click', function (e) {
             if (!e.target.closest('.gca-cw-post__more-wrap')) {
                 closeAllDropdowns();
             }
@@ -603,6 +612,27 @@
 
         document.addEventListener('keydown', function (e) {
             if (e.key === 'Escape') { closeAllDropdowns(); }
+        });
+
+        // ── Delete community post ─────────────────────────────────────────────
+        feedEl.addEventListener('click', function (e) {
+            var deletePostBtn = e.target.closest('[data-action="delete-post"]');
+            if (!deletePostBtn) { return; }
+            var postId = deletePostBtn.dataset.postId;
+            confirmDelete(deletePostBtn, 'Are you sure you want to delete this post?', 'This will permanently delete the post. You cannot undo this action.')
+                .then(function (confirmed) {
+                    if (!confirmed) { return; }
+                    var postEl = document.getElementById('gca-cw-post-' + postId);
+                    var parent = postEl && postEl.parentNode;
+                    var next   = postEl && postEl.nextSibling;
+                    if (postEl) { postEl.remove(); }
+                    showDeleteToast('Post deleted successfully.');
+                    apiFetch('DELETE', '/community/posts/' + postId)
+                        .catch(function () {
+                            if (postEl && parent) { parent.insertBefore(postEl, next); }
+                            alert('Could not delete post. Please try again.');
+                        });
+                });
         });
     }
 

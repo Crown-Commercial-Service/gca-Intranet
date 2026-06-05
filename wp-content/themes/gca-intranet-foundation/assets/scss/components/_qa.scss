@@ -167,6 +167,34 @@
     &[hidden] { display: none; }
 }
 
+.gca-qa-pending-banner__header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: govuk-spacing(3);
+    margin-bottom: govuk-spacing(2);
+
+    .gca-qa-pending-banner__intro {
+        margin-bottom: 0;
+    }
+}
+
+.gca-qa-pending-banner__close {
+    flex-shrink: 0;
+    background: none;
+    border: none;
+    padding: 2px;
+    cursor: pointer;
+    color: #856404;
+    line-height: 1;
+
+    &:hover { color: #533f03; }
+    &:focus-visible {
+        outline: 3px solid $govuk-focus-colour;
+        outline-offset: 2px;
+    }
+}
+
 .gca-qa-pending-banner__title {
     @include govuk-font($size: 16);
     font-weight: 700;

@@ -46,26 +46,36 @@ function gca_cw_is_community_host(?int $user_id = null): bool
 }
 
 /**
- * Register the Community Host role (idempotent – safe to call on every load).
- * The role is intentionally minimal: read access plus the custom cap that
- * gates post/poll creation on the Community Wall.
+ * Ensures gca_community_host has community_host_access and migrates any users
+ * still on the legacy community_host role, then removes that role.
  */
-function gca_cw_register_community_host_role(): void
+function gca_cw_setup_community_host_role(): void
 {
-    if (!get_role('community_host')) {
-        add_role('community_host', 'Community Host', [
-            'read'                  => true,
-            'community_host_access' => true,
-        ]);
+    // Ensure the canonical role carries the custom cap (belt-and-suspenders in
+    // case the plugin's init hasn't run yet on this request).
+    $gca_host_role = get_role('gca_community_host');
+    if ($gca_host_role instanceof WP_Role && !$gca_host_role->has_cap('community_host_access')) {
+        $gca_host_role->add_cap('community_host_access', true);
     }
 
-    // Grant the cap to existing admins so they always pass the host check.
+    // Grant the cap to administrators so they always pass the host check.
     $admin_role = get_role('administrator');
     if ($admin_role instanceof WP_Role && !$admin_role->has_cap('community_host_access')) {
         $admin_role->add_cap('community_host_access', true);
     }
+
+    // Migrate any users still on the legacy community_host role.
+    if (get_role('community_host')) {
+        $legacy_users = get_users(['role' => 'community_host', 'fields' => 'ID']);
+        foreach ($legacy_users as $user_id) {
+            $user = new WP_User((int) $user_id);
+            $user->add_role('gca_community_host');
+            $user->remove_role('community_host');
+        }
+        remove_role('community_host');
+    }
 }
-add_action('init', 'gca_cw_register_community_host_role');
+add_action('init', 'gca_cw_setup_community_host_role');
 
 /**
  * Returns author-info fields for a given user ID, ready for API responses.
@@ -184,7 +194,8 @@ function gca_cw_format_post(WP_Post $post, int $current_user_id): array
         'date_formatted' => (string) get_post_time('j F Y', false, $post),
         'media'          => $media,
         'is_own'         => (int) $post->post_author === $current_user_id,
-        'can_delete'     => ((int) $post->post_author === $current_user_id) || current_user_can('manage_options'),
+        'can_delete'     => current_user_can('manage_options') ||
+            (gca_cw_is_community_host($current_user_id) && (int) $post->post_author === $current_user_id),
     ]);
 }
 
@@ -195,17 +206,21 @@ function gca_cw_format_post(WP_Post $post, int $current_user_id): array
  */
 function gca_cw_format_item(WP_Post $post, int $current_user_id): array
 {
-    $can_delete = ((int) $post->post_author === $current_user_id) || current_user_can('manage_options');
-
     switch ($post->post_type) {
         case 'community_shoutout':
             if (!function_exists('gca_shoutout_format')) { return []; }
+            // Shoutouts: admin or own author can delete
+            $can_delete = current_user_can('manage_options') ||
+                (int) $post->post_author === $current_user_id;
             return array_merge(
                 gca_shoutout_format($post, $current_user_id),
                 ['kind' => 'shoutout', 'can_delete' => $can_delete]
             );
         case 'community_poll':
             if (!function_exists('gca_poll_format')) { return []; }
+            // Polls: admin or community host who owns the poll
+            $can_delete = current_user_can('manage_options') ||
+                (gca_cw_is_community_host($current_user_id) && (int) $post->post_author === $current_user_id);
             return array_merge(
                 gca_poll_format($post, $current_user_id),
                 ['kind' => 'poll', 'can_delete' => $can_delete]
@@ -404,7 +419,8 @@ function gca_cw_delete_post(WP_REST_Request $req): WP_REST_Response
         return new WP_REST_Response(['error' => 'Post not found'], 404);
     }
 
-    if ((int) $post->post_author !== $current_user_id && !current_user_can('manage_options')) {
+    if (!current_user_can('manage_options') &&
+        !(gca_cw_is_community_host($current_user_id) && (int) $post->post_author === $current_user_id)) {
         return new WP_REST_Response(['error' => 'Forbidden'], 403);
     }
 

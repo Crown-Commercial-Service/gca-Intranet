@@ -1,4 +1,4 @@
-/* global window, document, fetch, confirm */
+/* global window, document, fetch */
 (function () {
     'use strict';
 
@@ -30,6 +30,59 @@
         return d.innerHTML;
     }
 
+    function confirmDelete(triggerEl, title, body) {
+        return new Promise(function (resolve) {
+            var previouslyFocused = document.activeElement;
+            var modal = document.createElement('div');
+            modal.className = 'gca-lc-delete-modal';
+            modal.setAttribute('role', 'presentation');
+            modal.innerHTML =
+                '<div class="gca-lc-delete-modal__overlay" data-action="cancel-delete"></div>' +
+                '<div class="gca-lc-delete-modal__dialog" role="dialog" aria-modal="true" aria-labelledby="gca-poll-delete-title" aria-describedby="gca-poll-delete-description" tabindex="-1">' +
+                '<button type="button" class="gca-lc-delete-modal__close" data-action="cancel-delete" aria-label="Close delete confirmation">' +
+                '<span aria-hidden="true">&times;</span>' +
+                '</button>' +
+                '<div class="gca-lc-delete-modal__content">' +
+                '<h2 class="gca-lc-delete-modal__title" id="gca-poll-delete-title">' + esc(title) + '</h2>' +
+                '<p class="gca-lc-delete-modal__body" id="gca-poll-delete-description">' + esc(body) + '</p>' +
+                '<div class="gca-lc-delete-modal__actions">' +
+                '<button type="button" class="gca-lc-delete-modal__confirm" data-action="confirm-delete">Yes, delete it</button>' +
+                '<button type="button" class="gca-lc-delete-modal__cancel" data-action="cancel-delete">Cancel</button>' +
+                '</div>' +
+                '</div>' +
+                '</div>';
+            function close(confirmed) {
+                document.removeEventListener('keydown', onKeydown);
+                modal.remove();
+                if (previouslyFocused && typeof previouslyFocused.focus === 'function') {
+                    previouslyFocused.focus();
+                } else if (triggerEl && typeof triggerEl.focus === 'function') {
+                    triggerEl.focus();
+                }
+                resolve(confirmed);
+            }
+            function onKeydown(e) {
+                if (e.key === 'Escape') { close(false); return; }
+                if (e.key !== 'Tab') { return; }
+                var focusable = modal.querySelectorAll('button');
+                var first = focusable[0]; var last = focusable[focusable.length - 1];
+                if (!first || !last) { return; }
+                if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
+                else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
+            }
+            modal.addEventListener('click', function (e) {
+                var btn = e.target.closest('[data-action]');
+                if (!btn) { return; }
+                if (btn.dataset.action === 'confirm-delete') { close(true); }
+                if (btn.dataset.action === 'cancel-delete')  { close(false); }
+            });
+            document.body.appendChild(modal);
+            document.addEventListener('keydown', onKeydown);
+            var cancelBtn = modal.querySelector('[data-action="cancel-delete"].gca-lc-delete-modal__cancel');
+            if (cancelBtn) { setTimeout(function () { cancelBtn.focus(); }, 50); }
+        });
+    }
+
     function relativeTime(iso) {
         if (!iso) { return ''; }
         var then = new Date(iso);
@@ -49,7 +102,7 @@
     function buildLcHtml(postId, likeCount, userHasLiked, commentCount) {
         var liked = userHasLiked ? 'true' : 'false';
         return (
-            '<section class="gca-lc" data-post-id="' + postId + '" aria-label="Likes and comments">' +
+            '<section class="gca-lc" data-post-id="' + postId + '" aria-label="Likes and comments, post ' + postId + '">' +
             '<div class="govuk-visually-hidden" aria-live="polite" aria-atomic="true" id="gca-lc-status-' + postId + '"></div>' +
             '<div class="gca-lc__like-bar">' +
             '<button type="button" class="gca-lc__like-btn" aria-pressed="' + liked + '" data-action="toggle-post-like">' +
@@ -244,41 +297,24 @@
 
     function setupPollMenus(containerEl) {
         containerEl.addEventListener('click', function (e) {
-            var moreBtn = e.target.closest('.gca-cw-post__more-btn[data-poll-id]');
-            if (moreBtn) {
-                e.stopPropagation();
-                var pid = moreBtn.dataset.pollId;
-                var dd  = document.getElementById('gca-poll-dd-' + pid);
-                if (!dd) { return; }
-                var opening = dd.hidden;
-                closeAllPollDropdowns();
-                if (opening) {
-                    dd.hidden = false;
-                    moreBtn.setAttribute('aria-expanded', 'true');
-                }
-                return;
-            }
-
-            // Delete poll
             var deleteBtn = e.target.closest('[data-poll-action="delete"]');
-            if (deleteBtn) {
-                var pollId = deleteBtn.dataset.pollId;
-                if (!confirm('Delete this poll? This cannot be undone.')) { return; }
-                apiFetch('DELETE', '/polls/' + pollId)
-                    .then(function () {
-                        var el = document.getElementById('gca-poll-' + pollId);
-                        if (el) { el.remove(); }
-                    })
-                    .catch(function () {
-                        alert('Could not delete poll. Please try again.');
+            if (!deleteBtn) { return; }
+            var pollId = deleteBtn.dataset.pollId;
+            confirmDelete(deleteBtn, 'Are you sure you want to delete this poll?', 'This will permanently delete the poll. You cannot undo this action.')
+                .then(function (confirmed) {
+                    if (!confirmed) { return; }
+                    var positions = [];
+                    document.querySelectorAll('#gca-poll-' + pollId).forEach(function (el) {
+                        positions.push({ el: el, parent: el.parentNode, next: el.nextSibling });
+                        el.remove();
                     });
-            }
-        });
-
-        document.addEventListener('click', function (e) {
-            if (!e.target.closest('.gca-cw-post__more-wrap')) {
-                closeAllPollDropdowns();
-            }
+                    if (window.gcaShowDeleteToast) { window.gcaShowDeleteToast('Poll deleted successfully.'); }
+                    apiFetch('DELETE', '/polls/' + pollId)
+                        .catch(function () {
+                            positions.forEach(function (p) { if (p.parent) { p.parent.insertBefore(p.el, p.next); } });
+                            alert('Could not delete poll. Please try again.');
+                        });
+                });
         });
     }
 

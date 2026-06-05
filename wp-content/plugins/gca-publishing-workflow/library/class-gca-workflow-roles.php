@@ -55,11 +55,12 @@ class GCA_Workflow_Roles {
     ];
 
     private const COMMUNITY_HOST_CAPS = [
-        'read'         => true,
-        'edit_posts'   => true,
-        'publish_posts' => true,
-        'delete_posts' => true,
-        'upload_files' => true,
+        'read'                  => true,
+        'edit_posts'            => true,
+        'publish_posts'         => true,
+        'delete_posts'          => true,
+        'upload_files'          => true,
+        'community_host_access' => true,
     ];
 
     // -------------------------------------------------------------------------

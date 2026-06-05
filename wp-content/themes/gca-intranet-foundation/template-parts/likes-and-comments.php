@@ -15,7 +15,7 @@ if (!is_user_logged_in() || $post_id <= 0) {
 <section
     class="gca-lc"
     data-post-id="<?php echo esc_attr((string) $post_id); ?>"
-    aria-label="Likes and comments"
+    aria-label="Likes and comments for: <?php echo esc_attr(get_the_title($post_id)); ?>"
 >
     <?php /* Accessible live region – JS writes status messages here */ ?>
     <div
