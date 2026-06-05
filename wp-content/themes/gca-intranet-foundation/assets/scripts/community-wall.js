@@ -615,7 +615,9 @@
         });
 
         // ── Delete community post ─────────────────────────────────────────────
-        feedEl.addEventListener('click', function (e) {
+        // Use capture phase on document.body so third-party scripts (e.g. GF's
+        // jQuery handlers) cannot swallow the event before it reaches us.
+        document.body.addEventListener('click', function (e) {
             var deletePostBtn = e.target.closest('[data-action="delete-post"]');
             if (!deletePostBtn) { return; }
             var postId = deletePostBtn.dataset.postId;
@@ -633,7 +635,7 @@
                             alert('Could not delete post. Please try again.');
                         });
                 });
-        });
+        }, true);
     }
 
     function closeAllDropdowns() {

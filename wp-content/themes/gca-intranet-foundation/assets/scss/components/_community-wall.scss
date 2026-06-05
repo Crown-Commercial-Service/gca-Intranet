@@ -845,6 +845,130 @@ $gca-cw-compose-input-bg: #f5f6fa;
     color: govuk-colour('dark-grey');
 }
 
+// ── GF shoutout compose form overrides ───────────────────────────────────────
+
+.gca-shoutout-gf-wrap {
+
+    .gform_wrapper {
+        margin: 0 !important;
+        max-width: 100% !important;
+    }
+
+    .gform_body {
+        margin-bottom: 0 !important;
+    }
+
+    // Labels: match govuk-label
+    .gfield_label {
+        font-family: $govuk-font-family !important;
+        font-size: govuk-px-to-rem(19) !important;
+        font-weight: 700 !important;
+        line-height: 1.25 !important;
+        display: block !important;
+        margin-bottom: govuk-spacing(1) !important;
+    }
+
+    // Hide "(Required)" indicator — we validate in JS
+    .gfield_required {
+        display: none !important;
+    }
+
+    // Hide GF's built-in character counter — we inject our own
+    .ginput_counter {
+        display: none !important;
+    }
+
+    // Hide hidden field wrappers
+    .gfield--type-hidden {
+        display: none !important;
+        margin: 0 !important;
+        padding: 0 !important;
+    }
+
+    // Text input — grey border, 4 px radius
+    .ginput_container_text input,
+    .govuk-input {
+        border: 1px solid #b1b4b6 !important;
+        border-radius: 4px !important;
+        font-family: $govuk-font-family !important;
+        font-size: govuk-px-to-rem(19) !important;
+        width: 100% !important;
+        box-sizing: border-box !important;
+        box-shadow: none !important;
+    }
+
+    // Category select — grey border, 4 px radius, matching compose bg
+    .ginput_container_select select,
+    .govuk-select {
+        border: 1px solid #b1b4b6 !important;
+        border-radius: 4px !important;
+        background-color: #f5f6fa !important;
+        font-family: $govuk-font-family !important;
+        font-size: govuk-px-to-rem(19) !important;
+        width: 100% !important;
+        box-sizing: border-box !important;
+        box-shadow: none !important;
+        -webkit-appearance: auto !important;
+        appearance: auto !important;
+    }
+
+    // Textarea — grey border, 4 px radius
+    .ginput_container_textarea textarea,
+    .govuk-textarea {
+        border: 1px solid #b1b4b6 !important;
+        border-radius: 4px !important;
+        font-family: $govuk-font-family !important;
+        font-size: govuk-px-to-rem(19) !important;
+        width: 100% !important;
+        min-height: 100px !important;
+        resize: vertical !important;
+        box-sizing: border-box !important;
+        box-shadow: none !important;
+    }
+
+    // Form footer: flex row, matching compose actions layout
+    .gform_footer {
+        display: flex !important;
+        align-items: center !important;
+        gap: govuk-spacing(3) !important;
+        padding: 0 !important;
+        margin-top: govuk-spacing(3) !important;
+        border: 0 !important;
+    }
+
+    // Submit button — green confirm style (overrides GF's govuk-button)
+    input[type="submit"].gform_button,
+    .gform_button[type="submit"] {
+        background: #b8ca1c !important;
+        color: #000 !important;
+        border: 0 !important;
+        border-radius: 5px !important;
+        cursor: pointer !important;
+        font-family: $govuk-font-family !important;
+        font-size: govuk-px-to-rem(19) !important;
+        font-weight: 700 !important;
+        line-height: 1 !important;
+        padding: 11px 18px !important;
+        margin: 0 !important;
+        -webkit-appearance: none !important;
+        box-shadow: none !important;
+        text-decoration: none !important;
+
+        &:hover {
+            background: #a6b719 !important;
+        }
+
+        &:focus {
+            @include govuk-focused-text;
+        }
+
+        &:disabled {
+            opacity: 0.75 !important;
+            cursor: default !important;
+        }
+    }
+}
+
 // ── Poll cards ────────────────────────────────────────────────────────────────
 
 .gca-poll {
