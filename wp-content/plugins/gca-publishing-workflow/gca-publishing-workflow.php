@@ -16,6 +16,7 @@ define( 'GCA_WORKFLOW_DIR',     plugin_dir_path( __FILE__ ) );
 
 require_once GCA_WORKFLOW_DIR . 'library/class-gca-workflow-settings.php';
 require_once GCA_WORKFLOW_DIR . 'library/class-gca-workflow-roles.php';
+require_once GCA_WORKFLOW_DIR . 'library/class-gca-workflow-category-permissions.php';
 require_once GCA_WORKFLOW_DIR . 'library/class-gca-workflow-admin-ui.php';
 require_once GCA_WORKFLOW_DIR . 'library/class-gca-workflow-statuses.php';
 require_once GCA_WORKFLOW_DIR . 'library/class-gca-workflow-notifications.php';
@@ -39,6 +40,7 @@ add_action( 'init', function (): void {
 add_action( 'init', function (): void {
     GCA_Workflow_Settings::init();
     GCA_Workflow_Roles::init();
+    GCA_Workflow_Category_Permissions::init();
     GCA_Workflow_Admin_UI::init();
 }, 10 );
 
