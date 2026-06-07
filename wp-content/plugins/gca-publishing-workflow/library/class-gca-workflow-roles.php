@@ -73,9 +73,11 @@ class GCA_Workflow_Roles {
         self::maybe_create_role( self::PUBLISHER_ADMIN, 'GCA Publisher Admin', array_merge( self::CONTRIBUTOR_CAPS, self::PUBLISHER_CAPS, self::PUBLISHER_ADMIN_CAPS ) );
         self::maybe_create_role( self::COMMUNITY_HOST, 'GCA Community Host', self::COMMUNITY_HOST_CAPS );
 
-        // Block contributors from creating new pages (edit_pages alone covers both
-        // creating and editing in WP; this filter narrows it to edit-only).
-        add_filter( 'map_meta_cap', [ __CLASS__, 'block_contributor_page_creation' ], 10, 4 );
+        // Block contributors from creating new pages. user_has_cap covers actual
+        // capability enforcement; admin_menu/admin_head handle the UI removal.
+        add_filter( 'user_has_cap', [ __CLASS__, 'block_contributor_page_creation' ], 10, 4 );
+        add_action( 'admin_menu',   [ __CLASS__, 'remove_contributor_add_page_menu' ] );
+        add_action( 'admin_head',   [ __CLASS__, 'hide_contributor_add_page_button' ] );
 
         // Block contributors from trashing live (published) pages.
         add_filter( 'user_has_cap', [ __CLASS__, 'block_contributor_live_page_delete' ], 10, 4 );
@@ -94,11 +96,27 @@ class GCA_Workflow_Roles {
     // Capability filters
     // -------------------------------------------------------------------------
 
-    public static function block_contributor_page_creation( array $caps, string $cap, int $user_id, array $args ): array {
-        if ( 'create_pages' === $cap && self::user_has_role( $user_id, self::CONTRIBUTOR ) ) {
-            return [ 'do_not_allow' ];
+    public static function block_contributor_page_creation( array $all_caps, array $cap_list, array $args, WP_User $user ): array {
+        if ( in_array( 'create_pages', $cap_list, true ) && self::user_has_role( $user->ID, self::CONTRIBUTOR ) ) {
+            $all_caps['create_pages'] = false;
         }
-        return $caps;
+        return $all_caps;
+    }
+
+    public static function remove_contributor_add_page_menu(): void {
+        if ( self::user_has_role( get_current_user_id(), self::CONTRIBUTOR ) ) {
+            remove_submenu_page( 'edit.php?post_type=page', 'post-new.php?post_type=page' );
+        }
+    }
+
+    public static function hide_contributor_add_page_button(): void {
+        if ( ! self::user_has_role( get_current_user_id(), self::CONTRIBUTOR ) ) {
+            return;
+        }
+        $screen = get_current_screen();
+        if ( $screen && 'edit-page' === $screen->id ) {
+            echo '<style>.page-title-action { display: none !important; }</style>';
+        }
     }
 
     public static function block_contributor_live_page_delete( array $all_caps, array $cap_list, array $args, WP_User $user ): array {
