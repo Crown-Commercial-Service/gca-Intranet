@@ -54,8 +54,15 @@ function gca_cw_setup_community_host_role(): void
     // Ensure the canonical role carries the custom cap (belt-and-suspenders in
     // case the plugin's init hasn't run yet on this request).
     $gca_host_role = get_role('gca_community_host');
-    if ($gca_host_role instanceof WP_Role && !$gca_host_role->has_cap('community_host_access')) {
-        $gca_host_role->add_cap('community_host_access', true);
+    if ($gca_host_role instanceof WP_Role) {
+        // Idempotently backfill caps that may be missing on existing installations.
+        foreach ([
+            'community_host_access', 'edit_others_posts', 'edit_published_posts',
+        ] as $cap) {
+            if (!$gca_host_role->has_cap($cap)) {
+                $gca_host_role->add_cap($cap, true);
+            }
+        }
     }
 
     // Grant the cap to administrators so they always pass the host check.
@@ -76,6 +83,64 @@ function gca_cw_setup_community_host_role(): void
     }
 }
 add_action('init', 'gca_cw_setup_community_host_role');
+
+// ---------------------------------------------------------------------------
+// Admin – restrict dashboard for Community Hosts
+// ---------------------------------------------------------------------------
+
+// Strip all menu items except the four community sections.
+// Runs at priority 999 so all menus are registered before we remove them.
+add_action('admin_menu', function (): void {
+    $user = wp_get_current_user();
+    if (!in_array('gca_community_host', (array) $user->roles, true)) {
+        return;
+    }
+
+    $allowed_slugs = [
+        'edit.php?post_type=community_post',
+        'edit.php?post_type=community_shoutout',
+        'edit.php?post_type=community_poll',
+        'edit.php?post_type=qa_question',
+    ];
+
+    global $menu;
+    foreach (array_keys($menu) as $position) {
+        $slug = $menu[$position][2] ?? '';
+        if (!in_array($slug, $allowed_slugs, true)) {
+            remove_menu_page($slug);
+        }
+    }
+}, 999);
+
+// Redirect community hosts away from any admin page outside the community sections.
+add_action('admin_init', function (): void {
+    $user = wp_get_current_user();
+    if (!in_array('gca_community_host', (array) $user->roles, true)) {
+        return;
+    }
+
+    global $pagenow;
+
+    if (in_array($pagenow, ['admin-ajax.php', 'admin-post.php', 'async-upload.php'], true)) {
+        return;
+    }
+
+    $community_types = ['community_post', 'community_shoutout', 'community_poll', 'qa_question'];
+
+    $is_allowed = (
+        ($pagenow === 'edit.php' && in_array(sanitize_key($_GET['post_type'] ?? ''), $community_types, true))
+        || ($pagenow === 'post.php' && (
+            (isset($_GET['post']) && in_array(get_post_type((int) $_GET['post']), $community_types, true))
+            || (isset($_POST['post_ID']) && in_array(get_post_type((int) $_POST['post_ID']), $community_types, true))
+        ))
+        || ($pagenow === 'admin.php' && sanitize_key($_GET['page'] ?? '') === 'gca-shoutout-categories')
+    );
+
+    if (!$is_allowed) {
+        wp_safe_redirect(admin_url('edit.php?post_type=community_post'));
+        exit;
+    }
+});
 
 /**
  * Returns author-info fields for a given user ID, ready for API responses.
