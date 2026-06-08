@@ -15,13 +15,8 @@ if ( ! defined( 'ABSPATH' ) ) {
  * picture URL.  Users without one are skipped — they will be processed
  * automatically the next time they log in.
  *
- * Generated letter-avatars (Google's default when a user has no real photo) are
- * detected using GD colour analysis and discarded.  A real photograph contains
- * hundreds of distinct colours; a letter-avatar has only a handful.
- *
  * Requires:
  *  - The `google-profile-picture` feature flag to be enabled.
- *  - PHP's GD extension (gdimage).
  *
  * WP-CLI usage:
  *
@@ -97,9 +92,8 @@ class GCA_Sync_Profile_Pictures {
         } );
 
         WP_CLI::success( sprintf(
-            'Done. Saved: %d, Cleared: %d, Skipped: %d, Errors: %d.',
+            'Done. Saved: %d, Skipped: %d, Errors: %d.',
             $stats['saved'],
-            $stats['cleared'],
             $stats['skipped'],
             $stats['errors']
         ) );
@@ -112,7 +106,7 @@ class GCA_Sync_Profile_Pictures {
     /**
      * @param WP_User[]     $users
      * @param callable|null $logger Receives log-message strings.
-     * @return array{saved:int, cleared:int, skipped:int, errors:int}
+     * @return array{saved:int, skipped:int, errors:int}
      */
     public static function sync( array $users, ?callable $logger = null ): array {
         $log = $logger ?? static function ( string $message ): void {
@@ -121,7 +115,6 @@ class GCA_Sync_Profile_Pictures {
 
         $stats = [
             'saved'   => 0,
-            'cleared' => 0,
             'skipped' => 0,
             'errors'  => 0,
         ];
@@ -142,17 +135,9 @@ class GCA_Sync_Profile_Pictures {
 
             $dest = $profile_dir . '/user-' . $user->ID . '.jpg';
 
-            // If the local file already exists, analyse it directly — no re-download needed.
             if ( file_exists( $dest ) ) {
-                if ( self::is_letter_avatar( $dest ) ) {
-                    @unlink( $dest );
-                    delete_user_meta( $user->ID, 'google_profile_picture_local_url' );
-                    $log( "Cleared letter avatar for {$user->user_email}." );
-                    $stats['cleared']++;
-                } else {
-                    $log( "Real photo confirmed for {$user->user_email} — no change." );
-                    $stats['saved']++;
-                }
+                $log( "Photo already exists for {$user->user_email} — no change." );
+                $stats['saved']++;
                 continue;
             }
 
@@ -179,88 +164,12 @@ class GCA_Sync_Profile_Pictures {
                 continue;
             }
 
-            if ( self::is_letter_avatar( $dest ) ) {
-                @unlink( $dest );
-                $log( "Cleared letter avatar for {$user->user_email} (re-downloaded)." );
-                $stats['cleared']++;
-            } else {
-                $local_url = $upload_dir['baseurl'] . '/google-profile-pictures/user-' . $user->ID . '.jpg';
-                update_user_meta( $user->ID, 'google_profile_picture_local_url', $local_url );
-                $log( "Saved real photo for {$user->user_email}." );
-                $stats['saved']++;
-            }
+            $local_url = $upload_dir['baseurl'] . '/google-profile-pictures/user-' . $user->ID . '.jpg';
+            update_user_meta( $user->ID, 'google_profile_picture_local_url', $local_url );
+            $log( "Saved photo for {$user->user_email}." );
+            $stats['saved']++;
         }
 
         return $stats;
-    }
-
-    // -------------------------------------------------------------------------
-    // Letter-avatar detection
-    // -------------------------------------------------------------------------
-
-    /**
-     * Returns true if the image at the given path appears to be a generated
-     * letter-avatar rather than a real photograph.
-     *
-     * The algorithm resamples the image to a 20×20 thumbnail and counts the
-     * number of distinct colours.  Google's letter-avatars use a solid background
-     * with a single white initial, producing only 2–5 unique colours.  Real
-     * photographs contain hundreds.  A threshold of 30 gives ample headroom.
-     *
-     * Returns false (assume real photo) if GD is not available or the image
-     * cannot be read, so that real photos are never silently discarded.
-     */
-    public static function is_letter_avatar( string $file_path ): bool {
-        if ( ! function_exists( 'imagecreatefromstring' ) ) {
-            return false; // GD unavailable — assume real photo.
-        }
-
-        $data = @file_get_contents( $file_path );
-        if ( $data === false || strlen( $data ) < 100 ) {
-            return false;
-        }
-
-        $img = @imagecreatefromstring( $data );
-        if ( $img === false ) {
-            return false;
-        }
-
-        // Resample to 20×20 — enough resolution to capture colour variety while
-        // keeping the loop fast regardless of the source image dimensions.
-        $sample = imagecreatetruecolor( 20, 20 );
-        imagecopyresampled( $sample, $img, 0, 0, 0, 0, 20, 20, imagesx( $img ), imagesy( $img ) );
-        imagedestroy( $img );
-
-        // Quantise each pixel to 4 bits per channel before counting.
-        // imagecopyresampled blends anti-aliased edge pixels (e.g. the white
-        // letter against an orange background) into dozens of intermediate
-        // shades, which inflates the unique-colour count and causes
-        // letter-avatars to be misclassified as real photos. Rounding to the
-        // nearest 16 collapses those blended pixels back into their dominant
-        // colour while still leaving real photographs with many distinct values.
-        //
-        // Greyscale photos have R=G=B for every pixel, producing at most 16
-        // quantised RGB values — below the colour threshold. We also track
-        // quantised luminance: a real B&W photo spans the full brightness range
-        // (≥ 10 distinct 4-bit luma levels), whereas a letter-avatar has only
-        // 2–3 (background + white initial).
-        $unique_rgb  = [];
-        $unique_luma = [];
-        for ( $x = 0; $x < 20; $x++ ) {
-            for ( $y = 0; $y < 20; $y++ ) {
-                $c = imagecolorat( $sample, $x, $y );
-                $r = ( $c >> 16 ) & 0xFF;
-                $g = ( $c >> 8  ) & 0xFF;
-                $b =   $c         & 0xFF;
-
-                $unique_rgb[ ( ( $r >> 4 ) << 8 ) | ( ( $g >> 4 ) << 4 ) | ( $b >> 4 ) ] = true;
-
-                $luma                        = (int) ( 0.299 * $r + 0.587 * $g + 0.114 * $b );
-                $unique_luma[ $luma >> 4 ]   = true;
-            }
-        }
-        imagedestroy( $sample );
-
-        return count( $unique_rgb ) < 30 && count( $unique_luma ) < 10;
     }
 }
