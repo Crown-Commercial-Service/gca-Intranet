@@ -24,7 +24,7 @@ $gca-lc-icon-color: #767676;
     display: flex;
     align-items: center;
     gap: govuk-spacing(3);
-    margin-bottom: govuk-spacing(1);
+    margin-bottom: 10px;
     border-top: 1px solid $gca-lc-border;
     padding-top: govuk-spacing(2);
 }
@@ -41,7 +41,7 @@ $gca-lc-icon-color: #767676;
     padding: govuk-spacing(1) govuk-spacing(2);
     cursor: pointer;
     font-family: $govuk-font-family;
-    font-size: govuk-px-to-rem(14);
+    font-size: govuk-px-to-rem(16);
     font-weight: 600;
     color: $govuk-text-colour;
     transition: color 0.15s ease, border-color 0.15s ease;
@@ -332,7 +332,7 @@ $gca-lc-icon-color: #767676;
     padding: 0;
     cursor: pointer;
     font-family: $govuk-font-family;
-    font-size: govuk-px-to-rem(14);
+    font-size: govuk-px-to-rem(16);
     font-weight: 600;
     color: govuk-colour('dark-grey');
     display: inline-flex;
@@ -524,5 +524,15 @@ $gca-lc-icon-color: #767676;
 
     .gca-lc-delete-modal__body {
         margin-bottom: 36px;
+    }
+}
+
+// Community Hub keeps the smaller 14px size
+.gca-cw-page-wrap {
+    .gca-lc__like-btn,
+    .gca-lc__comment-toggle-btn,
+    .gca-lc__save-btn,
+    .gca-lc__action-btn {
+        font-size: govuk-px-to-rem(14);
     }
 }
