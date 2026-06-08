@@ -17,8 +17,8 @@ get_template_part('template-parts/breadcrumbs');
     <main class="govuk-main-wrapper" id="main-content" tabindex="-1" data-testid="work-update-main">
         <?php if (have_posts()) : while (have_posts()) : the_post(); ?>
                 
-        <div class="govuk-grid-row">
-            
+        <div class="govuk-grid-row gca-author-grid">
+
             <div class="govuk-grid-column-one-third">
                 <div class="profile_img_wrapper">
                     <?php echo gca_get_author_image_html( get_the_ID(), (int) get_the_author_meta( 'ID' ) ); ?>
@@ -72,6 +72,8 @@ get_template_part('template-parts/breadcrumbs');
 
         <?php endwhile;
         endif; ?>
+
+        <?php if ( gca_flag_enabled( 'related-articles' ) ) { get_template_part( 'template-parts/related-articles' ); } ?>
     </main>
 </div>
 

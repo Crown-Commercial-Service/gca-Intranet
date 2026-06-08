@@ -14,6 +14,9 @@ require_once get_template_directory() . '/inc/auth-logic.php';
 require_once get_template_directory() . '/inc/features.php';
 require_once get_template_directory() . '/inc/rest-api-auth.php';
 require_once get_template_directory() . '/inc/features/community-wall.php';
+require_once get_template_directory() . '/inc/features/qa.php';
+require_once get_template_directory() . '/inc/features/polls.php';
+require_once get_template_directory() . '/inc/features/shoutouts.php';
 
 require_once get_template_directory() . '/inc/rest-api-auth.php';
 
@@ -477,6 +480,7 @@ JS
  */
 add_action('wp_enqueue_scripts', function (): void {
     $is_interaction_page = is_singular(['post', 'blog', 'news', 'work_update', 'event'])
+        || (is_page() && gca_flag_enabled('post-saves'))
         || (is_page_template('template-community-wall.php') && gca_flag_enabled('community-hub'));
 
     if (!$is_interaction_page) {
@@ -680,6 +684,7 @@ add_action('wp_enqueue_scripts', function (): void {
         var query = '';
         var users = [];
         var selIdx = -1;
+        var mentionMap = {};
 
         function close() {
             mentionList.hidden = true;
@@ -700,10 +705,19 @@ add_action('wp_enqueue_scripts', function (): void {
 
         function insert(user) {
             var val = textarea.value;
-            var token = '@[' + user.display_name + '](' + user.id + ')';
-            textarea.value = val.substring(0, mentionStart) + token + ' ' + val.substring(mentionStart + 1 + query.length);
+            mentionMap[user.display_name] = '@[' + user.display_name + '](' + user.id + ')';
+            var displayText = '@' + user.display_name;
+            textarea.value = val.substring(0, mentionStart) + displayText + ' ' + val.substring(mentionStart + 1 + query.length);
             close();
             textarea.focus();
+        }
+
+        function encode(text) {
+            var names = Object.keys(mentionMap).sort(function (a, b) { return b.length - a.length; });
+            names.forEach(function (name) {
+                text = text.split('@' + name).join(mentionMap[name]);
+            });
+            return text;
         }
 
         function showUsers(list) {
@@ -751,6 +765,8 @@ add_action('wp_enqueue_scripts', function (): void {
         });
 
         textarea.addEventListener('blur', function () { setTimeout(close, 200); });
+
+        return encode;
     }
 
     // ── Per-component initialisation ─────────────────────────────────────────
@@ -769,6 +785,7 @@ add_action('wp_enqueue_scripts', function (): void {
         var commentList      = section.querySelector('.gca-lc__list');
         var statusRegion     = section.querySelector('[aria-live="polite"]');
         var mainForm         = section.querySelector('[data-action="submit-comment"]');
+        var saveBtn          = section.querySelector('[data-action="toggle-post-save"]');
         var panelLoaded      = false;
         var listEvtsBound    = false;
 
@@ -791,19 +808,28 @@ add_action('wp_enqueue_scripts', function (): void {
             if (countEl) { countEl.textContent = count; }
         }
 
+        function updateSave(saved) {
+            if (!saveBtn) { return; }
+            saveBtn.setAttribute('aria-pressed', saved ? 'true' : 'false');
+            saveBtn.setAttribute('aria-label', (saved ? 'Unsave' : 'Save') + ' post');
+            var label = saveBtn.querySelector('.gca-lc__save-label');
+            if (label) { label.textContent = saved ? 'Saved' : 'Save'; }
+            saveBtn.classList.toggle('gca-lc__save-btn--saved', saved);
+        }
+
         // Bind a form (main or reply) submit event once.
         function bindForm(form) {
             if (!form || form.dataset.evtBound) { return; }
             form.dataset.evtBound = '1';
             var ta = form.querySelector('.gca-lc__textarea');
             var ml = form.querySelector('.gca-lc__mention-list');
-            if (ta && ml) { setupMentions(ta, ml); }
+            var encodeMentions = (ta && ml) ? setupMentions(ta, ml) : null;
 
             form.addEventListener('submit', function (e) {
                 e.preventDefault();
                 var textarea  = form.querySelector('.gca-lc__textarea');
                 var parentEl  = form.querySelector('[name="parent_id"]');
-                var content   = textarea ? textarea.value.trim() : '';
+                var content   = textarea ? (encodeMentions ? encodeMentions(textarea.value.trim()) : textarea.value.trim()) : '';
                 var parentId  = parentEl ? parseInt(parentEl.value, 10) : 0;
                 if (!content) { if (textarea) { textarea.focus(); } return; }
 
@@ -933,6 +959,7 @@ add_action('wp_enqueue_scripts', function (): void {
             apiFetch('GET', '/posts/' + postId + '/interactions')
                 .then(function (data) {
                     updateLike(data.user_has_liked, data.post_like_count);
+                    updateSave(data.user_has_saved);
                     updateCommentCount(data.comment_count);
                     renderList(data.comments, commentList);
                     panelLoaded = true;
@@ -956,6 +983,7 @@ add_action('wp_enqueue_scripts', function (): void {
         // Load counts immediately on page load (without opening panel)
         apiFetch('GET', '/posts/' + postId + '/interactions').then(function (data) {
             updateLike(data.user_has_liked, data.post_like_count);
+            updateSave(data.user_has_saved);
             updateCommentCount(data.comment_count);
         }).catch(function () {});
 
@@ -968,6 +996,19 @@ add_action('wp_enqueue_scripts', function (): void {
             });
         }
 
+        if (saveBtn) {
+            saveBtn.addEventListener('click', function () {
+                saveBtn.disabled = true;
+                apiFetch('POST', '/posts/' + postId + '/save')
+                    .then(function (data) {
+                        updateSave(data.saved);
+                        announce(data.saved ? 'Post saved.' : 'Post unsaved.');
+                    })
+                    .catch(function () { announce('Could not save post. Please try again.'); })
+                    .finally(function () { saveBtn.disabled = false; });
+            });
+        }
+
         if (commentToggleBtn && commentsPanel) {
             commentToggleBtn.addEventListener('click', function () {
                 var expanded = commentToggleBtn.getAttribute('aria-expanded') === 'true';
@@ -977,11 +1018,16 @@ add_action('wp_enqueue_scripts', function (): void {
             });
         }
 
+        // Auto-load comments if the panel is already visible on page load (article pages)
+        if (commentsPanel && !commentsPanel.hidden) {
+            loadPanel();
+        }
+
         if (mainForm) { bindForm(mainForm); }
     }
 
     // Expose init so community wall JS can wire dynamically created .gca-lc elements
-    window.GcaLc = { init: initComponent };
+    window.GcaLc = { init: initComponent, setupMentions: setupMentions };
 
     document.addEventListener('DOMContentLoaded', function () {
         document.querySelectorAll('.gca-lc').forEach(initComponent);
@@ -992,7 +1038,13 @@ JS
 });
 
 /**
- * Community Wall – enqueue config + JS on the community wall page template.
+ * Community Hub – enqueue config + JS on the community wall page template.
+ *
+ * Script load order (each depends on the previous for global references):
+ *   1. gca-community-wall  (posts + main feed, defines gcaCommunityData)
+ *   2. gca-shoutouts       (shoutout tab, exposes window.GcaShoutouts)
+ *   3. gca-polls           (polls tab, exposes window.GcaPolls)
+ *   4. gca-qa              (Q&A tab + tab orchestration, exposes window.GcaQa)
  */
 add_action('wp_enqueue_scripts', function (): void {
     if (!is_page_template('template-community-wall.php')) {
@@ -1010,43 +1062,65 @@ add_action('wp_enqueue_scripts', function (): void {
     $avatar_url = $local_avatar
         ?: ($current_user->exists() ? (string) get_avatar_url($current_user->ID, ['size' => 40]) : '');
 
+    $is_community_host = function_exists('gca_cw_is_community_host') && gca_cw_is_community_host();
+    $is_admin          = current_user_can('manage_options');
+
+    // Shared data object – available to all community scripts
+    $community_data = wp_json_encode([
+        'restUrl'           => esc_url_raw(rest_url('gca/v1')),
+        'wpRestBase'        => esc_url_raw(rest_url()),
+        'nonce'             => wp_create_nonce('wp_rest'),
+        'currentUserId'     => get_current_user_id(),
+        'currentUserAvatar' => $avatar_url,
+        'isCommunityHost'   => $is_community_host,
+        'isAdmin'           => $is_admin,
+    ]);
+
+    // ── 1. community-wall.js ─────────────────────────────────────────────
     $cw_js_rel = '/assets/scripts/community-wall.js';
     $cw_js_abs = get_template_directory() . $cw_js_rel;
     $cw_js_ver = file_exists($cw_js_abs) ? (string) filemtime($cw_js_abs) : '1.0.0';
 
-    wp_register_script(
-        'gca-community-wall',
-        get_template_directory_uri() . $cw_js_rel,
-        ['gca-interactions'],
-        $cw_js_ver,
-        true
-    );
+    wp_register_script('gca-community-wall', get_template_directory_uri() . $cw_js_rel, ['gca-interactions'], $cw_js_ver, true);
     wp_enqueue_script('gca-community-wall');
+    wp_add_inline_script('gca-community-wall', 'window.gcaCommunityData = ' . $community_data . ';', 'before');
 
-    wp_add_inline_script(
-        'gca-community-wall',
-        'window.gcaCommunityData = ' . wp_json_encode([
-            'restUrl'           => esc_url_raw(rest_url('gca/v1')),
-            'wpRestBase'        => esc_url_raw(rest_url()),
-            'nonce'             => wp_create_nonce('wp_rest'),
-            'currentUserId'     => get_current_user_id(),
-            'currentUserAvatar' => $avatar_url,
-        ]) . ';',
-        'before'
-    );
+    // ── 2. shoutouts.js ──────────────────────────────────────────────────
+    $so_js_rel = '/assets/scripts/shoutouts.js';
+    $so_js_abs = get_template_directory() . $so_js_rel;
+    if (file_exists($so_js_abs)) {
+        $so_js_ver = (string) filemtime($so_js_abs);
+        wp_register_script('gca-shoutouts', get_template_directory_uri() . $so_js_rel, ['gca-community-wall'], $so_js_ver, true);
+        wp_enqueue_script('gca-shoutouts');
+    }
 
-    // Also load GOV.UK Frontend on the community wall page (normally only on is_singular)
+    // ── 3. polls.js ──────────────────────────────────────────────────────
+    $poll_js_rel = '/assets/scripts/polls.js';
+    $poll_js_abs = get_template_directory() . $poll_js_rel;
+    if (file_exists($poll_js_abs)) {
+        $poll_js_ver = (string) filemtime($poll_js_abs);
+        wp_register_script('gca-polls', get_template_directory_uri() . $poll_js_rel, ['gca-community-wall'], $poll_js_ver, true);
+        wp_enqueue_script('gca-polls');
+    }
+
+    // ── 4. qa.js – also receives gcaQaData (same shape as gcaCommunityData) ─
+    $qa_js_rel = '/assets/scripts/qa.js';
+    $qa_js_abs = get_template_directory() . $qa_js_rel;
+    if (file_exists($qa_js_abs)) {
+        $qa_deps     = array_filter(['gca-community-wall', 'gca-shoutouts', 'gca-polls'], fn ($h) => wp_script_is($h, 'registered'));
+        $qa_js_ver   = (string) filemtime($qa_js_abs);
+        wp_register_script('gca-qa', get_template_directory_uri() . $qa_js_rel, array_values($qa_deps), $qa_js_ver, true);
+        wp_enqueue_script('gca-qa');
+        // qa.js reads window.gcaQaData — point it at the shared object
+        wp_add_inline_script('gca-qa', 'window.gcaQaData = window.gcaCommunityData;', 'before');
+    }
+
+    // ── GOV.UK Frontend (needed for accordion etc. on this page) ─────────
     $govuk_js_rel = '/assets/scripts/all.js';
     $govuk_js_abs = get_template_directory() . $govuk_js_rel;
     $govuk_js_ver = file_exists($govuk_js_abs) ? (string) filemtime($govuk_js_abs) : '1.0.0';
 
-    wp_enqueue_script(
-        'gca-govuk-frontend-cw',
-        get_template_directory_uri() . $govuk_js_rel,
-        [],
-        $govuk_js_ver,
-        true
-    );
+    wp_enqueue_script('gca-govuk-frontend-cw', get_template_directory_uri() . $govuk_js_rel, [], $govuk_js_ver, true);
     wp_add_inline_script(
         'gca-govuk-frontend-cw',
         'document.addEventListener("DOMContentLoaded", function() {
@@ -1057,6 +1131,103 @@ add_action('wp_enqueue_scripts', function (): void {
         });',
         'after'
     );
+});
+
+/**
+ * Community Q&A – enqueue JS on the community wall page template.
+ */
+add_action('wp_enqueue_scripts', function (): void {
+    if (!is_page_template('template-community-wall.php')) {
+        return;
+    }
+
+    if (!gca_flag_enabled('community-qa')) {
+        return;
+    }
+
+    $current_user = wp_get_current_user();
+    $local_avatar = $current_user->exists()
+        ? trim((string) get_user_meta($current_user->ID, 'google_profile_picture_local_url', true))
+        : '';
+    $avatar_url = $local_avatar
+        ?: ($current_user->exists() ? (string) get_avatar_url($current_user->ID, ['size' => 40]) : '');
+
+    $qa_js_rel = '/assets/scripts/qa.js';
+    $qa_js_abs = get_template_directory() . $qa_js_rel;
+    $qa_js_ver = file_exists($qa_js_abs) ? (string) filemtime($qa_js_abs) : '1.0.0';
+
+    wp_register_script(
+        'gca-qa',
+        get_template_directory_uri() . $qa_js_rel,
+        ['gca-interactions'],
+        $qa_js_ver,
+        true
+    );
+    wp_enqueue_script('gca-qa');
+
+    wp_add_inline_script(
+        'gca-qa',
+        'window.gcaQaData = ' . wp_json_encode([
+            'restUrl'           => esc_url_raw(rest_url('gca/v1')),
+            'nonce'             => wp_create_nonce('wp_rest'),
+            'currentUserId'     => get_current_user_id(),
+            'currentUserAvatar' => $avatar_url,
+            'isQaModerator'     => current_user_can('edit_others_qa_questions'),
+        ]) . ';',
+        'before'
+    );
+});
+
+/**
+ * Community Polls – enqueue JS on the community wall page template.
+ */
+add_action('wp_enqueue_scripts', function (): void {
+    if (!is_page_template('template-community-wall.php')) {
+        return;
+    }
+
+    if (!gca_flag_enabled('community-polls')) {
+        return;
+    }
+
+    $polls_js_rel = '/assets/scripts/polls.js';
+    $polls_js_abs = get_template_directory() . $polls_js_rel;
+    $polls_js_ver = file_exists($polls_js_abs) ? (string) filemtime($polls_js_abs) : '1.0.0';
+
+    wp_register_script(
+        'gca-polls',
+        get_template_directory_uri() . $polls_js_rel,
+        ['gca-community-wall'],
+        $polls_js_ver,
+        true
+    );
+    wp_enqueue_script('gca-polls');
+});
+
+/**
+ * Community Shout-outs – enqueue JS on the community wall page template.
+ */
+add_action('wp_enqueue_scripts', function (): void {
+    if (!is_page_template('template-community-wall.php')) {
+        return;
+    }
+
+    if (!gca_flag_enabled('community-shoutouts')) {
+        return;
+    }
+
+    $shoutouts_js_rel = '/assets/scripts/shoutouts.js';
+    $shoutouts_js_abs = get_template_directory() . $shoutouts_js_rel;
+    $shoutouts_js_ver = file_exists($shoutouts_js_abs) ? (string) filemtime($shoutouts_js_abs) : '1.0.0';
+
+    wp_register_script(
+        'gca-shoutouts',
+        get_template_directory_uri() . $shoutouts_js_rel,
+        ['gca-community-wall'],
+        $shoutouts_js_ver,
+        true
+    );
+    wp_enqueue_script('gca-shoutouts');
 });
 
 /**
@@ -1336,7 +1507,7 @@ function gca_get_search_autocomplete_items(string $term, int $limit = 5): array
             ])));
 
             $results[] = [
-                'title'    => (string) $result->display_name,
+                'title'    => html_entity_decode((string) $result->display_name, ENT_QUOTES | ENT_HTML5, 'UTF-8'),
                 'meta'     => $role_line !== ''
                     ? sprintf(__('Staff profile - %s', 'gca-intranet'), $role_line)
                     : __('Staff profile', 'gca-intranet'),
@@ -1353,6 +1524,41 @@ function gca_get_search_autocomplete_items(string $term, int $limit = 5): array
         }
     }
 
+    $staff_dir_page = get_page_by_path('staff-directory');
+    $staff_dir_url  = ($staff_dir_page instanceof WP_Post) ? get_permalink($staff_dir_page) : null;
+
+    $sections = [
+        ['keywords' => ['news'],                        'title' => __('News', 'gca-intranet'),            'url' => get_post_type_archive_link('news')],
+        ['keywords' => ['blog', 'blogs'],               'title' => __('Blogs', 'gca-intranet'),           'url' => get_post_type_archive_link('blog')],
+        ['keywords' => ['work update', 'work updates'], 'title' => __('Work Updates', 'gca-intranet'),    'url' => get_post_type_archive_link('work_update')],
+        ['keywords' => ['event', 'events'],             'title' => __('Events', 'gca-intranet'),          'url' => get_post_type_archive_link('event')],
+        ['keywords' => ['staff directory'],             'title' => __('Staff Directory', 'gca-intranet'), 'url' => $staff_dir_url],
+    ];
+
+    foreach ($sections as $section) {
+        if (empty($section['url'])) {
+            continue;
+        }
+        $section_score = 0;
+        foreach ($section['keywords'] as $kw) {
+            if ($q_lower === $kw) {
+                $section_score = 100;
+                break;
+            } elseif (str_contains($q_lower, $kw) || str_contains($kw, $q_lower)) {
+                $section_score = max($section_score, 50);
+            }
+        }
+        if ($section_score > 0) {
+            $results[] = [
+                'title'    => $section['title'],
+                'meta'     => __('Section', 'gca-intranet'),
+                'url'      => (string) $section['url'],
+                'score'    => $section_score,
+                'sort_key' => $section['title'],
+            ];
+        }
+    }
+
     $post_types = array_values(array_diff(
         array_keys(get_post_types(['public' => true, 'exclude_from_search' => false])),
         ['blog', 'news']
@@ -1362,7 +1568,7 @@ function gca_get_search_autocomplete_items(string $term, int $limit = 5): array
         's'                   => $term,
         'post_type'           => $post_types,
         'post_status'         => 'publish',
-        'posts_per_page'      => max(10, $limit),
+        'posts_per_page'      => max(30, $limit * 6),
         'orderby'             => 'relevance',
         'order'               => 'DESC',
         'suppress_filters'    => false,
@@ -1370,7 +1576,7 @@ function gca_get_search_autocomplete_items(string $term, int $limit = 5): array
     ]);
 
     foreach ($posts as $post) {
-        $title = get_the_title($post);
+        $title = html_entity_decode(get_the_title($post), ENT_QUOTES | ENT_HTML5, 'UTF-8');
         if ($title === '') {
             continue;
         }
@@ -1409,7 +1615,7 @@ function gca_get_search_autocomplete_items(string $term, int $limit = 5): array
     });
 
     $results = array_values(array_reduce($results, static function (array $carry, array $item): array {
-        $key = mb_strtolower($item['title']) . '|' . untrailingslashit($item['url']);
+        $key = mb_strtolower($item['title']) . '|' . mb_strtolower($item['meta']);
         if (!isset($carry[$key])) {
             $carry[$key] = $item;
         }
@@ -3183,4 +3389,21 @@ function gca_show_all_screen_options($hidden, $screen) {
     return $hidden;
 }
 endif;
+
+// ---------------------------------------------------------------------------
+// Related Articles component
+// ---------------------------------------------------------------------------
+
+
+// Ensure Excerpt, Slug, and Author meta boxes are never force-hidden on our
+// post types, regardless of any previously saved Screen Options user-meta.
+add_filter( 'hidden_meta_boxes', function ( $hidden, $screen ) {
+    $types = [ 'news', 'blog', 'work_update', 'event' ];
+    if ( isset( $screen->post_type ) && in_array( $screen->post_type, $types, true ) ) {
+        $hidden = array_values( array_diff( $hidden, [ 'postexcerpt', 'slugdiv', 'authordiv' ] ) );
+    }
+    return $hidden;
+}, 10, 2 );
+
+
 add_filter('default_hidden_meta_boxes', 'gca_show_all_screen_options', 10, 2);
