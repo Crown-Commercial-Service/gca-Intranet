@@ -37,6 +37,7 @@ class GCA_Workflow_Roles {
         'delete_others_posts'       => true,
         'delete_published_posts'    => true,
         'moderate_comments'         => true,
+        'manage_gca_announcement'   => true,
     ];
 
 

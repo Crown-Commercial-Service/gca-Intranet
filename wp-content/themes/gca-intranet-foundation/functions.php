@@ -2053,12 +2053,27 @@ add_action('admin_menu', function (): void {
     add_menu_page(
         __('Global Settings', 'gca-intranet'),
         __('Global Settings', 'gca-intranet'),
-        'manage_options',
+        'manage_gca_announcement',
         'gca-global-settings',
         'gca_global_settings_page',
         'dashicons-admin-settings',
         25
     );
+});
+
+// Grant manage_gca_announcement to any user who can manage_options (administrators).
+add_filter('user_has_cap', function (array $caps, array $cap_list, array $args): array {
+    if (in_array('manage_gca_announcement', $cap_list, true) && !empty($caps['manage_options'])) {
+        $caps['manage_gca_announcement'] = true;
+    }
+    return $caps;
+}, 10, 3);
+
+add_filter('option_page_capability_gca_global_settings', function (string $cap): string {
+    if (current_user_can('manage_gca_announcement')) {
+        return 'manage_gca_announcement';
+    }
+    return $cap;
 });
 
 add_action('admin_init', function (): void {
@@ -2120,11 +2135,12 @@ function gca_get_banner_url(string $option_key, string $fallback_filename): stri
 
 function gca_global_settings_page(): void
 {
-    if (!current_user_can('manage_options')) {
+    if (!current_user_can('manage_options') && !current_user_can('manage_gca_announcement')) {
         return;
     }
 
-    $updated = isset($_GET['settings-updated']);
+    $is_admin = current_user_can('manage_options');
+    $updated  = isset($_GET['settings-updated']);
     ?>
     <div class="wrap">
       <h1><?php esc_html_e('Global Settings', 'gca-intranet'); ?></h1>
@@ -2138,6 +2154,7 @@ function gca_global_settings_page(): void
       <form method="post" action="options.php">
         <?php settings_fields('gca_global_settings'); ?>
 
+        <?php if ($is_admin): ?>
         <h2><?php esc_html_e('Cookies banner', 'gca-intranet'); ?></h2>
         <p class="description"><?php esc_html_e('Content displayed in the cookies notice shown to users on first visit.', 'gca-intranet'); ?></p>
 
@@ -2236,7 +2253,9 @@ function gca_global_settings_page(): void
           </tr>
           <?php endforeach; ?>
         </table>
+        <?php endif; ?>
 
+        <?php if (gca_flag_enabled('site-wide-announcement')): ?>
         <h2><?php esc_html_e('Announcement banner', 'gca-intranet'); ?></h2>
         <p class="description"><?php esc_html_e('Displays a site-wide announcement bar at the top of every page. Requires the "Site-wide Announcement Banner" feature flag to be enabled.', 'gca-intranet'); ?></p>
 
@@ -2326,7 +2345,11 @@ function gca_global_settings_page(): void
             });
           }
         }(jQuery));
+        </script>
+        <?php endif; ?>
 
+        <?php if ($is_admin): ?>
+        <script>
         (function ($) {
           $('.gca-banner-select').on('click', function () {
             var targetId  = $(this).data('target');
@@ -2358,6 +2381,7 @@ function gca_global_settings_page(): void
           });
         }(jQuery));
         </script>
+        <?php endif; ?>
 
         <?php submit_button(); ?>
       </form>
