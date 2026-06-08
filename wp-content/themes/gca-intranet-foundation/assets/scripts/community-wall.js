@@ -1,12 +1,16 @@
-/* global window, document, fetch, FormData, URL, URLSearchParams, confirm */
+/* global window, document, fetch, FormData, URL, URLSearchParams */
 (function () {
     'use strict';
 
-    var cfg        = window.gcaCommunityData || {};
-    var restUrl    = cfg.restUrl    || '';
-    var wpRestBase = cfg.wpRestBase || '';
-    var nonce      = cfg.nonce      || '';
-    var userAvatar = cfg.currentUserAvatar || '';
+    var cfg             = window.gcaCommunityData || {};
+    var restUrl         = cfg.restUrl             || '';
+    var wpRestBase      = cfg.wpRestBase          || '';
+    var nonce           = cfg.nonce               || '';
+    var userAvatar      = cfg.currentUserAvatar   || '';
+    var isCommunityHost = cfg.isCommunityHost     || false;
+    var isAdmin         = cfg.isAdmin             || false;
+
+    var CHAR_LIMIT = 500;
 
     // ── Utility ───────────────────────────────────────────────────────────────
 
@@ -33,7 +37,93 @@
         return d.innerHTML;
     }
 
+    function confirmDelete(triggerEl, title, body) {
+        return new Promise(function (resolve) {
+            var previouslyFocused = document.activeElement;
+            var modal = document.createElement('div');
+            modal.className = 'gca-lc-delete-modal';
+            modal.setAttribute('role', 'presentation');
+            modal.innerHTML =
+                '<div class="gca-lc-delete-modal__overlay" data-action="cancel-delete"></div>' +
+                '<div class="gca-lc-delete-modal__dialog" role="dialog" aria-modal="true" aria-labelledby="gca-cw-delete-title" aria-describedby="gca-cw-delete-description" tabindex="-1">' +
+                '<button type="button" class="gca-lc-delete-modal__close" data-action="cancel-delete" aria-label="Close delete confirmation">' +
+                '<span aria-hidden="true">&times;</span>' +
+                '</button>' +
+                '<div class="gca-lc-delete-modal__content">' +
+                '<h2 class="gca-lc-delete-modal__title" id="gca-cw-delete-title">' + esc(title) + '</h2>' +
+                '<p class="gca-lc-delete-modal__body" id="gca-cw-delete-description">' + esc(body) + '</p>' +
+                '<div class="gca-lc-delete-modal__actions">' +
+                '<button type="button" class="gca-lc-delete-modal__confirm" data-action="confirm-delete">Yes, delete it</button>' +
+                '<button type="button" class="gca-lc-delete-modal__cancel" data-action="cancel-delete">Cancel</button>' +
+                '</div>' +
+                '</div>' +
+                '</div>';
+
+            function close(confirmed) {
+                document.removeEventListener('keydown', onKeydown);
+                modal.remove();
+                if (previouslyFocused && typeof previouslyFocused.focus === 'function') {
+                    previouslyFocused.focus();
+                } else if (triggerEl && typeof triggerEl.focus === 'function') {
+                    triggerEl.focus();
+                }
+                resolve(confirmed);
+            }
+
+            function onKeydown(e) {
+                if (e.key === 'Escape') { close(false); return; }
+                if (e.key !== 'Tab') { return; }
+                var focusable = modal.querySelectorAll('button');
+                var first = focusable[0];
+                var last  = focusable[focusable.length - 1];
+                if (!first || !last) { return; }
+                if (e.shiftKey && document.activeElement === first) {
+                    e.preventDefault(); last.focus();
+                } else if (!e.shiftKey && document.activeElement === last) {
+                    e.preventDefault(); first.focus();
+                }
+            }
+
+            modal.addEventListener('click', function (e) {
+                var actionBtn = e.target.closest('[data-action]');
+                if (!actionBtn) { return; }
+                if (actionBtn.dataset.action === 'confirm-delete') { close(true); }
+                if (actionBtn.dataset.action === 'cancel-delete')  { close(false); }
+            });
+
+            document.body.appendChild(modal);
+            document.addEventListener('keydown', onKeydown);
+
+            var cancelBtn = modal.querySelector('[data-action="cancel-delete"].gca-lc-delete-modal__cancel');
+            if (cancelBtn) { setTimeout(function () { cancelBtn.focus(); }, 50); }
+        });
+    }
+
+    function showDeleteToast(message) {
+        var toast = document.createElement('div');
+        toast.className = 'gca-cw-toast';
+        toast.setAttribute('role', 'status');
+        toast.setAttribute('aria-live', 'polite');
+        toast.textContent = message;
+        document.body.appendChild(toast);
+        setTimeout(function () {
+            toast.classList.add('gca-cw-toast--fading');
+            setTimeout(function () { toast.remove(); }, 300);
+        }, 3000);
+    }
+
+    window.gcaShowDeleteToast = showDeleteToast;
+
+    // ── Relative time ─────────────────────────────────────────────────────────
+    // < 1 min    → "just now"
+    // < 1 hour   → "X mins ago"
+    // < 24 hours → "X hrs ago"
+    // Yesterday  → "Yesterday"
+    // 2–6 days   → day name ("Tuesday")
+    // 7+ days    → date ("12 Jan 2025")
+
     function relativeTime(iso) {
+        if (!iso) { return ''; }
         var then = new Date(iso);
         var now  = new Date();
         var diff = Math.floor((now - then) / 1000);
@@ -53,18 +143,31 @@
         var dayDiff  = Math.round((todayDay - thenDay) / 86400000);
 
         if (dayDiff === 1) { return 'Yesterday'; }
+        if (dayDiff < 7)   { return then.toLocaleDateString('en-GB', { weekday: 'long' }); }
 
         return then.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
     }
 
-    // ── Build the gca-lc (likes + comments) HTML for a post ───────────────────
-    // Mirrors the structure in template-parts/likes-and-comments.php so the
-    // existing gca-interactions JS (window.GcaLc.init) can wire it up.
+    // Tick <time> elements every minute while they are still within 7 days
+    function startTimeTicker() {
+        setInterval(function () {
+            document.querySelectorAll('.gca-cw-feed time[datetime]').forEach(function (el) {
+                var iso = el.getAttribute('datetime');
+                if (!iso) { return; }
+                var diff = Math.floor((Date.now() - new Date(iso).getTime()) / 1000);
+                if (diff < 7 * 86400) {
+                    el.textContent = relativeTime(iso);
+                }
+            });
+        }, 60000);
+    }
+
+    // ── Build gca-lc HTML ────────────────────────────────────────────────────
 
     function buildLcHtml(postId, likeCount, userHasLiked, commentCount) {
         var liked = userHasLiked ? 'true' : 'false';
         return (
-            '<section class="gca-lc" data-post-id="' + postId + '" aria-label="Likes and comments">' +
+            '<section class="gca-lc" data-post-id="' + postId + '" aria-label="Likes and comments, post ' + postId + '">' +
             '<div class="govuk-visually-hidden" aria-live="polite" aria-atomic="true" id="gca-lc-status-' + postId + '"></div>' +
 
             '<div class="gca-lc__like-bar">' +
@@ -86,12 +189,6 @@
             '<span class="gca-lc__comment-count-label"><span class="gca-lc__comment-count">' + esc(commentCount) + '</span> comments</span>' +
             '</button>' +
 
-            '<button type="button" class="gca-cw-post__interact-btn gca-cw-post__bookmark-btn"' +
-            ' aria-label="Bookmark (coming soon)" disabled>' +
-            '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true" focusable="false">' +
-            '<path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>' +
-            '</svg>' +
-            '</button>' +
             '</div>' +
 
             '<div class="gca-lc__comments-panel" id="gca-lc-comments-' + postId + '" hidden>' +
@@ -121,15 +218,13 @@
         );
     }
 
-    // ── Render a single post card ──────────────────────────────────────────────
+    // ── Render a regular post card ────────────────────────────────────────────
 
     function buildMediaHtml(media) {
         if (!media || !media.length) { return ''; }
-
-        var isSingle  = media.length === 1;
-        var cls       = isSingle ? 'gca-cw-post__media' : 'gca-cw-post__media gca-cw-post__media--grid';
-        var inner     = '';
-
+        var isSingle = media.length === 1;
+        var cls      = isSingle ? 'gca-cw-post__media' : 'gca-cw-post__media gca-cw-post__media--grid';
+        var inner    = '';
         media.forEach(function (m) {
             if (m.type === 'video') {
                 inner += '<video src="' + esc(m.url) + '" controls preload="metadata" aria-label="Post video attachment"></video>';
@@ -137,8 +232,28 @@
                 inner += '<img src="' + esc(m.url) + '" alt="' + esc(m.alt || '') + '" loading="lazy" decoding="async">';
             }
         });
-
         return '<div class="' + cls + '">' + inner + '</div>';
+    }
+
+    function buildMoreMenu(postId, canDelete) {
+        if (!canDelete) { return ''; }
+        return (
+            '<div class="gca-cw-post__more-wrap">' +
+            '<button type="button" class="gca-cw-post__more-btn"' +
+            ' aria-label="More options" aria-expanded="false" aria-haspopup="menu"' +
+            ' data-post-id="' + postId + '">' +
+            '<svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true" focusable="false">' +
+            '<circle cx="12" cy="5" r="1.5"/><circle cx="12" cy="12" r="1.5"/><circle cx="12" cy="19" r="1.5"/>' +
+            '</svg></button>' +
+            '<ul class="gca-cw-post__dropdown" id="gca-cw-dd-' + postId + '" role="menu" hidden>' +
+            '<li role="none"><button type="button" role="menuitem"' +
+            ' class="gca-cw-post__dropdown-btn gca-cw-post__dropdown-btn--delete"' +
+            ' data-action="delete-post" data-post-id="' + postId + '">' +
+            '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" aria-hidden="true">' +
+            '<path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>' +
+            '</svg> Delete post</button></li>' +
+            '</ul></div>'
+        );
     }
 
     function renderPost(post) {
@@ -149,27 +264,6 @@
         var teamHtml = post.author_team
             ? '<span class="gca-cw-post__author-team">' + esc(post.author_team) + '</span>'
             : '';
-
-        var moreMenuHtml = '';
-        if (post.is_own) {
-            moreMenuHtml = (
-                '<div class="gca-cw-post__more-wrap">' +
-                '<button type="button" class="gca-cw-post__more-btn"' +
-                ' aria-label="More options" aria-expanded="false" aria-haspopup="menu"' +
-                ' data-post-id="' + post.id + '">' +
-                '<svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true" focusable="false">' +
-                '<circle cx="12" cy="5" r="1.5"/><circle cx="12" cy="12" r="1.5"/><circle cx="12" cy="19" r="1.5"/>' +
-                '</svg></button>' +
-                '<ul class="gca-cw-post__dropdown" id="gca-cw-dd-' + post.id + '" role="menu" hidden>' +
-                '<li role="none"><button type="button" role="menuitem"' +
-                ' class="gca-cw-post__dropdown-btn gca-cw-post__dropdown-btn--delete"' +
-                ' data-action="delete-post" data-post-id="' + post.id + '">' +
-                '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" aria-hidden="true">' +
-                '<path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>' +
-                '</svg> Delete post</button></li>' +
-                '</ul></div>'
-            );
-        }
 
         return (
             '<article class="gca-cw-post" id="gca-cw-post-' + post.id + '">' +
@@ -182,7 +276,7 @@
             teamHtml +
             '<span class="gca-cw-post__meta-dot"><time datetime="' + esc(post.date_iso) + '">' + esc(relativeTime(post.date_iso)) + '</time></span>' +
             '</div></div></div>' +
-            moreMenuHtml +
+            buildMoreMenu(post.id, post.can_delete) +
             '</div>' +
             '<div class="gca-cw-post__content">' + post.content_html + '</div>' +
             buildMediaHtml(post.media) +
@@ -191,23 +285,53 @@
         );
     }
 
-    // ── Feed state ─────────────────────────────────────────────────────────────
+    // ── Mixed feed item renderer ──────────────────────────────────────────────
+
+    function renderItem(item) {
+        switch (item.kind) {
+            case 'shoutout':
+                if (window.GcaShoutouts && typeof window.GcaShoutouts.renderShoutout === 'function') {
+                    return window.GcaShoutouts.renderShoutout(item);
+                }
+                break;
+            case 'poll':
+                if (window.GcaPolls && typeof window.GcaPolls.renderPoll === 'function') {
+                    return window.GcaPolls.renderPoll(item);
+                }
+                break;
+            case 'qa':
+                if (window.GcaQa && typeof window.GcaQa.renderAnsweredQuestion === 'function') {
+                    return window.GcaQa.renderAnsweredQuestion(item);
+                }
+                break;
+        }
+        return renderPost(item);
+    }
+
+    function initItemInteractions(articleEl, item) {
+        var lcEl = articleEl ? articleEl.querySelector('.gca-lc') : null;
+        if (lcEl && window.GcaLc && typeof window.GcaLc.init === 'function') {
+            window.GcaLc.init(lcEl);
+        }
+        if (item && item.kind === 'poll' && window.GcaPolls && typeof window.GcaPolls.initPollCard === 'function') {
+            window.GcaPolls.initPollCard(articleEl);
+        }
+    }
+
+    // ── Feed state ────────────────────────────────────────────────────────────
 
     var feedEl, footerEl, loadMoreBtn, endEl, loadingEl;
     var currentPage = 1;
     var totalPages  = 1;
     var isLoading   = false;
 
-    function initLcForPost(articleEl) {
-        var lcEl = articleEl ? articleEl.querySelector('.gca-lc') : null;
-        if (lcEl && window.GcaLc && typeof window.GcaLc.init === 'function') {
-            window.GcaLc.init(lcEl);
-        }
-    }
+    function appendItem(item, prepend) {
+        if (!feedEl) { return; }
+        var html = renderItem(item);
+        if (!html) { return; }
 
-    function appendPost(post, prepend) {
         var tmp = document.createElement('div');
-        tmp.innerHTML = renderPost(post);
+        tmp.innerHTML = html;
         var articleEl = tmp.firstElementChild;
         if (!articleEl) { return; }
 
@@ -217,7 +341,7 @@
             feedEl.appendChild(articleEl);
         }
 
-        initLcForPost(articleEl);
+        initItemInteractions(articleEl, item);
     }
 
     function loadFeed(page) {
@@ -235,16 +359,16 @@
                 if (!data.posts || !data.posts.length) {
                     if (page === 1) {
                         var empty = document.createElement('p');
-                        empty.className = 'gca-cw-feed__status';
+                        empty.className   = 'gca-cw-feed__status';
                         empty.textContent = 'No posts yet — be the first to share an update!';
                         feedEl.appendChild(empty);
                     }
-                    if (footerEl)   { footerEl.hidden = true; }
-                    if (endEl)      { endEl.hidden = false; }
+                    if (footerEl) { footerEl.hidden = true; }
+                    if (endEl)    { endEl.hidden = false; }
                     return;
                 }
 
-                data.posts.forEach(function (post) { appendPost(post, false); });
+                data.posts.forEach(function (item) { appendItem(item, false); });
 
                 if (currentPage < totalPages) {
                     if (footerEl) { footerEl.hidden = false; }
@@ -257,7 +381,7 @@
             .catch(function () {
                 if (loadingEl) { loadingEl.hidden = true; }
                 var errEl = document.createElement('p');
-                errEl.className = 'gca-cw-feed__status';
+                errEl.className   = 'gca-cw-feed__status';
                 errEl.textContent = 'Could not load posts. Please refresh the page.';
                 feedEl.appendChild(errEl);
             })
@@ -267,24 +391,29 @@
             });
     }
 
-    // ── Post creation ──────────────────────────────────────────────────────────
+    // ── Post creation ─────────────────────────────────────────────────────────
 
-    var pendingMediaIds  = [];
+    var pendingMediaIds = [];
 
     function setupCompose() {
-        var triggerBtn  = document.getElementById('gca-cw-trigger');
-        var formArea    = document.getElementById('gca-cw-form-area');
-        var cancelBtn   = document.getElementById('gca-cw-cancel');
-        var form        = document.getElementById('gca-cw-form');
-        var submitBtn   = document.getElementById('gca-cw-submit');
-        var textarea    = document.getElementById('gca-cw-content');
-        var charsLeft   = document.getElementById('gca-cw-chars-left');
-        var charHint    = document.getElementById('gca-cw-char-hint');
-        var fileInput   = document.getElementById('gca-cw-file-input');
-        var mediaPrev   = document.getElementById('gca-cw-media-preview');
-        var errorEl     = document.getElementById('gca-cw-error');
+        var triggerBtn = document.getElementById('gca-cw-trigger');
+        var formArea   = document.getElementById('gca-cw-form-area');
+        var cancelBtn  = document.getElementById('gca-cw-cancel');
+        var form       = document.getElementById('gca-cw-form');
+        var submitBtn  = document.getElementById('gca-cw-submit');
+        var textarea   = document.getElementById('gca-cw-content');
+        var charsLeft  = document.getElementById('gca-cw-chars-left');
+        var charHint   = document.getElementById('gca-cw-char-hint');
+        var fileInput    = document.getElementById('gca-cw-file-input');
+        var mediaPrev    = document.getElementById('gca-cw-media-preview');
+        var errorEl      = document.getElementById('gca-cw-error');
+        var mentionList  = document.getElementById('gca-cw-mention-list');
 
         if (!triggerBtn || !formArea || !form) { return; }
+
+        var encodeMentions = (textarea && mentionList && window.GcaLc && window.GcaLc.setupMentions)
+            ? window.GcaLc.setupMentions(textarea, mentionList)
+            : null;
 
         function openForm() {
             triggerBtn.setAttribute('aria-expanded', 'true');
@@ -295,46 +424,42 @@
         function closeForm() {
             triggerBtn.setAttribute('aria-expanded', 'false');
             formArea.hidden = true;
-            if (form) { form.reset(); }
-            if (charsLeft) { charsLeft.textContent = '2000'; }
+            if (form)      { form.reset(); }
+            if (charsLeft) { charsLeft.textContent = String(CHAR_LIMIT); }
             if (charHint)  { charHint.classList.remove('gca-cw-compose__char-hint--warning'); }
             if (mediaPrev) { mediaPrev.innerHTML = ''; mediaPrev.hidden = true; }
             if (errorEl)   { errorEl.hidden = true; }
+            if (textarea)  { textarea.removeAttribute('aria-invalid'); }
             pendingMediaIds = [];
-            activeUploads  = 0;
+            activeUploads   = 0;
             setPostBtnState();
         }
 
         triggerBtn.addEventListener('click', openForm);
         if (cancelBtn) { cancelBtn.addEventListener('click', closeForm); }
 
-        // Character counter
+        // Character counter (maxlength="500" in HTML enforces the hard cap)
         if (textarea && charsLeft) {
             textarea.addEventListener('input', function () {
-                var remaining = 2000 - textarea.value.length;
+                var remaining = CHAR_LIMIT - textarea.value.length;
                 charsLeft.textContent = remaining;
                 if (charHint) {
-                    charHint.classList.toggle('gca-cw-compose__char-hint--warning', remaining < 100);
+                    charHint.classList.toggle('gca-cw-compose__char-hint--warning', remaining < 50);
                 }
             });
         }
 
-        // Media file selection and upload
         var activeUploads = 0;
 
         function setPostBtnState() {
             if (!submitBtn) { return; }
-            submitBtn.disabled = activeUploads > 0;
-            if (activeUploads > 0) {
-                submitBtn.textContent = 'Uploading…';
-            } else {
-                submitBtn.textContent = 'Post';
-            }
+            submitBtn.disabled    = activeUploads > 0;
+            submitBtn.textContent = activeUploads > 0 ? 'Uploading…' : 'Post update';
         }
 
         if (fileInput && mediaPrev) {
             fileInput.addEventListener('change', function () {
-                var files = Array.prototype.slice.call(fileInput.files || []);
+                var files        = Array.prototype.slice.call(fileInput.files || []);
                 var currentCount = pendingMediaIds.filter(function (id) { return id !== null; }).length;
 
                 files.forEach(function (file) {
@@ -344,31 +469,29 @@
                     var slotIdx = pendingMediaIds.length;
                     pendingMediaIds.push(null);
 
-                    // Build preview element
                     var item = document.createElement('div');
-                    item.className = 'gca-cw-compose__preview-item';
-                    item.dataset.slot = slotIdx;
+                    item.className      = 'gca-cw-compose__preview-item';
+                    item.dataset.slot   = slotIdx;
 
                     var preview;
                     if (file.type.indexOf('video') === 0) {
-                        preview = document.createElement('video');
-                        preview.src = URL.createObjectURL(file);
+                        preview         = document.createElement('video');
+                        preview.src     = URL.createObjectURL(file);
                         preview.preload = 'metadata';
                     } else {
-                        preview = document.createElement('img');
+                        preview     = document.createElement('img');
                         preview.src = URL.createObjectURL(file);
                         preview.alt = '';
                     }
-                    // Inline styles override the global img { width:100% } rule
-                    preview.style.width       = '120px';
-                    preview.style.height      = '80px';
-                    preview.style.objectFit   = 'cover';
-                    preview.style.display     = 'block';
-                    preview.style.flexShrink  = '0';
+                    preview.style.width      = '120px';
+                    preview.style.height     = '80px';
+                    preview.style.objectFit  = 'cover';
+                    preview.style.display    = 'block';
+                    preview.style.flexShrink = '0';
                     item.appendChild(preview);
 
                     var removeBtn = document.createElement('button');
-                    removeBtn.type = 'button';
+                    removeBtn.type      = 'button';
                     removeBtn.className = 'gca-cw-compose__preview-remove';
                     removeBtn.innerHTML = '&times;';
                     removeBtn.setAttribute('aria-label', 'Remove this attachment');
@@ -384,7 +507,6 @@
                     mediaPrev.appendChild(item);
                     mediaPrev.hidden = false;
 
-                    // Upload immediately to WP media library (raw binary — WP requires Content-Disposition)
                     activeUploads++;
                     setPostBtnState();
 
@@ -403,7 +525,6 @@
                             .then(function (r) { return r.json().then(function (d) { if (!r.ok) { throw d; } return d; }); })
                             .then(function (media) { pendingMediaIds[slot] = media.id; })
                             .catch(function () {
-                                // Mark failed upload visually
                                 var slot_item = mediaPrev.querySelector('[data-slot="' + slot + '"]');
                                 if (slot_item) { slot_item.style.outline = '3px solid #d4351c'; }
                             })
@@ -414,16 +535,19 @@
                     }(slotIdx, file));
                 });
 
-                fileInput.value = ''; // allow re-selecting same file
+                fileInput.value = '';
             });
         }
 
-        // Form submit → create post
         form.addEventListener('submit', function (e) {
             e.preventDefault();
-
-            var content = textarea ? textarea.value.trim() : '';
-            if (!content) { if (textarea) { textarea.focus(); } return; }
+            var raw     = textarea ? textarea.value.trim() : '';
+            var content = (raw && encodeMentions) ? encodeMentions(raw) : raw;
+            if (!content) {
+                if (textarea) { textarea.setAttribute('aria-invalid', 'true'); textarea.focus(); }
+                return;
+            }
+            if (textarea) { textarea.removeAttribute('aria-invalid'); }
 
             if (submitBtn) { submitBtn.disabled = true; submitBtn.textContent = 'Posting…'; }
 
@@ -433,13 +557,11 @@
                 .then(function (post) {
                     closeForm();
 
-                    // Remove the "no posts" placeholder if it's there
-                    var ph = feedEl.querySelector('.gca-cw-feed__status');
+                    var ph = feedEl ? feedEl.querySelector('.gca-cw-feed__status') : null;
                     if (ph) { ph.remove(); }
 
-                    appendPost(post, true);
+                    appendItem(post, true);
 
-                    // Focus the new post
                     var newArticle = document.getElementById('gca-cw-post-' + post.id);
                     if (newArticle) {
                         newArticle.setAttribute('tabindex', '-1');
@@ -447,34 +569,33 @@
                         newArticle.removeAttribute('tabindex');
                     }
                 })
-                .catch(function () {
+                .catch(function (err) {
                     if (errorEl) {
-                        errorEl.textContent = 'Could not post update. Please try again.';
+                        errorEl.textContent = (err && err.error) ? err.error : 'Could not post update. Please try again.';
                         errorEl.hidden = false;
+                        errorEl.focus();
                     }
+                    if (textarea) { textarea.setAttribute('aria-invalid', 'true'); }
                 })
                 .finally(function () {
                     if (submitBtn) {
-                        submitBtn.disabled = false;
+                        submitBtn.disabled    = false;
                         submitBtn.textContent = 'Post update';
                     }
                 });
         });
     }
 
-    // ── Feed event delegation (dropdown menu + delete) ─────────────────────────
+    // ── Feed event delegation (dropdown menu + delete) ────────────────────────
 
     function setupFeedEvents() {
         if (!feedEl) { return; }
 
-        feedEl.addEventListener('click', function (e) {
-
-            // Three-dot toggle
+        // ── Single document handler: three-dot toggle (all tabs) + outside-click close
+        document.addEventListener('click', function (e) {
             var moreBtn = e.target.closest('.gca-cw-post__more-btn');
             if (moreBtn) {
-                e.stopPropagation();
-                var pid      = moreBtn.dataset.postId;
-                var dropdown = document.getElementById('gca-cw-dd-' + pid);
+                var dropdown = moreBtn.parentElement.querySelector('.gca-cw-post__dropdown');
                 if (!dropdown) { return; }
                 var opening = dropdown.hidden;
                 closeAllDropdowns();
@@ -484,25 +605,6 @@
                 }
                 return;
             }
-
-            // Delete post
-            var deleteBtn = e.target.closest('[data-action="delete-post"]');
-            if (deleteBtn) {
-                var postId = deleteBtn.dataset.postId;
-                if (!confirm('Are you sure you want to delete this post?')) { return; }
-                apiFetch('DELETE', '/community/posts/' + postId)
-                    .then(function () {
-                        var postEl = document.getElementById('gca-cw-post-' + postId);
-                        if (postEl) { postEl.remove(); }
-                    })
-                    .catch(function () {
-                        alert('Could not delete post. Please try again.');
-                    });
-            }
-        });
-
-        // Close dropdowns on outside click
-        document.addEventListener('click', function (e) {
             if (!e.target.closest('.gca-cw-post__more-wrap')) {
                 closeAllDropdowns();
             }
@@ -511,6 +613,29 @@
         document.addEventListener('keydown', function (e) {
             if (e.key === 'Escape') { closeAllDropdowns(); }
         });
+
+        // ── Delete community post ─────────────────────────────────────────────
+        // Use capture phase on document.body so third-party scripts (e.g. GF's
+        // jQuery handlers) cannot swallow the event before it reaches us.
+        document.body.addEventListener('click', function (e) {
+            var deletePostBtn = e.target.closest('[data-action="delete-post"]');
+            if (!deletePostBtn) { return; }
+            var postId = deletePostBtn.dataset.postId;
+            confirmDelete(deletePostBtn, 'Are you sure you want to delete this post?', 'This will permanently delete the post. You cannot undo this action.')
+                .then(function (confirmed) {
+                    if (!confirmed) { return; }
+                    var postEl = document.getElementById('gca-cw-post-' + postId);
+                    var parent = postEl && postEl.parentNode;
+                    var next   = postEl && postEl.nextSibling;
+                    if (postEl) { postEl.remove(); }
+                    showDeleteToast('Post deleted successfully.');
+                    apiFetch('DELETE', '/community/posts/' + postId)
+                        .catch(function () {
+                            if (postEl && parent) { parent.insertBefore(postEl, next); }
+                            alert('Could not delete post. Please try again.');
+                        });
+                });
+        }, true);
     }
 
     function closeAllDropdowns() {
@@ -529,9 +654,13 @@
 
         if (!feedEl) { return; }
 
-        setupCompose();
+        if (isCommunityHost || isAdmin) {
+            setupCompose();
+        }
+
         setupFeedEvents();
         loadFeed(1);
+        startTimeTicker();
 
         if (loadMoreBtn) {
             loadMoreBtn.addEventListener('click', function () {
@@ -539,4 +668,12 @@
             });
         }
     });
+
+    // ── Public API ────────────────────────────────────────────────────────────
+
+    window.GcaCommunityWall = {
+        appendItem:   appendItem,
+        relativeTime: relativeTime,
+        buildLcHtml:  buildLcHtml,
+    };
 }());

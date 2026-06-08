@@ -1,0 +1,352 @@
+// =============================================================================
+// Community Q&A
+// =============================================================================
+
+// Reuses $gca-cw-* tokens from _community-wall.scss
+
+// ── Status badges ─────────────────────────────────────────────────────────────
+
+.gca-qa-badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 3px 8px;
+    border-radius: 3px;
+    font-family: $govuk-font-family;
+    font-size: govuk-px-to-rem(12);
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    line-height: 1.4;
+    white-space: nowrap;
+
+    &--official {
+        background: #d4edda;
+        color: #155724;
+        border: 1px solid #c3e6cb;
+    }
+
+    &--pending {
+        background: #fff3cd;
+        color: #856404;
+        border: 1px solid #ffeeba;
+    }
+
+    &--sm {
+        font-size: govuk-px-to-rem(10);
+        padding: 2px 6px;
+    }
+}
+
+// ── Answered Q&A card ─────────────────────────────────────────────────────────
+
+.gca-qa-card {
+    background: $gca-cw-card-bg;
+    border: 1px solid $gca-cw-card-border;
+    border-radius: 8px;
+    box-shadow: $gca-cw-card-shadow;
+    padding: govuk-spacing(5);
+    margin-bottom: govuk-spacing(4);
+    padding-bottom: 5px;
+}
+
+.gca-qa-card__header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: govuk-spacing(3);
+    margin-bottom: govuk-spacing(4);
+    flex-wrap: wrap;
+}
+
+.gca-qa-card__answerer-row {
+    display: flex;
+    align-items: center;
+    gap: govuk-spacing(3);
+    flex: 1;
+    min-width: 0;
+}
+
+.gca-qa-card__avatar {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    flex-shrink: 0;
+    display: block;
+    object-fit: cover;
+}
+
+.gca-qa-card__answerer-info {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 0;
+}
+
+.gca-qa-card__answerer-title {
+    @include govuk-font($size: 19);
+    font-weight: 400;
+    color: $govuk-text-colour;
+}
+
+.gca-qa-card__answerer-name {
+    font-weight: 700;
+    color: $govuk-text-colour;
+    text-decoration: none;
+
+    &:hover {
+        text-decoration: underline;
+    }
+}
+
+.gca-qa-card__answered-label {
+    color: govuk-colour('dark-grey');
+}
+
+.gca-qa-card__meta {
+    @include govuk-font($size: 14);
+    color: govuk-colour('dark-grey');
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    flex-wrap: wrap;
+}
+
+.gca-qa-card__answerer-team {
+    @include govuk-font($size: 14);
+    color: govuk-colour('dark-grey');
+}
+
+// Question block (the quoted employee question)
+.gca-qa-card__question-block {
+    background: #f5f6fa;
+    border-left: 3px solid govuk-colour('mid-grey');
+    border-radius: 0 4px 4px 0;
+    padding: govuk-spacing(3) govuk-spacing(4);
+    margin-bottom: govuk-spacing(4);
+}
+
+.gca-qa-card__question-label {
+    font-family: $govuk-font-family;
+    font-size: govuk-px-to-rem(12);
+    line-height: 1.4;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    color: govuk-colour('dark-grey');
+    margin: 0 0 govuk-spacing(1);
+}
+
+.gca-qa-card__question-text {
+    @include govuk-font($size: 16);
+    font-style: italic;
+    color: $govuk-text-colour;
+    margin: 0;
+    line-height: 1.65;
+}
+
+// Official answer body
+.gca-qa-card__answer-block {
+    @include govuk-font($size: 19);
+    color: $govuk-text-colour;
+    line-height: 1.65;
+    margin-bottom: govuk-spacing(4);
+    word-break: break-word;
+
+    p { margin-bottom: govuk-spacing(2); }
+    p:last-child { margin-bottom: 0; }
+}
+
+// ── Pending question cards (user's own, shown at top of Q&A tab) ──────────────
+
+.gca-qa-pending-banner {
+    background: #fffbf0;
+    border: 1px solid #ffeeba;
+    border-radius: 8px;
+    padding: govuk-spacing(4) govuk-spacing(5);
+    margin-bottom: govuk-spacing(4);
+
+    &[hidden] { display: none; }
+}
+
+.gca-qa-pending-banner__header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: govuk-spacing(3);
+    margin-bottom: govuk-spacing(2);
+
+    .gca-qa-pending-banner__intro {
+        margin-bottom: 0;
+    }
+}
+
+.gca-qa-pending-banner__close {
+    flex-shrink: 0;
+    background: none;
+    border: none;
+    padding: 2px;
+    cursor: pointer;
+    color: #856404;
+    line-height: 1;
+
+    &:hover { color: #533f03; }
+    &:focus-visible {
+        outline: 3px solid $govuk-focus-colour;
+        outline-offset: 2px;
+    }
+}
+
+.gca-qa-pending-banner__title {
+    @include govuk-font($size: 16);
+    font-weight: 700;
+    color: #856404;
+    margin: 0 0 govuk-spacing(3);
+    display: flex;
+    align-items: center;
+    gap: govuk-spacing(2);
+}
+
+.gca-qa-pending-list {
+    display: flex;
+    flex-direction: column;
+    gap: govuk-spacing(3);
+}
+
+.gca-qa-pending-card {
+    background: $gca-cw-card-bg;
+    border: 1px solid $gca-cw-card-border;
+    border-radius: 6px;
+    padding: govuk-spacing(3) govuk-spacing(4);
+}
+
+.gca-qa-pending-card__header {
+    display: flex;
+    align-items: center;
+    gap: govuk-spacing(3);
+    margin-bottom: govuk-spacing(2);
+}
+
+.gca-qa-pending-card__date {
+    @include govuk-font($size: 14);
+    color: govuk-colour('dark-grey');
+    margin-left: auto;
+}
+
+.gca-qa-pending-card__question {
+    @include govuk-font($size: 16);
+    color: $govuk-text-colour;
+    margin: 0;
+    line-height: 1.5;
+}
+
+// ── Inline answer edit form ───────────────────────────────────────────────────
+
+.gca-qa-edit-form {
+    margin-bottom: govuk-spacing(4);
+}
+
+.gca-qa-edit-form__textarea {
+    width: 100%;
+    resize: vertical;
+    min-height: 120px;
+    font-size: govuk-px-to-rem(16);
+    margin-bottom: govuk-spacing(3);
+}
+
+.gca-qa-edit-form__actions {
+    display: flex;
+    gap: govuk-spacing(3);
+    align-items: center;
+}
+
+// ── Sidebar – pending questions section ───────────────────────────────────────
+
+.gca-qa-sidebar-pending {
+    border-top: 1px solid $gca-cw-card-border;
+    padding-top: govuk-spacing(4);
+    margin-top: govuk-spacing(2);
+
+    &[hidden] { display: none; }
+}
+
+.gca-qa-sidebar-pending__title {
+    @include govuk-font($size: 14);
+    font-weight: 700;
+    color: $govuk-text-colour;
+    margin: 0 0 govuk-spacing(3);
+    letter-spacing: 0.04em;
+}
+
+.gca-qa-sidebar-pending__list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: govuk-spacing(3);
+}
+
+.gca-qa-sidebar-pending__item {
+    // Individual pending item in sidebar
+}
+
+.gca-qa-sidebar-pending__meta {
+    display: flex;
+    align-items: center;
+    gap: govuk-spacing(2);
+    margin-bottom: 4px;
+}
+
+.gca-qa-sidebar-pending__date {
+    font-family: $govuk-font-family;
+    font-size: govuk-px-to-rem(12);
+    line-height: 1.4;
+    color: govuk-colour('dark-grey');
+    margin-left: auto;
+}
+
+.gca-qa-sidebar-pending__text {
+    @include govuk-font($size: 14);
+    color: $govuk-text-colour;
+    margin: 0;
+    line-height: 1.5;
+
+    // Clamp to 2 lines
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+.gca-qa-sidebar-pending__view-all {
+    display: inline-block;
+    margin-top: govuk-spacing(2);
+    @include govuk-font($size: 14);
+    font-weight: 600;
+    color: $gca-action-blue;
+    background: none;
+    border: none;
+    padding: 0;
+    cursor: pointer;
+    text-decoration: underline;
+
+    &:hover {
+        color: darken($gca-action-blue, 10%);
+    }
+
+    &:focus {
+        @include govuk-focused-text;
+    }
+}
+
+// ── Q&A panel ─────────────────────────────────────────────────────────────────
+
+#gca-panel-feed,
+#gca-panel-qa {
+    &[hidden] { display: none; }
+}
+
+#gca-panel-qa {
+    .gca-qa-feed {
+        display: flex;
+        flex-direction: column;
+    }
+}

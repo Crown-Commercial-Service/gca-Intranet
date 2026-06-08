@@ -28,7 +28,7 @@ $no_form     = GFAPI::get_form($no_form_id);
 $report_form = GFAPI::get_form($report_form_id);
 ?>
 
-<div class="gca-page-useful" id="gca-page-useful">
+<section class="gca-page-useful" id="gca-page-useful" aria-label="Page feedback">
 
   <?php /* ── Initial bar ─────────────────────────────────────────────── */ ?>
   <div class="gca-pf-bar" id="gca-pf-bar">
@@ -86,7 +86,7 @@ $report_form = GFAPI::get_form($report_form_id);
     </div>
   </div>
 
-</div>
+</section>
 
 <script>
 (function () {
