@@ -27,7 +27,6 @@ class GCA_Workflow_Rejection {
     public static function register_meta_boxes(): void {
         $user_id     = get_current_user_id();
         $is_reviewer = GCA_Workflow_Roles::user_has_role( $user_id, GCA_Workflow_Roles::PUBLISHER )
-                    || GCA_Workflow_Roles::user_has_role( $user_id, GCA_Workflow_Roles::PUBLISHER_ADMIN )
                     || current_user_can( 'manage_options' );
 
         // Reviewer meta box — visible only to publishers and above.

@@ -39,20 +39,6 @@ class GCA_Workflow_Roles {
         'moderate_comments'         => true,
     ];
 
-    private const PUBLISHER_ADMIN_CAPS = [
-        'manage_options'     => true,
-        'manage_categories'  => true,
-        'edit_theme_options' => true,
-        'list_users'         => true,
-        'edit_users'         => true,
-        'promote_users'      => true,
-        // install_plugins intentionally omitted: WordPress core auto-grants
-        // install_languages to any user with install_plugins, and update-core.php
-        // allows access if install_languages is true. Plugins page only needs
-        // activate_plugins.
-        'activate_plugins'   => true,
-        'pp_manage_settings' => true,
-    ];
 
     private const COMMUNITY_HOST_CAPS = [
         'read'                  => true,
@@ -70,8 +56,12 @@ class GCA_Workflow_Roles {
     public static function init(): void {
         self::maybe_create_role( self::CONTRIBUTOR,    'GCA Contributor',    self::CONTRIBUTOR_CAPS );
         self::maybe_create_role( self::PUBLISHER,      'GCA Publisher',      array_merge( self::CONTRIBUTOR_CAPS, self::PUBLISHER_CAPS ) );
-        self::maybe_create_role( self::PUBLISHER_ADMIN, 'GCA Publisher Admin', array_merge( self::CONTRIBUTOR_CAPS, self::PUBLISHER_CAPS, self::PUBLISHER_ADMIN_CAPS ) );
         self::maybe_create_role( self::COMMUNITY_HOST, 'GCA Community Host', self::COMMUNITY_HOST_CAPS );
+
+        // One-time cleanup — idempotent, safe to run on every init.
+        self::retire_publisher_admin_role();
+        self::remove_deprecated_legacy_roles();
+        self::deprecate_revisor_role();
 
         // Block contributors from creating new pages. user_has_cap covers actual
         // capability enforcement; admin_menu/admin_head handle the UI removal.
@@ -163,20 +153,40 @@ class GCA_Workflow_Roles {
             foreach ( $users as $user ) {
                 $user->set_role( $new_slug );
             }
+        }
 
-            $role = get_role( $old_slug );
-            if ( $role ) {
-                foreach ( array_keys( $role->capabilities ) as $cap ) {
-                    $role->remove_cap( $cap );
-                }
-                // Rename display name so it's obvious in the UI.
-                // WP stores role names in the wp_user_roles option.
-                $all_roles = get_option( 'wp_user_roles', [] );
-                if ( isset( $all_roles[ $old_slug ] ) ) {
-                    $all_roles[ $old_slug ]['name'] = '[Deprecated] ' . $all_roles[ $old_slug ]['name'];
-                    update_option( 'wp_user_roles', $all_roles );
-                }
+        // Users migrated — delete the shells entirely.
+        self::remove_deprecated_legacy_roles();
+    }
+
+    // Moves any remaining gca_publisher_admin users to administrator and deletes
+    // the role. The administrator role already covers all the same capabilities.
+    private static function retire_publisher_admin_role(): void {
+        if ( ! get_role( self::PUBLISHER_ADMIN ) ) {
+            return;
+        }
+        foreach ( get_users( [ 'role' => self::PUBLISHER_ADMIN ] ) as $user ) {
+            $user->set_role( 'administrator' );
+        }
+        remove_role( self::PUBLISHER_ADMIN );
+    }
+
+    // Removes the empty shells left by migrate_and_deprecate_legacy_roles.
+    private static function remove_deprecated_legacy_roles(): void {
+        foreach ( [ 'editor', 'author', 'contributor' ] as $slug ) {
+            if ( get_role( $slug ) ) {
+                remove_role( $slug );
             }
+        }
+    }
+
+    // The revisionary plugin recreates the revisor role on every load so it
+    // cannot be permanently deleted — rename it to make its status clear.
+    private static function deprecate_revisor_role(): void {
+        $all_roles = get_option( 'wp_user_roles', [] );
+        if ( isset( $all_roles['revisor'] ) && false === strpos( $all_roles['revisor']['name'], '[Deprecated]' ) ) {
+            $all_roles['revisor']['name'] = '[Deprecated] ' . $all_roles['revisor']['name'];
+            update_option( 'wp_user_roles', $all_roles );
         }
     }
 
