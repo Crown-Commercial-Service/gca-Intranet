@@ -113,6 +113,51 @@ add_action('admin_head', function (): void {
     }
 });
 
+// Strip all dashboard menu items except "Q&A Questions" for the qa_moderator role.
+// Runs at priority 999 so all menus are registered before we remove them.
+add_action('admin_menu', function (): void {
+    $user = wp_get_current_user();
+    if (!in_array('qa_moderator', (array) $user->roles, true)) {
+        return;
+    }
+
+    global $menu;
+    foreach (array_keys($menu) as $position) {
+        $slug = $menu[$position][2] ?? '';
+        if ($slug !== 'edit.php?post_type=qa_question') {
+            remove_menu_page($slug);
+        }
+    }
+}, 999);
+
+// Redirect qa_moderators away from any admin page other than Q&A Questions.
+add_action('admin_init', function (): void {
+    $user = wp_get_current_user();
+    if (!in_array('qa_moderator', (array) $user->roles, true)) {
+        return;
+    }
+
+    global $pagenow;
+
+    // Allow internal WordPress AJAX/async endpoints to pass through untouched.
+    if (in_array($pagenow, ['admin-ajax.php', 'admin-post.php', 'async-upload.php'], true)) {
+        return;
+    }
+
+    $is_qa_page = (
+        ($pagenow === 'edit.php' && sanitize_key($_GET['post_type'] ?? '') === 'qa_question')
+        || ($pagenow === 'post.php' && (
+            (isset($_GET['post']) && get_post_type((int) $_GET['post']) === 'qa_question')
+            || (isset($_POST['post_ID']) && get_post_type((int) $_POST['post_ID']) === 'qa_question')
+        ))
+    );
+
+    if (!$is_qa_page) {
+        wp_safe_redirect(admin_url('edit.php?post_type=qa_question'));
+        exit;
+    }
+});
+
 // ---------------------------------------------------------------------------
 // Role + capability setup
 // ---------------------------------------------------------------------------
@@ -124,14 +169,31 @@ function gca_qa_setup_roles(): void
     // plus a single custom cap used as the REST API answer-permission gate.
     if (!get_role('qa_moderator')) {
         add_role('qa_moderator', 'Q&A Moderator', [
-            'read'                => true,
-            'edit_posts'          => true,
-            'edit_others_posts'   => true,
-            'publish_posts'       => true,
-            'delete_posts'        => true,
-            'delete_others_posts' => true,
-            'qa_answer_questions' => true,
+            'read'                  => true,
+            'edit_posts'            => true,
+            'edit_others_posts'     => true,
+            'edit_published_posts'  => true,
+            'publish_posts'         => true,
+            'delete_posts'          => true,
+            'delete_others_posts'   => true,
+            'qa_answer_questions'   => true,
         ]);
+    }
+
+    // Idempotently ensure all required caps are present on the existing role.
+    // add_role() above is skipped on existing installs, so capabilities added
+    // after initial deployment must be backfilled here.
+    $qa_role = get_role('qa_moderator');
+    if ($qa_role instanceof WP_Role) {
+        foreach ([
+            'read', 'edit_posts', 'edit_others_posts', 'edit_published_posts',
+            'publish_posts', 'delete_posts', 'delete_others_posts',
+            'qa_answer_questions',
+        ] as $cap) {
+            if (!$qa_role->has_cap($cap)) {
+                $qa_role->add_cap($cap, true);
+            }
+        }
     }
 
     // Grant the answer-permission cap to admins (one-time DB write, idempotent).
