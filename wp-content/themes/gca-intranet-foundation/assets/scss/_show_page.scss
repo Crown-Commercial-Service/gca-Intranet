@@ -51,8 +51,8 @@ main.govuk-main-wrapper {
 .blogs-container,
 .work-updates-container {
     @media (max-width: 1024px) {
-        .govuk-grid-column-one-third,
-        .govuk-grid-column-two-thirds {
+        .gca-author-grid .govuk-grid-column-one-third,
+        .gca-author-grid .govuk-grid-column-two-thirds {
             width: 100%;
         }
     }

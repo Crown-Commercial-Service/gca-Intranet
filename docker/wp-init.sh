@@ -84,12 +84,19 @@ fi
 [ -n "${WP_THEME:-}" ] && wp theme activate "$WP_THEME" --allow-root || true
 
 wp plugin activate gca-custom --allow-root || true
+wp plugin activate wp-mail-smtp --allow-root || true
+wp plugin activate revisionary --allow-root || true
+wp plugin activate publishpress-statuses --allow-root || true
+wp plugin activate gca-publishing-workflow --allow-root || true
 wp rewrite structure "/%postname%/" --allow-root || true
-wp rewrite flush --allow-root || true
 
 # 7b) Activate Redis Object Cache plugin and enable the object cache drop-in
 wp plugin activate redis-cache --allow-root || true
 wp redis enable --allow-root || true
+
+# Flush rewrites after Redis is active so the cache is invalidated correctly
+wp cache flush --allow-root || true
+wp rewrite flush --allow-root || true
 
 # 8) Permissions (best effort)
 chown -R www-data:www-data /var/www/html/wp-content 2>/dev/null || true
