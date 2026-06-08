@@ -24,8 +24,14 @@ get_header();
 
     <?php if (gca_flag_enabled('personalised-greeting')) : ?>
     <?php
-    $gca_hour       = (int) current_time('G');
-    $gca_greeting   = $gca_hour < 12 ? __('Good morning', 'gca-intranet') : __('Good afternoon', 'gca-intranet');
+    $gca_hour = (int) current_time('G');
+    if ($gca_hour < 12) {
+      $gca_greeting = __('Good morning', 'gca-intranet');
+    } elseif ($gca_hour < 18) {
+      $gca_greeting = __('Good afternoon', 'gca-intranet');
+    } else {
+      $gca_greeting = __('Good evening', 'gca-intranet');
+    }
     $gca_first_name = '';
     if (is_user_logged_in()) {
       $gca_first_name = trim((string) get_user_meta(get_current_user_id(), 'first_name', true));

@@ -83,6 +83,8 @@ get_template_part('template-parts/breadcrumbs');
             <?php endif; ?>
 
         <?php endwhile; endif; ?>
+
+        <?php if ( gca_flag_enabled( 'related-articles' ) ) { get_template_part( 'template-parts/related-articles' ); } ?>
     </main>
 </div>
 

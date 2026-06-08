@@ -1,4 +1,32 @@
 // =============================================================================
+// Profile page — blue banner + overlap layout
+// =============================================================================
+
+.gca-profile-banner {
+  position: relative;
+  background: #95b4f9;
+  height: 160px;
+
+  &::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    height: 8px;
+    width: 100%;
+    background: #699aff;
+    z-index: 3;
+  }
+}
+
+.gca-profile-content {
+  position: relative;
+  z-index: 1;
+  margin-top: -100px;
+  padding-top: govuk-spacing(6);
+}
+
+// =============================================================================
 // Staff Profile Card  +  Staff Search Results
 // Follows GOV.UK Frontend conventions and the GCA token system.
 // =============================================================================
@@ -130,4 +158,226 @@
   .gca-profile-card__contact-item {
     font-size: 15px;
   }
+}
+
+// =============================================================================
+// Profile tabs — My Saves / Mentions / My Posts
+// =============================================================================
+
+.gca-profile-tabs {
+  font-family: $govuk-font-family;
+  background: #fff;
+  border: 1px solid $gca-border-mid;
+  border-radius: $border-radius;
+  padding: govuk-spacing(5) govuk-spacing(6) govuk-spacing(6);
+  padding-top:5px;
+  overflow: hidden;
+}
+
+// ── Tab nav ──────────────────────────────────────────────────────────────────
+
+.gca-profile-tabs__nav {
+  display: flex;
+  gap: 0;
+  border-bottom: 2px solid $gca-border-mid;
+  margin-bottom: govuk-spacing(5);
+  margin-left: govuk-spacing(6) * -1;
+  margin-right: govuk-spacing(6) * -1;
+  padding-left: govuk-spacing(6);
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+
+  // Hide scrollbar visually while keeping scroll functionality
+  scrollbar-width: none;
+  &::-webkit-scrollbar { display: none; }
+}
+
+.gca-profile-tabs__btn {
+  display: inline-flex;
+  align-items: center;
+  gap: govuk-spacing(1);
+  background: none;
+  border: none;
+  border-bottom: 3px solid transparent;
+  margin-bottom: -2px;
+  padding: govuk-spacing(3) govuk-spacing(4);
+  cursor: pointer;
+  font-family: $govuk-font-family;
+  font-size: govuk-px-to-rem(16);
+  font-weight: 600;
+  color: govuk-colour('dark-grey');
+  white-space: nowrap;
+  transition: color 0.15s ease, border-color 0.15s ease;
+
+  &:hover {
+    color: $govuk-text-colour;
+    border-bottom-color: $gca-border-mid;
+  }
+
+  &:focus {
+    @include govuk-focused-text;
+    outline-offset: 0;
+  }
+
+  &--active {
+    color: govuk-colour('blue');
+    border-bottom-color: govuk-colour('blue');
+  }
+}
+
+.gca-profile-tabs__badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: govuk-px-to-rem(13);
+  font-weight: 700;
+  color: govuk-colour('dark-grey');
+}
+
+// ── Tab panel ────────────────────────────────────────────────────────────────
+
+.gca-profile-tabs__panel {
+  min-height: 120px;
+}
+
+.gca-profile-tabs__loading,
+.gca-profile-tabs__empty {
+  color: govuk-colour('dark-grey');
+  font-size: govuk-px-to-rem(16);
+  padding: govuk-spacing(4) 0;
+  margin: 0;
+}
+
+// ── Item list ────────────────────────────────────────────────────────────────
+
+.gca-profile-item-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: govuk-spacing(3);
+}
+
+// ── Individual item card ─────────────────────────────────────────────────────
+
+.gca-profile-item {
+  display: flex;
+  align-items: center;
+  gap: govuk-spacing(3);
+  background: #fff;
+  border: 1px solid $gca-border-mid;
+  border-radius: $border-radius;
+  padding: govuk-spacing(4) govuk-spacing(5);
+  position: relative;
+  transition: border-color 0.15s ease;
+
+  &:hover {
+    border-color: govuk-colour('blue');
+  }
+}
+
+.gca-profile-item__body {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: govuk-spacing(1);
+}
+
+.gca-profile-item__label {
+  font-size: govuk-px-to-rem(13);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: govuk-colour('dark-grey');
+}
+
+.gca-profile-item__title {
+  font-size: govuk-px-to-rem(19);
+  font-weight: 700;
+  color: govuk-colour('blue');
+  text-decoration: none;
+  word-break: break-word;
+
+  // Stretch the link to cover the whole card
+  &::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+  }
+
+  &:hover {
+    text-decoration: underline;
+  }
+}
+
+.gca-profile-item__meta {
+  font-size: govuk-px-to-rem(14);
+  color: govuk-colour('dark-grey');
+}
+
+// ── Star (unsave) button ──────────────────────────────────────────────────────
+
+.gca-profile-item__star {
+  flex-shrink: 0;
+  background: none;
+  border: none;
+  padding: govuk-spacing(1);
+  cursor: pointer;
+  color: govuk-colour('dark-grey');
+  line-height: 1;
+  position: relative;
+  z-index: 1;
+
+  &--saved {
+    color: #c9a800;
+  }
+
+  &:hover {
+    color: #a08000;
+  }
+
+  &:focus {
+    @include govuk-focused-text;
+  }
+}
+
+// ── Mention items ─────────────────────────────────────────────────────────────
+
+.gca-profile-item--mention {
+  align-items: flex-start;
+}
+
+.gca-profile-item__avatar {
+  flex-shrink: 0;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 1px solid $gca-border-grey;
+  margin-top: 2px;
+}
+
+.gca-profile-item__mention-meta {
+  font-size: govuk-px-to-rem(14);
+  color: govuk-colour('dark-grey');
+}
+
+.gca-profile-item__author,
+.gca-profile-item__post-link {
+  color: govuk-colour('blue');
+  font-weight: 600;
+  text-decoration: none;
+
+  &:hover {
+    text-decoration: underline;
+  }
+}
+
+.gca-profile-item__comment-text {
+  font-size: govuk-px-to-rem(16);
+  margin: govuk-spacing(1) 0 0;
+  color: $govuk-text-colour;
+  word-break: break-word;
 }

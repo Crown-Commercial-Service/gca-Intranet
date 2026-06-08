@@ -64,7 +64,7 @@ class SyncUsersSyncTest extends TestCase {
             'EmployeeName'   => 'Jane Smith',
             'EmployeeKey'    => '42',
             'ItemInternalId' => 'wd-item-001',
-            'JobTitle'       => 'Senior Engineer',
+            'BusinessTitle'  => 'Senior Engineer',
             'Team'           => 'Engineering (Bob Manager)',
             'Directorate'    => 'Digital',
             'Manager'        => 'Bob Manager',
@@ -236,7 +236,7 @@ class SyncUsersSyncTest extends TestCase {
         $record = $this->staffRecord([
             'ItemInternalId' => 'wd-999',
             'EmployeeKey'    => '77',
-            'JobTitle'       => 'Principal Architect',
+            'BusinessTitle'  => 'Principal Architect',
             'Team'           => 'Platform (Alice Lead)',
             'Directorate'    => 'Technology',
             'Manager'        => 'Alice Lead',
@@ -267,7 +267,7 @@ class SyncUsersSyncTest extends TestCase {
 
         $this->assertSame('wd-999',                $capturedMeta['workday_item_id']);
         $this->assertSame('77',                    $capturedMeta['employee_key']);
-        $this->assertSame('Principal Architect',   $capturedMeta['job_title']);
+        $this->assertSame('Principal Architect',   $capturedMeta['business_title']);
         $this->assertSame('Platform',              $capturedMeta['team']);  // "(Alice Lead)" stripped
         $this->assertSame('Technology',            $capturedMeta['directorate']);
         $this->assertSame('Alice Lead',            $capturedMeta['manager']);
@@ -679,7 +679,14 @@ class SyncUsersSyncTest extends TestCase {
         WP_Mock::userFunction('get_users', ['return' => [$activeUser, $staleUser]]);
 
         WP_Mock::userFunction('get_userdata', ['return' => $staleUser]);
-        WP_Mock::userFunction('get_user_meta', ['return' => '']); // not yet soft-deleted
+        WP_Mock::userFunction('get_user_meta', [
+            'return' => function (int $userId, string $key) {
+                if ($userId === 99 && $key === 'employee_key') {
+                    return 'EMP099'; // WD user — subject to offboard logic
+                }
+                return ''; // not yet soft-deleted, no other meta
+            },
+        ]);
 
         // Capture update_user_meta calls for the stale user only.
         $offboardMeta = [];
@@ -699,7 +706,7 @@ class SyncUsersSyncTest extends TestCase {
         $this->assertArrayHasKey('deleted_at', $offboardMeta, 'deleted_at must be written on soft-delete');
         $this->assertNotEmpty($offboardMeta['deleted_at'],     'deleted_at must not be empty');
         // Workday meta and display name must NOT be touched during soft-delete.
-        $this->assertArrayNotHasKey('job_title',       $offboardMeta, 'job_title must not be cleared on soft-delete');
+        $this->assertArrayNotHasKey('business_title',       $offboardMeta, 'job_title must not be cleared on soft-delete');
         $this->assertArrayNotHasKey('former_employee', $offboardMeta, 'former_employee flag must not be written');
     }
 
@@ -719,7 +726,14 @@ class SyncUsersSyncTest extends TestCase {
         WP_Mock::userFunction('get_users', ['return' => [$activeUser, $staleUser]]);
 
         WP_Mock::userFunction('get_userdata', ['return' => $staleUser]);
-        WP_Mock::userFunction('get_user_meta', ['return' => '']);
+        WP_Mock::userFunction('get_user_meta', [
+            'return' => function (int $userId, string $key) {
+                if ($userId === 99 && $key === 'employee_key') {
+                    return 'EMP099'; // WD user — subject to offboard logic
+                }
+                return ''; // not yet soft-deleted, no other meta
+            },
+        ]);
 
         $offboardMeta = [];
         WP_Mock::userFunction('update_user_meta', [
@@ -736,7 +750,7 @@ class SyncUsersSyncTest extends TestCase {
         $this->assertArrayHasKey('deleted_at', $offboardMeta, 'deleted_at must be set');
         $this->assertMatchesRegularExpression('/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/', $offboardMeta['deleted_at'], 'deleted_at must be a MySQL datetime');
         $this->assertArrayNotHasKey('former_employee', $offboardMeta, 'no former_employee flag written');
-        $this->assertArrayNotHasKey('job_title',       $offboardMeta, 'job_title not cleared at soft-delete time');
+        $this->assertArrayNotHasKey('business_title',       $offboardMeta, 'job_title not cleared at soft-delete time');
     }
 
     public function test_run_skips_soft_delete_for_already_soft_deleted_user(): void {
