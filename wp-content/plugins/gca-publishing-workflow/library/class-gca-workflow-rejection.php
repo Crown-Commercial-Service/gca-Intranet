@@ -64,13 +64,12 @@ class GCA_Workflow_Rejection {
             rows="5"
             style="width:100%;margin-top:8px;"
         ><?php echo esc_textarea( $value ); ?></textarea>
+        <input type="hidden" name="gca_submit_rejection" id="gca_submit_rejection_flag" value="" />
         <p style="margin-top:8px;">
             <button
-                type="submit"
-                name="gca_submit_rejection"
-                value="1"
+                type="button"
                 class="button button-secondary"
-                onclick="return confirm('Return this page to the contributor with your feedback?');"
+                onclick="if(confirm('Return this page to the contributor with your feedback?')){ document.getElementById('gca_submit_rejection_flag').value='1'; document.getElementById('post').submit(); }"
             >Submit Rejection</button>
         </p>
         <?php if ( ! empty( $history ) && is_array( $history ) ) : ?>
