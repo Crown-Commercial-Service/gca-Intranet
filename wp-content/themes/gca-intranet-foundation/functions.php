@@ -1074,7 +1074,6 @@ add_action('wp_enqueue_scripts', function (): void {
         'currentUserAvatar' => $avatar_url,
         'isCommunityHost'   => $is_community_host,
         'isAdmin'           => $is_admin,
-        'shoutoutFormId'    => class_exists('GFAPI') ? (int) get_option('gca_shoutout_compose_form_id', 0) : 0,
     ]);
 
     // ── 1. community-wall.js ─────────────────────────────────────────────

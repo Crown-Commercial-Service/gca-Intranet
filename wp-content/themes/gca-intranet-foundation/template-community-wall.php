@@ -247,13 +247,59 @@ endif;
                             </button>
                         </div>
 
-                        <div class="gca-cw-compose__form-area gca-shoutout-gf-wrap" id="gca-shoutout-form-area" hidden>
-                            <?php
-                            $shoutout_form_id = (int) get_option('gca_shoutout_compose_form_id', 0);
-                            if ($shoutout_form_id > 0 && function_exists('gravity_form')) {
-                                gravity_form($shoutout_form_id, false, false, false, null, false);
-                            }
-                            ?>
+                        <div class="gca-cw-compose__form-area" id="gca-shoutout-form-area" hidden>
+                            <form class="gca-cw-compose__form" id="gca-shoutout-form" novalidate>
+
+                                <div class="govuk-form-group">
+                                    <label class="govuk-label" for="gca-shoutout-recipient-search">Who are you shouting out?</label>
+                                    <div class="gca-shoutout-compose__search-wrap">
+                                        <input
+                                            type="text"
+                                            id="gca-shoutout-recipient-search"
+                                            class="govuk-input"
+                                            placeholder="Search for a colleague&hellip;"
+                                            autocomplete="off"
+                                            role="combobox"
+                                            aria-autocomplete="list"
+                                            aria-expanded="false"
+                                            aria-controls="gca-shoutout-suggestions"
+                                            aria-describedby="gca-shoutout-error"
+                                        >
+                                        <input type="hidden" id="gca-shoutout-recipient-id" name="recipient_id">
+                                        <ul id="gca-shoutout-suggestions" class="gca-shoutout-compose__suggestions" role="listbox" aria-label="Colleague suggestions" hidden></ul>
+                                    </div>
+                                </div>
+
+                                <div class="govuk-form-group" id="gca-shoutout-category-group">
+                                    <label class="govuk-label" for="gca-shoutout-category">Category</label>
+                                    <select id="gca-shoutout-category" class="govuk-select" name="category_id" disabled>
+                                        <option value="">Loading categories&hellip;</option>
+                                    </select>
+                                </div>
+
+                                <div class="govuk-form-group gca-cw-compose__textarea-group">
+                                    <label class="govuk-label" for="gca-shoutout-content">Your message</label>
+                                    <textarea
+                                        id="gca-shoutout-content"
+                                        class="govuk-textarea gca-cw-compose__textarea"
+                                        name="content"
+                                        rows="3"
+                                        placeholder="What would you like to celebrate?"
+                                        maxlength="500"
+                                        aria-describedby="gca-shoutout-char-hint gca-shoutout-error"
+                                    ></textarea>
+                                </div>
+
+                                <p class="gca-cw-compose__char-hint" id="gca-shoutout-char-hint" aria-live="polite">
+                                    <span id="gca-shoutout-chars-left">500</span> characters remaining
+                                </p>
+
+                                <div class="gca-cw-compose__actions gca-lc-delete-modal__actions">
+                                    <button type="submit" class="gca-lc-delete-modal__confirm" id="gca-shoutout-submit">Post shout-out</button>
+                                    <button type="button" class="gca-lc-delete-modal__cancel" id="gca-shoutout-cancel">Cancel</button>
+                                </div>
+
+                            </form>
                             <div class="gca-cw-compose__error" id="gca-shoutout-error" role="alert" tabindex="-1" hidden></div>
                         </div>
                     </div>
