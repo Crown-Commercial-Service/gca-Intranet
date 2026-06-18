@@ -501,7 +501,7 @@ function gca_profile_get_saves(): WP_REST_Response
 
         $results[] = [
             'id'              => $post_id,
-            'title'           => get_the_title($post),
+            'title'           => html_entity_decode(get_the_title($post), ENT_QUOTES | ENT_HTML5, 'UTF-8'),
             'url'             => get_permalink($post),
             'post_type'       => $post->post_type,
             'post_type_label' => $post_type_obj ? $post_type_obj->labels->singular_name : ucfirst($post->post_type),
@@ -529,7 +529,7 @@ function gca_profile_get_posts(): WP_REST_Response
         return [
             'type'            => 'post',
             'id'              => $post->ID,
-            'title'           => get_the_title($post),
+            'title'           => html_entity_decode(get_the_title($post), ENT_QUOTES | ENT_HTML5, 'UTF-8'),
             'url'             => get_permalink($post),
             'post_type'       => $post->post_type,
             'post_type_label' => $post_type_obj ? $post_type_obj->labels->singular_name : ucfirst($post->post_type),
@@ -629,7 +629,7 @@ function gca_profile_get_mentions(): WP_REST_Response
             'type'           => 'mention',
             'comment_id'     => (int) $comment->comment_ID,
             'post_id'        => (int) $comment->comment_post_ID,
-            'post_title'     => $post ? get_the_title($post) : '',
+            'post_title'     => $post ? html_entity_decode(get_the_title($post), ENT_QUOTES | ENT_HTML5, 'UTF-8') : '',
             'post_url'       => $post ? get_permalink($post) : '',
             'author_name'    => $comment->comment_author,
             'author_avatar'  => get_avatar_url((int) $comment->user_id, ['size' => 40]),
