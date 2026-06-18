@@ -27,6 +27,7 @@ if (!is_user_logged_in() || $post_id <= 0) {
 
     <?php /* ── Like bar ─────────────────────────────────────────────────── */ ?>
     <div class="gca-lc__like-bar">
+        <?php if (get_post_meta($post_id, '_gca_hide_likes', true) ? '0' : '1') : ?>
         <button
             type="button"
             class="gca-lc__like-btn"
@@ -41,7 +42,9 @@ if (!is_user_logged_in() || $post_id <= 0) {
             <span class="gca-lc__like-label">Like</span>
             <span class="gca-lc__like-count" aria-label="likes">0</span>
         </button>
+        <?php endif; ?>
 
+        <?php if (get_post_meta($post_id, '_gca_hide_comments', true) ? '0' : '1') : ?>
         <button
             type="button"
             class="gca-lc__comment-toggle-btn"
@@ -56,6 +59,7 @@ if (!is_user_logged_in() || $post_id <= 0) {
             </span>
             <span class="gca-lc__comment-count-label"><span class="gca-lc__comment-count">0</span> comments</span>
         </button>
+        <?php endif; ?>
 
         <?php if (gca_flag_enabled('post-saves')) : ?>
         <button
@@ -75,6 +79,7 @@ if (!is_user_logged_in() || $post_id <= 0) {
     </div>
 
     <?php /* ── Comments panel ───────────────────────────────────────────── */ ?>
+    <?php if (get_post_meta($post_id, '_gca_hide_comments', true) ? '0' : '1') : ?>
     <div
         class="gca-lc__comments-panel"
         id="gca-lc-comments-<?php echo esc_attr((string) $post_id); ?>"
@@ -115,4 +120,5 @@ if (!is_user_logged_in() || $post_id <= 0) {
             <p class="gca-lc__loading govuk-body-s">Loading comments…</p>
         </div>
     </div>
+    <?php endif; ?>
 </section>
