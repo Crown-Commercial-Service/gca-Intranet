@@ -35,29 +35,6 @@ Text Domain: gca-intranet-foundation
 }
 
 /* =========================================================
-   Page feedback bar — background on full-width wrapper
-   ========================================================= */
-
-/* The cream bg lives on the govuk-width-container inner div which has fixed
-   side margins below 1260px. Move it to the full-width outer wrappers so the
-   bar appears edge-to-edge at all viewport widths. */
-.gca-pf-bar,
-.gca-pf-thankyou {
-  background: #e9edc2;
-  padding: 12px 15px;
-}
-
-.gca-pf-thankyou {
-  padding: 14px 15px;
-}
-
-.gca-pf-bar-inner,
-.gca-pf-thankyou-inner {
-  background: transparent;
-  padding: 0;
-}
-
-/* =========================================================
    Layout width — consistent gutters at all breakpoints
    ========================================================= */
 
@@ -391,11 +368,6 @@ Text Domain: gca-intranet-foundation
    Footer
    ========================================================= */
 
-/* The green border-top on .site-footer creates an unwanted visual gap between
-   the cream page-feedback bar and the cream footer background. */
-.site-footer {
-  border-top: none;
-}
 
 /* =========================================================
    Single (News) layout helpers
