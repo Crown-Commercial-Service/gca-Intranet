@@ -35,14 +35,57 @@ Text Domain: gca-intranet-foundation
 }
 
 /* =========================================================
-   Layout width
+   Layout width — consistent gutters at all breakpoints
    ========================================================= */
 
-@media (min-width: 1024px) {
-  .govuk-width-container {
-    width: 100%;
-    max-width: 1200px;
-    min-width: 600px;
+/* Switch govuk-frontend's margin-based gutters to padding-based so that
+   margin: auto can always handle centering without an abrupt jump at 1024px.
+   box-sizing: border-box keeps padding inside max-width. */
+.govuk-width-container,
+.ccs-width-container {
+  box-sizing: border-box;
+  width: 100%;
+  max-width: 1200px;
+  margin-right: auto !important;
+  margin-left: auto !important;
+  padding-left: 15px;
+  padding-right: 15px;
+}
+
+@media (min-width: 40.0625em) {
+  .govuk-width-container,
+  .ccs-width-container {
+    padding-left: 30px;
+    padding-right: 30px;
+  }
+}
+
+@supports (margin: max(calc(0px))) {
+  .govuk-width-container,
+  .ccs-width-container {
+    padding-left: max(15px, calc(15px + env(safe-area-inset-left)));
+    padding-right: max(15px, calc(15px + env(safe-area-inset-right)));
+  }
+
+  @media (min-width: 40.0625em) {
+    .govuk-width-container,
+    .ccs-width-container {
+      padding-left: max(30px, calc(15px + env(safe-area-inset-left)));
+      padding-right: max(30px, calc(15px + env(safe-area-inset-right)));
+    }
+  }
+}
+
+/* =========================================================
+   Header nav — remove excess spacing between logo row and hero
+   ========================================================= */
+
+/* The second nav stylesheet defines margin-top: 20px on .global-navigation
+   (no media query), overriding the desktop value and adding unwanted space
+   inside the nav-wrapper that appears as a gap at 1024px. */
+@media (min-width: 48.0625em) {
+  .global-navigation {
+    margin-top: 0 !important;
   }
 }
 
@@ -163,16 +206,10 @@ Text Domain: gca-intranet-foundation
   overflow: hidden;
 }
 
-/* Top blue bar */
-.gca-hero-banner::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  height: 8px;
+
+.gca-hero-banner > .govuk-width-container,
+.gca-home-hero > .govuk-width-container {
   width: 100%;
-  background: #699aff;
-  z-index: 3;
 }
 
 .gca-hero-banner__inner {
@@ -184,7 +221,7 @@ Text Domain: gca-intranet-foundation
 .gca-hero-banner__title {
   margin: 0;
   font-weight: 500 !important;
-  font-size: govuk-px-to-rem(48);
+  font-size: 3rem;
   line-height: 1.1;
   max-width: 28ch;
 }
@@ -266,6 +303,72 @@ Text Domain: gca-intranet-foundation
     max-width: 100%;
   }
 }
+/* =========================================================
+   Archive layout (events/news/blog) — fixed filter column
+   ========================================================= */
+
+/* Govuk float layout lets the left filter column shrink when the right
+   column has little content. Switch to flexbox to lock the 1/4 width. */
+@media (min-width: 40.0625em) {
+  .archive-layout {
+    display: flex;
+    flex-wrap: nowrap;
+    align-items: flex-start;
+  }
+
+  .archive-layout .govuk-grid-column-one-quarter {
+    flex: 0 0 25%;
+    float: none;
+  }
+
+  .archive-layout .govuk-grid-column-three-quarters {
+    flex: 1 1 auto;
+    float: none;
+    min-width: 0;
+  }
+}
+
+/* =========================================================
+   Left-nav two-column layout — fixed proportions
+   ========================================================= */
+
+/* Switch the grid row to flexbox so the left nav column cannot shrink
+   below its 1/3 allocation regardless of how little content is in the
+   right column. Float layout allows implicit shrinking via ancestor flex
+   contexts; flexbox with flex-shrink:0 prevents it. */
+@media (min-width: 40.0625em) {
+  .gca-single--left-nav .govuk-grid-row {
+    display: flex;
+    flex-wrap: nowrap;
+    align-items: flex-start;
+  }
+
+  .gca-single--left-nav .govuk-grid-column-one-third {
+    flex: 0 0 33.3333%;
+    float: none;
+  }
+
+  .gca-single--left-nav .govuk-grid-column-two-thirds {
+    flex: 1 1 auto;
+    float: none;
+    min-width: 0;
+  }
+}
+
+/* The section nav header has 30px side padding + 10px left border = 70px overhead.
+   At narrower desktop widths (641px–1260px) the 1/3 column is tight enough that
+   section titles wrap. Reduce side padding so the title has room to breathe. */
+.section-nav__header {
+  padding-left: 15px;
+  padding-right: 15px;
+}
+
+
+/* =========================================================
+   Footer
+   ========================================================= */
+
+
 /* =========================================================
    Single (News) layout helpers
    ========================================================= */

@@ -60,6 +60,35 @@ add_action('after_setup_theme', function (): void {
 });
 
 /**
+ * Propagate current-menu-ancestor up the menu tree when WordPress only marks
+ * items as current-page-ancestor (which happens when the current page is not
+ * in the nav menu itself, e.g. a 3rd-level page accessed via the section nav).
+ * Without this, the top-level nav tab loses its highlight on deep pages.
+ */
+add_filter('wp_nav_menu_objects', function (array $items): array {
+    $by_id = [];
+    foreach ($items as $item) {
+        $by_id[$item->db_id] = $item;
+    }
+
+    foreach ($items as $item) {
+        $classes = (array) $item->classes;
+        if (array_intersect($classes, ['current-page-ancestor', 'current-page-parent', 'current-menu-item'])) {
+            $parent_id = (int) $item->menu_item_parent;
+            while ($parent_id && isset($by_id[$parent_id])) {
+                $parent = $by_id[$parent_id];
+                if (!in_array('current-menu-ancestor', (array) $parent->classes, true)) {
+                    $parent->classes[] = 'current-menu-ancestor';
+                }
+                $parent_id = (int) $parent->menu_item_parent;
+            }
+        }
+    }
+
+    return $items;
+});
+
+/**
  * Ensure the Customizer logo uses our header logo class for consistent sizing.
  */
 add_filter('get_custom_logo', function (string $html): string {

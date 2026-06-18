@@ -22,17 +22,15 @@ if (function_exists('gca_flag_enabled') && gca_flag_enabled('staff-directory')) 
     );
 }
 
+$sd_hero_id  = (int) get_post_meta(get_the_ID(), '_gca_hero_image_id', true);
+$sd_hero_url = $sd_hero_id ? wp_get_attachment_image_url($sd_hero_id, 'large') : '';
+
 get_header();
 
 if (!gca_flag_enabled('staff-directory')) :
+
+get_template_part('template-parts/hero', null, ['image_url' => $sd_hero_url]);
 ?>
-<section class="gca-hero-banner" aria-label="Page banner">
-  <div class="govuk-width-container">
-    <div class="gca-hero-banner__inner">
-      <h1 class="govuk-heading-xl gca-hero-banner__title"><?php the_title(); ?></h1>
-    </div>
-  </div>
-</section>
 <div class="govuk-width-container govuk-!-padding-top-6 govuk-!-padding-bottom-9">
   <main id="main-content" tabindex="-1">
     <div class="govuk-notification-banner govuk-notification-banner--important" role="region" aria-labelledby="govuk-notification-banner-title" data-module="govuk-notification-banner">
@@ -51,15 +49,7 @@ exit;
 endif;
 ?>
 
-<section class="gca-hero-banner" aria-label="Page banner">
-  <div class="govuk-width-container">
-    <div class="gca-hero-banner__inner">
-      <h1 class="govuk-heading-xl gca-hero-banner__title">
-        <?php the_title(); ?>
-      </h1>
-    </div>
-  </div>
-</section>
+<?php get_template_part('template-parts/hero', null, ['image_url' => $sd_hero_url]); ?>
 
 <div class="govuk-width-container govuk-!-padding-top-6 govuk-!-padding-bottom-9">
   <main id="main-content" tabindex="-1">
