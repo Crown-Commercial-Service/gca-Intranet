@@ -667,7 +667,7 @@ add_action('wp_enqueue_scripts', function (): void {
 
     function renderList(comments, container) {
         if (!comments.length) {
-            container.innerHTML = '<p class="gca-lc__loading govuk-body-s">No comments yet. Be the first!</p>';
+            container.innerHTML = '<p class="gca-lc__loading govuk-body-s">No comments yet. Be the first.</p>';
             return;
         }
         container.innerHTML = comments.map(function (c) { return renderComment(c, false); }).join('');
