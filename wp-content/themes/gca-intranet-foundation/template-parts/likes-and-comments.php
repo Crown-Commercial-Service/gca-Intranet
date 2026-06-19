@@ -27,7 +27,7 @@ if (!is_user_logged_in() || $post_id <= 0) {
 
     <?php /* ── Like bar ─────────────────────────────────────────────────── */ ?>
     <div class="gca-lc__like-bar">
-        <?php if (get_post_meta($post_id, '_gca_hide_likes', true) ? '0' : '1') : ?>
+        <?php if (get_post_meta($post_id, '_gca_hide_likes_and_comments', true) ? '0' : '1') : ?>
         <button
             type="button"
             class="gca-lc__like-btn"
@@ -44,7 +44,7 @@ if (!is_user_logged_in() || $post_id <= 0) {
         </button>
         <?php endif; ?>
 
-        <?php if (get_post_meta($post_id, '_gca_hide_comments', true) ? '0' : '1') : ?>
+        <?php if (get_post_meta($post_id, '_gca_hide_comments', true)||get_post_meta($post_id, '_gca_hide_likes_and_comments', true) ? '0' : '1') : ?>
         <button
             type="button"
             class="gca-lc__comment-toggle-btn"
@@ -79,7 +79,7 @@ if (!is_user_logged_in() || $post_id <= 0) {
     </div>
 
     <?php /* ── Comments panel ───────────────────────────────────────────── */ ?>
-    <?php if (get_post_meta($post_id, '_gca_hide_comments', true) ? '0' : '1') : ?>
+    <?php if (get_post_meta($post_id, '_gca_hide_comments', true)||get_post_meta($post_id, '_gca_hide_likes_and_comments', true) ? '0' : '1') : ?>
     <div
         class="gca-lc__comments-panel"
         id="gca-lc-comments-<?php echo esc_attr((string) $post_id); ?>"

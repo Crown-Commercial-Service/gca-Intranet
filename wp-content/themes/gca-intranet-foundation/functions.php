@@ -2689,20 +2689,20 @@ add_action('add_meta_boxes', function (): void {
             wp_nonce_field('gca_save_comment_toggle', 'gca_comment_toggle_nonce');
 
             $hideComments = get_post_meta($post->ID, '_gca_hide_comments', true) ? 'checked' : '';
-            $hideLikes = get_post_meta($post->ID, '_gca_hide_likes', true) ? 'checked' : '';
+            $hideLikesAndComments = get_post_meta($post->ID, '_gca_hide_likes_and_comments', true) ? 'checked' : '';
            
             echo '<label style="display:flex;gap:8px;align-items:center;">';
-            echo '<input type="checkbox" name="gca_hide_likes" value="1" ' . $hideLikes . ' />';
-            echo esc_html__('Hide likes', 'gca-intranet');
+            echo '<input type="checkbox" name="gca_hide_comments" value="1" ' . $hideComments . ' />';
+            echo esc_html__('Turn off comments', 'gca-intranet');
             echo '</label>';
 
             echo '<label style="display:flex;gap:8px;align-items:center;">';
-            echo '<input type="checkbox" name="gca_hide_comments" value="1" ' . $hideComments . ' />';
-            echo esc_html__('Hide comments', 'gca-intranet');
+            echo '<input type="checkbox" name="gca_hide_likes_and_comments" value="1" ' . $hideLikesAndComments . ' />';
+            echo esc_html__('Turn off likes and comments', 'gca-intranet');
             echo '</label>';
 
             echo '<p class="description" style="margin-top:8px;">' . esc_html__(
-                'If checked, the comments or likes will not show on the page (regardless of template).',
+                'If checked, the comments or likes will not show on the news item',
                 'gca-intranet'
             ) . '</p>';
         },
@@ -2722,7 +2722,7 @@ add_action('save_post', function (int $post_id): void {
     if (!current_user_can('edit_post', $post_id)) return;
 
     $comment = isset($_POST['gca_hide_comments']) ? 1 : 0;
-    $like = isset($_POST['gca_hide_likes']) ? 1 : 0;
+    $likeAndComments = isset($_POST['gca_hide_likes_and_comments']) ? 1 : 0;
 
     if ($comment) {
         update_post_meta($post_id, '_gca_hide_comments', 1);
@@ -2730,10 +2730,10 @@ add_action('save_post', function (int $post_id): void {
         delete_post_meta($post_id, '_gca_hide_comments');
     }
 
-    if ($like) {
-        update_post_meta($post_id, '_gca_hide_likes', 1);
+    if ($likeAndComments) {
+        update_post_meta($post_id, '_gca_hide_likes_and_comments', 1);
     } else {
-        delete_post_meta($post_id, '_gca_hide_likes');
+        delete_post_meta($post_id, '_gca_hide_likes_and_comments');
     }
 });
 
