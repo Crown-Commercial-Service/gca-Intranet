@@ -75,6 +75,16 @@ $is_page = !empty($GLOBALS['gca_is_page']);
 
           <?php get_template_part('template-parts/template-body-content'); ?>
 
+          <?php if (is_singular(['page']) && !is_page_template('template-community-wall.php')) : ?>
+            <div class="gca-published-by-wrapper" role="region" aria-label="Page information">
+              <?php get_template_part('template-parts/published-by-region'); ?>
+            </div>
+          <?php endif; ?>
+
+          <?php if (is_singular(['page']) && gca_flag_enabled('page-feedback')) : ?>
+            <?php get_template_part('template-parts/page-feedback'); ?>
+          <?php endif; ?>
+
         </div>
 
       </div>
