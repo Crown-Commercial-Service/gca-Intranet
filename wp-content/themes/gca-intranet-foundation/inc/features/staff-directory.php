@@ -592,8 +592,9 @@ function gca_directory_get_js(): string
     var loadingEl        = document.getElementById('sd-loading');
     var teamSummary      = document.getElementById('sd-team-summary');
 
-    var state      = { directorate: null, team: null };
-    var teamsCache = {};
+    var pendingTeam = null;
+    var state       = { directorate: null, team: null };
+    var teamsCache  = {};
 
     // ── Utilities ─────────────────────────────────────────────────────────────
 
@@ -605,6 +606,26 @@ function gca_directory_get_js(): string
             if (!r.ok) { throw new Error('HTTP ' + r.status); }
             return r.json();
         });
+    }
+
+    function getQueryParam(name) {
+        var params = new URLSearchParams(window.location.search);
+        var value = params.get(name);
+        return value ? value.trim() : '';
+    }
+
+    function updateUrl(team) {
+        var url = new URL(window.location.href);
+        var params = url.searchParams;
+
+        if (team) {
+            params.set('team', team);
+        } else {
+            params.delete('team');
+        }
+
+        url.search = params.toString();
+        history.replaceState(null, '', url.toString());
     }
 
     function enc(v) { return encodeURIComponent(String(v)); }
@@ -737,6 +758,20 @@ function gca_directory_get_js(): string
                     });
                 });
 
+                if (pendingTeam) {
+                    var matchBtn = null;
+                    teamsList.querySelectorAll('.sd-directory__team-btn').forEach(function (b) {
+                        if (b.dataset.team === pendingTeam) {
+                            matchBtn = b;
+                        }
+                    });
+
+                    if (matchBtn) {
+                        selectTeam(pendingTeam, matchBtn);
+                        pendingTeam = null;
+                    }
+                }
+
                 show(teamsSection);
             })
             .catch(function () { setLoading(false); });
@@ -755,6 +790,7 @@ function gca_directory_get_js(): string
         }
 
         state.team = name;
+        updateUrl(name);
         setLoading(true);
 
         apiFetch('staff?directorate=' + enc(state.directorate) + '&team=' + enc(name))
@@ -768,6 +804,37 @@ function gca_directory_get_js(): string
                 showStaff(state.directorate, name, staff, teamObj ? (teamObj.summary || '') : '');
             })
             .catch(function () { setLoading(false); });
+    }
+
+    function loadTeamByName(name) {
+        // We need to discover the directorate for the given team so the
+        // sidebar can expand to show the directorate -> team path. Query
+        // the staff endpoint (which includes `directorate` in each record),
+        // then set the directorate select and trigger `selectDirectorate`.
+        pendingTeam = name;
+        updateUrl(name);
+        setLoading(true);
+
+        apiFetch('staff?team=' + enc(name))
+            .then(function (staff) {
+                setLoading(false);
+
+                var directorate = '';
+                if (staff && staff.length) {
+                    for (var i = 0; i < staff.length; i++) {
+                        if (staff[i].directorate) { directorate = staff[i].directorate; break; }
+                    }
+                }
+
+                if (directorate && directorateSelect) {
+                    directorateSelect.value = directorate;
+                    selectDirectorate(directorate);
+                } else {
+                    showStaff(directorate || '', name, staff || []);
+                    pendingTeam = null;
+                }
+            })
+            .catch(function () { setLoading(false); pendingTeam = null; });
     }
 
     // ── Name search ───────────────────────────────────────────────────────────
@@ -837,6 +904,7 @@ function gca_directory_get_js(): string
                 // Reset to default state when placeholder is selected.
                 state.directorate = null;
                 state.team        = null;
+                updateUrl(null);
                 if (teamsList)    { teamsList.innerHTML = ''; }
                 if (teamsSection) { hide(teamsSection); }
                 showDefault();
@@ -851,6 +919,17 @@ function gca_directory_get_js(): string
             directorateSelect.dispatchEvent(new Event('change'));
         }
     }
+
+    // ── Initialize from URL query params ─────────────────────────────────────
+
+    (function () {
+        var initialTeam = getQueryParam('team');
+        
+        if (initialTeam) {
+            loadTeamByName(initialTeam);
+        }
+
+    })();
 
 })();
 JS;
