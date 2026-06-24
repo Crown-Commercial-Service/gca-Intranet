@@ -71,6 +71,257 @@ add_action('rest_api_init', function (): void {
     ]);
 });
 
+// ── Admin: Team Summaries ─────────────────────────────────────────────────────
+
+add_action('admin_menu', function (): void {
+    if (!gca_flag_enabled('staff-directory')) {
+        return;
+    }
+    add_options_page(
+        'Team Summaries',
+        'Team Summaries',
+        'manage_options',
+        'gca-team-summaries',
+        'gca_team_summaries_admin_page'
+    );
+});
+
+add_action('admin_init', function (): void {
+    if (!isset($_POST['gca_team_summaries_nonce'])) {
+        return;
+    }
+    if (!current_user_can('manage_options')) {
+        wp_die('Forbidden', 403);
+    }
+    check_admin_referer('gca_team_summaries_save', 'gca_team_summaries_nonce');
+
+    $raw = wp_unslash($_POST['team_summary'] ?? []);
+    gca_save_team_summaries(is_array($raw) ? $raw : []);
+
+    wp_redirect(add_query_arg('updated', '1', admin_url('options-general.php?page=gca-team-summaries')));
+    exit;
+});
+
+function gca_team_summaries_admin_page(): void
+{
+    if (!current_user_can('manage_options')) {
+        return;
+    }
+
+    global $wpdb;
+
+    $rows = $wpdb->get_results(
+        "SELECT d.meta_value AS directorate, t.meta_value AS team
+         FROM {$wpdb->usermeta} d
+         INNER JOIN {$wpdb->usermeta} t ON d.user_id = t.user_id
+         WHERE d.meta_key = 'directorate'
+           AND d.meta_value != ''
+           AND t.meta_key = 'team'
+           AND t.meta_value != ''
+         GROUP BY d.meta_value, t.meta_value
+         ORDER BY d.meta_value ASC, t.meta_value ASC"
+    );
+
+    $grouped = [];
+    foreach ($rows as $row) {
+        $grouped[$row->directorate][] = $row->team;
+    }
+
+    $summaries = gca_get_team_summaries();
+    ?>
+    <style>
+    .gca-ts-directorate {
+        border: 1px solid #dcdcde;
+        margin-bottom: 1.25em;
+        max-width: 700px;
+    }
+    .gca-ts-directorate > summary {
+        list-style: none;
+        display: flex;
+        align-items: center;
+        gap: .6em;
+        padding: .6em .9em;
+        cursor: pointer;
+        font-weight: 600;
+        font-size: 1em;
+        color: #1d2327;
+        user-select: none;
+        background: #f0f0f1;
+        border-left: 3px solid #2271b1;
+    }
+    .gca-ts-directorate > summary::-webkit-details-marker { display: none; }
+    .gca-ts-directorate > summary:hover { background: #e8e8e9; }
+    .gca-ts-directorate[open] > summary { border-bottom: 1px solid #dcdcde; }
+    .gca-ts-directorate__teams { padding: 0; }
+    .gca-ts-item {
+        border-top: 1px solid #dcdcde;
+    }
+    .gca-ts-item:first-child { border-top: none; }
+    .gca-ts-item summary {
+        list-style: none;
+        display: flex;
+        align-items: center;
+        gap: .6em;
+        padding: .65em .9em .65em 1.25em;
+        cursor: pointer;
+        font-weight: 500;
+        user-select: none;
+        background: #fff;
+    }
+    .gca-ts-item summary::-webkit-details-marker { display: none; }
+    .gca-ts-item summary:hover { background: #f6f7f7; }
+    .gca-ts-item[open] summary { background: #f6f7f7; border-bottom: 1px solid #dcdcde; }
+    .gca-ts-chevron {
+        margin-left: auto;
+        width: 18px;
+        height: 18px;
+        flex-shrink: 0;
+        transition: transform .15s ease;
+        color: #787c82;
+    }
+    .gca-ts-item[open] .gca-ts-chevron,
+    .gca-ts-directorate[open] > summary .gca-ts-chevron { transform: rotate(180deg); }
+    .gca-ts-badge {
+        display: inline-block;
+        font-size: .75em;
+        font-weight: 400;
+        color: #fff;
+        background: #2271b1;
+        padding: .1em .55em;
+        border-radius: 10px;
+        line-height: 1.6;
+    }
+    .gca-ts-item__body { padding: .9em; background: #fff; }
+    .gca-ts-item__body textarea {
+        width: 100%;
+        box-sizing: border-box;
+        resize: vertical;
+    }
+    .gca-ts-counter { display: block; color: #787c82; font-size: .82em; margin-top: .25em; }
+    .gca-ts-save { margin: 1.25em 0; }
+    </style>
+
+    <div class="wrap">
+        <h1>Team Summaries</h1>
+        <p class="description">Add an optional summary for each team. It appears above the member count on the staff directory. Maximum 200 characters per team.</p>
+
+        <?php if (isset($_GET['updated']) && $_GET['updated'] === '1') : ?>
+            <div class="notice notice-success is-dismissible"><p>Summaries saved.</p></div>
+        <?php endif; ?>
+
+        <form method="post" action="">
+            <?php wp_nonce_field('gca_team_summaries_save', 'gca_team_summaries_nonce'); ?>
+
+            <?php if (!empty($grouped)) : ?>
+                <div class="gca-ts-save">
+                    <button type="submit" class="button button-primary">Save summaries</button>
+                </div>
+            <?php endif; ?>
+
+            <?php foreach ($grouped as $directorate => $teams) :
+                $dir_has_summary = false;
+                foreach ($teams as $team) {
+                    if (isset($summaries[$team]) && $summaries[$team] !== '') {
+                        $dir_has_summary = true;
+                        break;
+                    }
+                }
+            ?>
+                <details class="gca-ts-directorate"<?php echo $dir_has_summary ? ' open' : ''; ?>>
+                    <summary>
+                        <?php echo esc_html($directorate); ?>
+                        <svg class="gca-ts-chevron" viewBox="0 0 20 20" fill="none"
+                             xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false">
+                            <path d="M5 7.5l5 5 5-5" stroke="currentColor" stroke-width="1.5"
+                                  stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>
+                    </summary>
+                    <div class="gca-ts-directorate__teams">
+                        <?php foreach ($teams as $team) :
+                            $field_id    = 'ts_' . sanitize_html_class(md5($team));
+                            $current     = $summaries[$team] ?? '';
+                            $char_count  = mb_strlen($current);
+                            $has_summary = $current !== '';
+                        ?>
+                            <details class="gca-ts-item"<?php echo $has_summary ? ' open' : ''; ?>>
+                                <summary>
+                                    <?php echo esc_html($team); ?>
+                                    <?php if ($has_summary) : ?>
+                                        <span class="gca-ts-badge">Summary set</span>
+                                    <?php endif; ?>
+                                    <svg class="gca-ts-chevron" viewBox="0 0 20 20" fill="none"
+                                         xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false">
+                                        <path d="M5 7.5l5 5 5-5" stroke="currentColor" stroke-width="1.5"
+                                              stroke-linecap="round" stroke-linejoin="round"/>
+                                    </svg>
+                                </summary>
+                                <div class="gca-ts-item__body">
+                                    <label for="<?php echo esc_attr($field_id); ?>" class="screen-reader-text">
+                                        Summary for <?php echo esc_attr($team); ?>
+                                    </label>
+                                    <textarea
+                                        id="<?php echo esc_attr($field_id); ?>"
+                                        name="team_summary[<?php echo esc_attr($team); ?>]"
+                                        maxlength="200"
+                                        rows="3"
+                                        placeholder="Optional summary shown on the staff directory…"
+                                        data-counter="<?php echo esc_attr($field_id); ?>_count"
+                                        data-has-summary="<?php echo $has_summary ? '1' : '0'; ?>"
+                                    ><?php echo esc_textarea($current); ?></textarea>
+                                    <span id="<?php echo esc_attr($field_id); ?>_count" class="gca-ts-counter"><?php echo $char_count; ?>/200</span>
+                                </div>
+                            </details>
+                        <?php endforeach; ?>
+                    </div>
+                </details>
+            <?php endforeach; ?>
+
+            <?php if (empty($grouped)) : ?>
+                <p>No teams found. Staff data may not have been synced yet.</p>
+            <?php else : ?>
+                <div class="gca-ts-save">
+                    <button type="submit" class="button button-primary">Save summaries</button>
+                </div>
+            <?php endif; ?>
+        </form>
+    </div>
+    <script>
+    (function () {
+        // Live character counter
+        document.querySelectorAll('textarea[data-counter]').forEach(function (ta) {
+            var counter = document.getElementById(ta.dataset.counter);
+            if (!counter) { return; }
+            ta.addEventListener('input', function () {
+                counter.textContent = ta.value.length + '/200';
+            });
+        });
+
+        // Update "Summary set" badge dynamically as the user types
+        document.querySelectorAll('textarea[data-has-summary]').forEach(function (ta) {
+            var details = ta.closest('details');
+            var summary = details ? details.querySelector('summary') : null;
+            if (!summary) { return; }
+
+            ta.addEventListener('input', function () {
+                var badge = summary.querySelector('.gca-ts-badge');
+                if (ta.value.trim().length > 0) {
+                    if (!badge) {
+                        badge = document.createElement('span');
+                        badge.className = 'gca-ts-badge';
+                        badge.textContent = 'Summary set';
+                        var chevron = summary.querySelector('.gca-ts-chevron');
+                        summary.insertBefore(badge, chevron);
+                    }
+                } else {
+                    if (badge) { badge.remove(); }
+                }
+            });
+        });
+    })();
+    </script>
+    <?php
+}
+
 // ── Script enqueue ────────────────────────────────────────────────────────────
 
 add_action('wp_enqueue_scripts', function (): void {
@@ -92,6 +343,16 @@ add_action('wp_enqueue_scripts', function (): void {
     ]) . ';', 'before');
 
     wp_add_inline_script($handle, gca_directory_get_js());
+});
+
+add_action('wp_head', function (): void {
+    if (!gca_flag_enabled('staff-directory')) {
+        return;
+    }
+    if (get_page_template_slug() !== 'page-staff-directory.php') {
+        return;
+    }
+    echo '<style>.sd-directory__team-summary{overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;}</style>' . "\n";
 });
 
 // ── REST callbacks ────────────────────────────────────────────────────────────
@@ -152,9 +413,11 @@ function gca_directory_rest_teams(WP_REST_Request $request): WP_REST_Response
         $directorate
     ));
 
+    $summaries = gca_get_team_summaries();
     $data = array_map(fn($r) => [
-        'name'  => $r->name,
-        'count' => (int) $r->cnt,
+        'name'    => $r->name,
+        'count'   => (int) $r->cnt,
+        'summary' => $summaries[$r->name] ?? '',
     ], $rows);
 
     set_transient($cache_key, $data, HOUR_IN_SECONDS);
@@ -267,6 +530,34 @@ function gca_directory_format_staff(array $users): array
     return $results;
 }
 
+// ── Team summary helpers ──────────────────────────────────────────────────────
+
+function gca_get_team_summaries(): array
+{
+    return (array) get_option('gca_team_summaries', []);
+}
+
+function gca_save_team_summaries(array $summaries): void
+{
+    $clean = [];
+    foreach ($summaries as $team => $text) {
+        $text = mb_substr(sanitize_textarea_field((string) $text), 0, 200);
+        if ($text !== '') {
+            $clean[sanitize_text_field((string) $team)] = $text;
+        }
+    }
+    update_option('gca_team_summaries', $clean);
+
+    global $wpdb;
+    $dirs = $wpdb->get_col(
+        "SELECT DISTINCT meta_value FROM {$wpdb->usermeta}
+         WHERE meta_key = 'directorate' AND meta_value != ''"
+    );
+    foreach ($dirs as $dir) {
+        delete_transient('gca_dir_teams_' . md5($dir));
+    }
+}
+
 // ── JavaScript ────────────────────────────────────────────────────────────────
 
 function gca_directory_get_js(): string
@@ -299,9 +590,11 @@ function gca_directory_get_js(): string
     var searchInput      = document.getElementById('sd-search-input');
     var searchBtn        = document.getElementById('sd-search-btn');
     var loadingEl        = document.getElementById('sd-loading');
+    var teamSummary      = document.getElementById('sd-team-summary');
 
-    var state = { directorate: null, team: null };
     var pendingTeam = null;
+    var state       = { directorate: null, team: null };
+    var teamsCache  = {};
 
     // ── Utilities ─────────────────────────────────────────────────────────────
 
@@ -388,11 +681,16 @@ function gca_directory_get_js(): string
         show(defaultContent);
         hide(staffPanel);
         hide(searchPanel);
+        if (teamSummary) { teamSummary.textContent = ''; hide(teamSummary); }
     }
 
-    function showStaff(directorateName, teamName, staff) {
+    function showStaff(directorateName, teamName, staff, summary) {
         if (panelBreadcrumb) { panelBreadcrumb.textContent = directorateName; }
         if (panelTitle)      { panelTitle.textContent      = teamName; }
+        if (teamSummary) {
+            if (summary) { teamSummary.textContent = summary; show(teamSummary); }
+            else         { teamSummary.textContent = ''; hide(teamSummary); }
+        }
         if (staffCount) {
             staffCount.textContent = 'Showing ' + staff.length + ' team member' +
                 (staff.length === 1 ? '' : 's') + '.';
@@ -440,6 +738,7 @@ function gca_directory_get_js(): string
         apiFetch('teams?directorate=' + enc(name))
             .then(function (teams) {
                 setLoading(false);
+                teamsCache[name] = teams;
 
                 if (!teams.length) { return; }
 
@@ -497,7 +796,12 @@ function gca_directory_get_js(): string
         apiFetch('staff?directorate=' + enc(state.directorate) + '&team=' + enc(name))
             .then(function (staff) {
                 setLoading(false);
-                showStaff(state.directorate, name, staff);
+                var teams = teamsCache[state.directorate] || [];
+                var teamObj = null;
+                for (var i = 0; i < teams.length; i++) {
+                    if (teams[i].name === name) { teamObj = teams[i]; break; }
+                }
+                showStaff(state.directorate, name, staff, teamObj ? (teamObj.summary || '') : '');
             })
             .catch(function () { setLoading(false); });
     }
@@ -547,7 +851,12 @@ function gca_directory_get_js(): string
                 apiFetch('staff?directorate=' + enc(state.directorate) + '&team=' + enc(state.team))
                     .then(function (staff) {
                         setLoading(false);
-                        showStaff(state.directorate, state.team, staff);
+                        var teams = teamsCache[state.directorate] || [];
+                        var teamObj = null;
+                        for (var i = 0; i < teams.length; i++) {
+                            if (teams[i].name === state.team) { teamObj = teams[i]; break; }
+                        }
+                        showStaff(state.directorate, state.team, staff, teamObj ? (teamObj.summary || '') : '');
                     })
                     .catch(function () { setLoading(false); });
             } else {
