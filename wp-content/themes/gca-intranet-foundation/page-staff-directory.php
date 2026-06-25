@@ -133,6 +133,7 @@ endif;
           <div class="sd-directory__panel-meta" id="sd-panel-meta" hidden>
             <p class="sd-directory__breadcrumb govuk-body-s" id="sd-breadcrumb"></p>
             <h1 class="sd-directory__panel-title govuk-heading-l" id="sd-panel-title"></h1>
+            <p class="sd-directory__team-summary govuk-body" id="sd-team-summary" hidden></p>
             <p class="govuk-body-s" id="sd-staff-count"></p>
           </div>
 
