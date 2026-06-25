@@ -23,9 +23,8 @@ if (!$user instanceof WP_User) {
     return;
 }
 
-// Build role/team line – only include parts that have data.
-$role_parts = array_filter([$business_title, $team]);
-$role_line  = implode(' | ', $role_parts);
+// Determine whether the profile have a business title and/or team to show.
+$has_role = !empty($business_title) || !empty($team);
 
 // Fallback to default avatar if no Google picture is stored.
 if (empty($avatar_url)) {
@@ -53,9 +52,22 @@ if (empty($avatar_url)) {
         <?php echo esc_html($display_name); ?>
       </h2>
 
-      <?php if ($role_line) : ?>
+      <?php if ($has_role) : ?>
         <p class="govuk-body-s gca-profile-card__role">
-          <?php echo esc_html($role_line); ?>
+          <?php
+          $role_line = array();
+
+          if ($business_title) {
+              $role_line[] = esc_html($business_title);
+          }
+
+          if ($team) {
+              $team_url = esc_url( add_query_arg( 'team', rawurlencode( $team ), home_url( '/staff-directory/' ) ) );
+              $role_line[] = '<a href="' . $team_url . '" class="govuk-link">' . esc_html( $team ) . '</a>';
+          }
+
+          echo wp_kses( implode( ' | ', $role_line ), array( 'a' => array( 'href' => array(), 'class' => array() ) ) );
+          ?>
         </p>
       <?php endif; ?>
 
