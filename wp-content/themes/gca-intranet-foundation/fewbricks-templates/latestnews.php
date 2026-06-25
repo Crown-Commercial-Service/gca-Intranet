@@ -112,17 +112,15 @@ $secondary_posts = array_slice( $news_posts, $featured_count, $secondary_count )
 
         <?php if ( $see_more_url ) : ?>
             <div class="see-more-link-homepage" data-testid="latest-news-see-more">
-                <svg data-testid="latest-news-see-more-icon" xmlns="http://www.w3.org/2000/svg" width="16" height="22"
-                    fill="currentColor" class="bi bi-chevron-right"
-                    viewBox="0 0 16 16" style="stroke: currentColor; padding-top: 9px;" aria-hidden="true" focusable="false">
+                <svg data-testid="latest-news-see-more-icon" xmlns="http://www.w3.org/2000/svg" width="20" height="20"
+                    fill="#0b0c0c"
+                    viewBox="0 0 16 16" aria-hidden="true" focusable="false">
                     <path fill-rule="evenodd"
                         d="M4.646 1.646a.5.5 0 0 1 .708 0l6 6a.5.5 0 0 1 0 .708l-6 6a.5.5 0 0 1-.708-.708L10.293 8 4.646 2.354a.5.5 0 0 1 0-.708" />
                 </svg>
-                <p data-testid="latest-news-see-more-text">
-                    <a class="govuk-link" data-testid="latest-news-see-more-link" href="<?php echo esc_url( $see_more_url ); ?>">
-                        <?php echo esc_html( $see_more_text ); ?>
-                    </a>
-                </p>
+                <a class="govuk-link" data-testid="latest-news-see-more-link" href="<?php echo esc_url( $see_more_url ); ?>">
+                    <?php echo esc_html( $see_more_text ); ?>
+                </a>
             </div>
         <?php endif; ?>
     </div>

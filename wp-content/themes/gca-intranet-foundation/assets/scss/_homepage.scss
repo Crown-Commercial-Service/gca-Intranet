@@ -95,6 +95,8 @@
 
 .see-more-link-homepage {
   display: flex;
+  align-items: center;
+  gap: 5px;
   justify-content: flex-end;
   margin-left: auto;
   margin-right: govuk-spacing(3);
@@ -104,8 +106,14 @@
     padding-top: govuk-spacing(2);
   }
 
-  p {
-    margin-top: 8px;
+  svg {
+    flex-shrink: 0;
+    width: 20px;
+    height: 20px;
+  }
+
+  a {
+    @include govuk-font($size: 19);
   }
 }
 
