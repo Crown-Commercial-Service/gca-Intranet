@@ -4,12 +4,19 @@
  * get_template_part('template-parts/published-by');
  */
 
-$last_editor_id = get_post_meta(get_the_ID(), '_edit_last', true);
-if ($last_editor_id) {
-  $last_editor = get_userdata($last_editor_id);
-  $author      = $last_editor ? $last_editor->display_name : get_the_author();
-} else {
+$post_id               = get_the_ID();
+$author_explicitly_set = get_post_meta( $post_id, '_gca_author_explicitly_set', true );
+
+if ( $author_explicitly_set ) {
   $author = get_the_author();
+} else {
+  $last_editor_id = get_post_meta( $post_id, '_edit_last', true );
+  if ( $last_editor_id ) {
+    $last_editor = get_userdata( $last_editor_id );
+    $author      = $last_editor ? $last_editor->display_name : get_the_author();
+  } else {
+    $author = get_the_author();
+  }
 }
 $modified_date = get_the_modified_date('j F Y');
 
