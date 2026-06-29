@@ -108,8 +108,10 @@
 
   svg {
     flex-shrink: 0;
-    width: 20px;
-    height: 20px;
+    width: 14px;
+    height: 14px;
+    position: relative;
+    top: 2px;
   }
 
   a {

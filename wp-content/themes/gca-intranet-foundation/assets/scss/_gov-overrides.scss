@@ -144,15 +144,16 @@ iframe,
 
 /* theme overrides */
 main .see-more-link-homepage a {
-    font-size: 19px !important;
+    font-size: 16px !important;
 }
 
 main .see-more-link-homepage svg {
-    width: 20px !important;
-    height: 20px !important;
+    width: 14px !important;
+    height: 14px !important;
     padding: 0 !important;
     fill: #0b0c0c !important;
-    stroke: none !important;
+    position: relative !important;
+    top: 2px !important;
 }
 
 // Target links specifically when they are inside your H2s
