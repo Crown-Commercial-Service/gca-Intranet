@@ -147,6 +147,15 @@ main .see-more-link-homepage a {
     font-size: 16px !important;
 }
 
+main .see-more-link-homepage svg {
+    width: 14px !important;
+    height: 14px !important;
+    padding: 0 !important;
+    fill: #0b0c0c !important;
+    position: relative !important;
+    top: 2px !important;
+}
+
 // Target links specifically when they are inside your H2s
 main.govuk-main-wrapper h2 a,
 main.govuk-main-wrapper h2.govuk-heading-l a {
