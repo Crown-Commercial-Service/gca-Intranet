@@ -98,8 +98,17 @@ get_header();
                       <?php echo esc_html(get_the_excerpt()); ?>
                     </p>
 
-                    <p class="govuk-body-s" data-testid="latest-news-featured-date">
-                      <?php echo esc_html(get_the_date('j F Y')); ?>
+                    <p class="govuk-body-xs flex" data-testid="latest-news-secondary-date">
+                      <span style="flex-shrink: 0;"> <?php echo esc_html(get_the_date('j F Y')); ?> </span>
+
+                      <?php
+                      $categories = get_the_category();
+
+                      if ($categories && $categories[0]->name !== 'Uncategorized') : ?>
+                        <span class="govuk-body-s tag_label govuk-!-margin-left-1 responsive-truncate " data-testid="featured-news-category">
+                          <?php echo esc_html($categories[0]->name); ?>
+                        </span>
+                      <?php endif; ?>
                     </p>
                   </div>
                   <?php
@@ -142,8 +151,17 @@ get_header();
                         <?php echo esc_html(wp_trim_words(get_the_excerpt(), 12, '...')); ?>
                       </p>
 
-                      <p class="govuk-body-xs" data-testid="latest-news-secondary-date">
-                        <?php echo esc_html(get_the_date('j F Y')); ?>
+                      <p class="govuk-body-xs flex" data-testid="latest-news-secondary-date">
+                        <span style="flex-shrink: 0;"> <?php echo esc_html(get_the_date('j F Y')); ?> </span>
+
+                        <?php
+                        $categories = get_the_category();
+
+                        if ($categories && $categories[0]->name !== 'Uncategorized') : ?>
+                          <span class="govuk-body-s tag_label govuk-!-margin-left-1 responsive-truncate " data-testid="featured-news-category">
+                            <?php echo esc_html($categories[0]->name); ?>
+                          </span>
+                        <?php endif; ?>
                       </p>
                     </div>
                   </div>
