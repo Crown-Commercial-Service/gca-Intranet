@@ -98,7 +98,7 @@ get_header();
                       <?php echo esc_html(get_the_excerpt()); ?>
                     </p>
 
-                    <p class="govuk-body-xs flex" data-testid="latest-news-secondary-date">
+                    <p class="govuk-body-xs flex baseline" data-testid="latest-news-secondary-date">
                       <span style="flex-shrink: 0;"> <?php echo esc_html(get_the_date('j F Y')); ?> </span>
 
                       <?php
@@ -151,7 +151,7 @@ get_header();
                         <?php echo esc_html(wp_trim_words(get_the_excerpt(), 12, '...')); ?>
                       </p>
 
-                      <p class="govuk-body-xs flex" data-testid="latest-news-secondary-date">
+                      <p class="govuk-body-xs flex baseline" data-testid="latest-news-secondary-date">
                         <span style="flex-shrink: 0;"> <?php echo esc_html(get_the_date('j F Y')); ?> </span>
 
                         <?php
