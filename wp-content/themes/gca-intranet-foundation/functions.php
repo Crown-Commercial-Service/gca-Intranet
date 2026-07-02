@@ -699,7 +699,7 @@ add_action('wp_enqueue_scripts', function (): void {
 
     function renderList(comments, container) {
         if (!comments.length) {
-            container.innerHTML = '<p class="gca-lc__loading govuk-body-s">No comments yet. Be the first!</p>';
+            container.innerHTML = '<p class="gca-lc__loading govuk-body-s">No comments yet. Be the first.</p>';
             return;
         }
         container.innerHTML = comments.map(function (c) { return renderComment(c, false); }).join('');
@@ -2671,6 +2671,72 @@ add_action('save_post', function (int $post_id): void {
         delete_post_meta($post_id, '_gca_hide_featured_image');
     }
 });
+
+/**
+ * Comment display toggle
+ * Applies to: news
+ */
+add_action('add_meta_boxes', function (): void {
+    
+    if (!gca_flag_enabled('likes-and-comments')) return;
+
+    $screens = ['news'];
+
+    add_meta_box(
+        'gca_comment_toggle',
+        __('Comments and likes', 'gca-intranet'),
+        function (\WP_Post $post): void {
+            wp_nonce_field('gca_save_comment_toggle', 'gca_comment_toggle_nonce');
+
+            $hideComments = get_post_meta($post->ID, '_gca_hide_comments', true) ? 'checked' : '';
+            $hideLikesAndComments = get_post_meta($post->ID, '_gca_hide_likes_and_comments', true) ? 'checked' : '';
+           
+            echo '<label style="display:flex;gap:8px;align-items:center;">';
+            echo '<input type="checkbox" name="gca_hide_comments" value="1" ' . $hideComments . ' />';
+            echo esc_html__('Turn off comments', 'gca-intranet');
+            echo '</label>';
+
+            echo '<label style="display:flex;gap:8px;align-items:center;">';
+            echo '<input type="checkbox" name="gca_hide_likes_and_comments" value="1" ' . $hideLikesAndComments . ' />';
+            echo esc_html__('Turn off likes and comments', 'gca-intranet');
+            echo '</label>';
+
+            echo '<p class="description" style="margin-top:8px;">' . esc_html__(
+                'If checked, the comments or likes will not show on the news item',
+                'gca-intranet'
+            ) . '</p>';
+        },
+        $screens,
+        'side',
+        'default'
+    );
+});
+
+add_action('save_post', function (int $post_id): void {
+    if (defined('DOING_AUTOSAVE') && DOING_AUTOSAVE) return;
+
+    if (!isset($_POST['gca_comment_toggle_nonce']) || !wp_verify_nonce((string) $_POST['gca_comment_toggle_nonce'], 'gca_save_comment_toggle')) {
+        return;
+    }
+
+    if (!current_user_can('edit_post', $post_id)) return;
+
+    $comment = isset($_POST['gca_hide_comments']) ? 1 : 0;
+    $likeAndComments = isset($_POST['gca_hide_likes_and_comments']) ? 1 : 0;
+
+    if ($comment) {
+        update_post_meta($post_id, '_gca_hide_comments', 1);
+    } else {
+        delete_post_meta($post_id, '_gca_hide_comments');
+    }
+
+    if ($likeAndComments) {
+        update_post_meta($post_id, '_gca_hide_likes_and_comments', 1);
+    } else {
+        delete_post_meta($post_id, '_gca_hide_likes_and_comments');
+    }
+});
+
 
 /**
  * Admin JS: hero image media picker + template switcher

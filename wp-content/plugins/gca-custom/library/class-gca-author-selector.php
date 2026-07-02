@@ -14,11 +14,13 @@ if ( ! defined( 'ABSPATH' ) ) {
  */
 class GCA_Author_Selector {
 
-	const POST_TYPES = [ 'blog', 'work_update' ];
+	const POST_TYPES = [ 'blog', 'work_update', 'news', 'event' ];
+	const META_KEY   = '_gca_author_explicitly_set';
 
 	public static function init(): void {
 		add_action( 'add_meta_boxes', [ __CLASS__, 'register_meta_box' ] );
 		add_action( 'admin_enqueue_scripts', [ __CLASS__, 'enqueue_assets' ] );
+		add_action( 'save_post', [ __CLASS__, 'save_meta' ] );
 	}
 
 	// -------------------------------------------------------------------------
@@ -42,13 +44,15 @@ class GCA_Author_Selector {
 	}
 
 	public static function render_meta_box( WP_Post $post ): void {
-		$author_id = (int) $post->post_author;
-		$author    = $author_id ? get_userdata( $author_id ) : null;
-		$name      = $author ? $author->display_name : '';
-		$image     = $author_id ? self::get_user_image_url( $author_id ) : '';
+		$explicitly_set = get_post_meta( $post->ID, self::META_KEY, true );
+		$author_id      = $explicitly_set ? (int) $post->post_author : 0;
+		$author         = $author_id ? get_userdata( $author_id ) : null;
+		$name           = $author ? $author->display_name : '';
+		$image          = $author_id ? self::get_user_image_url( $author_id ) : '';
 		?>
 		<div class="gca-author-selector-wrap">
 			<select name="post_author" id="gca-author-select" style="width:100%">
+				<option value=""></option>
 				<?php if ( $author_id && $author ) : ?>
 					<option value="<?php echo esc_attr( $author_id ); ?>"
 					        data-img="<?php echo esc_attr( $image ); ?>"
@@ -59,6 +63,28 @@ class GCA_Author_Selector {
 			</select>
 		</div>
 		<?php
+	}
+
+	public static function save_meta( int $post_id ): void {
+		if ( defined( 'DOING_AUTOSAVE' ) && DOING_AUTOSAVE ) {
+			return;
+		}
+		if ( ! in_array( get_post_type( $post_id ), self::POST_TYPES, true ) ) {
+			return;
+		}
+		if ( ! current_user_can( 'edit_post', $post_id ) ) {
+			return;
+		}
+		if ( ! isset( $_POST['post_author'] ) ) {
+			return;
+		}
+
+		$selected = (int) $_POST['post_author'];
+		if ( $selected > 0 && get_userdata( $selected ) ) {
+			update_post_meta( $post_id, self::META_KEY, '1' );
+		} else {
+			delete_post_meta( $post_id, self::META_KEY );
+		}
 	}
 
 	// -------------------------------------------------------------------------
@@ -122,9 +148,10 @@ class GCA_Author_Selector {
 		);
 
 		global $post;
+		$explicitly_set = $post ? get_post_meta( $post->ID, self::META_KEY, true ) : false;
 		wp_localize_script( 'gca-author-selector', 'gcaAuthorSelector', [
 			'users'           => array_values( $user_data ),
-			'currentAuthorId' => $post ? (string) $post->post_author : '',
+			'currentAuthorId' => ( $explicitly_set && $post ) ? (string) $post->post_author : '',
 		] );
 	}
 

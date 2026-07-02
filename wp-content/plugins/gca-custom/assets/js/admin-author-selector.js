@@ -55,7 +55,7 @@
 			// Allow searching without a minimum number of characters.
 			minimumInputLength: 0,
 
-			allowClear:  false,
+			allowClear:  true,
 			placeholder: 'Search for a user',
 
 			// templateResult / templateSelection return jQuery objects, so
