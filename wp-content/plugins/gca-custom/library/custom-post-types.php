@@ -71,7 +71,7 @@ function gca_register_my_cpts()
 
 function get_labels($name)
 {
-    $name =  ucwords($name);
+    $name =  ucfirst($name);
     $plural = $name . 's';
 
     return array(
