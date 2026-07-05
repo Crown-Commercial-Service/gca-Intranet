@@ -331,8 +331,7 @@ get_header();
 
     </div>
 
-    <div class="govuk-width-container" data-testid="home-lower-width-container">
-      <div class="govuk-grid-row flex" data-testid="home-lower-row">
+    <div class="govuk-grid-row flex" data-testid="home-lower-row">
 
         <!-- Work updates -->
         <div class="govuk-grid-column-two-thirds gca-right-line" data-testid="work-updates-column">
@@ -509,7 +508,6 @@ get_header();
         </div>
 
       </div>
-    </div>
 
     <!-- Events -->
     <?php
