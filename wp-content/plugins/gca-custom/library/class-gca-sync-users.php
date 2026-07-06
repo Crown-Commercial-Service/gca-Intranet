@@ -417,6 +417,7 @@ class GCA_Sync_Users {
         $name       = trim( $record['EmployeeName'] ?? '' );
         $name_parts = explode( ' ', $name, 2 );
         $prefix     = (string) strstr( $email, '@', true );
+        $prefix     = self::sanitize_login_prefix( $prefix );
 
         return [
             'user_login'   => $prefix,
@@ -425,6 +426,20 @@ class GCA_Sync_Users {
             'first_name'   => $name_parts[0] ?? '',
             'last_name'    => $name_parts[1] ?? '',
         ];
+    }
+
+    /**
+     * Strips characters WordPress core's sanitize_user() would reject
+     * (e.g. apostrophes, as in "o'hare") from an email-derived login prefix.
+     *
+     * The update path writes user_login/user_nicename directly via $wpdb->update()
+     * (see line ~264) to bypass wp_update_user()'s uniqueness-suffix logic, which
+     * also means it bypasses wp_update_user()'s own sanitisation — so this must be
+     * applied here, before that raw write, or these fields diverge from what
+     * WordPress itself would ever produce for them.
+     */
+    private static function sanitize_login_prefix( string $prefix ): string {
+        return preg_replace( '/[^a-z0-9 _.\-@]/i', '', $prefix );
     }
 
     /**
