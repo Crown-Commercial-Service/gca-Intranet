@@ -612,6 +612,54 @@ class SyncUsersSyncTest extends TestCase {
         $this->assertTrue(true);
     }
 
+    public function test_run_strips_apostrophe_from_user_login_on_raw_wpdb_write(): void {
+        // Regression test: user_login/user_nicename are force-written via a raw
+        // $wpdb->update() (bypassing wp_update_user's own sanitisation) to avoid
+        // WordPress's uniqueness-suffix logic. Without sanitizing first, an
+        // apostrophe from an email like "lucy.o'hare1@..." was persisted
+        // verbatim, diverging from what wp_update_user() would ever produce for
+        // these fields. (This was investigated as a possible cause of a login
+        // issue for this user in production; the exact causal mechanism was not
+        // confirmed, but the divergence from WordPress's own sanitisation is a
+        // bug regardless.)
+        $record = $this->staffRecord([
+            'Email'        => "lucy.o'hare1@gca.gov.uk",
+            'EmployeeName' => "Lucy O'Hare",
+        ]);
+        $wpUser = $this->mockWpUser(55, $record['Email'], 'lohare1');
+
+        $this->mockApiReturning([$record]);
+        $this->mockIsWpErrorFalse();
+        $this->mockUpdateUserMeta();
+        WP_Mock::passthruFunction('do_action');
+
+        WP_Mock::userFunction('get_user_by',    ['return' => $wpUser]);
+        WP_Mock::userFunction('wp_update_user', ['return' => 55]);
+        WP_Mock::userFunction('get_users',      ['return' => []]);
+        WP_Mock::userFunction('get_user_meta',  ['return' => '']);
+
+        global $wpdb;
+        $wpdb           = \Mockery::mock('wpdb');
+        $wpdb->users    = 'wp_users';
+        $wpdb->posts    = 'wp_posts';
+        $wpdb->comments = 'wp_comments';
+
+        $capturedUpdate = null;
+        $wpdb->shouldReceive('update')
+            ->andReturnUsing(function (string $table, array $data) use (&$capturedUpdate): int {
+                if ('wp_users' === $table) {
+                    $capturedUpdate = $data;
+                }
+                return 1;
+            });
+
+        GCA_Sync_Users::run();
+
+        $this->assertNotNull($capturedUpdate, '$wpdb->update() must be called for wp_users');
+        $this->assertSame('lucy.ohare1', $capturedUpdate['user_login'], 'apostrophe must be stripped from user_login');
+        $this->assertSame('lucy-ohare1', $capturedUpdate['user_nicename'], 'apostrophe must be stripped from user_nicename');
+    }
+
     public function test_run_normalises_email_to_lowercase_before_lookup(): void {
         $record = $this->staffRecord(['Email' => 'Jane.Smith@GCA.GOV.UK']);
         $wpUser = $this->mockWpUser(55, 'jane.smith@gca.gov.uk', 'jane.smith');
