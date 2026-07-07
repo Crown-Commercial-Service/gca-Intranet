@@ -60,7 +60,7 @@ class SyncUsersSyncTest extends TestCase {
 
     private function staffRecord(array $overrides = []): array {
         return array_merge([
-            'Email'          => 'jane.smith@gca.gov.uk',
+            'Email'          => 'jane.smith@example.com',
             'EmployeeName'   => 'Jane Smith',
             'EmployeeKey'    => '42',
             'ItemInternalId' => 'wd-item-001',
@@ -68,7 +68,7 @@ class SyncUsersSyncTest extends TestCase {
             'Team'           => 'Engineering (Bob Manager)',
             'Directorate'    => 'Digital',
             'Manager'        => 'Bob Manager',
-            'ManagerEmail'   => 'bob.manager@gca.gov.uk',
+            'ManagerEmail'   => 'bob.manager@example.com',
         ], $overrides);
     }
 
@@ -165,7 +165,7 @@ class SyncUsersSyncTest extends TestCase {
         GCA_Sync_Users::run();
 
         $this->assertSame('jane.smith',             $capturedData['user_login']);
-        $this->assertSame('jane.smith@gca.gov.uk',  $capturedData['user_email']);
+        $this->assertSame('jane.smith@example.com',  $capturedData['user_email']);
         $this->assertSame('jane-smith',             $capturedData['user_nicename']);
         $this->assertSame('Jane Smith',             $capturedData['display_name']);
         $this->assertSame('Jane',                   $capturedData['first_name']);
@@ -202,7 +202,7 @@ class SyncUsersSyncTest extends TestCase {
     // =========================================================================
 
     public function test_run_updates_existing_user_when_found_by_email(): void {
-        $wpUser = $this->mockWpUser(55, 'jane.smith@gca.gov.uk', 'jane.smith');
+        $wpUser = $this->mockWpUser(55, 'jane.smith@example.com', 'jane.smith');
         $this->mockApiReturning([$this->staffRecord()]);
         $this->mockIsWpErrorFalse();
         $this->mockWpdb();
@@ -225,7 +225,7 @@ class SyncUsersSyncTest extends TestCase {
         GCA_Sync_Users::run();
 
         $this->assertSame(55,                       $capturedData['ID']);
-        $this->assertSame('jane.smith@gca.gov.uk',  $capturedData['user_email']);
+        $this->assertSame('jane.smith@example.com',  $capturedData['user_email']);
         $this->assertSame('Jane Smith',             $capturedData['display_name']);
         // user_login and user_nicename are stripped and written via $wpdb->update.
         $this->assertArrayNotHasKey('user_login',    $capturedData);
@@ -240,7 +240,7 @@ class SyncUsersSyncTest extends TestCase {
             'Team'           => 'Platform (Alice Lead)',
             'Directorate'    => 'Technology',
             'Manager'        => 'Alice Lead',
-            'ManagerEmail'   => 'alice.lead@gca.gov.uk',
+            'ManagerEmail'   => 'alice.lead@example.com',
         ]);
         $wpUser = $this->mockWpUser(55, $record['Email'], 'jane.smith');
 
@@ -271,7 +271,7 @@ class SyncUsersSyncTest extends TestCase {
         $this->assertSame('Platform',              $capturedMeta['team']);  // "(Alice Lead)" stripped
         $this->assertSame('Technology',            $capturedMeta['directorate']);
         $this->assertSame('Alice Lead',            $capturedMeta['manager']);
-        $this->assertSame('alice.lead@gca.gov.uk', $capturedMeta['manager_email']);
+        $this->assertSame('alice.lead@example.com', $capturedMeta['manager_email']);
     }
 
     // =========================================================================
@@ -336,7 +336,7 @@ class SyncUsersSyncTest extends TestCase {
     }
 
     public function test_run_logs_error_and_skips_meta_when_user_update_fails(): void {
-        $wpUser = $this->mockWpUser(55, 'jane.smith@gca.gov.uk', 'jane.smith');
+        $wpUser = $this->mockWpUser(55, 'jane.smith@example.com', 'jane.smith');
         $this->mockApiReturning([$this->staffRecord()]);
 
         $wpError = \Mockery::mock('\WP_Error');
@@ -363,7 +363,7 @@ class SyncUsersSyncTest extends TestCase {
     // =========================================================================
 
     public function test_run_skips_purge_step_when_deletion_is_disabled(): void {
-        $wpUser = $this->mockWpUser(55, 'jane.smith@gca.gov.uk', 'jane.smith');
+        $wpUser = $this->mockWpUser(55, 'jane.smith@example.com', 'jane.smith');
         $this->mockApiReturning([$this->staffRecord()]);
         $this->mockIsWpErrorFalse();
         $this->mockWpdb();
@@ -390,9 +390,9 @@ class SyncUsersSyncTest extends TestCase {
     public function test_run_hard_deletes_user_after_grace_period(): void {
         putenv('WORKDAY_SYNC_ENABLE_DELETE=true');
 
-        $apiRecord  = $this->staffRecord(['Email' => 'active@gca.gov.uk']);
-        $activeUser = $this->mockWpUser(10, 'active@gca.gov.uk', 'active');
-        $staleUser  = $this->mockWpUser(99, 'leaver@gca.gov.uk', 'leaver', ['subscriber']);
+        $apiRecord  = $this->staffRecord(['Email' => 'active@example.com']);
+        $activeUser = $this->mockWpUser(10, 'active@example.com', 'active');
+        $staleUser  = $this->mockWpUser(99, 'leaver@example.com', 'leaver', ['subscriber']);
 
         $formerEmployeeUser     = $this->mockWpUser(50, 'former-employee@gca.co.uk', 'former-employee');
         $formerEmployeeUser->ID = 50;
@@ -469,7 +469,7 @@ class SyncUsersSyncTest extends TestCase {
         $this->assertSame(50,                       $commentPrepareArgs[1], 'new comment user_id');
         $this->assertSame('former-employee@gca.co.uk', $commentPrepareArgs[2], 'new comment_author_email');
         $this->assertSame(99,                       $commentPrepareArgs[3], 'WHERE old user_id');
-        $this->assertSame('leaver@gca.gov.uk',      $commentPrepareArgs[4], 'WHERE comment_author_email');
+        $this->assertSame('leaver@example.com',      $commentPrepareArgs[4], 'WHERE comment_author_email');
     }
 
     public function test_run_skips_protected_login_during_purge(): void {
@@ -503,7 +503,7 @@ class SyncUsersSyncTest extends TestCase {
         $this->mockIsWpErrorFalse();
         WP_Mock::passthruFunction('do_action');
 
-        $superAdmin = $this->mockWpUser(2, 'super@gca.gov.uk', 'superadmin', ['administrator']);
+        $superAdmin = $this->mockWpUser(2, 'super@example.com', 'superadmin', ['administrator']);
 
         WP_Mock::userFunction('get_users', [
             'return' => function (array $args) use ($superAdmin): array {
@@ -525,9 +525,9 @@ class SyncUsersSyncTest extends TestCase {
     // =========================================================================
 
     public function test_run_creates_one_and_updates_one_for_two_api_records(): void {
-        $newRecord      = $this->staffRecord(['Email' => 'new@gca.gov.uk',      'EmployeeName' => 'New User',      'EmployeeKey' => '42']);
-        $existingRecord = $this->staffRecord(['Email' => 'existing@gca.gov.uk', 'EmployeeName' => 'Existing User', 'EmployeeKey' => '43']);
-        $existingWpUser = $this->mockWpUser(10, 'existing@gca.gov.uk', 'existing');
+        $newRecord      = $this->staffRecord(['Email' => 'new@example.com',      'EmployeeName' => 'New User',      'EmployeeKey' => '42']);
+        $existingRecord = $this->staffRecord(['Email' => 'existing@example.com', 'EmployeeName' => 'Existing User', 'EmployeeKey' => '43']);
+        $existingWpUser = $this->mockWpUser(10, 'existing@example.com', 'existing');
 
         $this->mockApiReturning([$newRecord, $existingRecord]);
         $this->mockIsWpErrorFalse();
@@ -616,17 +616,17 @@ class SyncUsersSyncTest extends TestCase {
         // Regression test: user_login/user_nicename are force-written via a raw
         // $wpdb->update() (bypassing wp_update_user's own sanitisation) to avoid
         // WordPress's uniqueness-suffix logic. Without sanitizing first, an
-        // apostrophe from an email like "lucy.o'hare1@..." was persisted
+        // apostrophe from an email like "john.o'connors1@..." was persisted
         // verbatim, diverging from what wp_update_user() would ever produce for
         // these fields. (This was investigated as a possible cause of a login
         // issue for this user in production; the exact causal mechanism was not
         // confirmed, but the divergence from WordPress's own sanitisation is a
         // bug regardless.)
         $record = $this->staffRecord([
-            'Email'        => "lucy.o'hare1@gca.gov.uk",
-            'EmployeeName' => "Lucy O'Hare",
+            'Email'        => "john.o'connors1@example.com",
+            'EmployeeName' => "John O'Connors",
         ]);
-        $wpUser = $this->mockWpUser(55, $record['Email'], 'lohare1');
+        $wpUser = $this->mockWpUser(55, $record['Email'], 'loconnors1');
 
         $this->mockApiReturning([$record]);
         $this->mockIsWpErrorFalse();
@@ -656,13 +656,13 @@ class SyncUsersSyncTest extends TestCase {
         GCA_Sync_Users::run();
 
         $this->assertNotNull($capturedUpdate, '$wpdb->update() must be called for wp_users');
-        $this->assertSame('lucy.ohare1', $capturedUpdate['user_login'], 'apostrophe must be stripped from user_login');
-        $this->assertSame('lucy-ohare1', $capturedUpdate['user_nicename'], 'apostrophe must be stripped from user_nicename');
+        $this->assertSame('john.oconnors1', $capturedUpdate['user_login'], 'apostrophe must be stripped from user_login');
+        $this->assertSame('john-oconnors1', $capturedUpdate['user_nicename'], 'apostrophe must be stripped from user_nicename');
     }
 
     public function test_run_normalises_email_to_lowercase_before_lookup(): void {
-        $record = $this->staffRecord(['Email' => 'Jane.Smith@GCA.GOV.UK']);
-        $wpUser = $this->mockWpUser(55, 'jane.smith@gca.gov.uk', 'jane.smith');
+        $record = $this->staffRecord(['Email' => 'Jane.Smith@EXAMPLE.COM']);
+        $wpUser = $this->mockWpUser(55, 'jane.smith@example.com', 'jane.smith');
 
         $this->mockApiReturning([$record]);
         $this->mockIsWpErrorFalse();
@@ -690,7 +690,7 @@ class SyncUsersSyncTest extends TestCase {
 
         GCA_Sync_Users::run();
 
-        $this->assertSame('jane.smith@gca.gov.uk', $capturedEmail);
+        $this->assertSame('jane.smith@example.com', $capturedEmail);
     }
 
     public function test_run_handles_empty_staff_list_without_errors(): void {
@@ -712,9 +712,9 @@ class SyncUsersSyncTest extends TestCase {
     // =========================================================================
 
     public function test_run_soft_deletes_user_absent_from_api(): void {
-        $apiRecord  = $this->staffRecord(['Email' => 'active@gca.gov.uk']);
-        $activeUser = $this->mockWpUser(10, 'active@gca.gov.uk', 'active');
-        $staleUser  = $this->mockWpUser(99, 'leaver@gca.gov.uk', 'leaver', ['subscriber']);
+        $apiRecord  = $this->staffRecord(['Email' => 'active@example.com']);
+        $activeUser = $this->mockWpUser(10, 'active@example.com', 'active');
+        $staleUser  = $this->mockWpUser(99, 'leaver@example.com', 'leaver', ['subscriber']);
 
         $this->mockApiReturning([$apiRecord]);
         $this->mockIsWpErrorFalse();
@@ -759,9 +759,9 @@ class SyncUsersSyncTest extends TestCase {
     }
 
     public function test_run_sets_deleted_at_on_soft_delete(): void {
-        $apiRecord  = $this->staffRecord(['Email' => 'active@gca.gov.uk']);
-        $activeUser = $this->mockWpUser(10, 'active@gca.gov.uk', 'active');
-        $staleUser  = $this->mockWpUser(99, 'leaver@gca.gov.uk', 'leaver', ['subscriber']);
+        $apiRecord  = $this->staffRecord(['Email' => 'active@example.com']);
+        $activeUser = $this->mockWpUser(10, 'active@example.com', 'active');
+        $staleUser  = $this->mockWpUser(99, 'leaver@example.com', 'leaver', ['subscriber']);
 
         $this->mockApiReturning([$apiRecord]);
         $this->mockIsWpErrorFalse();
@@ -802,9 +802,9 @@ class SyncUsersSyncTest extends TestCase {
     }
 
     public function test_run_skips_soft_delete_for_already_soft_deleted_user(): void {
-        $apiRecord  = $this->staffRecord(['Email' => 'active@gca.gov.uk']);
-        $activeUser = $this->mockWpUser(10, 'active@gca.gov.uk', 'active');
-        $formerUser = $this->mockWpUser(99, 'leaver@gca.gov.uk', 'leaver', ['subscriber']);
+        $apiRecord  = $this->staffRecord(['Email' => 'active@example.com']);
+        $activeUser = $this->mockWpUser(10, 'active@example.com', 'active');
+        $formerUser = $this->mockWpUser(99, 'leaver@example.com', 'leaver', ['subscriber']);
 
         $this->mockApiReturning([$apiRecord]);
         $this->mockIsWpErrorFalse();
@@ -846,9 +846,9 @@ class SyncUsersSyncTest extends TestCase {
     public function test_run_skips_hard_delete_within_grace_period(): void {
         putenv('WORKDAY_SYNC_ENABLE_DELETE=true');
 
-        $apiRecord  = $this->staffRecord(['Email' => 'active@gca.gov.uk']);
-        $activeUser = $this->mockWpUser(10, 'active@gca.gov.uk', 'active');
-        $staleUser  = $this->mockWpUser(99, 'leaver@gca.gov.uk', 'leaver', ['subscriber']);
+        $apiRecord  = $this->staffRecord(['Email' => 'active@example.com']);
+        $activeUser = $this->mockWpUser(10, 'active@example.com', 'active');
+        $staleUser  = $this->mockWpUser(99, 'leaver@example.com', 'leaver', ['subscriber']);
 
         $this->mockApiReturning([$apiRecord]);
         $this->mockIsWpErrorFalse();
@@ -885,8 +885,8 @@ class SyncUsersSyncTest extends TestCase {
 
     public function test_run_clears_deleted_at_when_user_returns_within_grace_period(): void {
         // User was soft-deleted 2 days ago but has now reappeared in the Workday feed.
-        $apiRecord   = $this->staffRecord(['Email' => 'returning@gca.gov.uk']);
-        $returnUser  = $this->mockWpUser(77, 'returning@gca.gov.uk', 'returning');
+        $apiRecord   = $this->staffRecord(['Email' => 'returning@example.com']);
+        $returnUser  = $this->mockWpUser(77, 'returning@example.com', 'returning');
 
         $this->mockApiReturning([$apiRecord]);
         $this->mockIsWpErrorFalse();
@@ -922,8 +922,8 @@ class SyncUsersSyncTest extends TestCase {
 
     public function test_run_does_not_call_delete_user_meta_when_deleted_at_not_set(): void {
         // Normal active user with no deleted_at — delete_user_meta must never be called.
-        $apiRecord  = $this->staffRecord(['Email' => 'active@gca.gov.uk']);
-        $activeUser = $this->mockWpUser(10, 'active@gca.gov.uk', 'active');
+        $apiRecord  = $this->staffRecord(['Email' => 'active@example.com']);
+        $activeUser = $this->mockWpUser(10, 'active@example.com', 'active');
 
         $this->mockApiReturning([$apiRecord]);
         $this->mockIsWpErrorFalse();
@@ -955,7 +955,7 @@ class SyncUsersSyncTest extends TestCase {
         // once, using the data from the last (amended) record.
         $firstRecord  = $this->staffRecord();
         $secondRecord = $this->staffRecord(['Team' => 'Engineering (Bob Manager)test']);
-        $wpUser       = $this->mockWpUser(55, 'jane.smith@gca.gov.uk', 'jane.smith');
+        $wpUser       = $this->mockWpUser(55, 'jane.smith@example.com', 'jane.smith');
 
         $this->mockApiReturning([$firstRecord, $secondRecord]);
         $this->mockIsWpErrorFalse();
@@ -984,7 +984,7 @@ class SyncUsersSyncTest extends TestCase {
         // Second record appends 'test' to Team — the final stored value must contain it.
         $firstRecord  = $this->staffRecord();
         $secondRecord = $this->staffRecord(['Team' => 'Engineering (Bob Manager)test']);
-        $wpUser       = $this->mockWpUser(55, 'jane.smith@gca.gov.uk', 'jane.smith');
+        $wpUser       = $this->mockWpUser(55, 'jane.smith@example.com', 'jane.smith');
 
         $this->mockApiReturning([$firstRecord, $secondRecord]);
         $this->mockIsWpErrorFalse();
