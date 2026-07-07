@@ -46,7 +46,7 @@ class SyncUsersDataMappingTest extends TestCase {
 
     public function test_build_common_fields_extracts_email_prefix_as_user_login(): void {
         $fields = $this->call('build_common_fields', [
-            'Email'        => 'natalie.cadwallader@gca.gov.uk',
+            'Email'        => 'natalie.cadwallader@example.com',
             'EmployeeName' => 'Natalie Cadwallader',
         ]);
 
@@ -121,23 +121,23 @@ class SyncUsersDataMappingTest extends TestCase {
     }
 
     public function test_build_common_fields_strips_apostrophe_from_login(): void {
-        // Regression test: "lucy.o'hare1@gca.gov.uk" must not leave an apostrophe
+        // Regression test: "john.o'connors1@example.com" must not leave an apostrophe
         // in user_login, since the update path writes it via a raw $wpdb->update()
         // that bypasses wp_update_user()'s own sanitisation. A stray apostrophe
         // was observed alongside a login issue for this user in production
         // (exact causal mechanism not confirmed) — this keeps the field aligned
         // with what wp_update_user() itself would produce.
         $fields = $this->call('build_common_fields', [
-            'Email'        => "lucy.o'hare1@gca.gov.uk",
-            'EmployeeName' => "Lucy O'Hare",
+            'Email'        => "john.o'connors1@example.com",
+            'EmployeeName' => "John O'Connors",
         ]);
 
-        $this->assertSame('lucy.ohare1', $fields['user_login']);
+        $this->assertSame('john.oconnors1', $fields['user_login']);
     }
 
     public function test_build_common_fields_login_still_lowercased_and_preserved_when_no_special_chars(): void {
         $fields = $this->call('build_common_fields', [
-            'Email'        => 'natalie.cadwallader@gca.gov.uk',
+            'Email'        => 'natalie.cadwallader@example.com',
             'EmployeeName' => 'Natalie Cadwallader',
         ]);
 
@@ -150,7 +150,7 @@ class SyncUsersDataMappingTest extends TestCase {
 
     public function test_build_insert_data_derives_nicename_from_email_prefix(): void {
         $data = $this->call('build_insert_data', [
-            'Email'        => 'natalie.cadwallader@gca.gov.uk',
+            'Email'        => 'natalie.cadwallader@example.com',
             'EmployeeName' => 'Natalie Cadwallader',
         ]);
 
@@ -159,12 +159,12 @@ class SyncUsersDataMappingTest extends TestCase {
 
     public function test_build_insert_data_strips_apostrophe_from_login_and_nicename(): void {
         $data = $this->call('build_insert_data', [
-            'Email'        => "lucy.o'hare1@gca.gov.uk",
-            'EmployeeName' => "Lucy O'Hare",
+            'Email'        => "john.o'connors1@example.com",
+            'EmployeeName' => "John O'Connors",
         ]);
 
-        $this->assertSame('lucy.ohare1', $data['user_login']);
-        $this->assertSame('lucy-ohare1', $data['user_nicename']);
+        $this->assertSame('john.oconnors1', $data['user_login']);
+        $this->assertSame('john-oconnors1', $data['user_nicename']);
     }
 
     // -------------------------------------------------------------------------
@@ -172,7 +172,7 @@ class SyncUsersDataMappingTest extends TestCase {
     // -------------------------------------------------------------------------
 
     public function test_sanitize_login_prefix_strips_apostrophe(): void {
-        $this->assertSame('ohare1', $this->call('sanitize_login_prefix', "o'hare1"));
+        $this->assertSame('oconnors1', $this->call('sanitize_login_prefix', "o'connors1"));
     }
 
     public function test_sanitize_login_prefix_strips_multiple_disallowed_characters(): void {
