@@ -53,7 +53,7 @@ get_header();
     <div class="govuk-grid-row" data-testid="home-top-row">
 
       <!-- Latest news -->
-      <div class="govuk-grid-column-two-thirds gca-right-line" data-testid="latest-news-column">
+      <div class="govuk-grid-column-two-thirds" data-testid="latest-news-column">
         <div class="gca-homepage-section-title" data-testid="latest-news-header">
           <h2 class="govuk-heading-m gca-clamp-2" data-testid="latest-news-heading">
             <?php
