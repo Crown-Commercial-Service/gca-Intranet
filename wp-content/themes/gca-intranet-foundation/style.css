@@ -525,7 +525,7 @@ body.single-news .gca-taxonomy-tags .govuk-tag::after {
    ========================================================= */
 
 .gca-quick-links {
-  margin-top: 29px;
+  margin-top: 36px;
 }
 
 .gca-quick-links .gca-homepage-section-title {
@@ -539,7 +539,7 @@ body.single-news .gca-taxonomy-tags .govuk-tag::after {
 .gca-quick-links__list {
   display: flex;
   flex-direction: column;
-  gap: 28px;
+  gap: 33px;
 }
 
 @media (max-width: 640px) {
