@@ -25,8 +25,6 @@ class GCA_Workflow_Rejection {
         add_action( 'admin_footer', [ __CLASS__, 'decline_redirect_script' ] );
         add_action( 'admin_menu',   [ __CLASS__, 'register_decline_feedback_page' ] );
         add_action( 'admin_init',   [ __CLASS__, 'handle_decline_feedback_submit' ] );
-        // Show reviewer feedback as a top-of-page admin notice (cannot be hidden via Screen Options).
-        add_action( 'admin_notices', [ __CLASS__, 'show_reviewer_feedback_notice' ] );
         // Show admin notice when a contributor's submission is blocked from trashing a live page.
         add_action( 'admin_notices', [ __CLASS__, 'show_delete_blocked_notice' ] );
     }
@@ -51,8 +49,16 @@ class GCA_Workflow_Rejection {
                 'high'
             );
         }
-        // Contributor feedback is shown via show_reviewer_feedback_notice (admin_notices hook)
-        // rather than a meta box, so it cannot be hidden via Screen Options.
+        if ( ! $is_reviewer ) {
+            add_meta_box(
+                'gca_rejection_comments',
+                'Rejection Feedback',
+                [ __CLASS__, 'render_contributor_meta_box' ],
+                'page',
+                'normal',
+                'high'
+            );
+        }
     }
 
     public static function show_reviewer_feedback_notice(): void {
@@ -73,23 +79,40 @@ class GCA_Workflow_Rejection {
             return;
         }
 
-        $comments = get_post_meta( $post->ID, self::META_KEY, true );
+        $source_id = $post->ID;
+        $history   = get_post_meta( $source_id, self::HISTORY_META_KEY, true );
 
-        if ( empty( $comments ) && function_exists( 'rvy_post_id' ) ) {
+        if ( ( ! is_array( $history ) || empty( $history ) ) && function_exists( 'rvy_post_id' ) ) {
             $parent_id = (int) rvy_post_id( $post->ID );
             if ( $parent_id && $parent_id !== $post->ID ) {
-                $comments = get_post_meta( $parent_id, self::META_KEY, true );
+                $history   = get_post_meta( $parent_id, self::HISTORY_META_KEY, true );
+                $source_id = $parent_id;
             }
         }
 
-        if ( empty( $comments ) ) {
+        if ( ! is_array( $history ) || empty( $history ) ) {
             return;
         }
 
-        echo '<div class="notice notice-warning">'
-            . '<p><strong>' . esc_html__( 'Reviewer Feedback', 'gca' ) . ':</strong> '
-            . nl2br( esc_html( $comments ) )
-            . '</p></div>';
+        $entries = array_reverse( $history ); // newest first
+        $rows    = '';
+        foreach ( $entries as $entry ) {
+            $reviewer = get_userdata( $entry['reviewer_id'] ?? 0 );
+            $name     = $reviewer ? esc_html( $reviewer->display_name ) : esc_html__( 'Reviewer', 'gca' );
+            $date     = esc_html( date_i18n( get_option( 'date_format' ), $entry['timestamp'] ?? 0 ) );
+            $rows    .= '<tr style="border-top:1px solid #e5e5e5;">'
+                . '<td style="padding:6px 8px;white-space:nowrap;font-weight:600;">' . $name . '</td>'
+                . '<td style="padding:6px 8px;white-space:nowrap;color:#666;">' . $date . '</td>'
+                . '<td style="padding:6px 8px;">' . nl2br( esc_html( $entry['comments'] ?? '' ) ) . '</td>'
+                . '</tr>';
+        }
+
+        echo '<div class="notice notice-warning" style="padding:10px 12px;">'
+            . '<p style="margin:0 0 8px;font-weight:600;">' . esc_html__( 'Reviewer Feedback', 'gca' ) . '</p>'
+            . '<table style="width:100%;border-collapse:collapse;font-size:13px;"><tbody>'
+            . $rows
+            . '</tbody></table>'
+            . '</div>';
     }
 
     public static function render_reviewer_meta_box( WP_Post $post ): void {
@@ -134,6 +157,43 @@ class GCA_Workflow_Rejection {
         <?php endforeach; ?>
         <?php endif; ?>
         <?php
+    }
+
+    public static function render_contributor_meta_box( WP_Post $post ): void {
+        // Always resolve to the parent page — revisions may have partial history stored
+        // on them directly, so using the parent ensures the full history is shown.
+        $source_id = $post->ID;
+        if ( function_exists( 'rvy_post_id' ) ) {
+            $parent_id = (int) rvy_post_id( $post->ID );
+            if ( $parent_id && $parent_id !== $post->ID ) {
+                $source_id = $parent_id;
+            }
+        }
+        $history = get_post_meta( $source_id, self::HISTORY_META_KEY, true );
+
+        if ( ! is_array( $history ) || empty( $history ) ) {
+            echo '<p class="description">No rejection feedback yet.</p>';
+            return;
+        }
+
+        foreach ( array_reverse( $history ) as $entry ) :
+            $reviewer      = get_userdata( $entry['reviewer_id'] ?? 0 );
+            $reviewer_name = $reviewer ? $reviewer->display_name : 'Unknown reviewer';
+            $date          = date_i18n(
+                get_option( 'date_format' ) . ' ' . get_option( 'time_format' ),
+                $entry['timestamp'] ?? 0
+            );
+            ?>
+            <div style="background:#f9f9f9;border-left:4px solid #ddd;padding:8px 12px;margin-bottom:8px;">
+                <p style="margin:0 0 4px;">
+                    <strong><?php echo esc_html( $reviewer_name ); ?></strong>
+                    &mdash;
+                    <em><?php echo esc_html( $date ); ?></em>
+                </p>
+                <p style="margin:0;white-space:pre-wrap;"><?php echo esc_html( $entry['comments'] ); ?></p>
+            </div>
+            <?php
+        endforeach;
     }
 
     // -------------------------------------------------------------------------

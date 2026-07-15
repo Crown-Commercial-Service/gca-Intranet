@@ -34,6 +34,10 @@ class GCA_Workflow_Revisions {
         // Revisions handles the workflow, so the native UI is redundant and confusing.
         add_action( 'admin_head', [ __CLASS__, 'hide_revisions_ui_for_non_admins' ] );
 
+        // Rename "Update Revision" → "Save Revision" for contributors to avoid confusion
+        // with the "Submit Revision" button.
+        add_filter( 'gettext', [ __CLASS__, 'rename_update_revision_button' ], 10, 3 );
+
     }
 
     public static function limit_to_pages( array $post_types ): array {
@@ -91,9 +95,27 @@ class GCA_Workflow_Revisions {
     }
 
     public static function remove_contributor_row_approval_actions( array $actions, WP_Post $post ): array {
-        if ( GCA_Workflow_Roles::user_has_role( get_current_user_id(), GCA_Workflow_Roles::CONTRIBUTOR ) ) {
+        $user_id = get_current_user_id();
+
+        if ( GCA_Workflow_Roles::user_has_role( $user_id, GCA_Workflow_Roles::CONTRIBUTOR ) ) {
             unset( $actions['approve'], $actions['approve_revision'], $actions['decline'], $actions['decline_revision'], $actions['publish'], $actions['publish_revision'] );
+            return $actions;
         }
+
+        // Add an Approve row action for publishers — PublishPress Free omits this by default.
+        // We append it to the decline action string rather than using a separate key,
+        // because WP's row_actions() hides unknown span classes in some admin themes.
+        if ( isset( $actions['decline'] )
+             && 'pending-revision' === $post->post_mime_type
+             && ( GCA_Workflow_Roles::user_has_role( $user_id, GCA_Workflow_Roles::PUBLISHER )
+                  || current_user_can( 'manage_options' ) )
+             && (int) $post->comment_count ) {
+            $parent_id = (int) $post->comment_count;
+            $nonce     = wp_create_nonce( "approve-post_{$parent_id}|{$post->ID}" );
+            $url       = admin_url( "admin.php?page=rvy-revisions&action=approve&revision={$post->ID}&_wpnonce={$nonce}" );
+            $actions['decline'] .= ' | <a href="' . esc_url( $url ) . '">' . esc_html__( 'Approve' ) . '</a>';
+        }
+
         return $actions;
     }
 
@@ -116,6 +138,16 @@ class GCA_Workflow_Revisions {
             // Publishers publish directly — the revision creation UI is not needed.
             echo '<style>.editor-last-revision,.rvy-creation-ui{display:none!important}</style>';
         }
+    }
+
+    public static function rename_update_revision_button( string $translation, string $text, string $domain ): string {
+        if ( 'revisionary' === $domain && 'Update Revision' === $text ) {
+            $user_id = get_current_user_id();
+            if ( GCA_Workflow_Roles::user_has_role( $user_id, GCA_Workflow_Roles::CONTRIBUTOR ) ) {
+                return 'Save Revision';
+            }
+        }
+        return $translation;
     }
 
 }
