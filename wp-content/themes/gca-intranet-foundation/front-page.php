@@ -53,7 +53,7 @@ get_header();
     <div class="govuk-grid-row" data-testid="home-top-row">
 
       <!-- Latest news -->
-      <div class="govuk-grid-column-two-thirds gca-right-line" data-testid="latest-news-column">
+      <div class="govuk-grid-column-two-thirds" data-testid="latest-news-column">
         <div class="gca-homepage-section-title" data-testid="latest-news-header">
           <h2 class="govuk-heading-m gca-clamp-2" data-testid="latest-news-heading">
             <?php
@@ -215,11 +215,8 @@ get_header();
       // ------------------------------------------------------------
       $ql_enabled = (bool) get_theme_mod('gca_quicklinks_enabled', true);
 
-      $ql_title = trim((string) get_theme_mod('gca_quicklinks_title', __('Quick links', 'gca-intranet')));
-      $ql_desc  = trim((string) get_theme_mod('gca_quicklinks_desc', ''));
-
       $quick_links = [];
-      for ($i = 1; $i <= 3; $i++) {
+      for ($i = 1; $i <= 4; $i++) {
         $t = trim((string) get_theme_mod("gca_quicklinks_{$i}_text", ''));
         $u = trim((string) get_theme_mod("gca_quicklinks_{$i}_url", ''));
 
@@ -287,18 +284,6 @@ get_header();
               <?php if ($ql_enabled && !empty($quick_links)) : ?>
                 <div class="gca-quick-links" data-testid="quick-links">
 
-                  <div class="gca-homepage-section-title" data-testid="quick-links-header">
-                    <h2 class="govuk-heading-m gca-clamp-2" data-testid="quick-links-heading">
-                      <?php echo esc_html($ql_title !== '' ? $ql_title : __('Quick links', 'gca-intranet')); ?>
-                    </h2>
-
-                    <?php if ($ql_desc !== '') : ?>
-                      <p class="govuk-body" data-testid="quick-links-subheading">
-                        <?php echo esc_html($ql_desc); ?>
-                      </p>
-                    <?php endif; ?>
-                  </div>
-
                   <div class="gca-quick-links__list" data-testid="quick-links-list">
                     <?php foreach ($quick_links as $link) : ?>
                       <a class="gca-quick-links__item govuk-link"
@@ -331,8 +316,7 @@ get_header();
 
     </div>
 
-    <div class="govuk-width-container" data-testid="home-lower-width-container">
-      <div class="govuk-grid-row flex" data-testid="home-lower-row">
+    <div class="govuk-grid-row flex" data-testid="home-lower-row">
 
         <!-- Work updates -->
         <div class="govuk-grid-column-two-thirds gca-right-line" data-testid="work-updates-column">
@@ -509,7 +493,6 @@ get_header();
         </div>
 
       </div>
-    </div>
 
     <!-- Events -->
     <?php

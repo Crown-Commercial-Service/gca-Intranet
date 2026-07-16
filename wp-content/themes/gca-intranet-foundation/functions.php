@@ -3074,36 +3074,8 @@ add_action('customize_register', function (\WP_Customize_Manager $wp_customize):
         'priority' => 80,
     ]);
 
-    $wp_customize->add_setting('gca_quicklinks_title', [
-        'default'           => __('Quick links', 'gca-intranet'),
-        'sanitize_callback' => 'gca_sanitize_home_text',
-        'transport'         => 'refresh',
-    ]);
-
-    $wp_customize->add_control('gca_quicklinks_title', [
-        'type'     => 'text',
-        'section'  => $section,
-        'label'    => __('Quick links: title', 'gca-intranet'),
-        'priority' => 90,
-    ]);
-
-    $wp_customize->add_setting('gca_quicklinks_desc', [
-        'default'           => '',
-        'sanitize_callback' => 'gca_sanitize_home_desc_40',
-        'transport'         => 'refresh',
-    ]);
-
-    $wp_customize->add_control('gca_quicklinks_desc', [
-        'type'        => 'textarea',
-        'section'     => $section,
-        'label'       => __('Quick links: description', 'gca-intranet'),
-        'description' => __('Optional text shown under the title. Max 40 characters (longer text is truncated).', 'gca-intranet'),
-        'input_attrs' => ['maxlength' => 40, 'rows' => 2],
-        'priority'    => 100,
-    ]);
-
-    $priority = 110;
-    for ($i = 1; $i <= 3; $i++) {
+    $priority = 90;
+    for ($i = 1; $i <= 4; $i++) {
 
         $wp_customize->add_setting("gca_quicklinks_{$i}_text", [
             'default'           => '',
@@ -3249,9 +3221,9 @@ add_action('customize_controls_enqueue_scripts', function (): void {
     addCounter('customize-control-gca_quicklinks_1_text', 48);
     addCounter('customize-control-gca_quicklinks_2_text', 48);
     addCounter('customize-control-gca_quicklinks_3_text', 48);
+    addCounter('customize-control-gca_quicklinks_4_text', 48);
     addCounter('customize-control-gca_latestnews_desc', 40);
     addCounter('customize-control-gca_takealook_desc', 40);
-    addCounter('customize-control-gca_quicklinks_desc', 40);
     addCounter('customize-control-gca_workupdates_desc', 40);
     addCounter('customize-control-gca_blogs_desc', 40);
   }
@@ -3300,14 +3272,14 @@ if (defined('WP_CLI') && WP_CLI) {
 
                 if ($component === 'all' || $component === 'quicklinks') {
                     set_theme_mod('gca_quicklinks_enabled', true);
-                    set_theme_mod('gca_quicklinks_title', 'Quick links');
-                    set_theme_mod('gca_quicklinks_desc', 'Useful shortcuts');
                     set_theme_mod('gca_quicklinks_1_text', 'Policies');
                     set_theme_mod('gca_quicklinks_1_url', 'https://www.gov.uk/government/organisations/crown-commercial-service');
                     set_theme_mod('gca_quicklinks_2_text', 'Guidance');
                     set_theme_mod('gca_quicklinks_2_url', 'https://www.gov.uk/guidance');
                     set_theme_mod('gca_quicklinks_3_text', 'Contact us');
                     set_theme_mod('gca_quicklinks_3_url', 'https://www.gov.uk/contact');
+                    set_theme_mod('gca_quicklinks_4_text', 'News');
+                    set_theme_mod('gca_quicklinks_4_url', 'https://www.gov.uk/government/news');
                     \WP_CLI::log('Seeded Quick links test data.');
                 }
 
@@ -3339,14 +3311,14 @@ if (defined('WP_CLI') && WP_CLI) {
                 remove_theme_mod('gca_takealook_link_text');
                 remove_theme_mod('gca_takealook_link_url');
                 remove_theme_mod('gca_quicklinks_enabled');
-                remove_theme_mod('gca_quicklinks_title');
-                remove_theme_mod('gca_quicklinks_desc');
                 remove_theme_mod('gca_quicklinks_1_text');
                 remove_theme_mod('gca_quicklinks_1_url');
                 remove_theme_mod('gca_quicklinks_2_text');
                 remove_theme_mod('gca_quicklinks_2_url');
                 remove_theme_mod('gca_quicklinks_3_text');
                 remove_theme_mod('gca_quicklinks_3_url');
+                remove_theme_mod('gca_quicklinks_4_text');
+                remove_theme_mod('gca_quicklinks_4_url');
                 \WP_CLI::success('Homepage test data reset.');
             }
         }

@@ -46,7 +46,7 @@ class SyncUsersDataMappingTest extends TestCase {
 
     public function test_build_common_fields_extracts_email_prefix_as_user_login(): void {
         $fields = $this->call('build_common_fields', [
-            'Email'        => 'natalie.cadwallader@gca.gov.uk',
+            'Email'        => 'natalie.cadwallader@example.com',
             'EmployeeName' => 'Natalie Cadwallader',
         ]);
 
@@ -120,17 +120,75 @@ class SyncUsersDataMappingTest extends TestCase {
         $this->assertSame('Jane Smith', $fields['display_name']);
     }
 
+    public function test_build_common_fields_strips_apostrophe_from_login(): void {
+        // Regression test: "john.o'connors1@example.com" must not leave an apostrophe
+        // in user_login, since the update path writes it via a raw $wpdb->update()
+        // that bypasses wp_update_user()'s own sanitisation. A stray apostrophe
+        // was observed alongside a login issue for this user in production
+        // (exact causal mechanism not confirmed) — this keeps the field aligned
+        // with what wp_update_user() itself would produce.
+        $fields = $this->call('build_common_fields', [
+            'Email'        => "john.o'connors1@example.com",
+            'EmployeeName' => "John O'Connors",
+        ]);
+
+        $this->assertSame('john.oconnors1', $fields['user_login']);
+    }
+
+    public function test_build_common_fields_login_still_lowercased_and_preserved_when_no_special_chars(): void {
+        $fields = $this->call('build_common_fields', [
+            'Email'        => 'natalie.cadwallader@example.com',
+            'EmployeeName' => 'Natalie Cadwallader',
+        ]);
+
+        $this->assertSame('natalie.cadwallader', $fields['user_login']);
+    }
+
     // -------------------------------------------------------------------------
     // build_insert_data — derives nicename from login
     // -------------------------------------------------------------------------
 
     public function test_build_insert_data_derives_nicename_from_email_prefix(): void {
         $data = $this->call('build_insert_data', [
-            'Email'        => 'natalie.cadwallader@gca.gov.uk',
+            'Email'        => 'natalie.cadwallader@example.com',
             'EmployeeName' => 'Natalie Cadwallader',
         ]);
 
         $this->assertSame('natalie-cadwallader', $data['user_nicename']);
+    }
+
+    public function test_build_insert_data_strips_apostrophe_from_login_and_nicename(): void {
+        $data = $this->call('build_insert_data', [
+            'Email'        => "john.o'connors1@example.com",
+            'EmployeeName' => "John O'Connors",
+        ]);
+
+        $this->assertSame('john.oconnors1', $data['user_login']);
+        $this->assertSame('john-oconnors1', $data['user_nicename']);
+    }
+
+    // -------------------------------------------------------------------------
+    // sanitize_login_prefix
+    // -------------------------------------------------------------------------
+
+    public function test_sanitize_login_prefix_strips_apostrophe(): void {
+        $this->assertSame('oconnors1', $this->call('sanitize_login_prefix', "o'connors1"));
+    }
+
+    public function test_sanitize_login_prefix_strips_multiple_disallowed_characters(): void {
+        $this->assertSame('jsmith', $this->call('sanitize_login_prefix', 'j$smi#th!'));
+    }
+
+    public function test_sanitize_login_prefix_preserves_dots_hyphens_underscores(): void {
+        $this->assertSame('jane.smith-o_hare', $this->call('sanitize_login_prefix', 'jane.smith-o_hare'));
+    }
+
+    public function test_sanitize_login_prefix_leaves_clean_prefix_unchanged(): void {
+        $this->assertSame('natalie.cadwallader', $this->call('sanitize_login_prefix', 'natalie.cadwallader'));
+    }
+
+    public function test_sanitize_login_prefix_handles_empty_string(): void {
+        $this->assertSame('', $this->call('sanitize_login_prefix', ''));
     }
 
     // -------------------------------------------------------------------------
