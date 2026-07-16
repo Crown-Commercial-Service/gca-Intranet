@@ -215,9 +215,12 @@ class GCA_Workflow_Category_Permissions {
             return;
         }
 
-        // Lift the default "author = me" restriction so contributors can see all
-        // pages within their assigned team, not just their own authored pages.
-        $query->set( 'author', '' );
+        // Lift the "author = me" restriction so contributors can see all team pages —
+        // but preserve it when the user explicitly clicked the "Mine" tab.
+        $is_mine_view = (int) $query->get( 'author' ) === $user_id;
+        if ( ! $is_mine_view ) {
+            $query->set( 'author', '' );
+        }
 
         if ( in_array( 'all', $teams, true ) ) {
             return;
@@ -322,7 +325,8 @@ class GCA_Workflow_Category_Permissions {
             return $all_caps;
         }
 
-        $edit_caps = [ 'edit_post', 'edit_page', 'edit_published_pages' ];
+        // Include edit_others_pages so we can both grant it (in-scope) and deny it (out-of-scope).
+        $edit_caps = [ 'edit_post', 'edit_page', 'edit_published_pages', 'edit_others_pages' ];
         if ( empty( array_intersect( $cap_list, $edit_caps ) ) ) {
             return $all_caps;
         }
@@ -334,7 +338,14 @@ class GCA_Workflow_Category_Permissions {
 
         $teams = self::get_contributor_teams( $user->ID );
 
-        if ( empty( $teams ) || in_array( 'all', $teams, true ) ) {
+        // No teams assigned: keep own-pages-only default — don't grant edit_others_pages.
+        if ( empty( $teams ) ) {
+            return $all_caps;
+        }
+
+        // All teams: grant edit_others_pages so they can open any page.
+        if ( in_array( 'all', $teams, true ) ) {
+            $all_caps['edit_others_pages'] = true;
             return $all_caps;
         }
 
@@ -343,11 +354,14 @@ class GCA_Workflow_Category_Permissions {
             return $all_caps;
         }
 
-        // If no overlap between the page's terms and the contributor's allowed terms, deny.
         if ( empty( array_intersect( $teams, $post_terms ) ) ) {
+            // Out of scope: deny all edit caps.
             foreach ( $edit_caps as $cap ) {
                 $all_caps[ $cap ] = false;
             }
+        } else {
+            // In scope: grant edit_others_pages so they can open pages not authored by them.
+            $all_caps['edit_others_pages'] = true;
         }
 
         return $all_caps;
