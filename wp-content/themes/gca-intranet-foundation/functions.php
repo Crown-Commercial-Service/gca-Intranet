@@ -2737,6 +2737,95 @@ add_action('save_post', function (int $post_id): void {
     }
 });
 
+/**
+ * Pin this news item toggle
+ * Applies to: news
+ */
+add_action('add_meta_boxes', function (): void {
+    $screens = ['news'];
+
+    add_meta_box(
+        'gca_news_pinned_toggle',
+        __('Pin this news item', 'gca-intranet'),
+        function (\WP_Post $post): void {
+            wp_nonce_field('gca_save_news_pinned_toggle', 'gca_news_pinned_toggle_nonce');
+
+            $checked = get_post_meta($post->ID, '_gca_news_pinned', true) ? 'checked' : '';
+
+            $other_pinned_ids = get_posts([
+                'post_type'      => 'news',
+                'post_status'    => 'any',
+                'posts_per_page' => 1,
+                'post__not_in'   => [$post->ID],
+                'meta_key'       => '_gca_news_pinned',
+                'meta_value'     => 1,
+                'fields'         => 'ids',
+                'no_found_rows'  => true,
+            ]);
+            $other_pinned_title = !empty($other_pinned_ids) ? get_the_title($other_pinned_ids[0]) : '';
+
+            echo '<label style="display:flex;gap:8px;align-items:center;">';
+            echo '<input type="checkbox" id="gca_news_pinned" name="gca_news_pinned" value="1" data-other-pinned-title="' . esc_attr($other_pinned_title) . '" ' . $checked . ' />';
+            echo esc_html__('Pin this news item', 'gca-intranet');
+            echo '</label>';
+
+            echo '<p class="description" style="margin-top:8px;">' . esc_html__(
+                'Only one news item can be pinned at a time. Pinning this item will always show it as the featured story on the homepage and first in the /news list.',
+                'gca-intranet'
+            ) . '</p>';
+        },
+        $screens,
+        'side',
+        'default'
+    );
+});
+
+add_action('save_post', function (int $post_id): void {
+    if (defined('DOING_AUTOSAVE') && DOING_AUTOSAVE) return;
+
+    if (!isset($_POST['gca_news_pinned_toggle_nonce']) || !wp_verify_nonce((string) $_POST['gca_news_pinned_toggle_nonce'], 'gca_save_news_pinned_toggle')) {
+        return;
+    }
+
+    if (!current_user_can('edit_post', $post_id)) return;
+
+    if (get_post_type($post_id) !== 'news') return;
+
+    if (isset($_POST['gca_news_pinned'])) {
+        $other_pinned_ids = get_posts([
+            'post_type'      => 'news',
+            'post_status'    => 'any',
+            'posts_per_page' => -1,
+            'post__not_in'   => [$post_id],
+            'meta_key'       => '_gca_news_pinned',
+            'meta_value'     => 1,
+            'fields'         => 'ids',
+            'no_found_rows'  => true,
+        ]);
+
+        foreach ($other_pinned_ids as $other_pinned_id) {
+            delete_post_meta($other_pinned_id, '_gca_news_pinned');
+        }
+
+        update_post_meta($post_id, '_gca_news_pinned', 1);
+    } else {
+        delete_post_meta($post_id, '_gca_news_pinned');
+    }
+});
+
+/**
+ * Clear the pin if a pinned news item leaves 'publish' status,
+ * so republishing later doesn't silently reinstate an old pin.
+ */
+add_action('transition_post_status', function (string $new_status, string $old_status, \WP_Post $post): void {
+    if ($post->post_type !== 'news') return;
+    if ($old_status !== 'publish' || $new_status === 'publish') return;
+
+    if (get_post_meta($post->ID, '_gca_news_pinned', true)) {
+        delete_post_meta($post->ID, '_gca_news_pinned');
+    }
+}, 10, 3);
+
 
 /**
  * Admin JS: hero image media picker + template switcher
@@ -2812,9 +2901,30 @@ add_action('admin_enqueue_scripts', function (string $hook): void {
     if (col2Box) col2Box.style.display = shouldShow ? '' : 'none';
   }
 
+  function initNewsPinnedToggle(){
+    var checkbox = document.getElementById('gca_news_pinned');
+    if(!checkbox) return;
+
+    checkbox.addEventListener('change', function(){
+      if(!checkbox.checked) return;
+
+      var otherTitle = checkbox.getAttribute('data-other-pinned-title');
+      if(!otherTitle) return;
+
+      var confirmed = window.confirm(
+        'There is already a pinned news item ("' + otherTitle + '"). By selecting this box the previous pinned item will be removed.'
+      );
+
+      if(!confirmed){
+        checkbox.checked = false;
+      }
+    });
+  }
+
   ready(function(){
     initHeroImage();
     set2ColBoxesVisibility();
+    initNewsPinnedToggle();
 
     var sel = document.getElementById('page_template');
     if (sel) {
