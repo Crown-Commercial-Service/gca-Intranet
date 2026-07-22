@@ -1,5 +1,15 @@
 <?php
 /**
+ * Disable plugin/theme installation, updates, and the built-in file editor.
+ * Remediates a pentest finding where an admin uploaded a malicious plugin
+ * package to gain code execution. No user, including administrators, can
+ * install, update, or edit plugins/themes through wp-admin while this is set.
+ */
+if (!defined('DISALLOW_FILE_MODS')) {
+    define('DISALLOW_FILE_MODS', true);
+}
+
+/**
  * Allow setting canonical URLs from env (useful for AWS ALB / CloudFront / ECS)
  */
 if (getenv('WP_HOME') && !defined('WP_HOME')) {
