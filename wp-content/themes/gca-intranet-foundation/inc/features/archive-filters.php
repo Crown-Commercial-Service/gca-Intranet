@@ -290,6 +290,28 @@ add_action('pre_get_posts', function (WP_Query $query): void {
             // Sort by post published date
             $query->set('orderby', 'date');
             $query->set('order', $sort === 'oldest' ? 'ASC' : 'DESC');
+
+            // Pinned news item always appears first on page 1 (see the
+            // `posts_results` filter below), regardless of sort direction.
+            // Exclude it from later pages here so it isn't shown twice.
+            if ($query->is_post_type_archive('news') && (int) $query->get('paged') > 1) {
+                $pinned_ids = get_posts([
+                    'post_type'      => 'news',
+                    'post_status'    => 'publish',
+                    'posts_per_page' => 1,
+                    'meta_key'       => '_gca_news_pinned',
+                    'meta_value'     => 1,
+                    'fields'         => 'ids',
+                    'no_found_rows'  => true,
+                ]);
+
+                if (!empty($pinned_ids)) {
+                    $query->set('post__not_in', array_merge(
+                        (array) $query->get('post__not_in'),
+                        $pinned_ids
+                    ));
+                }
+            }
         } else {
             // Events: sort by start_date meta.
             // Upcoming — ASC = soonest first (default); Past — DESC = most recently occurred first (default).
@@ -337,6 +359,57 @@ add_action('pre_get_posts', function (WP_Query $query): void {
         }
     }
 }, 20);
+
+/**
+ * Float the pinned news item to the front of page 1 of the /news archive,
+ * regardless of sort order. Implemented as an array reorder (rather than a
+ * meta_query-driven ORDER BY) because WP_Query's EXISTS/NOT EXISTS meta_query
+ * clauses don't scope their JOIN by meta_key, which makes ordering by them
+ * unreliable once combined with an OR relation.
+ */
+add_filter('posts_results', function (array $posts, WP_Query $query): array {
+    if (!gca_flag_enabled('archive-filters')) {
+        return $posts;
+    }
+
+    if (is_admin() || !$query->is_main_query() || !$query->is_post_type_archive('news')) {
+        return $posts;
+    }
+
+    if ((int) $query->get('paged') > 1) {
+        return $posts;
+    }
+
+    $pinned_ids = get_posts([
+        'post_type'      => 'news',
+        'post_status'    => 'publish',
+        'posts_per_page' => 1,
+        'meta_key'       => '_gca_news_pinned',
+        'meta_value'     => 1,
+        'fields'         => 'ids',
+        'no_found_rows'  => true,
+        'tax_query'      => $query->get('tax_query') ?: [],
+    ]);
+
+    if (empty($pinned_ids)) {
+        return $posts;
+    }
+
+    $pinned_post = get_post($pinned_ids[0]);
+    if (!$pinned_post) {
+        return $posts;
+    }
+
+    $posts = array_values(array_filter($posts, static fn ($post) => $post->ID !== $pinned_post->ID));
+    array_unshift($posts, $pinned_post);
+
+    $per_page = (int) $query->get('posts_per_page');
+    if ($per_page > 0 && count($posts) > $per_page) {
+        array_pop($posts);
+    }
+
+    return $posts;
+}, 10, 2);
 
 /**
  * Enqueue filter interaction JS on archive pages where the flag is active.
