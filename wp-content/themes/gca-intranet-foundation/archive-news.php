@@ -26,6 +26,7 @@ get_template_part('template-parts/breadcrumbs');
           get_template_part('template-parts/archive-filters', null, [
             'archive_url' => get_post_type_archive_link('news'),
             'taxonomies'  => $filter_taxonomies,
+            'post_type'   => 'news',
           ]);
           ?>
         </div>

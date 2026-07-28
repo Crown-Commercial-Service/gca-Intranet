@@ -269,6 +269,62 @@ function gca_get_archive_filter_taxonomies(string $post_type): array {
 }
 
 /**
+ * Return the term IDs of a taxonomy that are actually assigned to at least
+ * one published post of the given post type.
+ *
+ * Categories/labels are shared across news, blog, event, and work_update, so
+ * WP's own `hide_empty` term count (which is global across post types) isn't
+ * enough to hide terms unused by a specific archive. Result is cached in a
+ * transient since it requires a cross-table join.
+ */
+function gca_get_terms_in_use(string $taxonomy, string $post_type): array {
+    $cache_key = "gca_terms_in_use_{$post_type}_{$taxonomy}";
+    $cached    = get_transient($cache_key);
+    if ($cached !== false) {
+        return $cached;
+    }
+
+    global $wpdb;
+    $term_ids = $wpdb->get_col($wpdb->prepare("
+        SELECT DISTINCT tt.term_id
+        FROM {$wpdb->term_relationships} tr
+        INNER JOIN {$wpdb->term_taxonomy} tt ON tr.term_taxonomy_id = tt.term_taxonomy_id
+        INNER JOIN {$wpdb->posts} p ON tr.object_id = p.ID
+        WHERE tt.taxonomy = %s AND p.post_type = %s AND p.post_status = 'publish'
+    ", $taxonomy, $post_type));
+
+    $term_ids = array_map('intval', $term_ids);
+    set_transient($cache_key, $term_ids, HOUR_IN_SECONDS);
+
+    return $term_ids;
+}
+
+/**
+ * Invalidate the "terms in use" cache whenever a post's terms change.
+ */
+add_action('set_object_terms', function ($object_id, $terms, $tt_ids, $taxonomy): void {
+    $post_type = get_post_type($object_id);
+    if ($post_type) {
+        delete_transient("gca_terms_in_use_{$post_type}_{$taxonomy}");
+    }
+}, 10, 4);
+
+/**
+ * Invalidate the "terms in use" cache whenever a post is deleted or its
+ * status changes (e.g. published, trashed, unpublished), since that changes
+ * which terms have at least one published post.
+ */
+add_action('transition_post_status', function (string $new_status, string $old_status, WP_Post $post): void {
+    if ($new_status === $old_status) {
+        return;
+    }
+
+    foreach (gca_get_archive_filter_taxonomies($post->post_type) as $tax) {
+        delete_transient("gca_terms_in_use_{$post->post_type}_{$tax['taxonomy']}");
+    }
+}, 10, 3);
+
+/**
  * Apply sort order and taxonomy filters on archive queries.
  *
  * Runs at priority 20 so it fires after the existing event hook in functions.php
