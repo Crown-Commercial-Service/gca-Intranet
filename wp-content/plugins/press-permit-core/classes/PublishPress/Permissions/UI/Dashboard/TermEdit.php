@@ -18,6 +18,46 @@ class TermEdit
 	        wp_enqueue_style('presspermit-item-edit', PRESSPERMIT_URLPATH . '/common/css/item-edit.css', [], PRESSPERMIT_VERSION);
 	        wp_enqueue_style('presspermit-term-edit', PRESSPERMIT_URLPATH . '/common/css/term-edit.css', [], PRESSPERMIT_VERSION);
 	
+	        // Enqueue tabbed metabox styles and scripts if enabled
+	        if (presspermit()->getOption('use_tabbed_metabox')) {
+                // Always use our own Select2 version with unique handles to avoid conflicts with other plugins (e.g., WooCommerce)
+                if (!wp_style_is('presspermit-select2-css', 'registered')) {
+                    wp_register_style('presspermit-select2-css', PRESSPERMIT_URLPATH . '/common/lib/select2-4.0.13/css/select2.min.css', array(), '4.0.13', 'screen');
+                }
+                if (!wp_script_is('presspermit-select2-js', 'registered')) {
+                    wp_register_script('presspermit-select2-js', PRESSPERMIT_URLPATH . '/common/lib/select2-4.0.13/js/select2.full.min.js', ['jquery'], '4.0.13', true);
+                }
+                wp_enqueue_style('presspermit-select2-css');
+                wp_enqueue_script('presspermit-select2-js');
+	            
+	            $suffix = defined('SCRIPT_DEBUG') && SCRIPT_DEBUG ? '.dev' : '';
+	            wp_enqueue_script('presspermit-item-edit-tabbed', PRESSPERMIT_URLPATH . "/common/js/item-edit-tabbed{$suffix}.js", ['jquery', 'presspermit-select2-js'], PRESSPERMIT_VERSION, true);
+	            
+	            // Localize script with AJAX URL and nonce for user search
+	            wp_localize_script('presspermit-item-edit-tabbed', 'PPAgentSelect', [
+	                'ajaxurl' => wp_nonce_url(admin_url(''), 'pp-ajax'),
+	                'ajaxhandler' => 'got_ajax_listbox'
+	            ]);
+	            
+	            // Localize script with translated messages
+	            wp_localize_script('presspermit-item-edit-tabbed', 'ppPermissions', [
+	                'bulkActionNotAvailableNonUsers' => esc_html__("Editing can't be granted to non-users.", 'press-permit-core'),
+	                'addedToList'                    => esc_html__('You can now set individual permissions for', 'press-permit-core'),
+	                'filterAll'                      => esc_html__('All', 'press-permit-core'),
+	                'filterBlocked'                  => esc_html__('Blocked', 'press-permit-core'),
+	                'filterEnabled'                  => esc_html__('Enabled', 'press-permit-core'),
+	                'filterDefault'                  => esc_html__('Default', 'press-permit-core'),
+	                'filterRole'                     => esc_html__('Role', 'press-permit-core'),
+	                'filterGroup'                    => esc_html__('Group', 'press-permit-core'),
+	                'filterLoginState'               => esc_html__('Login State', 'press-permit-core'),
+	                'deleteItemTitle'                => esc_html__('Remove custom permissions for user', 'press-permit-core'),
+	                'alertSelectAction'              => esc_html__('Please select a bulk action first.', 'press-permit-core'),
+	                'alertSelectItem'                => esc_html__('Please select at least one item.', 'press-permit-core'),
+	                'confirmBulkRemove'              => esc_html__('Are you sure you want to remove the selected user(s) from exceptions?', 'press-permit-core'),
+	                'confirmDeleteItem'              => esc_html__('Remove the custom permisisons for "%s"?', 'press-permit-core'),
+	            ]);
+	        }
+	
 	        add_action('admin_print_scripts', ['\PublishPress\Permissions\UI\Dashboard\ItemEdit', 'scriptItemEdit']);
             add_action('admin_print_scripts', [$this, 'compatStyles']);
 
@@ -82,6 +122,78 @@ class TermEdit
         $this->item_exceptions_ui->drawExceptionsUI($box, $args);
     }
 
+    /**
+     * Draw tabbed exceptions UI with all operations in one metabox
+     */
+    public function drawTabbedExceptionsUI($term, $box)
+    {
+        if (empty($box['id']) || empty($box['args']['operations']))
+            return;
+
+        $this->initItemExceptionsUI();
+
+        $taxonomy = $box['args']['taxonomy'];
+        $post_type = $box['args']['post_type'];
+        $pp = presspermit();
+        
+        // Build operations data array with captions
+        $operations_data = [];
+        $tx = get_taxonomy($taxonomy);
+        $type_obj = get_post_type_object($post_type);
+        
+        foreach (array_keys($box['args']['operations']) as $op) {
+            if ($op_obj = $pp->admin()->getOperationObject($op, $post_type)) {
+                // Generate caption based on operation type
+                if ('assign' == $op) {
+                    $caption = ($post_type)
+                        ? sprintf(
+                            esc_html__('Assign to %s', 'press-permit-core'),
+                            $type_obj->labels->name
+                        )
+                        : esc_html__('Assign (All Types)', 'press-permit-core');
+                } elseif (in_array($op, ['read', 'edit'], true)) {
+                    $caption = ($post_type)
+                        ? sprintf(
+                            esc_html__('%1$s %2$s', 'press-permit-core'),
+                            $op_obj->label,
+                            $type_obj->labels->name
+                        )
+                        : sprintf(
+                            esc_html__('%s (All Types)', 'press-permit-core'),
+                            $op_obj->label
+                        );
+                } else {
+                    $caption = sprintf(
+                        esc_html__('%1$s %2$s', 'press-permit-core'),
+                        esc_html($op_obj->label),
+                        $tx->labels->singular_name
+                    );
+                }
+
+                $operations_data[] = [
+                    'op' => $op,
+                    'op_obj' => $op_obj,
+                    'caption' => $caption
+                ];
+            }
+        }
+        
+        // Determine for_item_type based on operation types
+        $operation_keys = array_keys($box['args']['operations']);
+        $has_term_ops = !empty(array_intersect($operation_keys, ['manage', 'associate']));
+        $for_item_type = $has_term_ops ? $taxonomy : $post_type;
+
+        $args = [
+            'via_item_source' => 'term',
+            'for_item_source' => 'post',
+            'for_item_type' => $for_item_type,
+            'via_item_type' => $taxonomy,
+            'item_id' => $term->term_taxonomy_id
+        ];
+
+        $this->item_exceptions_ui->drawTabbedExceptionsUI($operations_data, $args);
+    }
+
     public function actAddMetaBoxes()
     {
         // ========= register WP-rendered metaboxes ============
@@ -107,6 +219,15 @@ class TermEdit
             $tt_id = 0;
         }
 
+        if (!$referer = wp_get_original_referer()) $referer = wp_get_referer();
+        $url = esc_url_raw(
+            add_query_arg(
+                '_wp_original_http_referer',
+                urlencode($referer),
+                "term.php?taxonomy=$taxonomy&amp;tag_ID=$tag_id&amp;pp_universal=1"
+            )
+        );
+
         $post_type = (!PWP::empty_REQUEST('pp_universal')) ? '' : $typenow;
 
         $hidden_types = apply_filters('presspermit_hidden_post_types', []);
@@ -116,10 +237,7 @@ class TermEdit
             return;
         }
 
-        if (
-            !current_user_can('pp_assign_roles')
-            || apply_filters('presspermit_disable_exception_ui', false, 'term', $tt_id, $post_type)
-        ) {
+        if (!presspermit()->admin()->canSetAnyTermPermissions($post_type, $taxonomy) || apply_filters('presspermit_disable_exception_ui', false, 'term', $tt_id, $post_type)) {
             return;
         }
 
@@ -137,95 +255,137 @@ class TermEdit
             ? ['read' => true] : [];
 
         $operations = apply_filters('presspermit_item_edit_exception_ops', $ops, 'post', $taxonomy, $post_type);
+        $is_hierarchical = is_taxonomy_hierarchical($taxonomy);
 
-        $boxes = [];
-
-        foreach (array_keys($operations) as $op) {
-            if ($op_obj = $pp->admin()->getOperationObject($op, $post_type)) {
-                if ('assign' == $op) {
-                    $title = ($post_type)
-                        ? sprintf(
-                            esc_html__('Permissions: Assign this %2$s to %3$s', 'press-permit-core'),
-                            $op_obj->label,
-                            $tx->labels->singular_name,
-                            $type_obj->labels->name
-                        )
-                        : sprintf(
-                            esc_html__('Permissions: Assign this %2$s for All Post Types', 'press-permit-core'),
-                            $op_obj->label,
-                            $tx->labels->singular_name
-                        );
-                } elseif (in_array($op, ['read', 'edit'], true)) {
-                    $title = ($post_type)
-                        ? sprintf(
-                            esc_html__('Permissions: %1$s %2$s in this %3$s', 'press-permit-core'),
-                            $op_obj->label,
-                            $type_obj->labels->name,
-                            $tx->labels->singular_name
-                        )
-                        : sprintf(
-                            esc_html__('Permissions: %1$s all content in this %2$s for All Post Types', 'press-permit-core'),
-                            $op_obj->label,
-                            $tx->labels->singular_name
-                        );
-                } else {
-                    $title = ($post_type)
-                        ? sprintf(
-                            esc_html__('Permissions: %1$s %2$s in this %3$s', 'press-permit-core'),
-                            $op_obj->label,
-                            $type_obj->labels->name,
-                            $tx->labels->singular_name
-                        )
-                        : sprintf(
-                            esc_html__('Permissions: %1$s this %2$s', 'press-permit-core'),
-                            $op_obj->label,
-                            $tx->labels->singular_name
-                        );
-                }
-
-                if (!$referer = wp_get_original_referer()) $referer = wp_get_referer();
-    
-                $url = esc_url_raw(
-                    add_query_arg(
-                        '_wp_original_http_referer',
-                        urlencode($referer),
-                        "term.php?taxonomy=$taxonomy&amp;tag_ID=$tag_id&amp;pp_universal=1"
-                    )
-                );
-                $title_with_icon = $title;
-                if(!empty($type_obj) && !empty($tx)) {
-                    $title_with_icon = sprintf(
-                        '<div>%s&nbsp;<div data-toggle="tooltip" class="click"><span class="dashicons dashicons-info"></span><div class="tooltip-text"><span>%s</span><i></i></div></div></div>',
-                        esc_attr($title),
-                        sprintf(
-                            esc_html__('Displayed permissions are those assigned for the "%1$s" type. You can also %2$sdefine universal %3$s permissions which apply to all related post types%4$s.', 'press-permit-core'),
-                            esc_html($type_obj->labels->singular_name),
-                            '<a href="' . esc_url($url) . '"><strong>',
-                            esc_html($tx->labels->singular_name),
-                            '</strong></a>'
-                        )
-                    );
-                }
-
-                Arr::setElem($boxes, [$op, "pp_{$op}_{$post_type}_exceptions"]);
-                $boxes[$op]["pp_{$op}_{$post_type}_exceptions"]['for_item_type'] = $post_type;
-                $boxes[$op]["pp_{$op}_{$post_type}_exceptions"]['title'] = $title_with_icon;
-            }
+        if (!$is_hierarchical) {
+            // Non-hierarchical taxonomies don't have parent-child relationships, so 'associate' operation is not applicable
+            unset($operations['associate']);
         }
 
-        $boxes = apply_filters('presspermit_term_exceptions_metaboxes', $boxes, $taxonomy, $post_type);
+        // Check if tabbed metabox is enabled
+        if ($pp->getOption('use_tabbed_metabox')) {
+            $operations = apply_filters('presspermit_term_exceptions_metaboxes', $operations, $taxonomy, $post_type);
 
-        foreach ($boxes as $op => $boxes) {
-            foreach ($boxes as $box_id => $_box) {
+            // Register single tabbed metabox for all operations
+            if (!empty($operations)) {
+                $caption = ($post_type)
+                    ? sprintf(
+                        esc_html__('Permissions: %1$s in %2$s', 'press-permit-core'),
+                        $type_obj->labels->name,
+                        $tx->labels->singular_name
+                    )
+                    : sprintf(
+                        esc_html__('Permissions: %s', 'press-permit-core'),
+                        $tx->labels->singular_name
+                    );
+                    $title_with_icon = $caption;
+                    if(!empty($type_obj) && !empty($tx)) {
+                        $title_with_icon = sprintf(
+                            '<div>%s&nbsp;<div data-toggle="tooltip" class="click"><span class="dashicons dashicons-info"></span><div class="tooltip-text"><span>%s</span><i></i></div></div></div>',
+                            esc_attr($caption),
+                            sprintf(
+                                esc_html__('Displayed permissions are those assigned for the "%1$s" type. You can also %2$sdefine universal %3$s permissions which apply to all related post types%4$s.', 'press-permit-core'),
+                                esc_html($type_obj->labels->singular_name),
+                                '<a href="' . esc_url($url) . '"><strong>',
+                                esc_html($tx->labels->singular_name),
+                                '</strong></a>'
+                            )
+                        );
+                    }
+
                 add_meta_box(
-                    $box_id,
-                    $_box['title'],
-                    [$this, 'drawExceptionsUI'],
+                    "pp_all_{$register_type}_exceptions",
+                    $title_with_icon,
+                    [$this, 'drawTabbedExceptionsUI'],
                     $register_type,
                     'advanced',
                     'default',
-                    ['for_item_type' => $_box['for_item_type'], 'op' => $op]
+                    ['operations' => $operations, 'taxonomy' => $taxonomy, 'post_type' => $post_type]
                 );
+            }
+        } else {
+            // If tabbed metabox is disabled, fall back to original behavior
+            // Original behavior: Register separate metabox for each operation
+            $boxes = [];
+    
+            foreach (array_keys($operations) as $op) {
+                if ($op_obj = $pp->admin()->getOperationObject($op, $post_type)) {
+                    if ('assign' == $op) {
+                        $title = ($post_type)
+                            ? sprintf(
+                                esc_html__('Permissions: Assign this %2$s to %3$s', 'press-permit-core'),
+                                $op_obj->label,
+                                $tx->labels->singular_name,
+                                $type_obj->labels->name
+                            )
+                            : sprintf(
+                                esc_html__('Permissions: Assign this %2$s for All Post Types', 'press-permit-core'),
+                                $op_obj->label,
+                                $tx->labels->singular_name
+                            );
+                    } elseif (in_array($op, ['read', 'edit'], true)) {
+                        $title = ($post_type)
+                            ? sprintf(
+                                esc_html__('Permissions: %1$s %2$s in this %3$s', 'press-permit-core'),
+                                $op_obj->label,
+                                $type_obj->labels->name,
+                                $tx->labels->singular_name
+                            )
+                            : sprintf(
+                                esc_html__('Permissions: %1$s all content in this %2$s for All Post Types', 'press-permit-core'),
+                                $op_obj->label,
+                                $tx->labels->singular_name
+                            );
+                    } else {
+                        $title = ($post_type)
+                            ? sprintf(
+                                esc_html__('Permissions: %1$s %2$s in this %3$s', 'press-permit-core'),
+                                $op_obj->label,
+                                $type_obj->labels->name,
+                                $tx->labels->singular_name
+                            )
+                            : sprintf(
+                                esc_html__('Permissions: %1$s this %2$s', 'press-permit-core'),
+                                $op_obj->label,
+                                $tx->labels->singular_name
+                            );
+                    }
+
+                    $title_with_icon = $title;
+                    if(!empty($type_obj) && !empty($tx)) {
+                        $title_with_icon = sprintf(
+                            '<div>%s&nbsp;<div data-toggle="tooltip" class="click"><span class="dashicons dashicons-info"></span><div class="tooltip-text"><span>%s</span><i></i></div></div></div>',
+                            esc_attr($title),
+                            sprintf(
+                                esc_html__('Displayed permissions are those assigned for the "%1$s" type. You can also %2$sdefine universal %3$s permissions which apply to all related post types%4$s.', 'press-permit-core'),
+                                esc_html($type_obj->labels->singular_name),
+                                '<a href="' . esc_url($url) . '"><strong>',
+                                esc_html($tx->labels->singular_name),
+                                '</strong></a>'
+                            )
+                        );
+                    }
+    
+                    Arr::setElem($boxes, [$op, "pp_{$op}_{$post_type}_exceptions"]);
+                    $boxes[$op]["pp_{$op}_{$post_type}_exceptions"]['for_item_type'] = $post_type;
+                    $boxes[$op]["pp_{$op}_{$post_type}_exceptions"]['title'] = $title_with_icon;
+                }
+            }
+    
+            $boxes = apply_filters('presspermit_term_exceptions_metaboxes', $boxes, $taxonomy, $post_type);
+            
+            foreach ($boxes as $op => $boxes) {
+                foreach ($boxes as $box_id => $_box) {
+                    add_meta_box(
+                        $box_id,
+                        $_box['title'],
+                        [$this, 'drawExceptionsUI'],
+                        $register_type,
+                        'advanced',
+                        'default',
+                        ['for_item_type' => $_box['for_item_type'], 'op' => $op]
+                    );
+                }
             }
         }
     }
@@ -249,7 +409,7 @@ class TermEdit
         $post_type = (!PWP::empty_REQUEST('pp_universal')) ? '' : $typenow;
         $taxonomy = PWP::REQUEST_key('taxonomy');
 
-        if (current_user_can('pp_assign_roles')) {
+        if (presspermit()->admin()->canSetAnyTermPermissions($post_type, $taxonomy)) {
             $this->initItemExceptionsUI();
 
             $tt_id = PWP::termidToTtid($tag_ID, $taxonomy);
@@ -278,10 +438,7 @@ class TermEdit
 
         $post_type = (!PWP::empty_REQUEST('pp_universal')) ? '' : $typenow;
 
-        if (
-            !current_user_can('pp_assign_roles')
-            || apply_filters('presspermit_disable_exception_ui', false, 'term', $tag->term_taxonomy_id, $post_type)
-        ) {
+        if (!presspermit()->admin()->canSetAnyTermPermissions($post_type, $taxonomy) || apply_filters('presspermit_disable_exception_ui', false, 'term', $tag->term_taxonomy_id, $post_type)) {
             return;
         }
         
@@ -291,7 +448,7 @@ class TermEdit
         ?>
         <div id="poststuff" class="metabox-holder">
             <div id="post-body">
-                <div id="post-body-content" style="position: relative;z-index: 1;">
+                <div id="post-body-content" style="position: relative;z-index: 1;display: contents;">
                     <?php
 
                     require_once(ABSPATH . 'wp-admin/includes/meta-boxes.php');
@@ -299,7 +456,30 @@ class TermEdit
                     $this->prepMetaboxes();
 
                     $type = ($post_type) ? $post_type : 'post';
-                    do_meta_boxes($type, 'advanced', $tag);
+                    
+                    global $wp_meta_boxes;
+                    $hidden = get_hidden_meta_boxes($type);
+                    
+                    // Manually render metaboxes since do_meta_boxes() doesn't work properly on term pages
+                    if (isset($wp_meta_boxes[$type]['advanced']['default'])) {
+                        foreach ($wp_meta_boxes[$type]['advanced']['default'] as $metabox) {
+                            if (in_array($metabox['id'], $hidden, true)) {
+                                continue;
+                            }
+                            
+                            echo '<div id="' . esc_attr($metabox['id']) . '" class="postbox">';
+                            echo '<div class="postbox-header">';
+                            echo '<h2 class="hndle">' . wp_kses_post($metabox['title']) . '</h2>';
+                            echo '</div>';
+                            echo '<div class="inside">';
+                            
+                            if (is_callable($metabox['callback'])) {
+                                call_user_func($metabox['callback'], $tag, $metabox);
+                            }
+                            
+                            echo '</div></div>';
+                        }
+                    }
 
                     ?>
                 </div> <!-- post-body-content -->
@@ -323,7 +503,7 @@ class TermEdit
         <br/><br/>
         <div id="poststuff" class="metabox-holder">
             <div id="post-body">
-                <div id="post-body-content" style="position: relative;z-index: 1;">
+                <div id="post-body-content" style="position: relative;z-index: 1;display: contents;">
                     <?php
 
                     require_once(ABSPATH . 'wp-admin/includes/meta-boxes.php');

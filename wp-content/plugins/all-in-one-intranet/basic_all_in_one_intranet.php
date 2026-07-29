@@ -5,7 +5,7 @@
  * Description:       Instantly turn WordPress into a private corporate intranet.
  * Requires at least: 5.5
  * Requires PHP:      7.0
- * Version:           1.8.1
+ * Version:           1.9.1
  * Author:            WP-Glogin
  * Author URI:        https://wp-glogin.com/
  * Network:           true
@@ -26,13 +26,17 @@
  *  along with All-In-One Intranet. If not, see <https://www.gnu.org/licenses/>.
  */
 
+if ( ! defined( 'ABSPATH' ) ) {
+	exit;
+}
+
 if ( ! class_exists( 'core_all_in_one_intranet' ) ) {
 	require_once( plugin_dir_path( __FILE__ ) . '/core/core_all_in_one_intranet.php' );
 }
 
 class aioi_basic_all_in_one_intranet extends core_all_in_one_intranet {
 
-	public $PLUGIN_VERSION = '1.8.1';
+	public $PLUGIN_VERSION = '1.9.1';
 
 	// Singleton.
 	private static $instance = null;
@@ -85,3 +89,12 @@ function BasicAllInOneIntranet() {
 
 // Initialize at least once.
 BasicAllInOneIntranet();
+
+// Plant the must-use shim on activation and tear it down on deactivation. The
+// shim closes the /wp-activate.php content-leak surface on installs where the
+// main plugin can't help — wp-activate.php defines WP_INSTALLING before
+// loading WordPress, and wp_get_active_and_valid_plugins() then skips loading
+// regular plugins entirely. See core/mu-shim/core_aioi_mu_shim.php and
+// core/mu-shim/aioi-installing-gate.php for the source of truth.
+register_activation_hook( __FILE__, [ 'core_aioi_mu_shim', 'ensure' ] );
+register_deactivation_hook( __FILE__, [ 'core_aioi_mu_shim', 'remove' ] );

@@ -506,15 +506,15 @@ class AgentsDynamicUI
     {
         global $pagenow, $wp_scripts;
 
-        // Only load Select2 assets on the presspermit admin page or not registered
-        // Always load Select2 assets on term.php page, or if not registered, or on presspermit admin pages
-        if (!wp_script_is('select2', 'registered') 
-            || false !== strpos(presspermitPluginPage(), 'presspermit')
-            || in_array($pagenow, ['term.php', 'edit-tags.php'], true)
-        ) {
-            wp_enqueue_style('presspermit-select2-css', PRESSPERMIT_URLPATH . "/common/lib/select2-4.0.13/css/select2.min.css", array(), PRESSPERMIT_VERSION, 'screen');
-            wp_enqueue_script('presspermit-select2-js', PRESSPERMIT_URLPATH . "/common/lib/select2-4.0.13/js/select2.full.min.js", ['jquery'], PRESSPERMIT_VERSION);
+        // Always use our own Select2 version with unique handles to avoid conflicts with other plugins (e.g., WooCommerce)
+        if (!wp_style_is('presspermit-select2-css', 'registered')) {
+            wp_register_style('presspermit-select2-css', PRESSPERMIT_URLPATH . "/common/lib/select2-4.0.13/css/select2.min.css", array(), '4.0.13', 'screen');
         }
+        if (!wp_script_is('presspermit-select2-js', 'registered')) {
+            wp_register_script('presspermit-select2-js', PRESSPERMIT_URLPATH . "/common/lib/select2-4.0.13/js/select2.full.min.js", ['jquery'], '4.0.13', true);
+        }
+        wp_enqueue_style('presspermit-select2-css');
+        wp_enqueue_script('presspermit-select2-js');
 
         // note: this is also done in AdminFiltersItemUI() constructor
         $suffix = defined('SCRIPT_DEBUG') && SCRIPT_DEBUG ? '.dev' : '';
@@ -532,7 +532,12 @@ class AgentsDynamicUI
                 'ppListbox', 
                 [
                     'omit_admins' => !empty($allow_administrator_members) ? '0' : '1', 
-                    'metagroups' => 1
+                    'metagroups' => 1,
+                    'placeholder' => [
+                        'pp_group' => esc_html__('Search for a group', 'press-permit-core'),
+                        'user' => esc_html__('Search for a user', 'press-permit-core'),
+                        'select-author' => esc_html__('Search for an author', 'press-permit-core'),
+                    ],
                 ]
             );
 
@@ -545,13 +550,13 @@ class AgentsDynamicUI
             $_args = ['omit_admins' => $allow_administrator_members ? '0' : '1', 'metagroups' => 0];
 
             if (!PWP::empty_REQUEST('page') && PWP::REQUEST_key_match('page', 'presspermit-edit-permissions')) {
-                if ($group = presspermit()->groups()->getGroupByName('[Pending Revision Monitors]')) {
+                if ($group = presspermit()->groups()->getGroupByName('[Submitted Revision Editors]')) {
                     if ($group->ID == $agent_id) {
                         $_args['omit_admins'] = 0;
                     }
                 }
 
-                if ($group = presspermit()->groups()->getGroupByName('Pending Revision Monitors')) {
+                if ($group = presspermit()->groups()->getGroupByName('Submitted Revision Editors')) {
                     if ($group->ID == $agent_id) {
                         $_args['omit_admins'] = 0;
                     }
@@ -582,6 +587,11 @@ class AgentsDynamicUI
                 }
             }
 
+            $_args['placeholder'] = [
+                'pp_group'      => esc_html__('Search for a group', 'press-permit-core'),
+                'user'          => esc_html__('Search for a user', 'press-permit-core'),
+                'select-author' => esc_html__('Search for an author', 'press-permit-core'),
+            ];
             wp_localize_script('presspermit-listbox', 'ppListbox', $_args);
 
             if (!apply_filters('presspermit_override_agent_select_js', false)) {

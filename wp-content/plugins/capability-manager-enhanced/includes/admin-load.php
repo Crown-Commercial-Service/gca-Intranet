@@ -64,7 +64,7 @@ class PP_Capabilities_Admin_UI {
         }
         add_action('init', [$this, 'register_textdomain']);
 
-        if (is_admin() && (isset($_REQUEST['page']) && (in_array($_REQUEST['page'], ['pp-capabilities', 'pp-capabilities-backup', 'pp-capabilities-roles', 'pp-capabilities-admin-menus', 'pp-capabilities-editor-features', 'pp-capabilities-nav-menus', 'pp-capabilities-settings', 'pp-capabilities-admin-features', 'pp-capabilities-profile-features', 'pp-capabilities-dashboard', 'pp-capabilities-frontend-features', 'pp-capabilities-redirects', 'pp-capabilities-admin-styles']))
+        if (is_admin() && (isset($_REQUEST['page']) && (in_array($_REQUEST['page'], ['pp-capabilities', 'pp-capabilities-backup', 'pp-capabilities-roles', 'pp-capabilities-admin-menus', 'pp-capabilities-editor-features', 'pp-capabilities-nav-menus', 'pp-capabilities-settings', 'pp-capabilities-admin-features', 'pp-capabilities-profile-features', 'pp-capabilities-dashboard', 'pp-capabilities-frontend-features', 'pp-capabilities-redirects', 'pp-capabilities-admin-styles', 'pp-capabilities-admin-notices']))
 
         || (!empty($_REQUEST['action']) && in_array($_REQUEST['action'], ['pp-roles-add-role', 'pp-roles-delete-role', 'pp-roles-hide-role', 'pp-roles-unhide-role']))
         || ( ! empty($_SERVER['SCRIPT_NAME']) && strpos(sanitize_text_field($_SERVER['SCRIPT_NAME']), 'p-admin/plugins.php' ) && ! empty($_REQUEST['action'] ) )
@@ -86,7 +86,7 @@ class PP_Capabilities_Admin_UI {
         add_action('init', function() { // late execution avoids clash with autoloaders in other plugins
             global $pagenow;
 
-            if ((($pagenow == 'admin.php') && isset($_GET['page']) && in_array($_GET['page'], ['pp-capabilities', 'pp-capabilities-backup', 'pp-capabilities-roles', 'pp-capabilities-admin-menus', 'pp-capabilities-editor-features', 'pp-capabilities-nav-menus', 'pp-capabilities-settings', 'pp-capabilities-admin-features', 'pp-capabilities-profile-features', 'pp-capabilities-dashboard', 'pp-capabilities-redirects', 'pp-capabilities-admin-styles'])) // @todo: CSS for button alignment in Editor Features, Admin Features
+            if ((($pagenow == 'admin.php') && isset($_GET['page']) && in_array($_GET['page'], ['pp-capabilities', 'pp-capabilities-backup', 'pp-capabilities-roles', 'pp-capabilities-admin-menus', 'pp-capabilities-editor-features', 'pp-capabilities-nav-menus', 'pp-capabilities-settings', 'pp-capabilities-admin-features', 'pp-capabilities-profile-features', 'pp-capabilities-dashboard', 'pp-capabilities-redirects', 'pp-capabilities-admin-styles', 'pp-capabilities-admin-notices'])) // @todo: CSS for button alignment in Editor Features, Admin Features
             || (defined('DOING_AJAX') && DOING_AJAX && !empty($_REQUEST['action']) && (false !== strpos(sanitize_key($_REQUEST['action']), 'capability-manager-enhanced')))
             ) {
                 if (!class_exists('\PublishPress\WordPressReviews\ReviewsController')) {
@@ -131,6 +131,7 @@ class PP_Capabilities_Admin_UI {
         // Add plugin list action links
         add_filter('plugin_action_links', [$this, 'addPluginActionLinks'], 10, 2);
         add_filter('plugin_row_meta', [$this, 'addPluginRowMetaLinks'], 10, 2);
+        add_filter('all_plugins', [$this, 'filterPluginsListName']);
     }
 
 	function register_textdomain() {
@@ -138,9 +139,9 @@ class PP_Capabilities_Admin_UI {
         $domain       = 'capability-manager-enhanced';
 		$mofile_custom = sprintf('%s-%s.mo', $domain, get_user_locale());
 		$locations = [
+			trailingslashit( WP_LANG_DIR . '/plugins/'),
 			trailingslashit( WP_LANG_DIR . '/' . $domain ),
 			trailingslashit( WP_LANG_DIR . '/loco/plugins/'),
-			trailingslashit( WP_LANG_DIR . '/plugins/'),
 			trailingslashit( WP_LANG_DIR ),
 			trailingslashit( plugin_dir_path(CME_FILE) . 'languages' ),
         ];
@@ -248,7 +249,7 @@ class PP_Capabilities_Admin_UI {
     public function shouldDisplayBanner() {
         global $pagenow;
 
-        return ($pagenow == 'admin.php') && isset($_GET['page']) && in_array($_GET['page'], ['pp-capabilities', 'pp-capabilities-backup', 'pp-capabilities-roles', 'pp-capabilities-admin-menus', 'pp-capabilities-editor-features', 'pp-capabilities-nav-menus', 'pp-capabilities-settings', 'pp-capabilities-admin-features', 'pp-capabilities-profile-features', 'pp-capabilities-dashboard', 'pp-capabilities-redirects', 'pp-capabilities-admin-styles']);
+        return ($pagenow == 'admin.php') && isset($_GET['page']) && in_array($_GET['page'], ['pp-capabilities', 'pp-capabilities-backup', 'pp-capabilities-roles', 'pp-capabilities-admin-menus', 'pp-capabilities-editor-features', 'pp-capabilities-nav-menus', 'pp-capabilities-settings', 'pp-capabilities-admin-features', 'pp-capabilities-profile-features', 'pp-capabilities-dashboard', 'pp-capabilities-redirects', 'pp-capabilities-admin-styles', 'pp-capabilities-admin-notices']);
     }
 
     private function applyFeatureRestrictions($editor = 'gutenberg') {
@@ -440,13 +441,32 @@ class PP_Capabilities_Admin_UI {
         if ((!empty($_REQUEST['_wpnonce']) && wp_verify_nonce(sanitize_key($_REQUEST['_wpnonce']), 'update-user_' . $userId)
             || !empty($_REQUEST['_wpnonce_create-user']) && wp_verify_nonce(sanitize_key($_REQUEST['_wpnonce_create-user']), 'create-user'))
             && isset($_POST['pp_roles']) && current_user_can('promote_users')) {
-            // Remove the user's roles
-            $user = get_user_by('ID', $userId);
+            if (!current_user_can('edit_user', $userId) || !current_user_can('promote_user', $userId)) {
+                return;
+            }
 
-            $newRoles     = array_map('sanitize_key', $_POST['pp_roles']);
+            $user = get_user_by('ID', $userId);
+            if (empty($user)) {
+                return;
+            }
+
+            $newRoles = array_unique(
+                array_filter(
+                    array_map('sanitize_key', (array) $_POST['pp_roles'])
+                )
+            );
             $currentRoles = $user->roles;
 
             if (empty($newRoles) || !is_array($newRoles)) {
+                return;
+            }
+
+            $editableRoles = function_exists('get_editable_roles')
+                ? array_keys(get_editable_roles())
+                : array_keys(apply_filters('editable_roles', wp_roles()->roles));
+
+            // Reject the request if any submitted role is not editable by current user.
+            if (array_diff($newRoles, $editableRoles)) {
                 return;
             }
 
@@ -634,6 +654,7 @@ class PP_Capabilities_Admin_UI {
 
         $capsman_dashboard_features_status[$feature]['status'] = (bool) $_POST['new_state'] ? 'on' : 'off';
         update_option('capsman_dashboard_features_status', $capsman_dashboard_features_status, false);
+        do_action('pp_capabilities_dashboard_feature_updated', $feature, $capsman_dashboard_features_status[$feature]['status']);
 
         wp_send_json( true, 200 );
     }
@@ -828,5 +849,29 @@ class PP_Capabilities_Admin_UI {
         }
 
         return $links;
+    }
+
+    /**
+     * Show "Free" suffix for this plugin only on WordPress plugin list screens.
+     *
+     * @param array $all_plugins
+     *
+     * @return array
+     */
+    public function filterPluginsListName($all_plugins)
+    {
+        global $pagenow;
+
+        if (!is_admin() || 'plugins.php' !== $pagenow) {
+            return $all_plugins;
+        }
+
+        $plugin_file = plugin_basename(CME_FILE);
+
+        if (isset($all_plugins[$plugin_file]['Name'])) {
+            $all_plugins[$plugin_file]['Name'] = 'PublishPress Capabilities Free';
+        }
+
+        return $all_plugins;
     }
 }

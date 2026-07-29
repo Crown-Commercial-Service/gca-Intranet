@@ -119,6 +119,10 @@ a.item-title:hover {
 .wp-core-ui .button.item-view-link {
 	font-weight: normal;
 	box-shadow: 0 0 8px 8px #fff6e5;
+	height: 30px;
+	max-height: 30px;
+	min-height: 30px;
+	line-height: 28px;
 }
 .has-child-label {
 }
@@ -158,4 +162,13 @@ a.item-title:hover {
 .updating-order-notice .dashicons.dashicons-saved {
 	color: green;
 	margin-right: 4px;
+}
+
+#item-list.asenha-content-order--saving .row-content {
+	cursor: not-allowed;
+}
+
+.updating-order-notice.asenha-content-order-notice--error {
+	border-color: #d63638;
+	color: #8a2424;
 }

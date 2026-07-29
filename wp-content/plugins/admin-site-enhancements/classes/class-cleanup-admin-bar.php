@@ -9,6 +9,13 @@ namespace ASENHA\Classes;
  */
 class Cleanup_Admin_Bar {
     /**
+     * Node ID prefix for Admin Bar Custom Elements (Pro). Must match generateItemId() in assets/premium/js/admin-bar-custom-elements.js.
+     *
+     * @var string
+     */
+    const ADMIN_BAR_CUSTOM_ELEMENTS_NODE_ID_PREFIX = 'asenha-ab-';
+
+    /**
      * Modify admin bar menu for Admin Interface >> Hide or Modify Elements feature
      *
      * @param $wp_admin_bar object The admin bar.

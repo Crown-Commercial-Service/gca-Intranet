@@ -72,7 +72,7 @@ body.toplevel_page_gf_edit_forms .gform-form-toolbar {
 
 /* FluentCart */
 #wpbody-content #fct_admin_menu_holder .fct_admin_menu_wrap{
-	width: calc(100% - <?php echo esc_html( esc_html( $custom_width ) ); ?>) !important;;
+	width: calc(100% - <?php echo esc_html( esc_html( $custom_width ) ); ?>) !important;
 }
 
 .fct-reports-view-inner {
@@ -81,6 +81,20 @@ body.toplevel_page_gf_edit_forms .gform-form-toolbar {
 
 .fct-setting-container .fct-tab-wrapper {
 	padding-left: <?php echo esc_html( $custom_width ); ?> !important;
+}
+
+/* FluentSupport */
+.fs_main_navbar {
+	width: calc(100% - <?php echo esc_html( esc_html( $custom_width ) ); ?>) !important;
+}
+
+.fframe_body .fs_settings_view .fs_settings_wrapper {
+	padding-left: <?php echo esc_html( esc_html( $custom_width ) ); ?> !important;
+}
+
+.fs_setup .fs_sticky_footer,
+.fframe_body .fs_reports_wrapper {
+	left: <?php echo esc_html( esc_html( $custom_width ) ); ?> !important;
 }
 
 </style>

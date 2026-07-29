@@ -26,7 +26,11 @@ class Revisionary
 	var $enabled_post_types = [];	// enabled_post_types property is set (keyed by post type slug) late on the init action. 
 	var $enabled_post_types_archive = [];	// enabled_post_types_archive property is set (keyed by post type slug) late on the init action.
 	var $hidden_post_types_archive = [];
+	var $enabled_post_types_copy = [];
+	var $hidden_post_types_copy = [];
 
+	var $enabled_fields = true;
+	var $enabled_fields_copy = true;
 	var $post_edit_ui;
 
 	// minimal config retrieval to support pre-init usage by WP_Scoped_User before text domain is loaded
@@ -44,6 +48,51 @@ class Revisionary
 
 	function addFilters() {
 		global $script_name;
+
+		if (!is_admin() && is_user_logged_in() && rvy_get_option('front_end_indicator')) {
+			add_action(
+				'wp_enqueue_scripts', 
+				function() {
+					global $wpdb;
+					
+					if (is_single() || is_page()) {
+						global $wp_query;
+						
+						if (empty($wp_query) || empty($wp_query->queried_object_id)) {
+							return;
+						}
+						$post_id = $wp_query->queried_object_id;
+						$post_type = get_post_field('post_type', $post_id);
+
+						if (!$post_type || empty($this->enabled_post_types[$post_type]) 
+						|| !current_user_can('edit_post', $post_id)
+						|| !rvy_get_post_meta($post_id, '_rvy_has_revisions')
+						) {
+							return;
+						}
+
+						$revision_status_csv = implode("','", array_map('sanitize_key', array_diff(rvy_revision_statuses(), ['draft-revision'])));
+                        $status_field = (rvy_get_option('permissions_compat_mode')) ? 'post_status' : 'post_mime_type';
+
+						if ($revision_count = $wpdb->get_var(
+							apply_filters(
+								'revisionary_front_count',
+								// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+								$wpdb->prepare(
+									"SELECT COUNT(r.ID) FROM $wpdb->posts r INNER JOIN $wpdb->posts p ON r.comment_count = p.ID WHERE p.ID = %d AND r.$status_field IN ('$revision_status_csv')",
+									$post_id
+								)
+							)
+						)) {
+							require_once(dirname(__FILE__).'/front-notice.php' );
+
+							$front_notice = new \PublishPress\Revisions\FrontNotice(['post_id' => $post_id]);
+							$front_notice->enqueueScripts();
+						}
+					}
+				}
+			);
+		}
 
 		add_filter('pre_wp_update_comment_count_now', [$this, 'fltUpdateCommentCountBypass'], 10, 3);
 		
@@ -79,7 +128,10 @@ class Revisionary
 		}
 
 		$this->setPostTypes();
+		$this->setFields();
 		$this->setPostTypesArchive();
+		$this->setPostTypesCopy();
+		$this->setFieldsCopy();
 
 		rvy_refresh_options_sitewide();
 
@@ -336,7 +388,17 @@ class Revisionary
 		if (!defined('REVISIONARY_DISABLE_RVY_INIT_ACTION')) {
 			do_action( 'rvy_init', $this );
 		}
+
+		add_action( 'wp_ajax_rvy_dismiss_frontend_notice', [$this, 'dismissFrontendNotice']);
 	}
+
+    function dismissFrontendNotice() {
+        if ( is_user_logged_in() ) {
+			check_ajax_referer( 'rvy_dismiss_frontend_notice', 'nonce' );
+			update_user_meta( get_current_user_id(), 'rvy_revisions_has_revisions_hint_dismissed', 1 );
+			wp_send_json_success();
+        }
+    }
 
 	// Work around unfilterable get_pages() query by replacing the wp_dropdown_pages() return array
 	function fltDropdownPages($output, $parsed_args, $pages) {
@@ -645,6 +707,93 @@ class Revisionary
 			'revisionary_archive_post_types', 
 			$this->enabled_post_types_archive
 		);
+	}
+
+	function getHiddenPostTypesCopy() {
+		return $this->hidden_post_types_copy;
+	}
+
+	private function setHiddenPostTypesCopy() {
+		$this->hidden_post_types_copy = ['attachment' => true, 'tablepress_table' => true, 'acf-field-group' => true, 'acf-field' => true, 'acf-post-type' => true, 'acf-taxonomy' => true, 'nav_menu_item' => true, 'custom_css' => true, 'customize_changeset' => true, 'wp_block' => true, 'wp_template' => true, 'wp_template_part' => true, 'wp_global_styles' => true, 'wp_navigation' => true, 'ppma_boxes' => true, 'ppmacf_field' => true, 'psppnotif_workflow' => true];
+	}
+
+	public function setPostTypesCopy() {
+		global $current_user;
+
+		$this->setHiddenPostTypesCopy();
+
+	    $enabled_post_types_copy = get_option('rvy_enabled_post_types_copy', false);
+
+	    if (false === $enabled_post_types_copy) {
+			$types = get_post_types(['public' => true]);
+
+			$enabled_post_types_copy = array_fill_keys(
+	            $types, true
+	        );
+
+			if (!defined('REVISIONARY_NO_PRIVATE_TYPES')) {
+	            $private_types = array_merge(
+	                get_post_types(['public' => false], 'object'),
+	                get_post_types(['public' => null], 'object')
+	            );
+
+	            // by default, enable non-public post types that have type-specific capabilities defined
+	            foreach($private_types as $post_type => $type_obj) {
+	                if ((!empty($type_obj->cap) && !empty($type_obj->cap->edit_posts) && !in_array($type_obj->cap->edit_posts, ['edit_posts', 'edit_pages']))
+	                || defined('REVISIONARY_ENABLE_' . strtoupper($post_type) . '_TYPE')
+	                ) {
+	                    $enabled_post_types_copy[$post_type] = true;
+	                }
+	            }
+	        }
+
+	        if (class_exists('WooCommerce')) {
+	            $enabled_post_types_copy['product'] = true;
+	            $enabled_post_types_copy['order'] = true;
+	        }
+
+	        if (class_exists('Tribe__Events__Main')) {
+	            $enabled_post_types_copy['tribe_events'] = true;
+	        }
+	    }
+
+	    $enabled_post_types_copy = array_diff_key(
+			$enabled_post_types_copy,
+			[
+				'attachment' => true,
+				'tablepress_table' => true,
+				'acf-field-group' => true,
+				'acf-field' => true,
+				'nav_menu_item' => true,
+				'custom_css' => true,
+				'customize_changeset' => true,
+				'wp_block' => true,
+				'wp_template' => true,
+				'wp_template_part' => true,
+				'wp_global_styles' => true,
+				'wp_navigation' => true,
+				'product_variation' => true,
+				'shop_order_refund' => true
+			]
+		);
+
+		$this->enabled_post_types_copy = array_merge(
+			$this->enabled_post_types_copy,
+			$enabled_post_types_copy
+		);
+
+		$this->enabled_post_types_copy = apply_filters(
+			'revisionary_copy_post_types', 
+			$this->enabled_post_types_copy
+		);
+	}
+
+	public function setFields() {
+	    $this->enabled_fields = get_option('rvy_enabled_fields', true);
+	}
+
+	public function setFieldsCopy() {
+	    $this->enabled_fields_copy = get_option('rvy_enabled_fields_copy', true);
 	}
 
 	function fltNumRevisions ($num, $post) {
@@ -1045,7 +1194,60 @@ class Revisionary
 	function fltStatusChangeCap($caps, $cap, $user_id, $args) {
 		global $current_user;
 		
-		if ('copy_post' == $cap) {
+		if ('duplicate_post' == $cap) {
+			if (!empty($args[0])) {
+				$post_id = (is_object($args[0])) ? $args[0]->ID : (int) $args[0];
+			} else {
+				$post_id = 0;
+			}
+
+			$filter_args = [];
+
+			$this->skip_revisor_post_caps_workaround = true;
+
+			$can_copy = rvy_is_full_editor($post_id);
+
+			if (!$can_copy) {
+				if ($_post = get_post($post_id)) {
+					$type_obj = get_post_type_object($_post->post_type);
+				}
+
+				if (!empty($type_obj)) {
+					if (rvy_get_option("duplicate_posts_capability")) {		
+						$base_prop = (rvy_is_post_author($post_id)) ? 'edit_posts' : 'edit_others_posts';
+						$copy_cap_name = str_replace('edit_', 'duplicate_', $type_obj->cap->$base_prop);
+
+						if (false === strpos($copy_cap_name, 'duplicate_')) {
+							if ('page' == $_post->post_type) {
+								$copy_cap_name = (rvy_is_post_author($post_id)) ? 'duplicate_pages' : 'duplicate_others_pages';
+							} else {
+								$copy_cap_name = (rvy_is_post_author($post_id)) ? 'duplicate_posts' : 'duplicate_others_posts';
+							}
+						}
+
+						$can_copy = current_user_can($copy_cap_name);
+					} else {
+						$can_copy = current_user_can($type_obj->cap->create_posts);
+					}
+
+					$filter_args = compact('type_obj');
+				}
+			}
+
+			$this->skip_revisor_post_caps_workaround = false;
+
+			if (!empty($caps)) {
+				$can_copy = $can_copy && !array_diff($caps, array_keys(array_filter($current_user->allcaps)), ['duplicate_post']);
+			}
+
+			// allow PublishPress Permissions to apply 'duplicate' exceptions
+			if ($can_copy = apply_filters('revisionary_can_duplicate', $can_copy, $post_id, 'draft', $filter_args)
+			) {
+				$caps = ['read'];
+			} else {
+				$caps = array_diff_key($caps, [$cap => true]);
+			}
+		} elseif ('copy_post' == $cap) {
 			if (!rvy_get_option('pending_revisions')) {
 				return array_diff_key($caps, [$cap => true]);
 			}
@@ -1175,7 +1377,7 @@ class Revisionary
 				$main_post_id = rvy_post_id($post_id);
 
 				// Normally, it does not make sense to allow direct post editing but not revision approval, so don't comp the settings UI with that option.
-				$can_approve = !defined('REVISIONARY_REQUIRE_APPROVE_CAP') && current_user_can('edit_post', $main_post_id);
+				$can_approve = !rvy_get_option('approve_capability') && current_user_can('edit_post', $main_post_id);
 				
 				if (!$can_approve) { // bypass capability check for those with full editing caps on main post
 					if ($_post = get_post($post_id)) {

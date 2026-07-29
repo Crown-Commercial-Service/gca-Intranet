@@ -91,6 +91,13 @@ class Password_Protection {
      * @since 4.1.0
      */
     public function maybe_show_login_form() {
+        // Do not redirect WP-Cron requests; wp-cron.php must return from bootstrap so core can run scheduled hooks.
+        if ( function_exists( 'wp_doing_cron' ) && wp_doing_cron() ) {
+            return;
+        }
+        if ( defined( 'DOING_CRON' ) && DOING_CRON ) {
+            return;
+        }
         $options = get_option( ASENHA_SLUG_U, array() );
         $stored_password = $options['password_protection_password'];
         // When user is logged-in as in an administrator

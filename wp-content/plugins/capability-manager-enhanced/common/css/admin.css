@@ -112,11 +112,24 @@ h3.cme-cap-section {
 margin-top:0;
 }
 
-a.neg-cap, a.cap-on, a.type-on, a.neg-type-caps, a.cme-neg-all {
+tr.cme-cap-group-subheading td {
+  background: #f6f7f7;
+  border-top: 1px solid #dcdcde;
+  border-bottom: 1px solid #dcdcde;
+  padding: 10px 12px;
+}
+
+h4.cme-cap-group-title {
+  margin: 0;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+a.neg-cap, a.cap-on, a.type-on, a.neg-type-caps {
 text-decoration: none;
 }
 
-span.cap-x, a.cme-neg-all {
+span.cap-x {
     color: #EA3323;
     font-size: 1.5em;
     padding-left: 1px;
@@ -134,15 +147,6 @@ span.cap-x, a.cme-neg-all {
 .single-checkbox-table span.cap-x {
     line-height: 0.7;
     margin-right: 10.5px;
-}
-
-a.cme-switch-all {
-color: black;
-font-size: 1.5em;
-padding-right: 1px;
-padding-right: 1px;
-vertical-align: middle;
-text-decoration: line-through !important;
 }
 
 td.cap-yes span {
@@ -195,15 +199,15 @@ tr.cme-bulk-select span {
 vertical-align: bottom;
 }
 
-a.type-off, a.neg-cap, a.cme-neg-all, a.neg-type-caps {
+a.type-off, a.neg-cap, a.neg-type-caps {
 color: #EA3323;
 }
 
-a.type-on, a.cap-on, a.cme-switch-all {
+a.type-on, a.cap-on {
 color: black;
 }
 
-input.cme-check-all, a.cme-neg-all {
+input.cme-check-all {
 margin-right: 10px;
 padding-right: 10px;
 }
@@ -448,6 +452,11 @@ div.publishpress-caps-backup td.cme-backup-info .cme-negate {
     box-shadow: 0 0 0 1px crimson;
 }
 
+.restrict-column input[type=checkbox]:checked {
+  background: none;
+  border-color: none;
+}
+
 .restrict-column input[type=checkbox]:checked::before {
     content: url("data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHhtbG5zOnhsaW5rPSJodHRwOi8vd3d3LnczLm9yZy8xOTk5L3hsaW5rIiB3aWR0aD0iMjAiIGhlaWdodD0iMjAiIHByZXNlcnZlQXNwZWN0UmF0aW89InhNaWRZTWlkIG1lZXQiIHZpZXdCb3g9IjAgMCAyMCAyMCIgc3R5bGU9Ii1tcy10cmFuc2Zvcm06IHJvdGF0ZSgzNjBkZWcpOyAtd2Via2l0LXRyYW5zZm9ybTogcm90YXRlKDM2MGRlZyk7IHRyYW5zZm9ybTogcm90YXRlKDM2MGRlZyk7Ij48cGF0aCBkPSJNMTQuOTUgNi40NkwxMS40MSAxMGwzLjU0IDMuNTRsLTEuNDEgMS40MUwxMCAxMS40MmwtMy41MyAzLjUzbC0xLjQyLTEuNDJMOC41OCAxMEw1LjA1IDYuNDdsMS40Mi0xLjQyTDEwIDguNThsMy41NC0zLjUzeiIgZmlsbD0iI2RjMTQzYyIvPjxyZWN0IHg9IjAiIHk9IjAiIHdpZHRoPSIyMCIgaGVpZ2h0PSIyMCIgZmlsbD0icmdiYSgwLCAwLCAwLCAwKSIgLz48L3N2Zz4=");
 }
@@ -480,6 +489,14 @@ table#akmin tr td input[type=checkbox] {
   border-right: none;
   border-top: none;
   border-bottom: none;
+}
+
+#pp-capability-menu-wrapper table td,
+#pp-capability-menu-wrapper table th {
+    padding: 10px;
+    padding-bottom: 10px;
+    font-size: 13px;
+    line-height: 20px;
 }
 
 #pp-capability-menu-wrapper table td h4.ppc-menu-row-section {

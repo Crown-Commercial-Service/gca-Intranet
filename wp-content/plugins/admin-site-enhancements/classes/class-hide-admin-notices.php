@@ -109,7 +109,7 @@ class Hide_Admin_Notices {
                 #wpbody-content .notice-updated,
                 #wpbody-content .updated:not(.active, .inactive, .plugin-update-tr),
                 #wpbody-content .update-nag, */
-                #wpbody-content > .wrap > .notice:not(#plugin-activated-successfully,.system-notice,.updated,.hidden,.inline,.wcml-notice,.asenha-media-replacement-notice),
+                #wpbody-content > .wrap > .notice:not(#plugin-activated-successfully,.system-notice,.updated,.hidden,.inline,.wcml-notice,.asenha-media-replacement-notice,[data-id=clone_resolution_options_notice],[data-id=temporary_duplicate_notice]),
                 #wpbody-content > .wrap > .notice-error,
                 #wpbody-content > .wrap > .error:not(.hidden),
                 #wpbody-content > .wrap > .notice-info,
@@ -120,13 +120,13 @@ class Hide_Admin_Notices {
                 #wpbody-content > .wrap > .notice-updated,
                 #wpbody-content > .wrap > .updated:not(.inline),
                 #wpbody-content > .wrap > .update-nag,
-                #wpbody-content > .wrap > div:not(#loco-notices,#loco-content) > .notice:not(.system-notice,.hidden),
+                #wpbody-content > .wrap > div:not(#loco-notices,#loco-content) > .notice:not(.system-notice,.hidden,#asenha-fm-warning-notice,#asenha-smtp-password-notice,#asenha-view-admin-as-role-recovery-notice,[data-id=clone_resolution_options_notice],[data-id=temporary_duplicate_notice]),
                 #wpbody-content > .wrap > div:not(#loco-notices,#loco-content) > .notice-error,
                 #wpbody-content > .wrap > div:not(#loco-notices,#loco-content) > .error:not(.hidden),
                 #wpbody-content > .wrap > div:not(#loco-notices,#loco-content) > .notice-info,
                 #wpbody-content > .wrap > div:not(#loco-notices,#loco-content) > .notice-information,
                 #wpbody-content > .wrap > div > #message,
-                #wpbody-content > .wrap > div:not(#loco-notices,#loco-content) > .notice-warning:not(.hidden),
+                #wpbody-content > .wrap > div:not(#loco-notices,#loco-content) > .notice-warning:not(.hidden,#asenha-fm-warning-notice,#asenha-smtp-password-notice,#asenha-view-admin-as-role-recovery-notice,[data-id=clone_resolution_options_notice],[data-id=temporary_duplicate_notice]),
                 #wpbody-content > .wrap > div:not(#loco-notices,#loco-content) > .notice-success,
                 #wpbody-content > .wrap > div:not(#loco-notices,#loco-content) > .notice-updated,
                 #wpbody-content > .wrap > div:not(#loco-notices,#loco-content) > .updated,
@@ -274,7 +274,7 @@ class Hide_Admin_Notices {
                 #wpbody-content > .bwfan_header > .notice-updated,
                 #wpbody-content > .bwfan_header > .updated:not(.inline),
                 #wpbody-content > .bwfan_header > .update-nag,
-                #wpbody-content > .notice:not(.otgs-notice,.wcml-notice),
+                #wpbody-content > .notice:not(.otgs-notice,.wcml-notice,#asenha-smtp-password-notice,#asenha-view-admin-as-role-recovery-notice,[data-id=clone_resolution_options_notice],[data-id=temporary_duplicate_notice]),
                 #wpbody-content > .error,
                 #wpbody-content > .updated:not(.inline),
                 #wpbody-content > .update-nag,
@@ -317,10 +317,50 @@ class Hide_Admin_Notices {
                 #wpbody-content > .wrap .dokan-dashboard .updated:not(.inline),
                 #wpbody-content > .wrap .dokan-dashboard .update-nag,
                 /* BdThemes Element Pack Pro */
-                #wpbody-content > .wrap > .biggopti
+                #wpbody-content > .wrap > .biggopti,
+                /* Admin Columns */
+                #wpbody-content > .wrap .ac-admin-page .notice:not(.system-notice,.hidden),
+                #wpbody-content > .wrap .ac-admin-page .notice-error,
+                #wpbody-content > .wrap .ac-admin-page .error:not(.hidden),
+                #wpbody-content > .wrap .ac-admin-page .notice-info,
+                #wpbody-content > .wrap .ac-admin-page .notice-information,
+                #wpbody-content > .wrap .ac-admin-page #message,
+                #wpbody-content > .wrap .ac-admin-page .notice-warning:not(.hidden),
+                #wpbody-content > .wrap .ac-admin-page .notice-success,
+                #wpbody-content > .wrap .ac-admin-page .notice-updated,
+                #wpbody-content > .wrap .ac-admin-page .updated:not(.inline),
+                #wpbody-content > .wrap .ac-admin-page .update-nag 
                 {
                     position: absolute !important;
                     visibility: hidden !important;
+                }
+
+                /* Keep SMTP password notice visible for administrators. */
+                #wpbody #wpbody-content .notice.notice-warning.asenha-smtp-password-notice,
+                #wpbody #wpbody-content #asenha-smtp-password-notice {
+                    display: block !important;
+                    position: static !important;
+                    visibility: visible !important;
+                }
+
+                /* Keep View Admin as Role recovery URL notice visible for administrators. */
+                #wpbody #wpbody-content .notice.notice-info.asenha-view-admin-as-role-recovery-notice,
+                #wpbody #wpbody-content #asenha-view-admin-as-role-recovery-notice {
+                    display: block !important;
+                    position: relative !important;
+                    visibility: visible !important;
+                }
+
+                /* Keep Freemius clone/migration safe mode notices visible. */
+                #wpbody #wpbody-content .fs-notice[data-id="clone_resolution_options_notice"],
+                #wpbody #wpbody-content .fs-notice[data-id="temporary_duplicate_notice"] {
+                    display: block !important;
+                    position: static !important;
+                    visibility: visible !important;
+                }
+
+                #wpbody #wpbody-content #asenha-view-admin-as-role-recovery-notice p strong {
+                    word-break: break-all;
                 }
 
                 <?php 

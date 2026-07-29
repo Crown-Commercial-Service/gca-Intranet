@@ -1,5 +1,11 @@
 <?php
 
+if ( ! defined( 'ABSPATH' ) ) {
+	exit;
+}
+
+require_once __DIR__ . '/mu-shim/core_aioi_mu_shim.php';
+
 class core_all_in_one_intranet {
 
 	protected $aioi_options = null;
@@ -12,6 +18,22 @@ class core_all_in_one_intranet {
 	 * Hook into WordPress.
 	 */
 	protected function add_actions() {
+
+		// Keep the must-use shim in sync with the canonical source on every
+		// request, not just on plugin activation. register_activation_hook fires
+		// only on a fresh activate — it does NOT fire when an existing install is
+		// updated, so existing customers updating to this release would otherwise
+		// have no shim until the next admin visit. The shim is also the only way
+		// to gate /wp-activate.php on single-site (or non-network-activated
+		// multisite) installs: wp-activate.php defines WP_INSTALLING before
+		// bootstrapping WordPress, which makes wp-settings.php skip loading
+		// regular plugins entirely (see wp_get_active_and_valid_plugins() in
+		// wp-includes/load.php). MU plugins still load on that path, so the shim
+		// enforces the auth gate before template-loader.php would otherwise
+		// output protected feed content. core_aioi_mu_shim::ensure() is
+		// idempotent — it compares the installed copy's size and mtime against
+		// the source and only re-copies when they differ.
+		add_action( 'plugins_loaded', [ 'core_aioi_mu_shim', 'ensure' ], 0 );
 
 		if ( is_admin() ) {
 			add_action( 'admin_init', [ $this, 'aioi_admin_init' ], 5, 0 );
@@ -26,16 +48,61 @@ class core_all_in_one_intranet {
 			}
 		}
 
-		add_action( 'template_redirect', [ $this, 'aioi_template_redirect' ] );
+		// Run the auth gate from both 'wp' and 'template_redirect'.
+		// - 'template_redirect' priority 1 puts the gate before redirect_canonical
+		//   (priority 10), preventing post-slug leaks via 301 Location.
+		// - 'wp' priority 1 catches non-theme entry points (wp-signup.php,
+		//   wp-trackback.php, etc.) where template_redirect never fires because
+		//   wp_using_themes() is false — yet template-loader.php still runs the
+		//   unconditional is_feed/is_trackback/is_robots/is_favicon block, which
+		//   would otherwise leak feeds to anonymous visitors.
+		// aioi_template_redirect() uses a static guard so it only runs once per request.
+		// Skip the 'wp' hook on admin and CLI contexts: admin pages internally
+		// call wp() (e.g. list tables in wp-admin/includes/post.php), and WP-CLI
+		// commands may too. Admin has its own auth; CLI shouldn't be redirected.
+		if ( ! is_admin() && ! ( defined( 'WP_CLI' ) && WP_CLI ) ) {
+			add_action( 'wp', [ $this, 'aioi_template_redirect' ], 1 );
+		}
+		add_action( 'template_redirect', [ $this, 'aioi_template_redirect' ], 1 );
 		add_filter( 'robots_txt', [ $this, 'aioi_robots_txt' ], 0, 2 );
 		add_filter( 'option_ping_sites', [ $this, 'aioi_option_ping_sites' ], 0, 1 );
 		add_filter( 'rest_pre_dispatch', [ $this, 'aioi_rest_pre_dispatch' ], 0, 1 );
 		add_filter( 'xmlrpc_enabled', [ $this, 'aioi_xmlrpc_enabled' ] );
 
+		// wp-comments-post.php loads wp-load.php directly without calling wp(), so
+		// neither 'template_redirect' nor 'wp' fires on that endpoint —
+		// wp_handle_comment_submission() runs ungated. Gate anonymous comment
+		// submissions through 'comments_open', which it consults before insertion.
+		// 'pings_open' is defense-in-depth for wp-trackback.php: that endpoint does
+		// call wp(), but trackback writes shouldn't rely on the 'wp' hook alone.
+		add_filter( 'comments_open', [ $this, 'aioi_comments_open' ], 10, 2 );
+		add_filter( 'pings_open', [ $this, 'aioi_comments_open' ], 10, 2 );
+
 		add_filter( 'login_redirect', [ $this, 'aioi_login_redirect' ], 10, 3 );
 
 		add_action( 'wp_login', [ $this, 'aioi_wp_login' ], 10, 2 );
 		add_action( 'init', [ $this, 'aioi_check_activity' ], 1 );
+
+		// wp-links-opml.php require()s wp-load.php and prints the blogroll as OPML
+		// without ever calling wp(), so neither 'wp' nor 'template_redirect' fires
+		// and the link list (plus the site title and WordPress generator version)
+		// would leak to anonymous visitors on a private site. 'init' priority 1 is
+		// the earliest shared hook that runs on that endpoint — regular plugins are
+		// loaded and pluggable.php is available by then — and it fires before any
+		// OPML output. The handler is scoped to $pagenow, so it stays inert on
+		// every other request (admin, CLI, REST, normal front end).
+		add_action( 'init', [ $this, 'aioi_gate_opml' ], 1 );
+
+		// admin-ajax.php and admin-post.php both make is_admin() true, so the 'wp'
+		// gate above is deliberately skipped on them and 'template_redirect' never
+		// fires — and rest_pre_dispatch does not cover them either. That leaves any
+		// wp_ajax_nopriv_* / admin_post_nopriv_* handler registered by the active
+		// theme or another plugin running fully unauthenticated while the site is
+		// private. Gate both on 'init' priority 1 (the earliest shared hook on
+		// these endpoints, after pluggable.php is loaded and before they dispatch
+		// their nopriv action). Scoped to wp_doing_ajax() / $pagenow so it stays
+		// inert on every other request.
+		add_action( 'init', [ $this, 'aioi_gate_admin_endpoints' ], 1 );
 
 		if ( is_multisite() ) {
 			add_action( 'wpmu_new_user', [ $this, 'aioi_wpmu_new_user' ], 10, 1 );
@@ -68,6 +135,13 @@ class core_all_in_one_intranet {
 	 */
 	public function aioi_template_redirect() {
 
+		// Hooked on both 'wp' and 'template_redirect'. Run once.
+		static $already_ran = false;
+		if ( $already_ran ) {
+			return;
+		}
+		$already_ran = true;
+
 		$options = $this->get_option_aioi();
 
 		// Do nothing if private site is off.
@@ -77,11 +151,40 @@ class core_all_in_one_intranet {
 
 		$allow_access = false;
 
-		// Allow certain URLs.
-		if (
-			substr( $_SERVER['REQUEST_URI'], 0, 16 ) === '/wp-activate.php' ||
-			substr( $_SERVER['REQUEST_URI'], 0, 11 ) === '/robots.txt'
-		) {
+		// Allow certain URLs. Compare the parsed path exactly — a prefix match on
+		// the raw REQUEST_URI lets paths like /robots.txt/?p=7 bypass the auth gate
+		// and still be routed by WordPress to the underlying post/feed.
+		$request_path = isset( $_SERVER['REQUEST_URI'] )
+			? (string) wp_parse_url( wp_unslash( $_SERVER['REQUEST_URI'] ), PHP_URL_PATH )
+			: '';
+
+		// Derive expected paths at runtime so the gate works on subdirectory installs
+		// (where WP lives at /wp/, so robots.txt is at /wp/robots.txt) and on
+		// multisite subdirectory subsites (where home is at /siteN/).
+		$home_path   = (string) wp_parse_url( home_url( '/' ), PHP_URL_PATH );
+		$home_prefix = ( '' === $home_path || '/' === $home_path ) ? '' : rtrim( $home_path, '/' );
+		$robots_path = $home_prefix . '/robots.txt';
+
+		// The static-path allowances below (robots.txt and wp-activate.php) let an
+		// unauthenticated request reach WordPress without the auth gate, so each
+		// must first confirm the request is not ALSO being routed to content via a
+		// recognized query var — see aioi_request_has_routing_query_var().
+		global $pagenow;
+
+		if ( $request_path === $robots_path && ! $this->aioi_request_has_routing_query_var() ) {
+			$allow_access = true;
+		}
+
+		// Use the $pagenow global rather than REQUEST_URI path matching for the
+		// wp-activate.php check. WordPress derives $pagenow from PHP_SELF via a
+		// regex that survives trailing-slash PATH_INFO and percent-encoded dots
+		// (e.g. /wp-activate.php/?feed=rss2 and /wp-activate%2Ephp?feed=rss2 both
+		// route to wp-activate.php in PHP-FPM, and $pagenow resolves to
+		// 'wp-activate.php' in both cases — REQUEST_URI string compare did not).
+		// wp-activate.php loads wp-blog-header.php, which runs WP::main() and
+		// template-loader.php before the script's own redirect/render logic, so
+		// feed/REST output can be emitted before wp-activate.php itself runs.
+		if ( isset( $pagenow ) && 'wp-activate.php' === $pagenow && ! $this->aioi_request_has_routing_query_var() ) {
 			$allow_access = true;
 		}
 
@@ -99,16 +202,68 @@ class core_all_in_one_intranet {
 
 		if ( is_multisite() ) {
 			$this->handle_private_loggedin_multisite( $options );
-		} else {
-			// Restrict access to users with no role.
-			$user = wp_get_current_user();
-			if ( ! $user || ! is_array( $user->roles ) || count( $user->roles ) == 0 ) {
-				wp_logout();
-				wp_die(
-					'<p>' . esc_html__( 'You attempted to login to the site, but you do not have any permissions. If you believe you should have access, please contact your administrator.', 'all-in-one-intranet' ) . '</p>'
-				);
-			}
+		} elseif ( ! $this->aioi_user_has_role() ) {
+			// Restrict access to logged-in users with no role.
+			wp_logout();
+			wp_die(
+				'<p>' . esc_html__( 'You attempted to login to the site, but you do not have any permissions. If you believe you should have access, please contact your administrator.', 'all-in-one-intranet' ) . '</p>'
+			);
 		}
+	}
+
+	/**
+	 * Whether the current request carries a recognized WordPress query var that
+	 * would route it to content.
+	 *
+	 * Qualifies the static-path allowances in aioi_template_redirect() (robots.txt
+	 * and wp-activate.php): those paths are allowed past the private-site gate
+	 * unauthenticated, but only when the request is not also asking WordPress to
+	 * render something else. WP::parse_request() lets $_POST/$_GET override a
+	 * path's rewrite vars and also routes from the URL path itself (pretty
+	 * permalinks / PATH_INFO), so /robots.txt?robots=0&feed=rss2 or
+	 * /wp-activate.php/feed/rss2/ would otherwise emit the protected feed.
+	 *
+	 * Checks both sources WordPress routes from: the keys of $_GET/$_POST against
+	 * WP::$public_query_vars (extended via the `query_vars` filter inside
+	 * parse_request(), which is how the REST API adds `rest_route` and plugins
+	 * register their own routing vars), and the parsed feed/rest_route query vars
+	 * (which path routing can set without them ever appearing in the superglobals).
+	 * Keep in sync with core/mu-shim/aioi-installing-gate.php.
+	 *
+	 * Fails closed: if the global $wp request object is not available/parsed we
+	 * cannot tell where the request routes, so it is reported as carrying query
+	 * vars and the allowance does not fire.
+	 *
+	 * @return bool
+	 */
+	protected function aioi_request_has_routing_query_var() {
+
+		global $wp;
+
+		if ( ! isset( $wp ) || ! is_array( $wp->public_query_vars ) ) {
+			return true;
+		}
+
+		// WordPress populates routing query vars from $_POST as well as $_GET
+		// (WP::parse_request()), so a $_GET-only check is bypassable with a POST
+		// body — match the keys of both superglobals.
+		// phpcs:ignore WordPress.Security.NonceVerification.Missing, WordPress.Security.NonceVerification.Recommended
+		$request_keys = array_merge( array_keys( $_GET ), array_keys( $_POST ) );
+
+		if ( array_intersect( $request_keys, $wp->public_query_vars ) ) {
+			return true;
+		}
+
+		// feed and rest_route are the content-read vectors reachable from these
+		// static paths: wp_using_themes() is false on wp-activate.php, so
+		// template-loader.php skips theme rendering and runs only its unconditional
+		// feed block, while REST dispatches from rest_api_loaded(). Reading the
+		// parsed query vars also catches pretty-permalink routing (e.g.
+		// /wp-activate.php/feed/rss2/ or .../wp-json/...) that never appears in
+		// $_GET/$_POST.
+		$query_vars = is_array( $wp->query_vars ) ? $wp->query_vars : [];
+
+		return ! empty( $query_vars['feed'] ) || ! empty( $query_vars['rest_route'] );
 	}
 
 	/**
@@ -118,52 +273,103 @@ class core_all_in_one_intranet {
 	 */
 	protected function handle_private_loggedin_multisite( $options ) {
 
-		if ( ! is_multisite() ) {
+		if ( $this->aioi_user_is_subsite_member( $options ) ) {
 			return;
 		}
 
-		if ( ! $options['aioi_ms_requiremember'] ) {
-			return;
+		// The logged-in user is not a member of this sub-site.
+		$blogs     = get_blogs_of_user( get_current_user_id() );
+		$blog_name = get_bloginfo( 'name' );
+
+		$output = '<p>' . esc_html(
+			sprintf( /* translators: %s - name of the site. */
+				__( 'You attempted to access the "%1$s" sub-site, but you are not currently a member of this site. If you believe you should be able to access "%1$s", please contact your network administrator.', 'all-in-one-intranet' ),
+				$blog_name
+			)
+			) . '</p>';
+
+		if ( ! empty( $blogs ) ) {
+
+			$output .= '<p>' . esc_html__( 'You are a member of the following sites:', 'all-in-one-intranet' ) . '</p>';
+
+			$output .= '<table>';
+
+			foreach ( $blogs as $blog ) {
+				$output .= "<tr>";
+				$output .= "<td valign='top'>";
+				$output .= "<a href='" . esc_url( get_home_url( $blog->userblog_id ) ) . "'>" . esc_html( $blog->blogname ) . "</a>";
+				$output .= "</td>";
+				$output .= "</tr>";
+			}
+			$output .= '</table>';
 		}
 
-		if ( is_network_admin() ) {
-			return;
+		// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+		wp_die( $output );
+	}
+
+	/**
+	 * Whether the current logged-in user is a member of the current sub-site.
+	 *
+	 * Returns true (access permitted) whenever the membership requirement does
+	 * not apply: non-multisite installs, the requirement toggled off, or the
+	 * network admin. Shared by handle_private_loggedin_multisite() (frontend)
+	 * and aioi_is_access_allowed() (REST) so both decide membership identically.
+	 *
+	 * @param array $options Plugin options.
+	 *
+	 * @return bool
+	 */
+	protected function aioi_user_is_subsite_member( $options ) {
+
+		if ( ! is_multisite() || empty( $options['aioi_ms_requiremember'] ) || is_network_admin() ) {
+			return true;
 		}
 
-		// Need to check logged-in user is a member of this sub-site.
 		$blogs = get_blogs_of_user( get_current_user_id() );
 
-		if ( ! wp_list_filter( $blogs, [ 'userblog_id' => get_current_blog_id() ] ) ) {
-			// So the user is not a member, let's proceed.
+		return (bool) wp_list_filter( $blogs, [ 'userblog_id' => get_current_blog_id() ] );
+	}
 
-			$blog_name = get_bloginfo( 'name' );
+	/**
+	 * Whether the current logged-in user has at least one role on this site.
+	 *
+	 * @return bool
+	 */
+	protected function aioi_user_has_role() {
 
-			$output = '<p>' . esc_html(
-				sprintf( /* translators: %s - name of the site. */
-					__( 'You attempted to access the "%1$s" sub-site, but you are not currently a member of this site. If you believe you should be able to access "%1$s", please contact your network administrator.', 'all-in-one-intranet' ),
-					$blog_name
-				)
-				) . '</p>';
+		$user = wp_get_current_user();
 
-			if ( ! empty( $blogs ) ) {
+		return $user && is_array( $user->roles ) && count( $user->roles ) > 0;
+	}
 
-				$output .= '<p>' . esc_html__( 'You are a member of the following sites:', 'all-in-one-intranet' ) . '</p>';
+	/**
+	 * Whether the current request may access content while the site is private.
+	 *
+	 * Single source of truth for the login + role/membership rules, so the REST
+	 * gate (aioi_rest_pre_dispatch) enforces the same parity as the frontend
+	 * gate (aioi_template_redirect). The frontend-only URL allowances
+	 * (robots.txt, wp-activate.php) are applied by the caller, not here.
+	 * Anonymous users are reported as not allowed; the caller maps that to the
+	 * appropriate response (auth_redirect / 401 vs wp_die / 403).
+	 *
+	 * @param array $options Plugin options.
+	 *
+	 * @return bool
+	 */
+	protected function aioi_is_access_allowed( $options ) {
 
-				$output .= '<table>';
-
-				foreach ( $blogs as $blog ) {
-					$output .= "<tr>";
-					$output .= "<td valign='top'>";
-					$output .= "<a href='" . esc_url( get_home_url( $blog->userblog_id ) ) . "'>" . esc_html( $blog->blogname ) . "</a>";
-					$output .= "</td>";
-					$output .= "</tr>";
-				}
-				$output .= '</table>';
-			}
-
-			// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
-			wp_die( $output );
+		if ( empty( $options['aioi_privatesite'] ) ) {
+			return true;
 		}
+
+		if ( ! is_user_logged_in() ) {
+			return false;
+		}
+
+		return is_multisite()
+			? $this->aioi_user_is_subsite_member( $options )
+			: $this->aioi_user_has_role();
 	}
 
 	/**
@@ -179,7 +385,7 @@ class core_all_in_one_intranet {
 		$options = $this->get_option_aioi();
 
 		if ( $options['aioi_privatesite'] ) {
-			return "Disallow: /\n";
+			return "User-agent: *\nDisallow: /\n";
 		}
 
 		return $output;
@@ -200,21 +406,32 @@ class core_all_in_one_intranet {
 	}
 
 	/**
-	 * Disable REST API.
+	 * Gate the REST API on private sites.
 	 *
-	 * @return WP_Error
+	 * Enforces the same role/membership parity as the frontend gate via
+	 * aioi_is_access_allowed(): anonymous requests get 401 (authenticate),
+	 * while logged-in-but-unauthorized requests (no role on single-site, or not
+	 * a member of this sub-site on multisite) get 403 — matching the frontend's
+	 * auth_redirect() / wp_die() split.
+	 *
+	 * @param mixed $result REST dispatch result; returned unchanged when access is allowed.
+	 *
+	 * @return mixed|WP_Error
 	 */
 	public function aioi_rest_pre_dispatch( $result ) {
 
 		$options      = $this->get_option_aioi();
-		$allow_access = ! $options['aioi_privatesite'] || is_user_logged_in();
-		$allow_access = (bool) apply_filters( 'aioi_allow_public_access', $allow_access );
+		$allow_access = (bool) apply_filters( 'aioi_allow_public_access', $this->aioi_is_access_allowed( $options ) );
 
-		if ( ! $allow_access ) {
+		if ( $allow_access ) {
+			return $result;
+		}
+
+		if ( ! is_user_logged_in() ) {
 			return new WP_Error( 'not-logged-in', 'REST API Requests must be authenticated because All-In-One Intranet is active', [ 'status' => 401 ] );
 		}
 
-		return $result;
+		return new WP_Error( 'not-authorized', 'You are not authorized to access this site because All-In-One Intranet is active', [ 'status' => 403 ] );
 	}
 
 	/**
@@ -233,6 +450,118 @@ class core_all_in_one_intranet {
 		}
 
 		return $enabled;
+	}
+
+	/**
+	 * Force comments and pingbacks closed for anonymous visitors on private sites.
+	 *
+	 * Shared callback for 'comments_open' and 'pings_open'; see the filter
+	 * registrations in add_actions() for the rationale.
+	 *
+	 * @param bool $open    Whether commenting/pinging is currently open for the post.
+	 * @param int  $post_id Post ID being checked.
+	 *
+	 * @return bool
+	 */
+	public function aioi_comments_open( $open, $post_id ) {
+
+		$options      = $this->get_option_aioi();
+		$allow_access = (bool) apply_filters( 'aioi_allow_public_access', $this->aioi_is_access_allowed( $options ) );
+
+		if ( ! $allow_access ) {
+			return false;
+		}
+
+		return $open;
+	}
+
+	/**
+	 * Gate wp-links-opml.php on private sites.
+	 *
+	 * wp-links-opml.php require()s wp-load.php and prints the blogroll as OPML
+	 * directly — it never calls wp(), so neither the 'wp' nor 'template_redirect'
+	 * gate fires and the link list (plus the site title and WordPress generator
+	 * version) would otherwise leak to anonymous visitors while the site is
+	 * private. Hooked on 'init' priority 1, which runs on that endpoint before any
+	 * output is sent. The endpoint is identified via the $pagenow global (derived
+	 * from PHP_SELF, robust to trailing-slash PATH_INFO and percent-encoded dots)
+	 * rather than a REQUEST_URI compare, matching the wp-activate.php check.
+	 * Enforces the same login + role/membership parity as the REST gate via
+	 * aioi_is_access_allowed(): anonymous users are sent to the login wall, while
+	 * logged-in-but-unauthorized users get a 403.
+	 */
+	public function aioi_gate_opml() {
+
+		global $pagenow;
+
+		if ( ! isset( $pagenow ) || 'wp-links-opml.php' !== $pagenow ) {
+			return;
+		}
+
+		$options      = $this->get_option_aioi();
+		$allow_access = (bool) apply_filters( 'aioi_allow_public_access', $this->aioi_is_access_allowed( $options ) );
+
+		if ( $allow_access ) {
+			return;
+		}
+
+		if ( ! is_user_logged_in() ) {
+			auth_redirect();
+			exit;
+		}
+
+		wp_die(
+			'<p>' . esc_html__( 'You do not have permission to access this resource. If you believe you should have access, please contact your administrator.', 'all-in-one-intranet' ) . '</p>',
+			'',
+			[ 'response' => 403 ]
+		);
+	}
+
+	/**
+	 * Gate admin-ajax.php and admin-post.php on private sites.
+	 *
+	 * Both endpoints set is_admin() to true, so the 'wp' auth gate is intentionally
+	 * not registered for them and 'template_redirect' never fires there, while
+	 * rest_pre_dispatch only covers the REST API. Without this gate, any
+	 * wp_ajax_nopriv_* / admin_post_nopriv_* handler (registered by the active
+	 * theme or another plugin) would run fully unauthenticated while the site is
+	 * private, breaking the "entirely private" guarantee. Hooked on 'init'
+	 * priority 1 — the earliest shared hook that runs on these endpoints, after
+	 * pluggable.php is available and before admin-ajax.php / admin-post.php
+	 * dispatch their (nopriv) action. admin-ajax.php defines DOING_AJAX before
+	 * bootstrap so wp_doing_ajax() is reliable here; admin-post.php is identified
+	 * via the $pagenow global, matching the OPML gate. Enforces the same login +
+	 * role/membership parity as the REST gate via aioi_is_access_allowed():
+	 * anonymous users are sent to the login wall, logged-in-but-unauthorized users
+	 * get a 403.
+	 */
+	public function aioi_gate_admin_endpoints() {
+
+		global $pagenow;
+
+		$is_admin_post = isset( $pagenow ) && 'admin-post.php' === $pagenow;
+
+		if ( ! wp_doing_ajax() && ! $is_admin_post ) {
+			return;
+		}
+
+		$options      = $this->get_option_aioi();
+		$allow_access = (bool) apply_filters( 'aioi_allow_public_access', $this->aioi_is_access_allowed( $options ) );
+
+		if ( $allow_access ) {
+			return;
+		}
+
+		if ( ! is_user_logged_in() ) {
+			auth_redirect();
+			exit;
+		}
+
+		wp_die(
+			'<p>' . esc_html__( 'You do not have permission to access this resource. If you believe you should have access, please contact your administrator.', 'all-in-one-intranet' ) . '</p>',
+			'',
+			[ 'response' => 403 ]
+		);
 	}
 
 	/**
@@ -291,11 +620,18 @@ class core_all_in_one_intranet {
 			$logout_time_in_sec > 0 &&
 			$last_activity_time + $logout_time_in_sec < time()
 		) {
-			$current_url = 'http' . ( isset( $_SERVER['HTTPS'] ) ? 's' : '' ) . '://' . "{$_SERVER['HTTP_HOST']}{$_SERVER['REQUEST_URI']}";
+			// Bounce the user back to the page they were on so the private-site
+			// login wall catches them. Use the request URI (path and query) but
+			// never the attacker-influenced Host header; esc_url_raw() keeps any
+			// percent-encoding intact (sanitize_text_field() would strip it), and
+			// wp_safe_redirect() rejects an off-site target (a "//evil.com/x"
+			// request falls back to wp-admin, i.e. the login wall), so no scheme
+			// detection (is_ssl()) is needed.
+			$current_url = esc_url_raw( wp_unslash( $_SERVER['REQUEST_URI'] ?? '/' ) );
 
 			wp_logout();
 			// Should hit the Login wall if site is private.
-			wp_redirect( $current_url );
+			wp_safe_redirect( $current_url );
 			exit;
 		}
 
@@ -468,9 +804,22 @@ class core_all_in_one_intranet {
 			$newinput['aioi_autologout_units'] = 'minutes';
 		}
 
-		$newinput['aioi_loginredirect'] = isset( $input['aioi_loginredirect'] ) ? sanitize_text_field( $input['aioi_loginredirect'] ) : '';
+		// Normalize the post-login redirect before sanitizing. A bare site path like
+		// "dashboard" or "team/" has no scheme, so esc_url_raw() would rewrite it to
+		// "http://dashboard"; prepend a leading slash to keep it site-relative. Values
+		// that already start with "/" or carry a scheme (http://, https://, ...) are
+		// left as-is. Stored values are only normalized when settings are re-saved.
+		$redirect = isset( $input['aioi_loginredirect'] ) ? trim( $input['aioi_loginredirect'] ) : '';
 
-		$newinput['aioi_ms_membersrole'] = isset( $input['aioi_ms_membersrole'] ) ? sanitize_text_field( $input['aioi_ms_membersrole'] ) : '';
+		if ( $redirect !== '' && strpos( $redirect, '/' ) !== 0 && ! preg_match( '#^[a-z][a-z0-9+.-]*://#i', $redirect ) ) {
+			$redirect = '/' . $redirect;
+		}
+		$newinput['aioi_loginredirect'] = esc_url_raw( $redirect );
+
+		$members_role = isset( $input['aioi_ms_membersrole'] ) ? sanitize_text_field( $input['aioi_ms_membersrole'] ) : '';
+		// Allowlist against registered roles so a crafted POST or a stale role from a
+		// removed provider can't persist; '' keeps the "None" (auto-membership off) option.
+		$newinput['aioi_ms_membersrole'] = ( $members_role === '' || array_key_exists( $members_role, get_editable_roles() ) ) ? $members_role : '';
 
 		return $newinput;
 	}
@@ -617,7 +966,7 @@ class core_all_in_one_intranet {
 
 			if ( is_array( $limited_domains ) && count( $limited_domains ) > 0 ) {
 				 esc_html_e( 'Your site is set so that "Anyone can register" themselves, provided they are members of one of the following domains:', 'all-in-one-intranet' );
-				 esc_html_e( ' ' . implode( ', ', $limited_domains ) );
+				echo ' ' . esc_html( implode( ', ', $limited_domains ) );
 			} else {
 				esc_html_e( 'Warning: Your site is set so that "Anyone can register" themselves.', 'all-in-one-intranet' );
 			}
@@ -807,6 +1156,14 @@ class core_all_in_one_intranet {
 	 */
 	public function aioi_save_network_options() {
 
+		if ( ! current_user_can( 'manage_network_options' ) ) {
+			wp_die(
+				esc_html__( 'Sorry, you are not allowed to perform this action.', 'all-in-one-intranet' ),
+				'',
+				[ 'response' => 403 ]
+			);
+		}
+
 		check_admin_referer( $this->get_options_pagename() . '-options' );
 
 		if ( isset( $_POST[ $this->get_options_name() ] ) && is_array( $_POST[ $this->get_options_name() ] ) ) {
@@ -907,4 +1264,5 @@ class core_all_in_one_intranet {
 
 		return $this->aioi_options;
 	}
+
 }

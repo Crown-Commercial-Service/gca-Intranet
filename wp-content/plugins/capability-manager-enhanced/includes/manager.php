@@ -61,6 +61,11 @@ function _cme_core_caps() {
 
 function _cme_is_read_removal_blocked( $role_name ) {
 	$role = get_role($role_name);
+
+	if (!$role || empty($role->capabilities) || !is_array($role->capabilities)) {
+		return false;
+	}
+
 	$rcaps = $role->capabilities;
 
 	$core_caps = array_diff_key( _cme_core_caps(), array_fill_keys( array( 'unfiltered_html', 'unfiltered_upload', 'upload_files', 'edit_files', 'read' ), true ) );
@@ -122,6 +127,8 @@ class CapabilityManager
 	private $log_db_role_objects = array();
 
 	var $message;
+
+	var $network_sync_token;
 
 	/**
 	 * Module ID. Is the module internal short name.
@@ -193,7 +200,7 @@ class CapabilityManager
 		if (empty($_REQUEST['page'])
 		|| !in_array(
 			$_REQUEST['page'],
-			['pp-capabilities', 'pp-capabilities-backup', 'pp-capabilities-roles', 'pp-capabilities-admin-menus', 'pp-capabilities-editor-features', 'pp-capabilities-nav-menus', 'pp-capabilities-settings', 'pp-capabilities-admin-features', 'pp-capabilities-profile-features', 'pp-capabilities-dashboard', 'pp-capabilities-frontend-features', 'pp-capabilities-redirects', 'pp-capabilities-admin-styles']
+				['pp-capabilities', 'pp-capabilities-backup', 'pp-capabilities-roles', 'pp-capabilities-admin-menus', 'pp-capabilities-editor-features', 'pp-capabilities-nav-menus', 'pp-capabilities-settings', 'pp-capabilities-admin-features', 'pp-capabilities-profile-features', 'pp-capabilities-dashboard', 'pp-capabilities-frontend-features', 'pp-capabilities-redirects', 'pp-capabilities-admin-styles', 'pp-capabilities-admin-notices']
 			)
 		) {
 			return;
@@ -305,6 +312,22 @@ class CapabilityManager
 
 		$role_name = get_option("capsman_last_role_{$current_user->ID}");
 
+		if ($role_name && function_exists('pp_capabilities_is_application_password_subject') && pp_capabilities_is_application_password_subject($role_name)) {
+			$current_page = (!empty($_REQUEST['page']) && is_scalar($_REQUEST['page']))
+				? sanitize_key(wp_unslash($_REQUEST['page']))
+				: '';
+
+			if (
+				('pp-capabilities' === $current_page)
+				&& function_exists('pp_capabilities_can_manage_application_password_subject')
+				&& pp_capabilities_can_manage_application_password_subject($role_name)
+			) {
+				return sanitize_key($role_name);
+			}
+
+			$role_name = '';
+		}
+
 		if (!$role_name || !get_role($role_name)) {
 			$role_name = get_option('default_role');
 		}
@@ -355,7 +378,7 @@ class CapabilityManager
 			update_option( $this->ID . '_backup_datestamp', current_time( 'timestamp' ), false );
 		}
 
-		if (!$wpdb->get_var("SELECT COUNT(option_id) FROM $wpdb->options WHERE option_name LIKE 'cme_backup_auto_%'")) {
+		if (!pp_capabilities_get_auto_backup_option_names()) {
 			pp_capabilities_autobackup();
 		}
 	}
@@ -762,6 +785,68 @@ class CapabilityManager
     }
 
 	/**
+	 * Manages Admin Notices
+	 *
+	 * @return void
+	 */
+	public function ManageAdminNotices() {
+		if ((!is_multisite() || !is_super_admin()) && !current_user_can('administrator') && !current_user_can('manage_capabilities_admin_notices')) {
+            wp_die('<strong>' . esc_html__('You do not have permission to manage admin notices.', 'capability-manager-enhanced') . '</strong>');
+		}
+
+		$this->generateNames();
+		$roles = array_keys($this->roles);
+
+		if (!isset($this->current)) {
+			if ('POST' !== $_SERVER['REQUEST_METHOD'] && !empty($_REQUEST['role'])) {
+				$this->set_current_role(sanitize_key($_REQUEST['role']));
+			}
+		}
+
+		if (!isset($this->current) || !get_role($this->current)) {
+			$this->current = get_option('default_role');
+		}
+
+		if (!in_array($this->current, $roles)) {
+			$this->current = array_shift($roles);
+		}
+
+		$all_roles = wp_roles()->roles;
+
+		if ('POST' === $_SERVER['REQUEST_METHOD'] && (isset($_POST['ppc-admin-notices-submit']) || isset($_POST['ppc-admin-notices-all-submit']))) {
+			if (!wp_verify_nonce(sanitize_key($_REQUEST['_wpnonce'] ?? ''), 'pp-capabilities-admin-notices')) {
+				wp_die('<strong>' . esc_html__('You do not have permission to manage admin notices.', 'capability-manager-enhanced') . '</strong>');
+			}
+
+			$notices_role = !empty($_POST['ppc-admin-notices-role']) ? sanitize_key($_POST['ppc-admin-notices-role']) : $this->current;
+
+			if (isset($all_roles[$notices_role])) {
+				$this->set_current_role($notices_role);
+			}
+
+			$submitted_options = isset($_POST['cme_admin_notice_options']) ? map_deep($_POST['cme_admin_notice_options'], 'sanitize_text_field') : [];
+			if (!is_array($submitted_options)) {
+				$submitted_options = [];
+			}
+
+			$all_notice_options = (array) get_option('cme_admin_notice_options', []);
+
+			if (isset($_POST['ppc-admin-notices-all-submit'])) {
+				foreach (array_keys($all_roles) as $role_key) {
+					$all_notice_options[$role_key] = $submitted_options;
+				}
+			} else {
+				$all_notice_options[$notices_role] = $submitted_options;
+			}
+
+			update_option('cme_admin_notice_options', $all_notice_options, false);
+			ak_admin_notify(__('Settings updated.', 'capability-manager-enhanced'));
+		}
+
+        include(dirname(CME_FILE) . '/includes/admin-notices/admin-notices-settings.php');
+    }
+
+	/**
 	 * Manage Nave Menus
 	 *
 	 * @return void
@@ -1080,14 +1165,16 @@ class CapabilityManager
 			}
 
 			if ( ! empty($_REQUEST['current']) ) { // don't process role update unless form variable is received
-				$role = get_role(sanitize_key($_REQUEST['current']));
+				$current_subject = sanitize_key($_REQUEST['current']);
+				$is_application_password = function_exists('pp_capabilities_can_manage_application_password_subject') && pp_capabilities_can_manage_application_password_subject($current_subject);
+				$role = $is_application_password ? false : get_role($current_subject);
 				$current_level = ($role) ? ak_caps2level($role->capabilities) : 0;
 
 				$this->processAdminGeneral();
 
 				$set_level = (isset($_POST['level'])) ? (int) $_POST['level'] : 0;
 
-				if ($set_level != $current_level) {
+				if (!$is_application_password && ($set_level != $current_level)) {
 					global $wp_roles, $wp_version;
 
 					if ( version_compare($wp_version, '4.9', '>=') ) {
@@ -1096,11 +1183,26 @@ class CapabilityManager
 						$wp_roles->reinit();
 					}
 
-					foreach( get_users(array('role' => sanitize_key($_REQUEST['current']), 'fields' => 'ID')) as $ID ) {
+					foreach( get_users(array('role' => $current_subject, 'fields' => 'ID')) as $ID ) {
 						$user = new WP_User($ID);
 						$user->get_role_caps();
 						$user->update_user_level_from_caps();
 					}
+				}
+
+				if (!empty($this->network_sync_token)) {
+					$redirect_args = [
+						'page' => 'pp-capabilities',
+						'role' => sanitize_key($_REQUEST['current']),
+						'cme_network_sync_token' => $this->network_sync_token,
+					];
+
+					if (!empty($_REQUEST['pp_caps_tab'])) {
+						$redirect_args['pp_caps_tab'] = sanitize_key($_REQUEST['pp_caps_tab']);
+					}
+
+					wp_redirect(add_query_arg($redirect_args, admin_url('admin.php')));
+					exit;
 				}
 			}
 		}
@@ -1131,6 +1233,19 @@ class CapabilityManager
 		    wp_die('<strong>' . esc_html__('You do not have permission to manage capabilities.', 'capability-manager-enhanced') . '</strong>');
 		}
 
+		if (isset($_REQUEST['cme_network_sync_token']) && is_scalar($_REQUEST['cme_network_sync_token'])) {
+			$token = sanitize_key(wp_unslash($_REQUEST['cme_network_sync_token']));
+
+			if ('' !== $token) {
+				if (get_site_transient('cme_network_sync_done_' . $token)) {
+					delete_site_transient('cme_network_sync_done_' . $token);
+					ak_admin_notify(__('Network sync completed.', 'capability-manager-enhanced'));
+				} else {
+					ak_admin_notify(__('Network sync has been queued and will continue in the background.', 'capability-manager-enhanced'));
+				}
+			}
+		}
+
 		if (!empty($_SERVER['REQUEST_METHOD']) && ('POST' == $_SERVER['REQUEST_METHOD'])) {
 			if ( empty($_REQUEST['SaveRole']) && empty($_REQUEST['AddCap']) && empty($_REQUEST['RenameRole']) ) {
 				check_admin_referer('capsman-general-manager');
@@ -1148,24 +1263,29 @@ class CapabilityManager
 
 		$this->generateNames();
 		$roles = array_keys($this->roles);
+		$application_password_subjects = function_exists('pp_capabilities_get_application_password_subjects')
+			? pp_capabilities_get_application_password_subjects()
+			: [];
 
 		if ( ! isset($this->current) ) { // By default, we manage the default role
 			if ('POST' !== $_SERVER['REQUEST_METHOD'] && !empty($_REQUEST['role'])) {
-				$role = sanitize_key($_REQUEST['role']);
+				$subject = sanitize_key($_REQUEST['role']);
 
-				if (!pp_capabilities_is_editable_role($role)) {
+				if (isset($application_password_subjects[$subject])) {
+					$this->set_current_role($subject);
+				} elseif (!pp_capabilities_is_editable_role($subject)) {
 					wp_die(esc_html__('The selected role is not editable.', 'capability-manager-enhanced'));
+				} else {
+					$this->set_current_role($subject);
 				}
-
-				$this->set_current_role($role);
 			}
 		}
 
-		if (!isset($this->current) || !get_role($this->current)) {
+		if (!isset($this->current) || (!get_role($this->current) && !isset($application_password_subjects[$this->current]))) {
 			$this->current = $this->get_last_role();
 		}
 
-		if ( ! in_array($this->current, $roles) ) {    // Current role has been deleted.
+		if (!in_array($this->current, $roles) && !isset($application_password_subjects[$this->current])) {    // Current role has been deleted.
 			$this->current = array_shift($roles);
 		}
 
@@ -1230,6 +1350,11 @@ class CapabilityManager
 	function generateSysNames ()
 	{
 		$this->max_level = 10;
+
+		if ( ! function_exists( 'ak_get_roles' ) ) {
+			require_once dirname( CME_FILE ) . '/framework/lib/users.php';
+		}
+
 		$this->roles = ak_get_roles(true);
 		$caps = array();
 
@@ -1267,6 +1392,10 @@ class CapabilityManager
     		$names = array_map(array($this, '_capNamesCB'), $keys);
 
 	    	$this->capabilities = ( $keys ) ? array_combine($keys, $names) : array();
+
+		    if ( ! function_exists( 'ak_get_roles' ) ) {
+				require_once dirname( CME_FILE ) . '/framework/lib/users.php';
+			}
 
 		    $roles = ak_get_roles(true);
     		unset($roles['administrator']);

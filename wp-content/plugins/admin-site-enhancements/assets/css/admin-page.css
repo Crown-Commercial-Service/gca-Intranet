@@ -1,7 +1,5 @@
 :root {
-    --ase-accent: #2271b1;
-    --ase-accent-hover: #135e96;
-    --ase-accent-faded: #e8f0f7;
+    --ase-accent-faded: #ebeefc;
     --ase-accent-black: #111111;
     --ase-accent-warning: #d63638;
     --ase-accent-grey-darker: #333333;
@@ -18,6 +16,11 @@
     --ase-toggle-height: 22px;
     --ase-toggle-width: 40px;
     --ase-toggle-gap: 3px;
+}
+
+body {
+    --ase-accent: var(--wp-admin-theme-color, #2271b1);
+    --ase-accent-hover: var(--wp-admin-theme-color-darker-20, #135e96);
 }
 
 /* disable elastic scrolling */
@@ -846,7 +849,6 @@ input[type="search"]#module-search-input.has-text-input {
 }
 
 .asenha-tab-buttons > label:hover {
-    /* color: var(--ase-accent); */
     background: var(--ase-accent-faded);
 }
 
@@ -1045,10 +1047,6 @@ input[type="search"]#module-search-input.has-text-input {
 
 .form-table .asenha-subfields td:not(.datatable-td) {
     padding: 0;
-}
-
-.form-table .asenha-subfields .padding-left-20 td:not(.datatable-td) {
-    padding-left: 20px;
 }
 
 .form-table .asenha-toggle .asenha-radio-buttons td:not(.datatable-td) {
@@ -1303,6 +1301,21 @@ input[type="search"]#module-search-input.has-text-input {
     width: 240px;
 }
 
+.asenha-subfield-password-wrapper {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+}
+
+.asenha-subfield-password-wrapper .asenha-smtp-password-description {
+    margin-top: 4px;
+}
+
+.asenha-subfield-password-wrapper .asenha-smtp-password-warning {
+    margin-top: 4px;
+    width: 100%;
+}
+
 .full-width .asenha-subfield-text,
 .full-width .asenha-subfield-password {
     width: 100%;
@@ -1375,6 +1388,18 @@ input[type="search"]#module-search-input.has-text-input {
 .form-table .asenha-subfields tr:not(.datatable-tr).shift-more-up,
 .form-table .asenha-subfields tr:not(.datatable-tr).margin-top-m12 {
     margin-top: -12px;
+}
+
+.form-table .asenha-subfields tr:not(.datatable-tr).margin-top-m16 {
+    margin-top: -16px;
+}
+
+.form-table .asenha-subfields tr:not(.datatable-tr).margin-top-m20 {
+    margin-top: -20px;
+}
+
+.form-table .asenha-subfields tr:not(.datatable-tr).margin-top-m24 {
+    margin-top: -24px;
 }
 
 .form-table .asenha-subfields tr:not(.datatable-tr).margin-top-8 {
@@ -1471,6 +1496,30 @@ input[type="search"]#module-search-input.has-text-input {
 
 .form-table .asenha-subfields tr:not(.datatable-tr).padding-bottom-20 {
     padding-bottom: 20px !important;
+}
+
+.form-table .asenha-subfields tr:not(.datatable-tr).padding-left-4 {
+    padding-left: 4px !important;
+}
+
+.form-table .asenha-subfields tr:not(.datatable-tr).padding-left-8 {
+    padding-left: 8px !important;
+}
+
+.form-table .asenha-subfields tr:not(.datatable-tr).padding-left-10 {
+    padding-left: 10px !important;
+}
+
+.form-table .asenha-subfields tr:not(.datatable-tr).padding-left-12 {
+    padding-left: 12px !important;
+}
+
+.form-table .asenha-subfields tr:not(.datatable-tr).padding-left-16 {
+    padding-left: 16px !important;
+}
+
+.form-table .asenha-subfields tr:not(.datatable-tr).padding-left-20 {
+    padding-left: 20px !important;
 }
 
 .form-table .asenha-subfields tr:not(.datatable-tr).top-border {
@@ -1808,6 +1857,11 @@ input[type="search"]#module-search-input.has-text-input {
     display: none;
 }
 
+/* WP core overrides */
+.wp-core-ui .asenha-checkbox.attachment:not(:has(.filename))::after {
+    display: none;
+}
+
 /* =====================================================
    Toast Notifications
    ===================================================== */
@@ -1945,6 +1999,60 @@ input[type="search"]#module-search-input.has-text-input {
     .asenha-toast-close:hover {
         color: #f0f0f1;
     }
+}
+
+/* Info icon + hover/focus tooltip (e.g. 2FA checkbox field descriptions) */
+.asenha-info-tooltip-wrap {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    margin-left: 4px;
+    vertical-align: middle;
+}
+
+.asenha-info-tooltip-toggle {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 18px;
+    height: 18px;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    color: #2271b1;
+    cursor: help;
+}
+
+.asenha-info-tooltip-toggle .dashicons {
+    width: 18px;
+    height: 18px;
+    font-size: 18px;
+}
+
+.asenha-info-tooltip-toggle:focus {
+    outline: 2px solid #2271b1;
+    outline-offset: 2px;
+    border-radius: 50%;
+}
+
+.asenha-info-tooltip {
+    position: absolute;
+    right: 0;
+    top: calc(100% + 6px);
+    z-index: 10;
+    display: none;
+    width: 280px;
+    padding: 8px 10px;
+    border-radius: 4px;
+    background: #1d2327;
+    color: #fff;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.16);
+    line-height: 1.4;
+}
+
+.asenha-info-tooltip-wrap:hover .asenha-info-tooltip,
+.asenha-info-tooltip-wrap:focus-within .asenha-info-tooltip {
+    display: block;
 }
 
 /* ======================================================= */

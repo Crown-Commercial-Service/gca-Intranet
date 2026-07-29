@@ -10,6 +10,15 @@ namespace ASENHA\Classes;
 class Deactivation {
 
 	/**
+	 * Clear the scheduled failed-login log cleanup cron event.
+	 *
+	 * @since 8.8.3
+	 */
+	public function clear_failed_login_attempts_log_cleanup_schedule() {
+		wp_clear_scheduled_hook( 'asenha_failed_login_attempts_log_cleanup_by_amount' );
+	}
+
+	/**
 	 * Delete failed login log table for Limit Login Attempts feature
 	 *
 	 * @since 2.5.0
