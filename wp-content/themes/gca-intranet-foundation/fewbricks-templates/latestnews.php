@@ -18,6 +18,23 @@ $title           = trim((string) $title);
 $description     = trim((string) $description);
 $has_header      = ($title !== '' || $description !== '');
 $news_posts      = gca_get_selected_or_latest_posts( 'news', is_array( $selected_posts ) ? $selected_posts : [], $featured_count + $secondary_count );
+
+$pinned_posts = get_posts([
+    'post_type'      => 'news',
+    'post_status'    => 'publish',
+    'posts_per_page' => 1,
+    'meta_key'       => '_gca_news_pinned',
+    'meta_value'     => 1,
+    'no_found_rows'  => true,
+]);
+
+if ( ! empty( $pinned_posts ) ) {
+    $pinned_post = $pinned_posts[0];
+    $news_posts  = array_values( array_filter( $news_posts, static fn ( $news_post ) => $news_post->ID !== $pinned_post->ID ) );
+    array_unshift( $news_posts, $pinned_post );
+    $news_posts  = array_slice( $news_posts, 0, $featured_count + $secondary_count );
+}
+
 $featured_posts  = array_slice( $news_posts, 0, $featured_count );
 $secondary_posts = array_slice( $news_posts, $featured_count, $secondary_count );
 ?>
@@ -53,6 +70,11 @@ $secondary_posts = array_slice( $news_posts, $featured_count, $secondary_count )
                         <?php endif; ?>
 
                         <div data-testid="latest-news-featured-content">
+                            <?php if ( get_post_meta( get_the_ID(), '_gca_news_pinned', true ) ) : ?>
+                                <span class="govuk-body-s tag_label pinned" data-testid="latest-news-featured-pinned-pill">
+                                    <?php esc_html_e( 'Pinned article', 'gca-intranet' ); ?>
+                                </span>
+                            <?php endif; ?>
                             <h2 class="govuk-heading-m" data-testid="latest-news-featured-title">
                                 <a class="govuk-link govuk-!-text-break-word" data-testid="latest-news-featured-link" href="<?php the_permalink(); ?>">
                                     <?php echo esc_html( get_the_title() ); ?>
