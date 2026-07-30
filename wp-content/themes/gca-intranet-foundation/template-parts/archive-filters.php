@@ -5,11 +5,13 @@
  * Expected $args:
  *   archive_url  string   The archive base URL (form action).
  *   taxonomies   array    Each entry: ['taxonomy' => string, 'label' => string, 'param' => string]
+ *   post_type    string   The archive's post type, used to hide terms not assigned to it.
  */
 
 $archive_url  = $args['archive_url']  ?? '/';
 $taxonomies   = $args['taxonomies']   ?? [];
 $current_view = $args['current_view'] ?? '';
+$post_type    = $args['post_type']    ?? '';
 
 $current_sort = isset($_GET['sort']) ? sanitize_text_field($_GET['sort']) : 'newest';
 
@@ -62,6 +64,13 @@ $clear_url = ($current_view !== '') ? add_query_arg('view', $current_view, $arch
     $rendered_sections = 0;
     foreach ($taxonomies as $tax) :
       $terms = get_terms(['taxonomy' => $tax['taxonomy'], 'hide_empty' => true]);
+      if (!empty($terms) && !is_wp_error($terms) && $post_type !== '') {
+        $in_use_ids = gca_get_terms_in_use($tax['taxonomy'], $post_type);
+        $terms      = array_values(array_filter(
+          $terms,
+          fn($term) => in_array($term->term_id, $in_use_ids, true)
+        ));
+      }
       if (empty($terms) || is_wp_error($terms)) {
         continue;
       }

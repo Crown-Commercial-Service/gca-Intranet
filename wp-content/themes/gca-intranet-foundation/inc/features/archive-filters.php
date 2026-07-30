@@ -269,6 +269,62 @@ function gca_get_archive_filter_taxonomies(string $post_type): array {
 }
 
 /**
+ * Return the term IDs of a taxonomy that are actually assigned to at least
+ * one published post of the given post type.
+ *
+ * Categories/labels are shared across news, blog, event, and work_update, so
+ * WP's own `hide_empty` term count (which is global across post types) isn't
+ * enough to hide terms unused by a specific archive. Result is cached in a
+ * transient since it requires a cross-table join.
+ */
+function gca_get_terms_in_use(string $taxonomy, string $post_type): array {
+    $cache_key = "gca_terms_in_use_{$post_type}_{$taxonomy}";
+    $cached    = get_transient($cache_key);
+    if ($cached !== false) {
+        return $cached;
+    }
+
+    global $wpdb;
+    $term_ids = $wpdb->get_col($wpdb->prepare("
+        SELECT DISTINCT tt.term_id
+        FROM {$wpdb->term_relationships} tr
+        INNER JOIN {$wpdb->term_taxonomy} tt ON tr.term_taxonomy_id = tt.term_taxonomy_id
+        INNER JOIN {$wpdb->posts} p ON tr.object_id = p.ID
+        WHERE tt.taxonomy = %s AND p.post_type = %s AND p.post_status = 'publish'
+    ", $taxonomy, $post_type));
+
+    $term_ids = array_map('intval', $term_ids);
+    set_transient($cache_key, $term_ids, HOUR_IN_SECONDS);
+
+    return $term_ids;
+}
+
+/**
+ * Invalidate the "terms in use" cache whenever a post's terms change.
+ */
+add_action('set_object_terms', function ($object_id, $terms, $tt_ids, $taxonomy): void {
+    $post_type = get_post_type($object_id);
+    if ($post_type) {
+        delete_transient("gca_terms_in_use_{$post_type}_{$taxonomy}");
+    }
+}, 10, 4);
+
+/**
+ * Invalidate the "terms in use" cache whenever a post is deleted or its
+ * status changes (e.g. published, trashed, unpublished), since that changes
+ * which terms have at least one published post.
+ */
+add_action('transition_post_status', function (string $new_status, string $old_status, WP_Post $post): void {
+    if ($new_status === $old_status) {
+        return;
+    }
+
+    foreach (gca_get_archive_filter_taxonomies($post->post_type) as $tax) {
+        delete_transient("gca_terms_in_use_{$post->post_type}_{$tax['taxonomy']}");
+    }
+}, 10, 3);
+
+/**
  * Apply sort order and taxonomy filters on archive queries.
  *
  * Runs at priority 20 so it fires after the existing event hook in functions.php
@@ -290,6 +346,28 @@ add_action('pre_get_posts', function (WP_Query $query): void {
             // Sort by post published date
             $query->set('orderby', 'date');
             $query->set('order', $sort === 'oldest' ? 'ASC' : 'DESC');
+
+            // Pinned news item always appears first on page 1 (see the
+            // `posts_results` filter below), regardless of sort direction.
+            // Exclude it from later pages here so it isn't shown twice.
+            if ($query->is_post_type_archive('news') && (int) $query->get('paged') > 1) {
+                $pinned_ids = get_posts([
+                    'post_type'      => 'news',
+                    'post_status'    => 'publish',
+                    'posts_per_page' => 1,
+                    'meta_key'       => '_gca_news_pinned',
+                    'meta_value'     => 1,
+                    'fields'         => 'ids',
+                    'no_found_rows'  => true,
+                ]);
+
+                if (!empty($pinned_ids)) {
+                    $query->set('post__not_in', array_merge(
+                        (array) $query->get('post__not_in'),
+                        $pinned_ids
+                    ));
+                }
+            }
         } else {
             // Events: sort by start_date meta.
             // Upcoming — ASC = soonest first (default); Past — DESC = most recently occurred first (default).
@@ -337,6 +415,57 @@ add_action('pre_get_posts', function (WP_Query $query): void {
         }
     }
 }, 20);
+
+/**
+ * Float the pinned news item to the front of page 1 of the /news archive,
+ * regardless of sort order. Implemented as an array reorder (rather than a
+ * meta_query-driven ORDER BY) because WP_Query's EXISTS/NOT EXISTS meta_query
+ * clauses don't scope their JOIN by meta_key, which makes ordering by them
+ * unreliable once combined with an OR relation.
+ */
+add_filter('posts_results', function (array $posts, WP_Query $query): array {
+    if (!gca_flag_enabled('archive-filters')) {
+        return $posts;
+    }
+
+    if (is_admin() || !$query->is_main_query() || !$query->is_post_type_archive('news')) {
+        return $posts;
+    }
+
+    if ((int) $query->get('paged') > 1) {
+        return $posts;
+    }
+
+    $pinned_ids = get_posts([
+        'post_type'      => 'news',
+        'post_status'    => 'publish',
+        'posts_per_page' => 1,
+        'meta_key'       => '_gca_news_pinned',
+        'meta_value'     => 1,
+        'fields'         => 'ids',
+        'no_found_rows'  => true,
+        'tax_query'      => $query->get('tax_query') ?: [],
+    ]);
+
+    if (empty($pinned_ids)) {
+        return $posts;
+    }
+
+    $pinned_post = get_post($pinned_ids[0]);
+    if (!$pinned_post) {
+        return $posts;
+    }
+
+    $posts = array_values(array_filter($posts, static fn ($post) => $post->ID !== $pinned_post->ID));
+    array_unshift($posts, $pinned_post);
+
+    $per_page = (int) $query->get('posts_per_page');
+    if ($per_page > 0 && count($posts) > $per_page) {
+        array_pop($posts);
+    }
+
+    return $posts;
+}, 10, 2);
 
 /**
  * Enqueue filter interaction JS on archive pages where the flag is active.

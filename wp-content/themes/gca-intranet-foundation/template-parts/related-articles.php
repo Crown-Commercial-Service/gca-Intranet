@@ -6,6 +6,7 @@ if ( ! get_field( 'related_articles_enabled' ) ) {
 $heading          = get_field( 'related_articles_heading' ) ?: 'Related articles';
 $manual_posts     = get_field( 'related_articles_posts' ) ?: [];
 $taxonomy_value   = get_field( 'related_articles_taxonomy' );
+$type_value       = get_field( 'related_articles_type' );
 $current_id       = get_the_ID();
 $post_type        = get_post_type( $current_id );
 
@@ -29,6 +30,16 @@ if ( ! empty( $manual_posts ) ) {
             'field'    => 'term_id',
             'terms'    => (int) $term_id,
         ] ],
+    ] );
+} elseif ( $type_value && $type_value !== 'all' ) {
+    $posts = get_posts( [
+        'post_type'      => $type_value,
+        'post_status'    => 'publish',
+        'posts_per_page' => 3,
+        'post__not_in'   => [ $current_id ],
+        'orderby'        => 'date',
+        'order'          => 'DESC',
+        'no_found_rows'  => true,
     ] );
 } else {
     $posts = get_posts( [

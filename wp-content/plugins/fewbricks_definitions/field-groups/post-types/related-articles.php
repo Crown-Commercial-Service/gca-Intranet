@@ -28,6 +28,13 @@ $fg->add_field( new acf_fields\text( 'Heading', 'related_articles_heading', '202
     'maxlength'     => 50,
 ] ) );
 
+$fg->add_field( new acf_fields\select( 'Type', 'related_articles_type', '202605200006a', [
+    'instructions'  => 'Select the type of content to show as related articles. If a taxonomy is selected or specific articles are chosen below, those take priority over this setting.',
+    'default_value' => 'all',
+    'allow_null'    => 0,
+    'choices'       => [ 'all' => 'All' ],
+] ) );
+
 $fg->add_field( new acf_fields\select( 'Filter by taxonomy', 'related_articles_taxonomy', '202605200003a', [
     'instructions' => 'Select a taxonomy to show related articles. If left empty, the 3 most recent articles will show.',
     'allow_null'   => 1,
@@ -65,6 +72,23 @@ add_filter( 'acf/fields/relationship/query/name=related_articles_posts', functio
 
     return $args;
 }, 10, 3 );
+
+add_filter( 'acf/load_field/name=related_articles_type', function ( $field ) {
+    $field['choices'] = [ 'all' => 'All' ];
+
+    $post_types = [ 'news', 'blog', 'work_update', 'event' ];
+
+    foreach ( $post_types as $post_type_slug ) {
+        $post_type = get_post_type_object( $post_type_slug );
+        if ( ! $post_type ) {
+            continue;
+        }
+
+        $field['choices'][ $post_type_slug ] = $post_type->labels->name;
+    }
+
+    return $field;
+} );
 
 add_filter( 'acf/load_field/name=related_articles_taxonomy', function ( $field ) {
     $field['choices'] = [];
