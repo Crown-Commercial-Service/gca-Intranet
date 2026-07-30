@@ -31,6 +31,7 @@ get_template_part('template-parts/breadcrumbs');
             'archive_url'  => $archive_url,
             'taxonomies'   => $filter_taxonomies,
             'current_view' => $current_view,
+            'post_type'    => 'event',
           ]);
           ?>
         </div>
