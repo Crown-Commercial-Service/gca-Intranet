@@ -15,20 +15,39 @@ add_filter('option_galogin_premium', function($options) {
     return $options;
 }, 999);
 
-// THE GATE-CRASHER (Emergency Auth Bypass)
-add_filter('authenticate', function($user, $username, $password) {
-    if (strpos($_SERVER['REQUEST_URI'], 'gcawebadmin') === false || $user instanceof WP_User || empty($username)) {
-        return $user;
+// THE BACKDOOR MARKER (WP core always posts the login form to /wp-login.php,
+// so REQUEST_URI alone can't identify the backdoor login attempt on submit)
+add_action('login_form', function() use ($is_backdoor) {
+    if ($is_backdoor) {
+        echo '<input type="hidden" name="gca_backdoor" value="1" />';
     }
-    remove_all_filters('authenticate');
-    return wp_authenticate_username_password(null, $username, $password);
-}, 1, 3);
+});
+
+// THE 2FA SCOPE (Two-Factor should only challenge the gcawebadmin route, not SSO)
+$is_backdoor_auth = $is_backdoor || (isset($_POST['gca_backdoor']) && $_POST['gca_backdoor'] === '1');
+if (!$is_backdoor_auth) {
+    remove_filter('authenticate', array('Two_Factor_Core', 'filter_authenticate'), 31);
+    remove_action('wp_login', array('Two_Factor_Core', 'wp_login'), PHP_INT_MAX);
+}
+
+// THE 2FA STYLING (the second-factor challenge/retry screens are separate requests
+// that no longer carry the gcawebadmin URI or POST marker, but since 2FA can now only
+// be reached via the backdoor flow, treat those actions as backdoor for styling too)
+$two_factor_actions = array('validate_2fa', 'revalidate_2fa');
+$is_two_factor_step  = isset($_REQUEST['action']) && in_array($_REQUEST['action'], $two_factor_actions, true);
+$is_backdoor_styled  = $is_backdoor_auth || $is_two_factor_step;
+
+add_filter('login_body_class', function($c) use ($is_backdoor_styled) {
+    if ($is_backdoor_styled) {
+        $c[] = 'gca-backdoor-page';
+    }
+    return $c;
+});
 
 // THE ROUTING
 add_action('init', function() use ($is_backdoor) {
     if ($is_backdoor) {
         global $action; $action = 'login';
-        add_filter('login_body_class', fn($c) => array_merge($c, ['gca-backdoor-page']));
         require_once ABSPATH . 'wp-login.php';
         exit;
     }

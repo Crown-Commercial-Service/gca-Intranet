@@ -74,10 +74,27 @@ get_header();
           <div class="govuk-grid-column-one-half govuk-!-padding-left-0" data-testid="latest-news-featured-col">
             <div class="gca-featured-news" data-testid="latest-news-featured-card">
               <?php
-              $latest_post = new WP_Query(['post_type' => 'news', 'posts_per_page' => 1]);
+              $gca_pinned_news_ids = get_posts([
+                'post_type'      => 'news',
+                'post_status'    => 'publish',
+                'posts_per_page' => 1,
+                'meta_key'       => '_gca_news_pinned',
+                'meta_value'     => 1,
+                'fields'         => 'ids',
+                'no_found_rows'  => true,
+              ]);
+
+              $latest_post_args = ['post_type' => 'news', 'posts_per_page' => 1];
+              if (!empty($gca_pinned_news_ids)) {
+                $latest_post_args['post__in'] = $gca_pinned_news_ids;
+                $latest_post_args['orderby']  = 'post__in';
+              }
+              $latest_post = new WP_Query($latest_post_args);
+              $gca_featured_news_id = 0;
               if ($latest_post->have_posts()):
                 while ($latest_post->have_posts()):
                   $latest_post->the_post();
+                  $gca_featured_news_id = get_the_ID();
                   ?>
                   <?php if (has_post_thumbnail()): ?>
                     <img
@@ -88,6 +105,11 @@ get_header();
                   <?php endif; ?>
 
                   <div data-testid="latest-news-featured-content">
+                    <?php if (get_post_meta(get_the_ID(), '_gca_news_pinned', true)): ?>
+                      <span class="govuk-body-s tag_label pinned" data-testid="latest-news-featured-pinned-pill">
+                        <?php esc_html_e('Pinned article', 'gca-intranet'); ?>
+                      </span>
+                    <?php endif; ?>
                     <h2 class="govuk-heading-m" data-testid="latest-news-featured-title">
                       <a class="govuk-link govuk-!-text-break-word" data-testid="latest-news-featured-link" href="<?php the_permalink(); ?>">
                         <?php echo esc_html(get_the_title()); ?>
@@ -121,7 +143,13 @@ get_header();
 
           <div class="govuk-grid-column-one-half gca-flex-box-news" data-testid="latest-news-secondary-col">
             <?php
-            $secondary_posts = new WP_Query(['post_type' => 'news', 'posts_per_page' => 3, 'offset' => 1]);
+            $secondary_posts_args = ['post_type' => 'news', 'posts_per_page' => 3];
+            if ($gca_featured_news_id) {
+              $secondary_posts_args['post__not_in'] = [$gca_featured_news_id];
+            } else {
+              $secondary_posts_args['offset'] = 1;
+            }
+            $secondary_posts = new WP_Query($secondary_posts_args);
             if ($secondary_posts->have_posts()):
               while ($secondary_posts->have_posts()):
                 $secondary_posts->the_post();

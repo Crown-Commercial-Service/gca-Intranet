@@ -26,6 +26,7 @@ get_template_part('template-parts/breadcrumbs');
           get_template_part('template-parts/archive-filters', null, [
             'archive_url' => get_post_type_archive_link('news'),
             'taxonomies'  => $filter_taxonomies,
+            'post_type'   => 'news',
           ]);
           ?>
         </div>
@@ -61,6 +62,12 @@ get_template_part('template-parts/breadcrumbs');
                   <span class="govuk-body-s govuk-!-margin-right-2" style="margin:0">
                     <?php echo esc_html(get_the_date('j F Y')); ?>
                   </span>
+
+                  <?php if (get_post_meta(get_the_ID(), '_gca_news_pinned', true)) : ?>
+                      <span class="govuk-body-s tag_label pinned" style="margin:0" data-testid="news-post-pinned-pill">
+                          <?php esc_html_e('Pinned article', 'gca-intranet'); ?>
+                      </span>
+                  <?php endif; ?>
 
                   <?php
                   $categories = get_the_category();
