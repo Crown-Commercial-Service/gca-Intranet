@@ -28,7 +28,7 @@ if (!gca_flag_enabled('community-hub')) :
 <section class="gca-hero-banner" aria-label="Page banner">
     <div class="govuk-width-container">
         <div class="gca-hero-banner__inner">
-            <h1 class="govuk-heading-xl gca-hero-banner__title">Community Hub</h1>
+            <h1 class="govuk-heading-xl gca-hero-banner__title"><?php echo esc_html(get_the_title() ?: 'Community Hub'); ?></h1>
         </div>
     </div>
 </section>
@@ -53,7 +53,7 @@ endif;
 <section class="gca-hero-banner" aria-label="Page banner">
     <div class="govuk-width-container">
         <div class="gca-hero-banner__inner">
-            <h1 class="govuk-heading-xl gca-hero-banner__title">Community Hub</h1>
+            <h1 class="govuk-heading-xl gca-hero-banner__title"><?php echo esc_html(get_the_title() ?: 'Community Hub'); ?></h1>
         </div>
     </div>
 </section>
