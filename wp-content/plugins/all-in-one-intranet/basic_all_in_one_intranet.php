@@ -5,16 +5,18 @@
  * Description:       Instantly turn WordPress into a private corporate intranet.
  * Requires at least: 5.5
  * Requires PHP:      7.0
- * Version:           1.9.1
+ * Version:           1.10.0
  * Author:            WP-Glogin
  * Author URI:        https://wp-glogin.com/
+ * License:           GPL-3.0-or-later
+ * License URI:       https://www.gnu.org/licenses/gpl-3.0.html
  * Network:           true
  * Text Domain:       all-in-one-intranet
  * Domain Path:       /assets/lang
  *
  *  All-In-One Intranet is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
- *  the Free Software Foundation, either version 2 of the License, or
+ *  the Free Software Foundation, either version 3 of the License, or
  *  any later version.
  *
  *  All-In-One Intranet is distributed in the hope that it will be useful,
@@ -36,7 +38,7 @@ if ( ! class_exists( 'core_all_in_one_intranet' ) ) {
 
 class aioi_basic_all_in_one_intranet extends core_all_in_one_intranet {
 
-	public $PLUGIN_VERSION = '1.9.1';
+	public $PLUGIN_VERSION = '1.10.0';
 
 	// Singleton.
 	private static $instance = null;
@@ -90,11 +92,10 @@ function BasicAllInOneIntranet() {
 // Initialize at least once.
 BasicAllInOneIntranet();
 
-// Plant the must-use shim on activation and tear it down on deactivation. The
-// shim closes the /wp-activate.php content-leak surface on installs where the
-// main plugin can't help — wp-activate.php defines WP_INSTALLING before
-// loading WordPress, and wp_get_active_and_valid_plugins() then skips loading
-// regular plugins entirely. See core/mu-shim/core_aioi_mu_shim.php and
-// core/mu-shim/aioi-installing-gate.php for the source of truth.
+// Plant the must-use shim on activation and tear it down on deactivation. It
+// closes the wp-activate.php content-leak surface that the main plugin cannot
+// reach: that script defines WP_INSTALLING before loading WordPress, so
+// wp_get_active_and_valid_plugins() skips regular plugins entirely. The
+// source of truth for both files is core/mu-shim/.
 register_activation_hook( __FILE__, [ 'core_aioi_mu_shim', 'ensure' ] );
 register_deactivation_hook( __FILE__, [ 'core_aioi_mu_shim', 'remove' ] );

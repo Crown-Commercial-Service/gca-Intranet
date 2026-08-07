@@ -1,10 +1,41 @@
 ## Changelog
 
-**Admin and Site Enhancements (ASE) v1.0.0** was released on October 17, 2022. Since then, there have been **89 _major_ releases** (e.g. 1.1.0 ) and **203 _minor_ releases** (e.g. 4.9.1), for a **total of 292 releases**.
+**Admin and Site Enhancements (ASE) v1.0.0** was released on October 17, 2022. Since then, there have been **89 _major_ releases** (e.g. 1.1.0 ) and **204 _minor_ releases** (e.g. 4.9.1), for a **total of 293 releases**.
 
 Each **_major release_** usually corresponds with the addition of one new module/feature. Each module/feature usually is the equivalent of one (or more) single-purpose plugin. Each **_minor release_** usually contain one or more bugfix or improvements to existing modules/features.
 
 [**Upgrade to ASE Pro**](https://www.wpase.com/chnlg-to-web). Lifetime Deal (LTD) available.
+
+### 8.9.2 (2026.08.03) - ASE Free and Pro
+
+* **[FIXED in Free and Pro] Optimizations >> Heartbeat Control**: fixed interval settings still showing after selecting "Disable" and saving changes. Props to Jayron C. for reporting the issue in detail.
+
+* **[FIXED in Free and Pro] Admin Interface >> Clean Up Admin Bar**: fixed a conflict between ASE's and Divi Assistant's "remove howdy" feature when both are enabled, which causes admin bar layout issues. Props to Carmine M. for reporting the issue in detail, with a screenshot, and facilitating the troubleshooting process.
+
+* **[IMPROVED and FIXED in Pro] Utilities >> File Manager**: 
+  * fixed an error when opening wp-config.php in a certain scenario. Props to Jayron C. for reporting the issue and facilitating the troubleshooting process.
+  * added support for opening/editing SVG files in text mode. Props to Lucian P. for prompting this improvement.
+
+* **[IMPROVED and FIXED in Pro] Utilities >> Site Backup and Migration**:
+  * Added mechanisms to improve the reliability of restore and migration operations.
+  * Fixed database collation error when migrating from a site with MySQL 8.0 to a site with MySQL < 8.0 or MariaDB.
+  * Fixed an issue where /upgrade/ folder inside plugins, e.g. Elementor and Elementor Pro, were not being included in the backup archive because it was mistakenly regarded as the /wp-content/upgrade/ which WP core uses for upgrade operations. This can result in fatal error after restore or migration operation completes and the site is loaded for the first time. Props to Benjamin N. for reporting the fatal error in great detail and facilitating the troubleshooting process.
+
+* **[IMPROVED and FIXED in Pro] Content Management >> Custom Content Types**:
+  * Custom Field Group: Added a new field type, Map, which supports OpenStreetMap and Google Maps. The Map field is integrated with Elementor, Bricks, Breakdance and Oxygen (classic) via text widget/element, as URL dynamic data source, via native map widget/element (Bricks), and via an "ASE Map" widget/element (Elementor, Breakdance, Oxygen Classic). The map field also supports being queried inside a loop, e.g. posts and repeaters, across the four page buidlers. Props to Stijn V. for prompting this improvement.
+  * Custom Field Group: Fields can now be included in Quick Edit and Bulk Edit. All field types except repeater and layout fields are supported. Props to Rodlens H. for prompting this improvement.
+  * Custom Field Group: Added "ASE Repeater" element in Oxygen Classic, it' snow possible to work with a repeater field's sub-fields values directly in Oxygen Classic.
+  * Custom Field Groups: Fixed an issue that causes newly added fields that are added after a nested repeater field and without repositioning before clicking "Update", are getting their order scrambled upon successful save.
+  * Custom Field Group: the fullscreen button in WYSIWYG field is now hidden when in the block editor as it's very challenging to get fullscreen view right within the iframe environment of the block editor.
+  
+* **[IMPROVED and Fixed in Pro] Admin Interface >> Admin Columns Manager**: added support for rendering ASE map field value for both OpenStreetMap and Google Maps in an admin column.
+
+* **[FIXED in Pro] Admin Interface >> Admin Menu Organizer**: fixed an issue where orphaned hide settings from Elementor v3 is still being applied in Elementor v4, causing certain admin pages, e.g. Fonts, Code, to be blocked from access. Props to Benjamin N. for reporting the issue and facilitating the troubleshooting process.
+
+* **[TRANSLATION in Free and Pro]** ASE is now being translated into [38 languages](https://translate.wpase.com/):
+  * **Added new/improved translation** for:
+    * ASE Free: Updated Portuguese (Brazil), Norwegian, Hebrew.
+    * ASE Pro: Updated Chinese (China), Norwegian.
 
 ### 8.9.1 (2026.07.27) - ASE Free and Pro
 
@@ -20,7 +51,7 @@ Each **_major release_** usually corresponds with the addition of one new module
 
 * **[IMPROVED and FIXED in Pro] Content Management >> Custom Content Types**: 
   * Custom Post Types and Custom Taxonomies: Slash (/) is now allowed for use in custom rewrite slugs for custom post types and custom taxonomies, so you can get something like https://www.example.com/music/genre/pop for the 'Pop' term archive when you use 'music/genre' as the custom rewrite slug. Props to Stijn V. for prompting this improvement.
-  * Custom Field Groups: fixed unauthenticated RCE that can occur in a scenario where a frontend post creation form contains a repeater field.
+  * Custom Field Groups: fixed unauthenticated RCE that can occur in a scenario where a frontend post creation form contains a repeater field. Props to Nox Axter for the responsible disclosure via Wordfence.
   * Custom Field Groups: make the editor buttons that appears in the TinyMCE editor uniform across post, term and CFG screens.
   * Custom Field Groups: full-screen button in TinyMCE editor in the CFG edit screen, and in WYSIWYG field now will properly expand the editor without it being partially hidden under the admin bar and admin menu.
   * Custom Field Groups: added new options for WYSIWYG field to (i) optionally hide the media button ("Add Media" button), (ii) choose to show visual and code tabs, or just one of them, (iii) customize which toolbar buttons to show in the editor. Props to Stijn V. for prompting this improvement.

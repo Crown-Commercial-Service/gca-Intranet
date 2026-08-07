@@ -865,6 +865,8 @@
       // Enable Heartbeat Control => Check if "Modify interval" is chosen/clicked and show/hide the corresponding select field
       if ( $('input[name="admin_site_enhancements[heartbeat_control_for_admin_pages]"]:checked').val() == 'modify' ) {
          $('.heartbeat-interval-for-admin-pages .asenha-subfield-select-inner').show();
+      } else {
+         $('.heartbeat-interval-for-admin-pages .asenha-subfield-select-inner').hide();
       }
 
       // Two-Factor Authentication (2FA) => Show "Email code validity" only when Email codes is enabled.
@@ -973,6 +975,8 @@
 
       if ( $('input[name="admin_site_enhancements[heartbeat_control_for_post_edit]"]:checked').val() == 'modify' ) {
          $('.heartbeat-interval-for-post-edit .asenha-subfield-select-inner').show();
+      } else {
+         $('.heartbeat-interval-for-post-edit .asenha-subfield-select-inner').hide();
       }
 
       $('input[name="admin_site_enhancements[heartbeat_control_for_post_edit]"]').click(function() {
@@ -986,6 +990,8 @@
 
       if ( $('input[name="admin_site_enhancements[heartbeat_control_for_frontend]"]:checked').val() == 'modify' ) {
          $('.heartbeat-interval-for-frontend .asenha-subfield-select-inner').show();
+      } else {
+         $('.heartbeat-interval-for-frontend .asenha-subfield-select-inner').hide();
       }
 
       $('input[name="admin_site_enhancements[heartbeat_control_for_frontend]"]').click(function() {

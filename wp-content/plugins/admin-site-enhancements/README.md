@@ -5,7 +5,7 @@ Donate link: https://bowo.io/asenha-sp-rdm
 Tags: enhancements, tweaks, optimizations, tools  
 Requires at least: 4.6  
 Tested up to: 7.0.2  
-Stable tag: 8.9.1  
+Stable tag: 8.9.2  
 Requires PHP: 5.6  
 License: GPLv2 or later  
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
@@ -206,47 +206,42 @@ ASE does not officially support multisite. Please use at your own risk. That sai
 
 ## Changelog
 
-**Admin and Site Enhancements (ASE) v1.0.0** was released on October 17, 2022. Since then, there have been **89 _major_ releases** (e.g. 1.1.0 ) and **203 _minor_ releases** (e.g. 4.9.1), for a **total of 292 releases**.
+**Admin and Site Enhancements (ASE) v1.0.0** was released on October 17, 2022. Since then, there have been **89 _major_ releases** (e.g. 1.1.0 ) and **204 _minor_ releases** (e.g. 4.9.1), for a **total of 293 releases**.
 
 Each **_major release_** usually corresponds with the addition of one new module/feature. Each module/feature usually is the equivalent of one (or more) single-purpose plugin. Each **_minor release_** usually contain one or more bugfix or improvements to existing modules/features.
 
 [**Upgrade to ASE Pro**](https://www.wpase.com/chnlg-to-web). Lifetime Deal (LTD) available.
 
-### 8.9.1 (2026.07.27) - ASE Free and Pro
+### 8.9.2 (2026.08.03) - ASE Free and Pro
 
-* **[IMPROVED in Free and Pro] Admin Interface >> Admin Menu Organizer**:
-  * ASE Free: Properly hide "Yoast SEO" menu item until toggled for non-administrator roles. Props to Stijn V. for prompting this improvement.
-  * ASE Pro: Properly, always hide "Yoast SEO" menu item for the selected/excluded non-administrator roles. Props to Stijn V. for prompting this improvement.
+* **[FIXED in Free and Pro] Optimizations >> Heartbeat Control**: fixed interval settings still showing after selecting "Disable" and saving changes. Props to Jayron C. for reporting the issue in detail.
+
+* **[FIXED in Free and Pro] Admin Interface >> Clean Up Admin Bar**: fixed a conflict between ASE's and Divi Assistant's "remove howdy" feature when both are enabled, which causes admin bar layout issues. Props to Carmine M. for reporting the issue in detail, with a screenshot, and facilitating the troubleshooting process.
+
+* **[IMPROVED and FIXED in Pro] Utilities >> File Manager**: 
+  * fixed an error when opening wp-config.php in a certain scenario. Props to Jayron C. for reporting the issue and facilitating the troubleshooting process.
+  * added support for opening/editing SVG files in text mode. Props to Lucian P. for prompting this improvement.
+
+* **[IMPROVED and FIXED in Pro] Utilities >> Site Backup and Migration**:
+  * Added mechanisms to improve the reliability of restore and migration operations.
+  * Fixed database collation error when migrating from a site with MySQL 8.0 to a site with MySQL < 8.0 or MariaDB.
+  * Fixed an issue where /upgrade/ folder inside plugins, e.g. Elementor and Elementor Pro, were not being included in the backup archive because it was mistakenly regarded as the /wp-content/upgrade/ which WP core uses for upgrade operations. This can result in fatal error after restore or migration operation completes and the site is loaded for the first time. Props to Benjamin N. for reporting the fatal error in great detail and facilitating the troubleshooting process.
+
+* **[IMPROVED and FIXED in Pro] Content Management >> Custom Content Types**:
+  * Custom Field Group: Added a new field type, Map, which supports OpenStreetMap and Google Maps. The Map field is integrated with Elementor, Bricks, Breakdance and Oxygen (classic) via text widget/element, as URL dynamic data source, via native map widget/element (Bricks), and via an "ASE Map" widget/element (Elementor, Breakdance, Oxygen Classic). The map field also supports being queried inside a loop, e.g. posts and repeaters, across the four page buidlers. Props to Stijn V. for prompting this improvement.
+  * Custom Field Group: Fields can now be included in Quick Edit and Bulk Edit. All field types except repeater and layout fields are supported. Props to Rodlens H. for prompting this improvement.
+  * Custom Field Group: Added "ASE Repeater" element in Oxygen Classic, it' snow possible to work with a repeater field's sub-fields values directly in Oxygen Classic.
+  * Custom Field Groups: Fixed an issue that causes newly added fields that are added after a nested repeater field and without repositioning before clicking "Update", are getting their order scrambled upon successful save.
+  * Custom Field Group: the fullscreen button in WYSIWYG field is now hidden when in the block editor as it's very challenging to get fullscreen view right within the iframe environment of the block editor.
   
-* **[IMPROVED in Free and Pro] Log In/Out & Register >> Change Login URL**: Improve compatibility with login processes done via AJAX, e.g. StoreEngine login page. Props to Kuku C. for prompting this improvement.
+* **[IMPROVED and Fixed in Pro] Admin Interface >> Admin Columns Manager**: added support for rendering ASE map field value for both OpenStreetMap and Google Maps in an admin column.
 
-* **[IMPROVED in Free and Pro] Utilities >> Multiple User Roles**: added mechanism to prevent non-administrator users whose been granted `promote_users` (WP core) capability (for whatever reason) from promoting themselves to be an administrator. Props to Artus KG for reporting the issue.
-
-* **[IMPROVED in Pro] Utilities >> Email Delivery**: added handling for multiple addresses in "Reply-to email" for correct processing and fatal error prevention. Props to Brandon P. for reporting the issue in detail and proposing the code fix.
-
-* **[IMPROVED and FIXED in Pro] Content Management >> Custom Content Types**: 
-  * Custom Post Types and Custom Taxonomies: Slash (/) is now allowed for use in custom rewrite slugs for custom post types and custom taxonomies, so you can get something like https://www.example.com/music/genre/pop for the 'Pop' term archive when you use 'music/genre' as the custom rewrite slug. Props to Stijn V. for prompting this improvement.
-  * Custom Field Groups: fixed unauthenticated RCE that can occur in a scenario where a frontend post creation form contains a repeater field.
-  * Custom Field Groups: make the editor buttons that appears in the TinyMCE editor uniform across post, term and CFG screens.
-  * Custom Field Groups: full-screen button in TinyMCE editor in the CFG edit screen, and in WYSIWYG field now will properly expand the editor without it being partially hidden under the admin bar and admin menu.
-  * Custom Field Groups: added new options for WYSIWYG field to (i) optionally hide the media button ("Add Media" button), (ii) choose to show visual and code tabs, or just one of them, (iii) customize which toolbar buttons to show in the editor. Props to Stijn V. for prompting this improvement.
-  * Custom Field Groups: fixed an issue where 3-levels nested repeaters don't properly output the 3rd level repeater sub-fields in Bricks nested query loops. Props to Stijn V. for reporting the issue in detail and facilitating the troubleshooting process.
-  * Custom Field Groups: fixed an issue where select field's output format is not being honored in Bricks builder. Props to Stijn V. for reporting the issue in detail.
-
-* **[IMPROVED and FIXED in Pro] Admin Interface >> Admin Columns Manager**:
-  * ASE date time field can now have custom formatting and be used for the default sort.
-  * Fix an issue where date time field value in ASE, ACF and Meta Box is being converted with the WordPress timezone, instead of being treated as already in the WordPress timezone. Props to Gergo F. for reporting the issue in great detail and facilitating the troubleshooting process.
-
-* **[IMPROVED in Pro] Content Management >> Terms Order**: added WPML compatibility to sync term order between languages each time a term is reordered in any language. Props to Claudio P. for prompting this improvement.
-
-* **[IMPROVED in Pro] Disable Components >> Disable Gutenberg**: added an option to always disable Gutenberg on certain posts and another option to always enable Gutenberg on certain posts. Props to Martin Ž. for prompting this improvement.
-
-* **[FIXED in Pro] Optimizations >> Image Upload Control**: fixed fatal error when PHP is not compiled with the GD library and only the Imagick library is present. Props to Vikram S. for reporting the issue in detail.
+* **[FIXED in Pro] Admin Interface >> Admin Menu Organizer**: fixed an issue where orphaned hide settings from Elementor v3 is still being applied in Elementor v4, causing certain admin pages, e.g. Fonts, Code, to be blocked from access. Props to Benjamin N. for reporting the issue and facilitating the troubleshooting process.
 
 * **[TRANSLATION in Free and Pro]** ASE is now being translated into [38 languages](https://translate.wpase.com/):
   * **Added new/improved translation** for:
-    * ASE Free: Added Hebrew. Updated Portuguese (Brazil), French, Polish, Dutch (Netherlands).
-    * ASE Pro: Polish, Portuguese (Brazil), Indonesian
+    * ASE Free: Updated Portuguese (Brazil), Norwegian, Hebrew.
+    * ASE Pro: Updated Chinese (China), Norwegian.
   * **More strings have been internationalized**. @Translators, please visit the respective project pages for the Free and Pro versions to translate the new strings, if you havent' done so already.
   * **Interested to help translate or improve the translation?** Please go to [https://translate.wpase.com](https://translate.wpase.com) for more info.
   * **[Chinese (China)](https://translate.wordpress.org/locale/zh-cn/default/wp-plugins/admin-site-enhancements/)**: ASE Free and Pro (completed). Props to [@bricksvip](https://profiles.wordpress.org/bricksvip/) et al. Current status: [39 strings untranslated](https://translate.wordpress.org/projects/wp-plugins/admin-site-enhancements/stable/zh-cn/default/?filters%5Bstatus%5D=untranslated).

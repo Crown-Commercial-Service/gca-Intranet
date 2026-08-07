@@ -57,38 +57,44 @@ class Cleanup_Admin_Bar {
     }
 
     /**
-     * Remove 'Howdy' from admin bar's account item
+     * Remove 'Howdy' (or localized greeting) from admin bar's account item.
      *
-     * @param $wp_admin_bar object The admin bar.
-     * @link https://wordpress.stackexchange.com/a/12652
+     * Runs on wp_before_admin_bar_render (priority 100) so the final title is set
+     * after third-party Howdy removers that comma-split the title and can shred
+     * avatar srcset HTML (e.g. Divi Assistant's pac_da_custom_admin_bar_user_name).
+     *
+     * Does not remove_action wp_admin_bar_my_account_item or rebuild the account tree;
+     * only updates the existing my-account node title/meta via add_node merge.
+     *
      * @since 7.3.1
+     * @since 8.9.x Avoid remove_action rebuild; set core-compatible title after third parties.
      */
-    public function remove_howdy( $wp_admin_bar ) {
+    public function remove_howdy() {
         $options = get_option( ASENHA_SLUG_U, array() );
-        // Hide 'Howdy' text
-        if ( array_key_exists( 'hide_ab_howdy', $options ) && $options['hide_ab_howdy'] ) {
-            // Remove the whole my account sectino and later rebuild it
-            remove_action( 'admin_bar_menu', 'wp_admin_bar_my_account_item', 7 );
-            // Up to WP v6.5.5
-            remove_action( 'admin_bar_menu', 'wp_admin_bar_my_account_item', 9991 );
-            // Since WP v6.6
-            $current_user = wp_get_current_user();
-            $user_id = get_current_user_id();
-            $profile_url = get_edit_profile_url( $user_id );
-            $avatar = get_avatar( $user_id, 26 );
-            // size 26x26 pixels
-            $display_name = $current_user->display_name;
-            $class = ( $avatar ? 'with-avatar' : 'no-avatar' );
-            $wp_admin_bar->add_menu( array(
-                'id'     => 'my-account',
-                'parent' => 'top-secondary',
-                'title'  => $display_name . $avatar,
-                'href'   => $profile_url,
-                'meta'   => array(
-                    'class' => $class,
-                ),
-            ) );
+        if ( !array_key_exists( 'hide_ab_howdy', $options ) || !$options['hide_ab_howdy'] ) {
+            return;
         }
+        global $wp_admin_bar;
+        if ( !$wp_admin_bar instanceof \WP_Admin_Bar ) {
+            return;
+        }
+        $node = $wp_admin_bar->get_node( 'my-account' );
+        if ( !$node ) {
+            return;
+        }
+        $current_user = wp_get_current_user();
+        $user_id = get_current_user_id();
+        $display_name = $current_user->display_name;
+        $avatar = get_avatar( $user_id, 26 );
+        // Core-compatible markup without the greeting; keeps display-name span + avatar intact.
+        $title = '<span class="display-name">' . $display_name . '</span>' . $avatar;
+        $wp_admin_bar->add_node( array(
+            'id'    => 'my-account',
+            'title' => $title,
+            'meta'  => array(
+                'menu_title' => $display_name,
+            ),
+        ) );
     }
 
     /**

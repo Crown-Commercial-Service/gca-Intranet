@@ -419,6 +419,34 @@ class Settings_Fields_Render {
     }
 
     /**
+     * Render encrypted Google Maps API key subfield for Custom Content Types.
+     *
+     * @since 8.9.2
+     *
+     * @param array $args Field registration arguments.
+     * @return void
+     */
+    function render_cct_google_maps_api_key_subfield( $args ) {
+        $option_name = ( isset( $args['option_name'] ) ? $args['option_name'] : ASENHA_SLUG_U );
+        $field_name = $args['field_name'];
+        $placeholder = ( isset( $args['field_placeholder'] ) ? $args['field_placeholder'] : '' );
+        if ( function_exists( '\\asenha_get_option_array' ) ) {
+            $options = \asenha_get_option_array( $option_name, true );
+        } else {
+            $options = get_option( $option_name, array() );
+        }
+        if ( !class_exists( __NAMESPACE__ . '\\CCT_Secrets' ) ) {
+            require_once ASENHA_PATH . 'includes/premium/custom-content/class-cct-secrets.php';
+        }
+        $cct_secrets = new CCT_Secrets();
+        $ui_state = $cct_secrets->get_api_key_ui_state( $options );
+        echo '<div class="asenha-subfield-password-wrapper">';
+        echo '<input type="password" id="' . esc_attr( $field_name ) . '" class="asenha-subfield-password" name="' . esc_attr( $field_name ) . '" placeholder="' . esc_attr( $placeholder ) . '" size="40" autocomplete="off" value="">';
+        echo '<label for="' . esc_attr( $field_name ) . '" class="asenha-subfield-description">' . esc_html( $ui_state['description'] ) . '</label>';
+        echo '</div>';
+    }
+
+    /**
      * Render number field as sub-field of a toggle/switcher checkbox
      *
      * @since 1.4.0

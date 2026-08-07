@@ -2,7 +2,7 @@
 /**
  * Plugin Name: All-In-One Intranet - wp-activate.php gate
  * Description: All-In-One Intranet security companion: blocks a /wp-activate.php content leak when the main plugin can't load. Auto-managed; safe to delete if you removed the plugin manually (e.g. via FTP).
- * Version:     1.9.1
+ * Version:     1.10.0
  * Author:      WP-Glogin
  * License:     GPL-3.0-or-later
  *

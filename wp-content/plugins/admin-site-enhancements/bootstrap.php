@@ -342,7 +342,8 @@ class Admin_Site_Enhancements {
             $cleanup_admin_bar = new ASENHA\Classes\Cleanup_Admin_Bar();
             // Priority 5 to execute earlier than the normal 10. This is for removing default items.
             add_filter( 'admin_bar_menu', [$cleanup_admin_bar, 'modify_admin_bar_menu'], 5 );
-            add_filter( 'admin_bar_menu', [$cleanup_admin_bar, 'remove_howdy'], PHP_INT_MAX - 100 );
+            // Priority 100: after third-party Howdy removers on this hook (e.g. Divi Assistant at 10).
+            add_action( 'wp_before_admin_bar_render', [$cleanup_admin_bar, 'remove_howdy'], 100 );
             if ( array_key_exists( 'hide_help_drawer', $options ) && $options['hide_help_drawer'] ) {
                 add_action( 'admin_head', [$cleanup_admin_bar, 'hide_help_drawer'] );
             }
