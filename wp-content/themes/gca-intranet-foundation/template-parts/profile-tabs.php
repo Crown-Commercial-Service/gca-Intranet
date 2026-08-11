@@ -32,7 +32,7 @@ $show_shoutouts  = function_exists('gca_flag_enabled') && gca_flag_enabled('comm
       id="gca-tab-btn-saves"
       data-tab="saves"
     >
-      My Saves
+      My saves
     </button>
     <?php endif; ?>
 
@@ -70,7 +70,7 @@ $show_shoutouts  = function_exists('gca_flag_enabled') && gca_flag_enabled('comm
       id="gca-tab-btn-posts"
       data-tab="posts"
     >
-      My Posts
+      My posts
     </button>
     <?php endif; ?>
 
@@ -179,7 +179,7 @@ $show_shoutouts  = function_exists('gca_flag_enabled') && gca_flag_enabled('comm
 
             return '<li class="gca-profile-item">' +
                 '<div class="gca-profile-item__body">' +
-                    '<span class="gca-profile-item__label">Saved ' + esc(item.post_type_label) + '</span>' +
+                    '<span class="gca-profile-item__label">Saved ' + esc(item.post_type_label.toLowerCase()) + '</span>' +
                     '<a href="' + esc(item.url) + '" class="gca-profile-item__title">' + esc(item.title) + '</a>' +
                     '<span class="gca-profile-item__meta">' + meta + '</span>' +
                 '</div>' +

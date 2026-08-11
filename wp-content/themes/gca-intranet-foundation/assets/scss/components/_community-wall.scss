@@ -881,7 +881,6 @@ $gca-cw-compose-input-bg: #f5f6fa;
     @include govuk-font($size: 16, $weight: bold);
     color: govuk-colour('dark-grey');
     margin: 0 0 govuk-spacing(1);
-    text-transform: uppercase;
     letter-spacing: 0.04em;
 }
 
@@ -1117,7 +1116,6 @@ $gca-cw-compose-input-bg: #f5f6fa;
     padding: 2px govuk-spacing(2);
     border-radius: 999px;
     display: inline-block;
-    text-transform: uppercase;
     letter-spacing: 0.04em;
 
     &--pending {
@@ -1224,7 +1222,6 @@ $gca-cw-compose-input-bg: #f5f6fa;
 .gca-qa-card__question-label {
     @include govuk-font($size: 14, $weight: bold);
     color: govuk-colour('dark-grey');
-    text-transform: uppercase;
     letter-spacing: 0.04em;
     margin: 0 0 govuk-spacing(1);
 }
