@@ -19,7 +19,7 @@ RUN set -eux; \
     npm run js:minifygovuk-frontend
 
 # STAGE 2: The actual WordPress container
-FROM wordpress:7.0.3-php8.2-apache
+FROM wordpress:7.0.2-php8.2-apache
 
 COPY docker/php.ini /usr/local/etc/php/conf.d/custom-php.ini
 
