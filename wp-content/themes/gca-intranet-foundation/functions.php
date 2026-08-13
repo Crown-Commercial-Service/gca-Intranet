@@ -842,7 +842,7 @@ add_action('wp_enqueue_scripts', function (): void {
             saveBtn.setAttribute('aria-pressed', saved ? 'true' : 'false');
             saveBtn.setAttribute('aria-label', (saved ? 'Unsave' : 'Save') + ' post');
             var label = saveBtn.querySelector('.gca-lc__save-label');
-            if (label) { label.textContent = saved ? 'Saved' : 'Save'; }
+            if (label) { label.textContent = saved ? 'Saved this item' : 'Save this item'; }
             saveBtn.classList.toggle('gca-lc__save-btn--saved', saved);
         }
 

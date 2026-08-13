@@ -8,6 +8,9 @@
 ?>
 
 <?php if (is_singular(['page']) && !is_page_template('template-community-wall.php') && !is_page_template('template-layout-left-nav.php')) : ?>
+  <div class="govuk-width-container">
+    <?php get_template_part('template-parts/page-save-btn'); ?>
+  </div>
   <div class="gca-published-by-wrapper" role="region" aria-label="Page information">
     <div class="govuk-width-container">
       <?php get_template_part('template-parts/published-by-region'); ?>
