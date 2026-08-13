@@ -20,10 +20,6 @@ get_template_part('template-parts/single/_chrome');
         get_template_part('template-parts/content', $post_type); 
       ?>
 
-      <?php if ($post_type === 'page') : ?>
-        <?php get_template_part('template-parts/page-save-btn'); ?>
-      <?php endif; ?>
-
       <div class="gca-content">
           <?php get_template_part('template-parts/template-body-content'); ?>
       </div>

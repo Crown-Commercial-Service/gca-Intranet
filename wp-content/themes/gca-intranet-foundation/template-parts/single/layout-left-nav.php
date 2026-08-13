@@ -14,10 +14,6 @@ $is_page = !empty($GLOBALS['gca_is_page']);
   <?php if (have_posts()) : while (have_posts()) : the_post(); ?>
 
     <main class="gca-single gca-single--left-nav" id="main-content" data-testid="layout-left-nav">
-      <?php if (get_post_type() === 'page') : ?>
-        <?php get_template_part('template-parts/page-save-btn'); ?>
-      <?php endif; ?>
-
       <div class="govuk-grid-row">
 
         <!-- LEFT: Section nav -->
@@ -76,6 +72,7 @@ $is_page = !empty($GLOBALS['gca_is_page']);
           <?php get_template_part('template-parts/template-body-content'); ?>
 
           <?php if (is_singular(['page']) && !is_page_template('template-community-wall.php')) : ?>
+            <?php get_template_part('template-parts/page-save-btn'); ?>
             <div class="gca-published-by-wrapper" role="region" aria-label="Page information">
               <?php get_template_part('template-parts/published-by-region'); ?>
             </div>

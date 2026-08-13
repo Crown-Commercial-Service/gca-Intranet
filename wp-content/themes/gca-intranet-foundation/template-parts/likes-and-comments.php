@@ -74,6 +74,7 @@ if (!is_user_logged_in() || $post_id <= 0) {
                     <path class="gca-lc__save-path" d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
                 </svg>
             </span>
+            <span class="gca-lc__save-label">Save this item</span>
         </button>
         <?php endif; ?>
     </div>
