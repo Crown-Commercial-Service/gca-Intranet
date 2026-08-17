@@ -336,6 +336,11 @@ add_action('save_post_qa_question', function (int $post_id): void {
             'post_date_gmt' => current_time('mysql', true),
         ]);
         $updating = false;
+
+        $question = get_post($post_id);
+        if ($question instanceof WP_Post) {
+            do_action('gca_qa_answered', $post_id, (int) $question->post_author, get_current_user_id());
+        }
     } else {
         delete_post_meta($post_id, GCA_QA_ANSWER_META);
         delete_post_meta($post_id, GCA_QA_ANSWERED_BY_META);
@@ -664,6 +669,8 @@ function gca_qa_save_answer_rest(WP_REST_Request $req): WP_REST_Response
         'post_date'     => current_time('mysql'),
         'post_date_gmt' => current_time('mysql', true),
     ]);
+
+    do_action('gca_qa_answered', $question_id, (int) $post->post_author, $uid);
 
     $post = get_post($question_id);
     return new WP_REST_Response(gca_qa_format_question($post, $uid));

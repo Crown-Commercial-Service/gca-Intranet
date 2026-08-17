@@ -471,6 +471,8 @@ function gca_shoutout_create(WP_REST_Request $req): WP_REST_Response
 
     update_post_meta($post_id, GCA_SHOUTOUT_RECIPIENT_META, $recipient_id);
 
+    do_action('gca_shoutout_created', $post_id, $recipient_id, $uid);
+
     if ($category_id > 0) {
         wp_set_post_terms($post_id, [$category_id], 'shoutout_category');
     }
