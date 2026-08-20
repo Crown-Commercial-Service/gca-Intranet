@@ -204,6 +204,38 @@ function gca_qa_setup_roles(): void
 }
 
 // ---------------------------------------------------------------------------
+// Admin – Select2 for the "Answer as" user picker
+//
+// Reuses the Select2 build bundled with Advanced Custom Fields Pro (registered
+// under the 'select2' script/style handle) rather than shipping our own copy.
+// Only loads on the qa_question edit screen; falls back to a plain <select>
+// if ACF isn't active.
+// ---------------------------------------------------------------------------
+
+add_action('admin_enqueue_scripts', function (string $hook): void {
+    if (!in_array($hook, ['post.php', 'post-new.php'], true) || get_current_screen()->post_type !== 'qa_question') {
+        return;
+    }
+
+    if (!function_exists('acf_get_url')) {
+        return;
+    }
+
+    $min = defined('ACF_DEVELOPMENT_MODE') && ACF_DEVELOPMENT_MODE ? '' : '.min';
+
+    wp_enqueue_script('select2', acf_get_url("assets/inc/select2/4/select2.full{$min}.js"), ['jquery'], '4.0.13', true);
+    wp_enqueue_style('select2', acf_get_url("assets/inc/select2/4/select2{$min}.css"), [], '4.0.13');
+
+    wp_add_inline_script('select2', '
+        jQuery(function ($) {
+            if ($.fn.select2) {
+                $("#gca_qa_answered_by").select2({ width: "100%" });
+            }
+        });
+    ');
+});
+
+// ---------------------------------------------------------------------------
 // Admin – metaboxes
 // ---------------------------------------------------------------------------
 
