@@ -149,9 +149,7 @@
     var SHOUTOUT_ICON_HTML = (
         '<div class="gca-shoutout__icon" aria-hidden="true">' +
         '<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">' +
-        '<circle cx="12" cy="9" r="6" stroke="currentColor" stroke-width="1.8" fill="none"/>' +
-        '<path d="M9 15l-2 6 5-3 5 3-2-6" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" fill="none"/>' +
-        '<path d="M12 6v3l2 1" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>' +
+        '<path d="M12 3.5l2.47 5.01 5.53.8-4 3.9.94 5.51L12 16.98l-4.94 2.74.94-5.51-4-3.9 5.53-.8L12 3.5z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" fill="none"/>' +
         '</svg>' +
         '</div>'
     );
@@ -169,10 +167,6 @@
 
         var categoryHtml = s.category
             ? '<span class="gca-shoutout__category-tag">' + esc(s.category) + '</span>'
-            : '';
-
-        var teamHtml = s.giver_team
-            ? '<span class="gca-cw-post__author-team">' + esc(s.giver_team) + '</span>'
             : '';
 
         var moreHtml = '';
@@ -206,7 +200,7 @@
             '<span class="gca-shoutout__shouted-out"> shouted out </span>' +
             recipientHtml +
             '</div>' +
-            '<div class="gca-cw-post__author-meta">' + categoryHtml + teamHtml +
+            '<div class="gca-cw-post__author-meta">' + categoryHtml +
             '<span class="gca-cw-post__meta-dot"><time datetime="' + esc(s.date_iso) + '">' + esc(relativeTime(s.date_iso)) + '</time></span>' +
             '</div></div></div>' +
             moreHtml +
