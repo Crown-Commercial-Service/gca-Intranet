@@ -285,7 +285,21 @@ function gca_qa_answer_metabox(WP_Post $post): void
         </p>
     <?php endif; ?>
 
-    <label for="gca_qa_answer_text" style="font-weight:600;display:block;margin-bottom:6px">
+    <label for="gca_qa_answered_by" style="font-weight:600;display:block;margin-bottom:6px">
+        Answer as
+        <span style="color:#767676;font-weight:normal">(attribute this answer to any user, e.g. a senior leader)</span>
+    </label>
+    <?php
+    wp_dropdown_users([
+        'name'             => 'gca_qa_answered_by',
+        'id'               => 'gca_qa_answered_by',
+        'selected'         => $by_id ?: get_current_user_id(),
+        'include_selected' => true,
+        'show'             => 'display_name',
+    ]);
+    ?>
+
+    <label for="gca_qa_answer_text" style="font-weight:600;display:block;margin:14px 0 6px">
         Answer text
         <span style="color:#767676;font-weight:normal">(leave blank to keep the question pending)</span>
     </label>
@@ -324,9 +338,14 @@ add_action('save_post_qa_question', function (int $post_id): void {
     $raw    = isset($_POST['gca_qa_answer']) ? wp_unslash($_POST['gca_qa_answer']) : '';
     $answer = sanitize_textarea_field($raw);
 
+    $answered_by = isset($_POST['gca_qa_answered_by']) ? absint($_POST['gca_qa_answered_by']) : 0;
+    if (!$answered_by || !get_userdata($answered_by)) {
+        $answered_by = get_current_user_id();
+    }
+
     if (!empty(trim($answer))) {
         update_post_meta($post_id, GCA_QA_ANSWER_META, $answer);
-        update_post_meta($post_id, GCA_QA_ANSWERED_BY_META, get_current_user_id());
+        update_post_meta($post_id, GCA_QA_ANSWERED_BY_META, $answered_by);
         update_post_meta($post_id, GCA_QA_ANSWERED_AT_META, (string) current_time('mysql'));
 
         $updating = true;
@@ -462,6 +481,11 @@ add_action('rest_api_init', function (): void {
                 'required'          => true,
                 'sanitize_callback' => 'sanitize_textarea_field',
                 'validate_callback' => fn ($v) => is_string($v) && mb_strlen(trim($v)) > 0 && mb_strlen($v) <= 5000,
+            ],
+            'answered_by' => [
+                'required'          => false,
+                'sanitize_callback' => 'absint',
+                'validate_callback' => fn ($v) => (bool) get_userdata((int) $v),
             ],
         ],
     ]);
@@ -650,13 +674,18 @@ function gca_qa_save_answer_rest(WP_REST_Request $req): WP_REST_Response
     $answer      = (string) $req->get_param('answer');
     $uid         = get_current_user_id();
 
+    $answered_by = (int) $req->get_param('answered_by');
+    if (!$answered_by || !get_userdata($answered_by)) {
+        $answered_by = $uid;
+    }
+
     $post = get_post($question_id);
     if (!$post instanceof WP_Post || $post->post_type !== 'qa_question') {
         return new WP_REST_Response(['error' => 'Question not found'], 404);
     }
 
     update_post_meta($question_id, GCA_QA_ANSWER_META, $answer);
-    update_post_meta($question_id, GCA_QA_ANSWERED_BY_META, $uid);
+    update_post_meta($question_id, GCA_QA_ANSWERED_BY_META, $answered_by);
     update_post_meta($question_id, GCA_QA_ANSWERED_AT_META, (string) current_time('mysql'));
 
     wp_update_post([
