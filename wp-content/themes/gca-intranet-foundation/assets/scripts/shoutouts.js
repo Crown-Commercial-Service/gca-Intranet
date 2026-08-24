@@ -7,6 +7,15 @@
     var nonce      = cfg.nonce      || '';
     var userAvatar = cfg.currentUserAvatar || '';
 
+    // Deep-link from notification emails, e.g. ?tab=shoutouts&shoutout_id=123
+    var pendingScrollShoutoutId = new URLSearchParams(window.location.search).get('shoutout_id');
+
+    function scrollToAndHighlight(el) {
+        el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        el.classList.add('gca-cw-post--highlight');
+        setTimeout(function () { el.classList.remove('gca-cw-post--highlight'); }, 2500);
+    }
+
     // ── Utilities ─────────────────────────────────────────────────────────────
 
     function apiFetch(method, path, body) {
@@ -284,6 +293,22 @@
             .finally(function () {
                 shoutoutLoading = false;
                 if (shoutoutLoadMoreBtn) { shoutoutLoadMoreBtn.disabled = false; }
+
+                if (pendingScrollShoutoutId) {
+                    // Scoped to the dedicated Shout-outs panel: the same card can also be
+                    // rendered inside the (hidden) "Your feed" panel with the same element
+                    // id, and document.getElementById() would otherwise match that copy.
+                    var target = shoutoutFeedEl && shoutoutFeedEl.querySelector('#gca-shoutout-' + pendingScrollShoutoutId);
+                    if (target) {
+                        pendingScrollShoutoutId = null;
+                        scrollToAndHighlight(target);
+                    } else if (shoutoutPage < shoutoutTotalPages) {
+                        // Not on this page yet — keep paging in until we find it or run out of pages.
+                        loadShoutouts(shoutoutPage + 1);
+                    } else {
+                        pendingScrollShoutoutId = null;
+                    }
+                }
             });
     }
 

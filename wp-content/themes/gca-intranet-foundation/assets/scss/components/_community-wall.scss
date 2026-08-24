@@ -479,6 +479,13 @@ $gca-cw-compose-input-bg: #f5f6fa;
     padding: govuk-spacing(5);
     position: relative;
     padding-bottom:5px;
+    transition: box-shadow 0.3s ease, border-color 0.3s ease;
+}
+
+// Deep-linked from a notification email — briefly draw the eye to this card.
+.gca-cw-post--highlight {
+    border-color: govuk-colour('blue');
+    box-shadow: 0 0 0 3px rgba(29, 112, 184, 0.3);
 }
 
 // Header row: author info + more-options button

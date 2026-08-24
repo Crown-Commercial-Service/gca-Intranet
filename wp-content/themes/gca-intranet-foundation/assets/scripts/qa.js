@@ -565,6 +565,12 @@
         setupQaFeedEvents();
         setupSidebar();
 
+        // Deep-link from notification emails, e.g. ?tab=shoutouts or ?tab=qa
+        var requestedTab = new URLSearchParams(window.location.search).get('tab');
+        if (['feed', 'shoutouts', 'qa', 'polls'].indexOf(requestedTab) !== -1) {
+            switchToTab(requestedTab);
+        }
+
         if (qaLoadMoreBtn) {
             qaLoadMoreBtn.addEventListener('click', function () {
                 loadQaQuestions(qaPage + 1);

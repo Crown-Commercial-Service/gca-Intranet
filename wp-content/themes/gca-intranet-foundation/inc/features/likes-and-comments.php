@@ -368,6 +368,15 @@ function gca_lc_add_comment(WP_REST_Request $req): WP_REST_Response
         return new WP_REST_Response(['error' => 'Could not save comment'], 500);
     }
 
+    if (preg_match_all('/@\[[^\]]+\]\((\d+)\)/', $content, $mention_matches)) {
+        $mentioned_ids = array_unique(array_map('intval', $mention_matches[1]));
+        foreach ($mentioned_ids as $mentioned_id) {
+            if ($mentioned_id !== $current_user_id) {
+                do_action('gca_comment_mention_created', $comment_id, $mentioned_id, $current_user_id);
+            }
+        }
+    }
+
     $all_comments = get_comments([
         'post_id' => $post_id,
         'type'    => GCA_LC_COMMENT_TYPE,
