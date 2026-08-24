@@ -112,7 +112,7 @@ endif;
                         </li>
                         <li>
                             <button type="button" class="gca-cw-tabs__btn" data-tab="qa" aria-pressed="false">
-                                Questions &amp; answers
+                                Your questions answered
                             </button>
                         </li>
                         <li>
