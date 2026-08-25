@@ -103,14 +103,12 @@ add_action('admin_menu', function (): void {
         );
     }
 
-    add_menu_page(
+    add_submenu_page(
+        GCA_COMMUNITY_HUB_MENU_SLUG,
         'Shout-outs',
         $label,
         'edit_posts',
-        'edit.php?post_type=community_shoutout',
-        '',
-        'dashicons-awards',
-        24
+        'edit.php?post_type=community_shoutout'
     );
 }, 5);
 

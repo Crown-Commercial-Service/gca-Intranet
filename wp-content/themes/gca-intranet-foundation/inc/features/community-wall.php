@@ -98,9 +98,7 @@ add_action('admin_menu', function (): void {
 
     $allowed_slugs = [
         'edit.php?post_type=community_post',
-        'edit.php?post_type=community_shoutout',
-        'edit.php?post_type=community_poll',
-        'edit.php?post_type=qa_question',
+        GCA_COMMUNITY_HUB_MENU_SLUG,
     ];
 
     global $menu;
@@ -133,7 +131,7 @@ add_action('admin_init', function (): void {
             (isset($_GET['post']) && in_array(get_post_type((int) $_GET['post']), $community_types, true))
             || (isset($_POST['post_ID']) && in_array(get_post_type((int) $_POST['post_ID']), $community_types, true))
         ))
-        || ($pagenow === 'admin.php' && sanitize_key($_GET['page'] ?? '') === 'gca-shoutout-categories')
+        || ($pagenow === 'admin.php' && in_array(sanitize_key($_GET['page'] ?? ''), ['gca-shoutout-categories', GCA_COMMUNITY_HUB_MENU_SLUG], true))
     );
 
     if (!$is_allowed) {

@@ -95,14 +95,12 @@ add_action('admin_menu', function (): void {
         );
     }
 
-    add_menu_page(
+    add_submenu_page(
+        GCA_COMMUNITY_HUB_MENU_SLUG,
         'Q&A Questions',
         $label,
         'edit_posts',
-        'edit.php?post_type=qa_question',
-        '',
-        'dashicons-format-chat',
-        26
+        'edit.php?post_type=qa_question'
     );
 }, 5);
 
@@ -121,11 +119,21 @@ add_action('admin_menu', function (): void {
         return;
     }
 
-    global $menu;
+    global $menu, $submenu;
     foreach (array_keys($menu) as $position) {
         $slug = $menu[$position][2] ?? '';
-        if ($slug !== 'edit.php?post_type=qa_question') {
+        if ($slug !== GCA_COMMUNITY_HUB_MENU_SLUG) {
             remove_menu_page($slug);
+        }
+    }
+
+    // Also strip sibling Shout-outs / Community Polls submenu items so the
+    // moderator only sees Q&A Questions inside the Community Hub menu.
+    if (isset($submenu[GCA_COMMUNITY_HUB_MENU_SLUG])) {
+        foreach ($submenu[GCA_COMMUNITY_HUB_MENU_SLUG] as $key => $item) {
+            if (($item[2] ?? '') !== 'edit.php?post_type=qa_question') {
+                unset($submenu[GCA_COMMUNITY_HUB_MENU_SLUG][$key]);
+            }
         }
     }
 }, 999);
