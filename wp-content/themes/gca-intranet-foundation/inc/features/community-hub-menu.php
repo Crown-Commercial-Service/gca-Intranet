@@ -40,6 +40,14 @@ add_action('admin_menu', function (): void {
     );
 }, 4);
 
+// WordPress auto-adds a duplicate first submenu item (title "Community Hub",
+// same slug as the parent) unless a submenu with that exact slug is
+// registered. Since Shout-outs/Q&A/Polls each use their own distinct slug,
+// that duplicate is left behind — remove it once all three have registered.
+add_action('admin_menu', function (): void {
+    remove_submenu_page(GCA_COMMUNITY_HUB_MENU_SLUG, GCA_COMMUNITY_HUB_MENU_SLUG);
+}, 20);
+
 function gca_community_hub_menu_redirect(): void {
     if (gca_flag_enabled('community-shoutouts')) {
         wp_safe_redirect(admin_url('edit.php?post_type=community_shoutout'));
