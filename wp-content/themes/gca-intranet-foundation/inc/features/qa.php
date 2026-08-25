@@ -24,6 +24,7 @@ gca_register_feature_flag('community-qa', [
     'description' => 'Enables the Questions & Answers tab on the Community Hub.',
     'default'     => true,
     'tags'        => ['social', 'community'],
+    'parent'      => 'community-hub',
 ]);
 
 const GCA_QA_ANSWER_META      = '_gca_qa_answer';

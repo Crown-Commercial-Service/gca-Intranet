@@ -25,6 +25,7 @@ gca_register_feature_flag('community-polls', [
     'description' => 'Enables polls in the Community Hub feed.',
     'default'     => true,
     'tags'        => ['social', 'community'],
+    'parent'      => 'community-hub',
 ]);
 
 const GCA_POLL_OPTIONS_META  = '_gca_poll_options';

@@ -24,6 +24,7 @@ gca_register_feature_flag('community-shoutouts', [
     'description' => 'Enables the Shout-outs section in the Community Hub.',
     'default'     => true,
     'tags'        => ['social', 'community'],
+    'parent'      => 'community-hub',
 ]);
 
 const GCA_SHOUTOUT_RECIPIENT_META = '_gca_shoutout_recipient_id';
