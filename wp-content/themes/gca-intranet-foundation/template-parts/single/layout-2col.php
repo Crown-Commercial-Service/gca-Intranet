@@ -31,10 +31,6 @@ $is_page = !empty($GLOBALS['gca_is_page']);
     ?>
 
     <main class="gca-single gca-single--2col" id="main-content" data-testid="layout-2col">
-      <?php if ($is_page) : ?>
-        <?php get_template_part('template-parts/page-save-btn'); ?>
-      <?php endif; ?>
-
       <div class="govuk-grid-row">
 
         <?php if ($has_left_content) : ?>

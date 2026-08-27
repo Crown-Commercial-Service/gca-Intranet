@@ -217,7 +217,7 @@
         return (
             '<div class="gca-qa-pending-card" id="gca-qa-pending-' + q.id + '">' +
             '<div class="gca-qa-pending-card__header">' +
-            '<span class="gca-qa-badge gca-qa-badge--pending">UNDER REVIEW</span>' +
+            '<span class="gca-qa-badge gca-qa-badge--pending">Under review</span>' +
             '<time class="gca-qa-pending-card__date" datetime="' + esc(q.date_iso) + '">' + esc(relativeTime(q.date_iso)) + '</time>' +
             '</div>' +
             '<p class="gca-qa-pending-card__question">' + esc(q.question_raw) + '</p>' +
@@ -229,7 +229,7 @@
         return (
             '<li class="gca-qa-sidebar-pending__item">' +
             '<div class="gca-qa-sidebar-pending__meta">' +
-            '<span class="gca-qa-badge gca-qa-badge--pending gca-qa-badge--sm">UNDER REVIEW</span>' +
+            '<span class="gca-qa-badge gca-qa-badge--pending gca-qa-badge--sm">Under review</span>' +
             '<time class="gca-qa-sidebar-pending__date" datetime="' + esc(q.date_iso) + '">' + esc(relativeTime(q.date_iso)) + '</time>' +
             '</div>' +
             '<p class="gca-qa-sidebar-pending__text">' + esc(q.question_raw) + '</p>' +
@@ -564,6 +564,12 @@
         setupAskForm();
         setupQaFeedEvents();
         setupSidebar();
+
+        // Deep-link from notification emails, e.g. ?tab=shoutouts or ?tab=qa
+        var requestedTab = new URLSearchParams(window.location.search).get('tab');
+        if (['feed', 'shoutouts', 'qa', 'polls'].indexOf(requestedTab) !== -1) {
+            switchToTab(requestedTab);
+        }
 
         if (qaLoadMoreBtn) {
             qaLoadMoreBtn.addEventListener('click', function () {
