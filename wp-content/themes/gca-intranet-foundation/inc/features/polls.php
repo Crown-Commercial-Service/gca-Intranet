@@ -25,6 +25,7 @@ gca_register_feature_flag('community-polls', [
     'description' => 'Enables polls in the Community Hub feed.',
     'default'     => true,
     'tags'        => ['social', 'community'],
+    'parent'      => 'community-hub',
 ]);
 
 const GCA_POLL_OPTIONS_META  = '_gca_poll_options';
@@ -89,14 +90,12 @@ add_action('admin_menu', function (): void {
         );
     }
 
-    add_menu_page(
+    add_submenu_page(
+        GCA_COMMUNITY_HUB_MENU_SLUG,
         'Community Polls',
         $label,
         'edit_posts',
-        'edit.php?post_type=community_poll',
-        '',
-        'dashicons-chart-bar',
-        25
+        'edit.php?post_type=community_poll'
     );
 }, 5);
 

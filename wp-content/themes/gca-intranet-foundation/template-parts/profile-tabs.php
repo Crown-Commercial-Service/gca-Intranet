@@ -15,8 +15,9 @@ $rest_url        = esc_js($args['rest_url']         ?? '');
 $nonce           = esc_js($args['nonce']            ?? '');
 $is_own_profile  = (bool) ($args['is_own_profile']  ?? false);
 $profile_user_id = (int)  ($args['profile_user_id'] ?? 0);
-$show_saves_tabs = $is_own_profile && function_exists('gca_flag_enabled') && gca_flag_enabled('post-saves');
-$show_shoutouts  = function_exists('gca_flag_enabled') && gca_flag_enabled('community-shoutouts');
+$show_saves_tabs     = $is_own_profile && function_exists('gca_flag_enabled') && gca_flag_enabled('post-saves');
+$show_shoutouts      = function_exists('gca_flag_enabled') && gca_flag_enabled('community-shoutouts');
+$show_notifications  = $is_own_profile && function_exists('gca_flag_enabled') && gca_flag_enabled('social-wall-notifications');
 ?>
 
 <div class="gca-profile-tabs govuk-!-margin-top-6" id="gca-profile-tabs">
@@ -32,7 +33,7 @@ $show_shoutouts  = function_exists('gca_flag_enabled') && gca_flag_enabled('comm
       id="gca-tab-btn-saves"
       data-tab="saves"
     >
-      My Saves
+      My saves
     </button>
     <?php endif; ?>
 
@@ -70,7 +71,20 @@ $show_shoutouts  = function_exists('gca_flag_enabled') && gca_flag_enabled('comm
       id="gca-tab-btn-posts"
       data-tab="posts"
     >
-      My Posts
+      My posts
+    </button>
+    <?php endif; ?>
+
+    <?php if ($show_notifications) : ?>
+    <button
+      class="gca-profile-tabs__btn"
+      role="tab"
+      aria-selected="false"
+      aria-controls="gca-tab-notifications"
+      id="gca-tab-btn-notifications"
+      data-tab="notifications"
+    >
+      Notification settings
     </button>
     <?php endif; ?>
 
@@ -107,6 +121,44 @@ $show_shoutouts  = function_exists('gca_flag_enabled') && gca_flag_enabled('comm
     <p class="gca-profile-tabs__loading" id="gca-posts-loading" hidden>Loading&hellip;</p>
     <ul class="gca-profile-item-list" id="gca-posts-list" hidden></ul>
     <p class="gca-profile-tabs__empty" id="gca-posts-empty" hidden>You haven&rsquo;t published any posts yet.</p>
+  </div>
+  <?php endif; ?>
+
+  <?php if ($show_notifications) : ?>
+  <!-- Notification settings -->
+  <div class="gca-profile-tabs__panel" role="tabpanel" id="gca-tab-notifications" aria-labelledby="gca-tab-btn-notifications" hidden>
+    <ul class="gca-notify-settings" id="gca-notify-settings-list">
+      <li class="gca-notify-settings__row">
+        <div class="gca-notify-settings__text">
+          <span class="gca-notify-settings__label">Mention notifications</span>
+          <span class="gca-notify-settings__hint">Notifies you when mentioned in a comment</span>
+        </div>
+        <label class="gca-toggle">
+          <input type="checkbox" id="gca-notify-mentions" data-notify-type="mentions">
+          <span class="gca-toggle-slider" aria-hidden="true"></span>
+        </label>
+      </li>
+      <li class="gca-notify-settings__row">
+        <div class="gca-notify-settings__text">
+          <span class="gca-notify-settings__label">Shout-out notifications</span>
+          <span class="gca-notify-settings__hint">Notifies you when you receive a shout-out on the wall</span>
+        </div>
+        <label class="gca-toggle">
+          <input type="checkbox" id="gca-notify-shoutouts" data-notify-type="shoutouts">
+          <span class="gca-toggle-slider" aria-hidden="true"></span>
+        </label>
+      </li>
+      <li class="gca-notify-settings__row">
+        <div class="gca-notify-settings__text">
+          <span class="gca-notify-settings__label">Question and answer notifications</span>
+          <span class="gca-notify-settings__hint">Notifies you when your question has been answered on the wall</span>
+        </div>
+        <label class="gca-toggle">
+          <input type="checkbox" id="gca-notify-qa" data-notify-type="qa">
+          <span class="gca-toggle-slider" aria-hidden="true"></span>
+        </label>
+      </li>
+    </ul>
   </div>
   <?php endif; ?>
 
@@ -179,7 +231,7 @@ $show_shoutouts  = function_exists('gca_flag_enabled') && gca_flag_enabled('comm
 
             return '<li class="gca-profile-item">' +
                 '<div class="gca-profile-item__body">' +
-                    '<span class="gca-profile-item__label">Saved ' + esc(item.post_type_label) + '</span>' +
+                    '<span class="gca-profile-item__label">Saved ' + esc(item.post_type_label.toLowerCase()) + '</span>' +
                     '<a href="' + esc(item.url) + '" class="gca-profile-item__title">' + esc(item.title) + '</a>' +
                     '<span class="gca-profile-item__meta">' + meta + '</span>' +
                 '</div>' +
@@ -363,6 +415,28 @@ $show_shoutouts  = function_exists('gca_flag_enabled') && gca_flag_enabled('comm
         show(listEl);
     }
 
+    function renderNotificationSettings(data) {
+        ['mentions', 'shoutouts', 'qa'].forEach(function (type) {
+            var checkbox = document.getElementById('gca-notify-' + type);
+            if (checkbox) { checkbox.checked = !!data[type]; }
+        });
+    }
+
+    var notifySettingsList = document.getElementById('gca-notify-settings-list');
+    if (notifySettingsList) {
+        notifySettingsList.addEventListener('change', function (e) {
+            var checkbox = e.target.closest('[data-notify-type]');
+            if (!checkbox) { return; }
+            fetch(REST + '/profile/me/notification-settings', {
+                method:  'POST',
+                headers: { 'X-WP-Nonce': NONCE, 'Content-Type': 'application/json' },
+                body:    JSON.stringify({ type: checkbox.dataset.notifyType, enabled: checkbox.checked })
+            }).catch(function () {
+                checkbox.checked = !checkbox.checked;
+            });
+        });
+    }
+
     // ── Tab switching ──────────────────────────────────────────────────────
 
     var tabLoaded = {};
@@ -395,35 +469,48 @@ $show_shoutouts  = function_exists('gca_flag_enabled') && gca_flag_enabled('comm
                 hide(document.getElementById('gca-posts-loading'));
                 show(document.getElementById('gca-posts-empty'));
             });
+        } else if (tab === 'notifications') {
+            apiFetch('/profile/me/notification-settings').then(renderNotificationSettings);
         }
+    }
+
+    function activateTab(tab) {
+        var btn = document.getElementById('gca-tab-btn-' + tab);
+        if (!btn) { return false; }
+
+        // Deactivate all
+        document.querySelectorAll('.gca-profile-tabs__btn').forEach(function (b) {
+            b.classList.remove('gca-profile-tabs__btn--active');
+            b.setAttribute('aria-selected', 'false');
+        });
+        document.querySelectorAll('.gca-profile-tabs__panel').forEach(function (p) {
+            p.hidden = true;
+        });
+
+        // Activate selected
+        btn.classList.add('gca-profile-tabs__btn--active');
+        btn.setAttribute('aria-selected', 'true');
+        var panel = document.getElementById('gca-tab-' + tab);
+        if (panel) { panel.hidden = false; }
+
+        loadTab(tab);
+        return true;
     }
 
     document.querySelectorAll('.gca-profile-tabs__btn').forEach(function (btn) {
         btn.addEventListener('click', function () {
-            var tab = btn.dataset.tab;
-
-            // Deactivate all
-            document.querySelectorAll('.gca-profile-tabs__btn').forEach(function (b) {
-                b.classList.remove('gca-profile-tabs__btn--active');
-                b.setAttribute('aria-selected', 'false');
-            });
-            document.querySelectorAll('.gca-profile-tabs__panel').forEach(function (p) {
-                p.hidden = true;
-            });
-
-            // Activate selected
-            btn.classList.add('gca-profile-tabs__btn--active');
-            btn.setAttribute('aria-selected', 'true');
-            var panel = document.getElementById('gca-tab-' + tab);
-            if (panel) { panel.hidden = false; }
-
-            loadTab(tab);
+            activateTab(btn.dataset.tab);
         });
     });
 
+    // Deep-link from notification emails, e.g. /profile/me/?tab=notifications
+    var requestedTab = new URLSearchParams(window.location.search).get('tab');
+
     // Load the default tab
     if (IS_OWN_PROFILE) {
-        loadTab('saves');
+        if (!requestedTab || !activateTab(requestedTab)) {
+            loadTab('saves');
+        }
         // Pre-fetch mention count for badge
         apiFetch('/profile/me/mentions').then(function (items) {
             var badge = document.getElementById('gca-mentions-badge');
