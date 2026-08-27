@@ -24,6 +24,7 @@ gca_register_feature_flag('community-shoutouts', [
     'description' => 'Enables the Shout-outs section in the Community Hub.',
     'default'     => true,
     'tags'        => ['social', 'community'],
+    'parent'      => 'community-hub',
 ]);
 
 const GCA_SHOUTOUT_RECIPIENT_META = '_gca_shoutout_recipient_id';
@@ -103,14 +104,12 @@ add_action('admin_menu', function (): void {
         );
     }
 
-    add_menu_page(
+    add_submenu_page(
+        GCA_COMMUNITY_HUB_MENU_SLUG,
         'Shout-outs',
         $label,
         'edit_posts',
-        'edit.php?post_type=community_shoutout',
-        '',
-        'dashicons-awards',
-        24
+        'edit.php?post_type=community_shoutout'
     );
 }, 5);
 
