@@ -43,6 +43,14 @@ class RevisionaryAdmin
 			}
 		}
 
+		add_action('init', function() { // late execution avoids clash with autoloaders in other plugins
+			if (get_option('revisionary_activation')) {
+				delete_option('revisionary_activation');
+				wp_safe_redirect(admin_url("admin.php?page=revisionary-archive"));
+				exit;
+			}
+		});
+
 		// ===== Special early exit if this is a plugin install script
 		if ( strpos($script_name, 'p-admin/plugins.php') || strpos($script_name, 'p-admin/plugin-install.php') || strpos($script_name, 'p-admin/plugin-editor.php') ) {
 			if (strpos($script_name, 'p-admin/plugin-install.php') && !empty($_SERVER['HTTP_REFERER']) && strpos(esc_url_raw($_SERVER['HTTP_REFERER']), '=rvy')) {
@@ -202,6 +210,17 @@ class RevisionaryAdmin
 
 		// Planner Notifications integration
 		add_filter('posts_clauses_request', [$this, 'fltPostsClauses'], 50, 2);
+
+		// Ensure copied posts and revisions with empty title, content and excerpt can still be trashed
+		add_filter('wp_insert_post_empty_content', [$this, 'maybeDisregardEmptyContent'], 10, 2);
+	}
+
+	function maybeDisregardEmptyContent($empty, $postarr) {
+		if (!empty($postarr['post_status']) && ('trash' == $postarr['post_status'])) {
+			$empty = false;
+		}
+
+		return $empty;
 	}
 
 	function fltPostsClauses($clauses, $_wp_query = false, $args = [])
@@ -338,7 +357,7 @@ class RevisionaryAdmin
 	}
 
 	function build_menu() {
-		global $current_user, $revisionary;
+		global $current_user, $revisionary, $wpdb;
 
 		if ( isset($_SERVER['REQUEST_URI']) && (strpos( esc_url_raw($_SERVER['REQUEST_URI']), 'wp-admin/network/' )) )
 			return;
@@ -393,7 +412,45 @@ class RevisionaryAdmin
 				$menu_func = 'rvy_omit_site_options';
 			}
 
-			add_menu_page( esc_html__($_menu_caption, 'revisionary'), esc_html__($_menu_caption, 'revisionary'), 'read', $menu_slug, $menu_func, 'dashicons-backup', 29 );
+			$post_types = array_keys(array_filter($revisionary->enabled_post_types));
+
+			if (!is_content_administrator_rvy()) {
+				foreach ($post_types as $post_type) {
+					if ($type_obj = get_post_type_object($post_type)) {
+						if (!empty($type_obj->cap->edit_published_posts) && !empty($type_obj->cap->edit_others_posts)) {
+							if (!current_user_can($type_obj->cap->edit_published_posts) || !current_user_can($type_obj->cap->edit_others_posts)) {
+
+								$approve_cap_name = str_replace('edit_', 'approve_', $type_obj->cap->edit_others_posts);
+								
+								if (!current_user_can($approve_cap_name)) {
+									$post_types = array_diff($post_types, [$post_type]);
+								}
+							}
+						}
+					}
+				}
+			}
+
+			$type_csv = implode("','", $post_types);
+
+			$post_status_csv = implode( "','", apply_filters('revisionary_menu_count_post_statuses', array_diff(get_post_stati(), ['trash', 'auto-draft', 'inherit'])));
+
+			if ($post_types && $post_status_csv && rvy_get_option('admin_menu_pending_count_icon')) {
+				$revision_count = $wpdb->get_var(
+					apply_filters(
+						'revisionary_menu_count', 
+						"SELECT COUNT(r.ID) FROM $wpdb->posts r INNER JOIN $wpdb->posts p ON r.comment_count = p.ID WHERE p.post_status IN ('$post_status_csv') AND r.post_type IN ('$type_csv') AND r.post_mime_type IN ('pending-revision')"
+					)
+				);
+			}
+
+			if (!empty($revision_count)) {
+				$count_html = ' <span class="update-plugins count-' . $revision_count . '" style="vertical-align:baseline"><span class="plugin-count">' . $revision_count . '</span></span>';	
+			} else {
+				$count_html = '';
+			}
+
+			add_menu_page( esc_html__($_menu_caption, 'revisionary'), esc_html__($_menu_caption, 'revisionary') . $count_html, 'read', $menu_slug, $menu_func, 'dashicons-backup', 29 );
 
 			if ($can_edit_any && array_filter($revisionary->enabled_post_types)) {
 				add_submenu_page('revisionary-q', esc_html__('New Revisions', 'revisionary'), esc_html__('New Revisions', 'revisionary'), 'read', 'revisionary-q', [$this, 'moderation_queue']);

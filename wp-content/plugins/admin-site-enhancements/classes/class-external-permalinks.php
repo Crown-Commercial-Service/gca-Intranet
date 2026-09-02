@@ -44,6 +44,18 @@ class External_Permalinks {
     }
 
     /**
+     * Check whether an external permalink should open in a new tab.
+     *
+     * In the pro version, reads the Page Links To-compatible _links_to_target meta.
+     *
+     * @param int $post_id Post ID.
+     * @return bool True when the link should open in a new tab.
+     */
+    private function should_open_in_new_tab( $post_id ) {
+        return false;
+    }
+
+    /**
      * Add external permalink meta box for enabled post types
      * 
      * @since 3.9.0
@@ -90,7 +102,11 @@ class External_Permalinks {
         ?>" type="text" value="<?php 
         echo esc_url( get_post_meta( $post->ID, '_links_to', true ) );
         ?>" placeholder="https://" />
-            <div class="external-permalink-input-description">Keep empty to use the default WordPress permalink. External permalink will open in a new browser tab.</div>
+            <div class="external-permalink-input-description"><?php 
+        esc_html_e( 'Keep empty to use the default WordPress permalink.', 'admin-site-enhancements' );
+        ?></div>
+            <?php 
+        ?>
             <?php 
         wp_nonce_field(
             'external_permalink_' . $post->ID,
@@ -145,6 +161,12 @@ class External_Permalinks {
             $external_permalink = get_post_meta( $post_id, '_links_to', true );
             if ( !empty( $external_permalink ) ) {
                 $permalink = $external_permalink;
+                if ( !is_admin() ) {
+                    $permalink = $permalink . '#asenha_ep';
+                    if ( $this->should_open_in_new_tab( $post_id ) ) {
+                        $permalink = $permalink . '#new_tab';
+                    }
+                }
             }
         }
         return $permalink;
@@ -169,7 +191,10 @@ class External_Permalinks {
             if ( !empty( $external_permalink ) ) {
                 $permalink = $external_permalink;
                 if ( !is_admin() ) {
-                    $permalink = $permalink . '#new_tab';
+                    $permalink = $permalink . '#asenha_ep';
+                    if ( $this->should_open_in_new_tab( $post->ID ) ) {
+                        $permalink = $permalink . '#new_tab';
+                    }
                 }
             }
         }
@@ -201,6 +226,75 @@ class External_Permalinks {
                 }
             }
         }
+    }
+
+    /**
+     * Build frontend inline script config from plugin options.
+     *
+     * @since 8.8.0
+     *
+     * @param array $options Plugin options.
+     * @return array
+     */
+    private function get_frontend_script_config( array $options ) {
+        $config = array(
+            'excludeNofollowDomains' => array(),
+        );
+        return $config;
+    }
+
+    /**
+     * Return inline frontend script for external permalink link processing.
+     *
+     * @since 8.8.0
+     *
+     * @param array $config Script config from get_frontend_script_config().
+     * @return string
+     */
+    private function get_frontend_inline_script( array $config ) {
+        $js = <<<'JS'
+(function () {
+   'use strict';
+
+   document.addEventListener( 'DOMContentLoaded', function () {
+
+      var links = document.getElementsByTagName( 'a' );
+
+      for ( var i = 0; i < links.length; i++ ) {
+         var url = links[i].getAttribute( 'href' );
+
+         if ( url == null ) {
+            continue;
+         }
+
+         var hasAsenhaEp = url.indexOf( '#asenha_ep' ) >= 0;
+
+         if ( ! hasAsenhaEp ) {
+            continue;
+         }
+
+         url = url.replace( '#asenha_ep', '' );
+         links[i].setAttribute( 'href', url );
+         links[i].setAttribute( 'rel', 'noopener noreferrer nofollow' );
+      }
+
+   } );
+
+} )
+JS;
+        return $js . '();';
+    }
+
+    /**
+     * Return inline frontend script built from plugin options.
+     *
+     * @since 8.8.0
+     *
+     * @param array $options Plugin options.
+     * @return string
+     */
+    public function get_frontend_inline_script_for_options( array $options ) {
+        return $this->get_frontend_inline_script( $this->get_frontend_script_config( $options ) );
     }
 
 }

@@ -169,6 +169,67 @@ class Common_Methods {
     }
 
     /**
+     * Yoast SEO top-level menu CSS IDs that map to the same menu across roles.
+     *
+     * Administrators get toplevel_page_wpseo_dashboard. Non-administrators
+     * (Editors, SEO Managers, SEO Editors) get toplevel_page_wpseo_page_academy
+     * (newer Yoast) or toplevel_page_wpseo_workouts (older Yoast).
+     *
+     * @since 8.9.1
+     *
+     * @return array {
+     *     @type string   $canonical Canonical menu ID (administrator).
+     *     @type string[] $aliases   Non-administrator menu IDs.
+     * }
+     */
+    public function get_yoast_seo_menu_id_aliases() {
+        return array(
+            'canonical' => 'toplevel_page_wpseo_dashboard',
+            'aliases'   => array('toplevel_page_wpseo_page_academy', 'toplevel_page_wpseo_workouts'),
+        );
+    }
+
+    /**
+     * Yoast SEO admin page URL fragments that map across roles.
+     *
+     * @since 8.9.1
+     *
+     * @return array {
+     *     @type string   $canonical Canonical page slug (administrator).
+     *     @type string[] $aliases   Non-administrator page slugs.
+     * }
+     */
+    public function get_yoast_seo_url_fragment_aliases() {
+        return array(
+            'canonical' => 'wpseo_dashboard',
+            'aliases'   => array('wpseo_page_academy', 'wpseo_workouts'),
+        );
+    }
+
+    /**
+     * Append Yoast non-admin menu ID aliases when the canonical ID is present.
+     *
+     * @since 8.9.1
+     *
+     * @param array $menu_ids Indexed list of menu IDs.
+     * @return array
+     */
+    public function expand_yoast_seo_menu_id_aliases( $menu_ids ) {
+        if ( !is_array( $menu_ids ) || empty( $menu_ids ) ) {
+            return $menu_ids;
+        }
+        $yoast = $this->get_yoast_seo_menu_id_aliases();
+        if ( in_array( $yoast['canonical'], $menu_ids, true ) ) {
+            foreach ( $yoast['aliases'] as $alias ) {
+                if ( !in_array( $alias, $menu_ids, true ) ) {
+                    $menu_ids[] = $alias;
+                }
+            }
+        }
+        return $menu_ids;
+    }
+
+    /**
      * Get menu hidden by toggle
      * 
      * @since 5.1.0
@@ -183,6 +244,20 @@ class Common_Methods {
             $menu_hidden_by_toggle = array();
             foreach ( $menu_hidden as $menu_id ) {
                 $menu_hidden_by_toggle[] = $this->restore_menu_item_id( $menu_id );
+            }
+        }
+        // Yoast SEO uses different menu IDs for admins vs non-admins; apply the same toggle-hide rules to both.
+        $menu_hidden_by_toggle = $this->expand_yoast_seo_menu_id_aliases( $menu_hidden_by_toggle );
+        // Also include Yoast page slugs so slug-based matching works for alias menus.
+        $yoast_menu = $this->get_yoast_seo_menu_id_aliases();
+        $yoast_menu_ids = array_merge( array($yoast_menu['canonical']), $yoast_menu['aliases'] );
+        if ( !empty( array_intersect( $yoast_menu_ids, $menu_hidden_by_toggle ) ) ) {
+            $yoast_frags = $this->get_yoast_seo_url_fragment_aliases();
+            $frag_list = array_merge( array($yoast_frags['canonical']), $yoast_frags['aliases'] );
+            foreach ( $frag_list as $frag ) {
+                if ( !in_array( $frag, $menu_hidden_by_toggle, true ) ) {
+                    $menu_hidden_by_toggle[] = $frag;
+                }
             }
         }
         return $menu_hidden_by_toggle;
@@ -482,17 +557,19 @@ class Common_Methods {
      * @since 7.0.0
      */
     public function is_color_dark( $hex ) {
-        $hex = str_replace( '#', '', trim( $hex ) );
-        $r = hexdec( $hex[0] . $hex[1] );
-        $g = hexdec( $hex[2] . $hex[3] );
-        $b = hexdec( $hex[4] . $hex[5] );
-        $lightness = (max( $r, $g, $b ) + min( $r, $g, $b )) / 510.0;
-        // HSL algorithm
-        if ( $lightness > 0.8 ) {
-            return false;
-        } else {
+        $hex = str_replace( '#', '', trim( (string) $hex ) );
+        if ( 3 === strlen( $hex ) ) {
+            $hex = $hex[0] . $hex[0] . $hex[1] . $hex[1] . $hex[2] . $hex[2];
+        }
+        if ( 6 !== strlen( $hex ) || !ctype_xdigit( $hex ) ) {
             return true;
         }
+        $r = hexdec( substr( $hex, 0, 2 ) );
+        $g = hexdec( substr( $hex, 2, 2 ) );
+        $b = hexdec( substr( $hex, 4, 2 ) );
+        $lightness = (max( $r, $g, $b ) + min( $r, $g, $b )) / 510.0;
+        // HSL algorithm
+        return $lightness <= 0.8;
     }
 
     /**

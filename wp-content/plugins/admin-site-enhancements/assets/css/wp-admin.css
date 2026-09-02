@@ -1,8 +1,3 @@
-/* Content Management >> Media Replace >> Hide media replacement section on media dialog/frame */
-.media-sidebar .compat-item .compat-field-asenha-media-replace {
-	display: none;
-}
-
 /* Admin Interface >> Hide Howdy */
 #wp-admin-bar-my-account.no-avatar > .ab-item:before {
 	display: none;
@@ -36,6 +31,67 @@
 	content: "\f11f";
 }
 
+.asenha-public-preview-row {
+	align-items: center;
+	gap: 2px;
+}
+
+.additional-actions.asenha-public-preview-row {
+	padding: 6px 10px 4px;
+}
+
+.asenha-public-preview-row .asenha-public-preview-reset,
+.asenha-public-preview-row .asenha-copy-preview-link-button {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	padding: 0 4px;
+	margin: 0;
+	min-height: 0;
+	line-height: 1;
+	vertical-align: middle;
+	text-decoration: none;
+}
+
+.asenha-public-preview-row .asenha-copy-preview-link-button {
+	margin-left: 4px;
+}
+
+.asenha-public-preview-row .asenha-public-preview-reset .dashicons {
+	font-size: 18px;
+	width: 18px;
+	height: 18px;
+}
+
+.asenha-public-preview-row .asenha-public-preview-icon-group {
+	display: inline-flex;
+	align-items: center;
+	gap: 0;
+}
+
+#misc-publishing-actions .asenha-public-preview-row .asenha-copy-preview-link-button {
+	color: var(--wp-admin-theme-color, #2271b1);
+}
+
+#misc-publishing-actions .asenha-public-preview-row .asenha-copy-preview-link-button:hover {
+	color: var(--wp-admin-theme-color-darker-10, #135e96);
+}
+
+#misc-publishing-actions .asenha-public-preview-row .asenha-copy-preview-link-button svg {
+	display: block;
+	width: 18px;
+	height: 18px;
+}
+
+#misc-publishing-actions .asenha-public-preview-expiry {
+	margin: 0;
+	padding: 0 10px 8px 35px;
+	font-size: 12px;
+	line-height: 1.4;
+	color: #646970;
+	clear: both;
+}
+
 /* Utilities >> Enable Login Logout */
 .accordion-section #login-logout-links-checklist.categorychecklist {
 	margin: -13px 0 13px 0;
@@ -51,6 +107,10 @@
 .external-permalink-input-description,
 .custom-body-class-input-description {
 	margin-top: 4px;
+}
+
+.external-permalink-new-tab {
+	margin: 4px 0 0;
 }
 
 /* Utilities >> Multiple User Roles */
@@ -89,4 +149,8 @@
 	z-index: 999999;
 	box-shadow: rgba(0, 0, 0, 0.19) 0px 10px 20px, rgba(0, 0, 0, 0.23) 0px 6px 6px;
 }
+
+
+
+
 

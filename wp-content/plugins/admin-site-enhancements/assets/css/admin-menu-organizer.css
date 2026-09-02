@@ -66,6 +66,7 @@
 .admin-menu-organizer .menu-item-bar {
     display: flex;
     align-items: center;
+    margin: 8px 0 0;
 }
 
 .admin-menu-organizer .menu-item-bar .menu-item-handle {
@@ -76,10 +77,6 @@
     max-width: 600px;
     width: 600px;
     min-height: 30px;
-}
-
-.parent-menu-item.target-none .menu-item-handle {
-    background: #dddede;
 }
 
 .admin-menu-organizer .title-wrapper {
@@ -121,6 +118,8 @@
     margin-left: -5px;
     padding: 0 8px 0 4px;
     font-size: 13px;
+    min-height: 28px;
+    line-height: 28px;
 }
 
 .menu-item-title input[type="text"]:focus,
@@ -143,7 +142,8 @@ li[id^="separator"] .menu-item-title {
     color: #999;
 }
 
-.sortable-placeholder {
+/* Scoped to AMO root list so other screens (e.g. ABCE) can style .sortable-placeholder independently. */
+#custom-admin-menu .sortable-placeholder {
     width: 600px !important;
     max-width: 600px !important;
     height: 46px;
@@ -151,6 +151,7 @@ li[id^="separator"] .menu-item-title {
     max-height: 42px;
     background: #cdddd6;
     border: 1px dashed #508871;
+    border-radius: 0 !important;
 }
 
 .form-table .asenha-subfields td:not(.datatable-td) label.menu-item-checkbox-label {

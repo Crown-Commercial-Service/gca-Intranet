@@ -506,13 +506,13 @@ class Limit_Login_Attempts {
     }
 
     /**
-     * Trigger scheduling of email delivery log clean up event
-     * 
+     * Trigger scheduling of failed login attempts log clean up event.
+     *
      * @since 7.1.1
      */
     public function trigger_clear_or_schedule_log_clean_up_by_amount( $option_name ) {
-        if ( 'failed_login_attempts_log_schedule_cleanup_by_amount' == $option_name ) {
-            $this->clear_or_schedule_log_clean_up_by_amount();        
+        if ( ASENHA_SLUG_U === $option_name ) {
+            $this->clear_or_schedule_log_clean_up_by_amount();
         }
     }
 
@@ -524,10 +524,11 @@ class Limit_Login_Attempts {
      */
     public function clear_or_schedule_log_clean_up_by_amount() {
         $options = get_option( ASENHA_SLUG_U, array() );
+        $limit_login_attempts = isset( $options['limit_login_attempts'] ) ? $options['limit_login_attempts'] : false;
         $failed_login_attempts_log_schedule_cleanup_by_amount = isset( $options['failed_login_attempts_log_schedule_cleanup_by_amount'] ) ? $options['failed_login_attempts_log_schedule_cleanup_by_amount'] : false;
         
-        // If scheduled clean up is not enabled, let's clear the schedule
-        if ( ! $failed_login_attempts_log_schedule_cleanup_by_amount ) {
+        // If module or scheduled clean up is not enabled, clear the schedule.
+        if ( ! $limit_login_attempts || ! $failed_login_attempts_log_schedule_cleanup_by_amount ) {
             wp_clear_scheduled_hook( 'asenha_failed_login_attempts_log_cleanup_by_amount' );
             return;            
         }
@@ -548,15 +549,27 @@ class Limit_Login_Attempts {
         global $wpdb;
         
         $options = get_option( ASENHA_SLUG_U, array() );
+        $limit_login_attempts = isset( $options['limit_login_attempts'] ) ? $options['limit_login_attempts'] : false;
         $failed_login_attempts_log_schedule_cleanup_by_amount = isset( $options['failed_login_attempts_log_schedule_cleanup_by_amount'] ) ? $options['failed_login_attempts_log_schedule_cleanup_by_amount'] : false;
         $failed_login_attempts_log_entries_amount_to_keep = 1000;
         
-        // Bail if scheduled clean up by amount is not enabled
-        if ( ! $failed_login_attempts_log_schedule_cleanup_by_amount ) {
+        // Bail and clear any orphan schedule if clean up should not run.
+        if ( ! $limit_login_attempts || ! $failed_login_attempts_log_schedule_cleanup_by_amount ) {
+            wp_clear_scheduled_hook( 'asenha_failed_login_attempts_log_cleanup_by_amount' );
             return;
         }
-                
-        $table_name  = $wpdb->prefix.'asenha_failed_logins';
+
+        $table_name = $wpdb->prefix . 'asenha_failed_logins';
+
+        // Maybe create table if it does not exist yet, e.g. module enabled but no login attempt yet.
+        $query = $wpdb->prepare( 'SHOW TABLES LIKE %s', $wpdb->esc_like( $table_name ) );
+
+        if ( $wpdb->get_var( $query ) === $table_name ) {
+            // Table already exists, do nothing.
+        } else {
+            $activation = new Activation;
+            $activation->create_failed_logins_log_table();
+        }
         
         $wpdb->query( "DELETE failed_login_entries FROM " . $table_name . " 
                         AS failed_login_entries JOIN ( SELECT id FROM " . $table_name . " ORDER BY id DESC LIMIT 1 OFFSET " . $failed_login_attempts_log_entries_amount_to_keep . " ) 

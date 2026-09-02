@@ -36,31 +36,45 @@ class Media_Replacement {
     }
         
     /**
+     * Register attachment_fields_to_edit filter on admin_init for reliable admin-ajax hookup.
+     *
+     * @since 7.9.0
+     */
+    public function register_attachment_fields_filter() {
+        add_filter( 'attachment_fields_to_edit', [ $this, 'add_media_replacement_button' ], 10, 2 );
+    }
+
+    /**
      * Add media replacement button in the edit screen of media/attachment
      *
      * @since 1.1.0
      */
     public function add_media_replacement_button( $fields, $post ) {
-        global $pagenow, $typenow;
-        
-        // Do not do this on post creation and editing screen
-        // May cause media frame layout / display issues
-        if ( 'attachment' == $typenow ||
-            ( 'attachment' != $typenow && 'post-new.php' != $pagenow && 'post.php' != $pagenow )        
-            ) {
-            $original_attachment_id = '';
-            $image_mime_type = '';
-            if ( is_object( $post ) ) {
-                $original_attachment_id = $post->ID;
-                if ( property_exists( $post, 'post_mime_type' ) ) {
-                    $image_mime_type = $post->post_mime_type;       
-                }
-            }
-                    
-            // Enqueues all scripts, styles, settings, and templates necessary to use all media JS APIs.
-            // Reference: https://codex.wordpress.org/Javascript_Reference/wp.media
-            wp_enqueue_media();
+        if ( ! is_admin() || $this->is_page_builder_context() ) {
+            return $fields;
+        }
 
+        global $pagenow, $typenow;
+
+        $is_attachment_edit = ( 'post.php' === $pagenow && 'attachment' === $typenow );
+        $screen             = function_exists( 'get_current_screen' ) ? get_current_screen() : null;
+        $is_media_library   = ( $screen && 'upload' === $screen->base );
+
+        // Attachment edit screen, media library screen, or grid modal compat via upload.php AJAX only.
+        if ( ! $is_attachment_edit && ! $is_media_library && ! $this->is_native_media_library_compat_ajax() ) {
+            return $fields;
+        }
+
+        $original_attachment_id = '';
+        $image_mime_type        = '';
+        if ( is_object( $post ) ) {
+            $original_attachment_id = $post->ID;
+            if ( property_exists( $post, 'post_mime_type' ) ) {
+                $image_mime_type = $post->post_mime_type;
+            }
+        }
+
+        if ( $original_attachment_id ) {
             // Add new field to attachment fields for the media replace functionality
             $fields['asenha-media-replace'] = array();
             $fields['asenha-media-replace']['label'] = '';
@@ -387,6 +401,137 @@ class Media_Replacement {
         }
 
         return $additional_url_parameter;
+    }
+
+    /**
+     * Whether the current request is in a page builder editor context.
+     *
+     * @since 7.9.0
+     *
+     * @return bool
+     */
+    private function is_page_builder_context() {
+        $is_page_builder = false;
+
+        $request_action = isset( $_REQUEST['action'] ) ? sanitize_text_field( wp_unslash( $_REQUEST['action'] ) ) : ''; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+        $core_media_ajax_actions = array( 'get-attachment', 'save-attachment-compat', 'query-attachments' );
+        $skip_request_builder_keys = wp_doing_ajax() && in_array( $request_action, $core_media_ajax_actions, true );
+
+        if ( ! $skip_request_builder_keys && ! empty( $_REQUEST ) ) { // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+            if ( 'elementor' === $request_action ) {
+                $is_page_builder = true;
+            } elseif ( isset( $_REQUEST['fl_builder'] ) ) { // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+                $is_page_builder = true;
+            } elseif ( isset( $_REQUEST['et_fb'] ) ) { // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+                $is_page_builder = true;
+            } elseif ( isset( $_REQUEST['ct_builder'] ) ) { // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+                $is_page_builder = true;
+            } elseif ( isset( $_REQUEST['vc_editable'] ) ) { // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+                $is_page_builder = true;
+            } elseif ( isset( $_REQUEST['vcv-editable'] ) ) { // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+                $is_page_builder = true;
+            } elseif ( isset( $_REQUEST['tve'] ) ) { // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+                $is_page_builder = true;
+            } elseif ( isset( $_REQUEST['bricks'] ) ) { // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+                $is_page_builder = true;
+            } elseif ( isset( $_REQUEST['breakdance'] ) ) { // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+                $is_page_builder = true;
+            } elseif ( isset( $_REQUEST['_cs_nonce'] ) ) { // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+                $is_page_builder = true;
+            } elseif (
+                isset( $_REQUEST['tb-preview'], $_REQUEST['tb-id'] ) // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+            ) {
+                $is_page_builder = true;
+            }
+        }
+
+        if ( ! $is_page_builder ) {
+            $referer = $this->get_media_replacement_request_referer();
+
+            if ( $referer ) {
+                $referer_patterns = array(
+                    'action=elementor',
+                    'fl_builder',
+                    'et_fb=',
+                    'ct_builder',
+                    'vc_editable',
+                    'vcv-editable',
+                    'tve=',
+                    'tb-preview=',
+                    'bricks=',
+                    'breakdance=',
+                    'breakdance_builder',
+                );
+
+                foreach ( $referer_patterns as $pattern ) {
+                    if ( false !== strpos( $referer, $pattern ) ) {
+                        $is_page_builder = true;
+                        break;
+                    }
+                }
+            }
+        }
+
+        /**
+         * Filters whether the current request is a page builder editor context.
+         *
+         * @since 7.9.0
+         *
+         * @param bool $is_page_builder Whether the request is from a page builder.
+         */
+        return (bool) apply_filters( 'asenha_media_replacement_is_page_builder_context', $is_page_builder );
+    }
+
+    /**
+     * Whether this is a native Media Library compat AJAX request (upload.php).
+     *
+     * @since 7.9.0
+     *
+     * @return bool
+     */
+    private function is_native_media_library_compat_ajax() {
+        if ( ! wp_doing_ajax() || $this->is_page_builder_context() ) {
+            return false;
+        }
+
+        $action = isset( $_REQUEST['action'] ) ? sanitize_key( wp_unslash( $_REQUEST['action'] ) ) : ''; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+
+        if ( ! in_array( $action, array( 'get-attachment', 'save-attachment-compat', 'query-attachments' ), true ) ) {
+            return false;
+        }
+
+        $referer = $this->get_media_replacement_request_referer();
+
+        if ( $referer ) {
+            if ( false !== strpos( $referer, 'upload.php' ) ) {
+                return true;
+            }
+
+            // Exclude classic/block post editor media modals.
+            if ( false !== strpos( $referer, 'post.php' ) || false !== strpos( $referer, 'post-new.php' ) ) {
+                return false;
+            }
+        }
+
+        // Referer missing or non-upload admin URL: allow (Media Library often has no usable referer).
+        return true;
+    }
+
+    /**
+     * Referer URL for media replacement context checks.
+     *
+     * @since 7.9.0
+     *
+     * @return string
+     */
+    private function get_media_replacement_request_referer() {
+        $referer = wp_get_referer();
+
+        if ( ! $referer && ! empty( $_SERVER['HTTP_REFERER'] ) ) {
+            $referer = esc_url_raw( wp_unslash( $_SERVER['HTTP_REFERER'] ) );
+        }
+
+        return is_string( $referer ) ? $referer : '';
     }
     
 }

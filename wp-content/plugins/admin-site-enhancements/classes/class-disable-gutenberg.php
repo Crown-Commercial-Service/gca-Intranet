@@ -132,7 +132,11 @@ class Disable_Gutenberg {
             }
         }
         // Selectively disable for the selected post types
+        $should_disable_frontend_styles = false;
         if ( 'only-on' == $disable_gutenberg_type && in_array( $post_type, $post_types_for_disable_gutenberg ) || 'except-on' == $disable_gutenberg_type && !in_array( $post_type, $post_types_for_disable_gutenberg ) || 'all-post-types' == $disable_gutenberg_type ) {
+            $should_disable_frontend_styles = !empty( $options['disable_gutenberg_frontend_styles'] );
+        }
+        if ( $should_disable_frontend_styles ) {
             global $wp_styles;
             // As needed, exclude some block styles from dequeuing
             $keep_enqueued = array();

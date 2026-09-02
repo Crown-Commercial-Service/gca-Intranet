@@ -110,6 +110,34 @@
          }
 
       });
+
+      /**
+       * Update the SMTP password status label and inline warning from AJAX responses.
+       *
+       * @param {Object} response Test-email AJAX response payload.
+       */
+      function asenhaUpdateSmtpPasswordUiState( response ) {
+         if ( ! response || typeof response !== 'object' ) {
+            return;
+         }
+
+         if ( typeof response.smtp_password_description !== 'undefined' ) {
+            $('.asenha-smtp-password-description').text( response.smtp_password_description );
+         }
+
+         var $warning = $('.asenha-smtp-password-warning');
+         if ( typeof response.smtp_password_warning !== 'undefined' ) {
+            if ( response.smtp_password_warning ) {
+               $warning.empty().append(
+                  $('<div class="notice notice-warning inline"></div>').append(
+                     $('<p></p>').text( response.smtp_password_warning )
+                  )
+               ).show();
+            } else {
+               $warning.empty().hide();
+            }
+         }
+      }
       
       // Email Delivery >> Send test email
       $('#send-test-email').click(function(e) {
@@ -133,6 +161,7 @@
                },
                success:function(data) {
                   var response = data;
+                  asenhaUpdateSmtpPasswordUiState( response );
                   if ( response.status == 'success' ) {
                      setTimeout( function() {
                         $('.sending-test-email').hide();
@@ -328,7 +357,9 @@
       $('.enable-external-permalinks').appendTo('.fields-content-management > table > tbody');
       
       $('.enable-external-permalinks-for').appendTo('.fields-content-management .enable-external-permalinks .asenha-subfields');
+      
       $('.external-links-new-tab').appendTo('.fields-content-management > table > tbody');
+      
       $('.custom-nav-menu-items-new-tab').appendTo('.fields-content-management > table > tbody');
       $('.enable-missed-schedule-posts-auto-publish').appendTo('.fields-content-management > table > tbody');
 
@@ -342,6 +373,7 @@
       $('.hide-ab-new-content-menu').appendTo('.fields-admin-interface .hide-modify-elements .asenha-subfields');
       $('.hide-ab-howdy').appendTo('.fields-admin-interface .hide-modify-elements .asenha-subfields');
       $('.hide-help-drawer').appendTo('.fields-admin-interface .hide-modify-elements .asenha-subfields');
+      
       
       $('.hide-admin-notices').appendTo('.fields-admin-interface > table > tbody');
       
@@ -359,6 +391,7 @@
       $('.admin-menu-width').appendTo('.fields-admin-interface .wider-admin-menu .asenha-subfields');
       $('.customize-admin-menu').appendTo('.fields-admin-interface > table > tbody');
       $('.admin-menu-organizer-sticky-collapse-menu').appendTo('.fields-admin-interface .customize-admin-menu .asenha-subfields');
+      $('.navigation-menu-duplicator').appendTo('.fields-admin-interface > table > tbody');
       
       $('.show-custom-taxonomy-filters').appendTo('.fields-admin-interface > table > tbody');
       
@@ -406,6 +439,7 @@
       $('.redirect-after-logout-to-slug').appendTo('.fields-login-logout .redirect-after-logout .asenha-subfields');
       $('.redirect-after-logout-for').appendTo('.fields-login-logout .redirect-after-logout .asenha-subfields');
       
+      $('.disable-user-account').appendTo('.fields-login-logout > table > tbody');
 
       // Place fields into "Custom Code" tab
       
@@ -435,6 +469,7 @@
       
       $('.disable-gutenberg-for').appendTo('.fields-disable-components .disable-gutenberg .asenha-subfields');
       $('.disable-gutenberg-frontend-styles').appendTo('.fields-disable-components .disable-gutenberg .asenha-subfields');
+      
       $('.disable-comments').appendTo('.fields-disable-components > table > tbody');
       
       $('.disable-comments-for').appendTo('.fields-disable-components .disable-comments .asenha-subfields');
@@ -459,6 +494,8 @@
       $('.disable-lazy-load').appendTo('.fields-disable-components .disable-smaller-components .asenha-subfields');
       $('.disable-application-passwords').appendTo('.fields-disable-components .disable-smaller-components .asenha-subfields');
       $('.disable-site-admin-email-verification-screen').appendTo('.fields-disable-components .disable-smaller-components .asenha-subfields');
+      $('.disable-user-email-notification-after-password-change').appendTo('.fields-disable-components .disable-smaller-components .asenha-subfields');
+      $('.disable-admin-email-notification-after-password-change').appendTo('.fields-disable-components .disable-smaller-components .asenha-subfields');
       $('.disable-plugin-theme-editor').appendTo('.fields-disable-components .disable-smaller-components .asenha-subfields');
 
       // Place fields into "Security" tab
@@ -474,6 +511,7 @@
       $('.obfuscate-email-address').appendTo('.fields-security > table > tbody');
       $('.obfuscate-email-address-description').appendTo('.fields-security .obfuscate-email-address .asenha-subfields');
       
+      $('.obfuscate-email-address-builder-safe-mode').appendTo('.fields-security .obfuscate-email-address .asenha-subfields');
       $('.disable-xmlrpc').appendTo('.fields-security > table > tbody');
 
       // Place fields into "Optimizations" tab
@@ -485,6 +523,7 @@
       
       $('.enable-revisions-control').appendTo('.fields-optimizations > table > tbody');
       $('.revisions-max-number').appendTo('.fields-optimizations .enable-revisions-control .asenha-subfields');
+      
       $('.enable-revisions-control-for').appendTo('.fields-optimizations .enable-revisions-control .asenha-subfields');
       $('.enable-heartbeat-control').appendTo('.fields-optimizations > table > tbody');
       $('.heartbeat-control-for-admin-pages').appendTo('.fields-optimizations .enable-heartbeat-control .asenha-subfields');
@@ -495,6 +534,7 @@
       $('.heartbeat-interval-for-frontend').appendTo('.fields-optimizations .enable-heartbeat-control .asenha-subfields');
 
       // Place fields into "Utilities" tab
+      
       $('.smtp-email-delivery').appendTo('.fields-utilities > table > tbody');
       $('.smtp-default-from-description').appendTo('.fields-utilities .smtp-email-delivery .asenha-subfields');
       $('.smtp-default-from-name').appendTo('.fields-utilities .smtp-email-delivery .asenha-subfields');
@@ -825,23 +865,104 @@
       // Enable Heartbeat Control => Check if "Modify interval" is chosen/clicked and show/hide the corresponding select field
       if ( $('input[name="admin_site_enhancements[heartbeat_control_for_admin_pages]"]:checked').val() == 'modify' ) {
          $('.heartbeat-interval-for-admin-pages .asenha-subfield-select-inner').show();
+      } else {
+         $('.heartbeat-interval-for-admin-pages .asenha-subfield-select-inner').hide();
       }
 
       // Two-Factor Authentication (2FA) => Show "Email code validity" only when Email codes is enabled.
       function toggleTwoFactorEmailTokenTtlVisibility() {
+         var twoFactorSettingsMode = $( 'input[name="admin_site_enhancements[two_factor_settings_mode]"]:checked' ).val() || 'same_for_all_roles';
          var emailCodesEnabled = $( '#two_factor_available_providers_email' ).is( ':checked' );
 
-         if ( emailCodesEnabled ) {
+         if ( 'same_for_all_roles' !== twoFactorSettingsMode ) {
+            $( '.two-factor-email-token-ttl' ).hide();
+            $( '.two-factor-email-auto-enable' ).hide();
+         } else if ( emailCodesEnabled ) {
             $( '.two-factor-email-token-ttl' ).show();
+            $( '.two-factor-email-auto-enable' ).show();
          } else {
             $( '.two-factor-email-token-ttl' ).hide();
+            $( '.two-factor-email-auto-enable' ).hide();
          }
       }
 
+      function getTwoFactorSettingsMode() {
+         return $( 'input[name="admin_site_enhancements[two_factor_settings_mode]"]:checked' ).val() || 'same_for_all_roles';
+      }
+
+      function getTwoFactorRoleSlugFromName( fieldName ) {
+         var matches = fieldName.match( /two_factor_role_settings\]\[([^\]]+)\]\[enabled\]/ );
+
+         return matches ? matches[1] : '';
+      }
+
+      function toggleTwoFactorRoleEmailTokenTtlVisibility( roleSlug ) {
+         if ( ! roleSlug ) {
+            return;
+         }
+
+         var emailFieldSelector = 'input[name="admin_site_enhancements[two_factor_role_settings][' + roleSlug + '][available_providers][]"][value="email"]';
+         var emailCodesEnabled = $( emailFieldSelector ).is( ':checked' );
+
+         if ( emailCodesEnabled ) {
+            $( 'tr.two-factor-role-email-token-ttl-' + roleSlug ).show();
+            $( 'tr.two-factor-role-email-auto-enable-' + roleSlug ).show();
+         } else {
+            $( 'tr.two-factor-role-email-token-ttl-' + roleSlug ).hide();
+            $( 'tr.two-factor-role-email-auto-enable-' + roleSlug ).hide();
+         }
+      }
+
+      function toggleTwoFactorRoleSettingsPanels() {
+         var isPerRoleMode = ( 'different_per_role' === getTwoFactorSettingsMode() );
+
+         $( 'tr.two-factor-role-settings-panel' ).hide();
+
+         if ( ! isPerRoleMode ) {
+            return;
+         }
+
+         $( 'input[name^="admin_site_enhancements[two_factor_role_settings]"][name$="[enabled]"]' ).each( function() {
+            var roleSlug = getTwoFactorRoleSlugFromName( $( this ).attr( 'name' ) );
+
+            if ( ! roleSlug || ! $( this ).is( ':checked' ) ) {
+               return;
+            }
+
+            $( 'tr.two-factor-role-settings-panel-' + roleSlug ).show();
+            toggleTwoFactorRoleEmailTokenTtlVisibility( roleSlug );
+         } );
+      }
+
+      function toggleTwoFactorSettingsModeVisibility() {
+         var isPerRoleMode = ( 'different_per_role' === getTwoFactorSettingsMode() );
+
+         if ( isPerRoleMode ) {
+            $( 'tr.two-factor-settings-mode-shared' ).hide();
+            $( 'tr.two-factor-settings-mode-per-role' ).show();
+         } else {
+            $( 'tr.two-factor-settings-mode-shared' ).show();
+            $( 'tr.two-factor-settings-mode-per-role' ).hide();
+         }
+
+         toggleTwoFactorEmailTokenTtlVisibility();
+         toggleTwoFactorRoleSettingsPanels();
+      }
+
       toggleTwoFactorEmailTokenTtlVisibility();
+      toggleTwoFactorSettingsModeVisibility();
 
       $( document ).on( 'change', '#two_factor_available_providers_email', toggleTwoFactorEmailTokenTtlVisibility );
       $( document ).on( 'change', 'input[name="admin_site_enhancements[two_factor_authentication]"]', toggleTwoFactorEmailTokenTtlVisibility );
+      $( document ).on( 'change', 'input[name="admin_site_enhancements[two_factor_settings_mode]"]', toggleTwoFactorSettingsModeVisibility );
+      $( document ).on( 'change', 'input[name^="admin_site_enhancements[two_factor_role_settings]"][name$="[enabled]"]', toggleTwoFactorRoleSettingsPanels );
+      $( document ).on( 'change', 'input[name^="admin_site_enhancements[two_factor_role_settings]"][name*="[available_providers]"]', function() {
+         var matches = $( this ).attr( 'name' ).match( /two_factor_role_settings\]\[([^\]]+)\]\[available_providers\]/ );
+
+         if ( matches && matches[1] ) {
+            toggleTwoFactorRoleEmailTokenTtlVisibility( matches[1] );
+         }
+      } );
 
       $('input[name="admin_site_enhancements[heartbeat_control_for_admin_pages]"]').click(function() {
          var radioValue = $(this).attr('value');
@@ -854,6 +975,8 @@
 
       if ( $('input[name="admin_site_enhancements[heartbeat_control_for_post_edit]"]:checked').val() == 'modify' ) {
          $('.heartbeat-interval-for-post-edit .asenha-subfield-select-inner').show();
+      } else {
+         $('.heartbeat-interval-for-post-edit .asenha-subfield-select-inner').hide();
       }
 
       $('input[name="admin_site_enhancements[heartbeat_control_for_post_edit]"]').click(function() {
@@ -867,6 +990,8 @@
 
       if ( $('input[name="admin_site_enhancements[heartbeat_control_for_frontend]"]:checked').val() == 'modify' ) {
          $('.heartbeat-interval-for-frontend .asenha-subfield-select-inner').show();
+      } else {
+         $('.heartbeat-interval-for-frontend .asenha-subfield-select-inner').hide();
       }
 
       $('input[name="admin_site_enhancements[heartbeat_control_for_frontend]"]').click(function() {
@@ -877,6 +1002,8 @@
             $('.heartbeat-interval-for-frontend .asenha-subfield-select-inner').hide();            
          }
       });
+
+      
 
       subfieldsToggler( 'smtp_email_delivery', 'smtp-email-delivery' );
 
@@ -904,6 +1031,8 @@
 
       
 
+      
+
       // Disable Gutenberg
       if ( $('input[name="admin_site_enhancements[disable_gutenberg_type]"]:checked').val() == 'all-post-types' ) {
          $('.asenha-checkbox-item.disable-gutenberg-for').hide();
@@ -923,6 +1052,8 @@
             $('.disable-gutenberg-type').addClass('asenha-th-border-bottom');
          }
       });
+
+      
 
       // Disable Comments
       if ( $('input[name="admin_site_enhancements[disable_comments_type]"]:checked').val() == 'all-post-types' ) {

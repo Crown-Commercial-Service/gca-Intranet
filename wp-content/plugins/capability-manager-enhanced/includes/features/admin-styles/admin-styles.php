@@ -37,6 +37,46 @@ class PP_Capabilities_Admin_Styles
         $this->defaults = [
             // WordPress Builtin Features
             'admin_color_scheme' => 'fresh',
+            'admin_font_family' => '',
+            'admin_font_size' => '',
+            'admin_font_size_unit' => 'px',
+            'admin_typography' => [
+                'headings' => [
+                    'font_family' => '',
+                    'font_size' => '',
+                    'font_size_unit' => 'px',
+                ],
+                'body_text' => [
+                    'font_family' => '',
+                    'font_size' => '',
+                    'font_size_unit' => 'px',
+                ],
+                'links' => [
+                    'font_family' => '',
+                    'font_size' => '',
+                    'font_size_unit' => 'px',
+                ],
+                'admin_menu' => [
+                    'font_family' => '',
+                    'font_size' => '',
+                    'font_size_unit' => 'px',
+                ],
+                'admin_bar' => [
+                    'font_family' => '',
+                    'font_size' => '',
+                    'font_size_unit' => 'px',
+                ],
+                'form_fields' => [
+                    'font_family' => '',
+                    'font_size' => '',
+                    'font_size_unit' => 'px',
+                ],
+                'buttons' => [
+                    'font_family' => '',
+                    'font_size' => '',
+                    'font_size_unit' => 'px',
+                ],
+            ],
             'admin_custom_footer_text' => '',
 
             // Custom CSS based features
@@ -160,6 +200,10 @@ class PP_Capabilities_Admin_Styles
         // Define which settings should be overridden by roles
         $override_settings = [
             'admin_color_scheme',
+            'admin_font_family',
+            'admin_font_size',
+            'admin_font_size_unit',
+            'admin_typography',
             'admin_custom_footer_text',
             'hide_color_scheme_ui',
             'force_role_settings',
@@ -206,6 +250,8 @@ class PP_Capabilities_Admin_Styles
     public function apply_admin_styles_for_settings($settings)
     {
         $css = '';
+        $global_typography_selectors = $this->get_global_typography_selectors();
+        $global_selector_string = implode(",\n                ", $global_typography_selectors);
 
         // Custom admin logo
         if (!empty($settings['admin_logo'])) {
@@ -256,6 +302,45 @@ class PP_Capabilities_Admin_Styles
                     }
                 }
             ';
+        }
+
+        if (!empty($settings['admin_font_family'])) {
+            $font_family = $settings['admin_font_family'];
+
+            $css .= "\n                " . $global_selector_string . " {\n                    font-family: " . $font_family . " !important;\n                }\n            ";
+        }
+
+        if (!empty($settings['admin_font_size'])) {
+            $font_size = $this->format_admin_font_size_value($settings['admin_font_size'] ?? '');
+
+            if (!empty($font_size)) {
+                $css .= "\n                " . $global_selector_string . " {\n                    font-size: " . $font_size . " !important;\n                }\n            ";
+            }
+        }
+
+        if (!empty($settings['admin_typography']) && is_array($settings['admin_typography'])) {
+            $typography_selectors = $this->get_typography_target_selectors();
+
+            foreach ($typography_selectors as $target_key => $selectors) {
+                if (empty($settings['admin_typography'][$target_key]) || !is_array($settings['admin_typography'][$target_key])) {
+                    continue;
+                }
+
+                $target_settings = $settings['admin_typography'][$target_key];
+                $selector_string = implode(",\n                ", $selectors);
+
+                if (!empty($target_settings['font_family'])) {
+                    $css .= "\n                " . $selector_string . " {\n                    font-family: " . $target_settings['font_family'] . " !important;\n                }\n            ";
+                }
+
+                if (!empty($target_settings['font_size'])) {
+                    $target_font_size = $this->format_admin_font_size_value($target_settings['font_size'] ?? '');
+
+                    if (!empty($target_font_size)) {
+                        $css .= "\n                " . $selector_string . " {\n                    font-size: " . $target_font_size . " !important;\n                }\n            ";
+                    }
+                }
+            }
         }
 
         // Apply custom CSS
@@ -345,15 +430,331 @@ class PP_Capabilities_Admin_Styles
     /**
      * Generate CSS URL for custom style
      */
-    private function generate_custom_style_url($style_slug)
+    private function generate_custom_style_url($style_slug, $style = [])
     {
+        $stored_style_slug = (string) $style_slug;
+        $style_slug = sanitize_key($style_slug);
+
+        if (empty($style_slug)) {
+            return '';
+        }
+
+        if (empty($style)) {
+            $custom_styles = $this->get_custom_styles();
+            if (isset($custom_styles[$stored_style_slug])) {
+                $style = $custom_styles[$stored_style_slug];
+            } else {
+                $style = isset($custom_styles[$style_slug]) ? $custom_styles[$style_slug] : [];
+            }
+        }
+
+        $css_url = $this->get_generated_custom_style_url($style_slug, $style);
+
+        if (empty($css_url) && !empty($style)) {
+            $style = $this->generate_custom_style_css_file($style_slug, $style);
+            $css_url = $this->get_generated_custom_style_url($style_slug, $style);
+
+            if (!empty($css_url) && !empty($style['css_file'])) {
+                $custom_styles = $this->get_custom_styles();
+                $option_style_slug = isset($custom_styles[$stored_style_slug]) ? $stored_style_slug : $style_slug;
+
+                if (isset($custom_styles[$option_style_slug])) {
+                    $custom_styles[$option_style_slug]['css_file'] = $style['css_file'];
+                    $custom_styles[$option_style_slug]['css_file_hash'] = $style['css_file_hash'];
+                    $custom_styles[$option_style_slug]['css_file_updated'] = $style['css_file_updated'];
+                    $this->save_custom_styles($custom_styles);
+                }
+            }
+        }
+
+        $version = (isset($style['custom_scheme_version']) ? $style['custom_scheme_version'] : time());
+
+        if (!empty($css_url)) {
+            return add_query_arg('ver', $version, $css_url);
+        }
+
         $plugin_url = plugin_dir_url(__FILE__);
 
-        // Get the custom style's individual version for cache busting
-        $custom_styles = $this->get_custom_styles();
-        $version = (isset($custom_styles[$style_slug]['custom_scheme_version']) ? $custom_styles[$style_slug]['custom_scheme_version'] : time());
-
         return $plugin_url . 'admin-styles-css.php?ppc_custom_scheme=1&ppc_custom_style=' . urlencode($style_slug) . '&css_ver=' . $version;
+    }
+
+    /**
+     * Get uploads directory data for generated admin style CSS files.
+     */
+    private function get_admin_styles_upload_dir()
+    {
+        $uploads = wp_upload_dir(null, false);
+
+        if (!empty($uploads['error'])) {
+            return false;
+        }
+
+        $relative_dir = 'publishpress/capabilities/admin-styles';
+
+        $upload_dir = [
+            'path' => trailingslashit($uploads['basedir']) . $relative_dir,
+            'url' => trailingslashit($uploads['baseurl']) . $relative_dir,
+            'relative_dir' => $relative_dir,
+        ];
+
+        return apply_filters('pp_capabilities_admin_styles_upload_dir', $upload_dir, $uploads);
+    }
+
+    /**
+     * Generate the stable CSS file name for a custom admin style.
+     */
+    private function get_custom_style_css_file_name($style_slug, $css = '')
+    {
+        $style_slug = sanitize_key($style_slug);
+        $file_name = $style_slug;
+
+        if ($css !== '') {
+            $file_name .= '-' . substr(md5($css), 0, 12);
+        }
+
+        return sanitize_file_name($file_name . '.css');
+    }
+
+    /**
+     * Initialize the WordPress filesystem API.
+     */
+    private function init_wp_filesystem()
+    {
+        global $wp_filesystem;
+
+        if (!empty($wp_filesystem)) {
+            return true;
+        }
+
+        if (!function_exists('WP_Filesystem')) {
+            require_once ABSPATH . 'wp-admin/includes/file.php';
+        }
+
+        return WP_Filesystem();
+    }
+
+    /**
+     * Load the reusable CSS generator functions.
+     */
+    private function load_custom_style_css_generator()
+    {
+        if (!function_exists('ppc_generate_custom_scheme_css')) {
+            if (!defined('PPC_ADMIN_STYLES_CSS_LIBRARY')) {
+                define('PPC_ADMIN_STYLES_CSS_LIBRARY', true);
+            }
+
+            require_once __DIR__ . '/admin-styles-css.php';
+        }
+
+        return function_exists('ppc_generate_custom_scheme_css');
+    }
+
+    /**
+     * Build the color array expected by the CSS generator.
+     */
+    private function get_custom_style_css_colors($style)
+    {
+        return [
+            'base' => $style['custom_scheme_base'] ?? '',
+            'text' => $style['custom_scheme_text'] ?? '',
+            'highlight' => $style['custom_scheme_highlight'] ?? '',
+            'notification' => $style['custom_scheme_notification'] ?? '',
+            'background' => $style['custom_scheme_background'] ?? '',
+            'element_colors' => (isset($style['element_colors']) && is_array($style['element_colors'])) ? $style['element_colors'] : [],
+            'advanced_rules' => (isset($style['advanced_rules']) && is_array($style['advanced_rules'])) ? $style['advanced_rules'] : [],
+        ];
+    }
+
+    /**
+     * Generate a physical CSS file for a custom admin style.
+     */
+    private function generate_custom_style_css_file($style_slug, $style)
+    {
+        $style_slug = sanitize_key($style_slug);
+
+        if (empty($style_slug) || empty($style) || !$this->load_custom_style_css_generator()) {
+            return $style;
+        }
+
+        $upload_dir = $this->get_admin_styles_upload_dir();
+
+        if (empty($upload_dir) || !wp_mkdir_p($upload_dir['path']) || !$this->init_wp_filesystem()) {
+            return $style;
+        }
+
+        global $wp_filesystem;
+
+        $css = ppc_generate_custom_scheme_css($this->get_custom_style_css_colors($style));
+        $css_hash = substr(md5($css), 0, 12);
+        $file_name = $this->get_custom_style_css_file_name($style_slug, $css);
+
+        if (empty($file_name) || validate_file($file_name) !== 0) {
+            return $style;
+        }
+
+        $file_path = trailingslashit($upload_dir['path']) . $file_name;
+        $current_file = !empty($style['css_file']) ? sanitize_file_name(wp_basename($style['css_file'])) : '';
+        $file_exists = $wp_filesystem->exists($file_path);
+        $file_exists = apply_filters('pp_capabilities_admin_styles_css_file_exists', $file_exists, $file_path, $style_slug, $file_name, $style, $upload_dir);
+
+        if ($current_file === $file_name && !empty($style['css_file_hash']) && $style['css_file_hash'] === $css_hash && $file_exists) {
+            return $style;
+        }
+
+        $chmod = defined('FS_CHMOD_FILE') ? FS_CHMOD_FILE : 0644;
+
+        if ($wp_filesystem->put_contents($file_path, $css, $chmod) && $wp_filesystem->exists($file_path)) {
+            $style['css_file'] = $file_name;
+            $style['css_file_hash'] = $css_hash;
+            $style['css_file_updated'] = current_time('timestamp');
+            $this->delete_custom_style_css_files($style_slug, $style, $file_name);
+        } else {
+            unset($style['css_file'], $style['css_file_hash'], $style['css_file_updated']);
+            $this->delete_custom_style_css_files($style_slug, $style);
+        }
+
+        return $style;
+    }
+
+    /**
+     * Get the URL for a generated custom admin style CSS file.
+     */
+    private function get_generated_custom_style_url($style_slug, $style)
+    {
+        $upload_dir = $this->get_admin_styles_upload_dir();
+
+        if (empty($upload_dir)) {
+            return '';
+        }
+
+        $file_name = !empty($style['css_file'])
+            ? sanitize_file_name(wp_basename($style['css_file']))
+            : $this->get_custom_style_css_file_name($style_slug);
+
+        if (empty($file_name) || validate_file($file_name) !== 0) {
+            return '';
+        }
+
+        $file_path = trailingslashit($upload_dir['path']) . $file_name;
+
+        $file_exists = false;
+
+        if ($this->init_wp_filesystem()) {
+            global $wp_filesystem;
+
+            $file_exists = $wp_filesystem->exists($file_path);
+        }
+
+        $file_exists = apply_filters('pp_capabilities_admin_styles_css_file_exists', $file_exists, $file_path, $style_slug, $file_name, $style, $upload_dir);
+
+        if (!$file_exists) {
+            return '';
+        }
+
+        $css_url = trailingslashit($upload_dir['url']) . $file_name;
+
+        return apply_filters('pp_capabilities_admin_styles_css_url', $css_url, $style_slug, $file_name, $style, $upload_dir);
+    }
+
+    /**
+     * Delete generated CSS files for a custom admin style.
+     */
+    private function delete_custom_style_css_files($style_slug, $style = [], $preserve_file = '')
+    {
+        $style_slug = sanitize_key($style_slug);
+        $upload_dir = $this->get_admin_styles_upload_dir();
+
+        if (empty($style_slug) || empty($upload_dir)) {
+            return;
+        }
+
+        $files = [$this->get_custom_style_css_file_name($style_slug)];
+
+        if (!empty($style['css_file'])) {
+            $files[] = sanitize_file_name(wp_basename($style['css_file']));
+        }
+
+        if ($this->init_wp_filesystem()) {
+            global $wp_filesystem;
+
+            $dirlist = $wp_filesystem->dirlist($upload_dir['path']);
+            $prefix = preg_quote(sanitize_file_name($style_slug), '/');
+
+            if (is_array($dirlist)) {
+                foreach (array_keys($dirlist) as $file_name) {
+                    if (preg_match('/^' . $prefix . '(-[a-f0-9]{8,32})?\.css$/', $file_name)) {
+                        $files[] = sanitize_file_name($file_name);
+                    }
+                }
+            }
+        }
+
+        $base_path = wp_normalize_path(trailingslashit($upload_dir['path']));
+
+        $preserve_file = !empty($preserve_file) ? sanitize_file_name(wp_basename($preserve_file)) : '';
+
+        foreach (array_unique(array_filter($files)) as $file_name) {
+            if (!empty($preserve_file) && $file_name === $preserve_file) {
+                continue;
+            }
+
+            if (validate_file($file_name) !== 0) {
+                continue;
+            }
+
+            $file_path = trailingslashit($upload_dir['path']) . $file_name;
+            $normalized_path = wp_normalize_path($file_path);
+
+            if (strpos($normalized_path, $base_path) === 0) {
+                wp_delete_file($file_path);
+            }
+        }
+    }
+
+    /**
+     * Generate missing custom admin style CSS files and persist their metadata.
+     */
+    private function ensure_custom_styles_css_files($custom_styles = [])
+    {
+        if (empty($custom_styles)) {
+            $custom_styles = $this->get_custom_styles();
+        }
+
+        if (empty($custom_styles) || !is_array($custom_styles)) {
+            return [];
+        }
+
+        $updated = false;
+
+        foreach ($custom_styles as $stored_style_slug => $style) {
+            if (empty($style) || !is_array($style)) {
+                continue;
+            }
+
+            $style_slug = sanitize_key($stored_style_slug);
+
+            if (empty($style_slug)) {
+                continue;
+            }
+
+            $generated_style = $this->generate_custom_style_css_file($style_slug, $style);
+
+            if (!empty($generated_style['css_file']) && (
+                empty($style['css_file'])
+                || empty($style['css_file_hash'])
+                || $generated_style['css_file'] !== $style['css_file']
+                || $generated_style['css_file_hash'] !== $style['css_file_hash']
+            )) {
+                $custom_styles[$stored_style_slug] = $generated_style;
+                $updated = true;
+            }
+        }
+
+        if ($updated) {
+            $this->save_custom_styles($custom_styles);
+        }
+
+        return $custom_styles;
     }
 
     /**
@@ -632,6 +1033,8 @@ class PP_Capabilities_Admin_Styles
                 isset($_POST['custom_style_advanced_rules']) ? (array) $_POST['custom_style_advanced_rules'] : []
             );
 
+            $custom_style = $this->generate_custom_style_css_file($style_slug, $custom_style);
+
             // Save custom style and move to top
             if (isset($custom_styles[$style_slug])) {
                 unset($custom_styles[$style_slug]);
@@ -678,6 +1081,7 @@ class PP_Capabilities_Admin_Styles
 
                 if (isset($custom_styles[$style_slug])) {
                     $style_name = $custom_styles[$style_slug]['name'];
+                    $this->delete_custom_style_css_files($style_slug, $custom_styles[$style_slug]);
                     unset($custom_styles[$style_slug]);
                     $this->save_custom_styles($custom_styles);
 
@@ -751,7 +1155,7 @@ class PP_Capabilities_Admin_Styles
         );
 
         $color_schemes = $this->get_color_schemes_data();
-        $custom_styles = $this->get_custom_styles();
+        $custom_styles = $this->ensure_custom_styles_css_files($this->get_custom_styles());
 
         // Localize script
         wp_localize_script('pp-capabilities-admin-styles', 'ppCapabilitiesAdminStyles', [
@@ -764,27 +1168,27 @@ class PP_Capabilities_Admin_Styles
             'styleTemplates' => $this->get_style_templates(),
             'proInstalled' => defined('PUBLISHPRESS_CAPS_PRO_VERSION') ? 1 : 0,
             'labels' => [
-                'selectImage' => __('Select Image', 'capsman-enhanced'),
-                'useImage' => __('Use this Image', 'capsman-enhanced'),
-                'saving' => __('Saving...', 'capsman-enhanced'),
-                'saved' => __('Settings saved.', 'capsman-enhanced'),
-                'saveForRole' => __('Save for %s', 'capsman-enhanced'),
-                'currentLogoPreview' => __('Current logo preview', 'capsman-enhanced'),
-                'addCustomStyle' => __('Add New Custom Style', 'capsman-enhanced'),
-                'editCustomStyle' => __('Edit Custom Style', 'capsman-enhanced'),
-                'confirmDeleteCustomStyle' => __('Are you sure you want to delete "%s" custom style?', 'capsman-enhanced'),
-                'thisCustomStyle' => __('this custom style', 'capsman-enhanced'),
-                'primaryButton' => __('Primary Button', 'capsman-enhanced'),
-                'hoverState' => __('Hover State', 'capsman-enhanced'),
-                'notification' => __('Notification', 'capsman-enhanced'),
-                'livePreview' => __('Live preview of your custom color scheme', 'capsman-enhanced'),
-                'styleNameRequired' => __('Custom Style Name is required.', 'capsman-enhanced'),
-                'mainAdminColorRequired' => __('Main Admin Color is required.', 'capsman-enhanced'),
-                'publishpressCustom' => __('PublishPress Custom', 'capsman-enhanced'),
-                'displayName' => __('Display Name', 'capsman-enhanced'),
-                'displayNameDescription' => __('Change how this style is displayed', 'capsman-enhanced'),
-                'styleNameDescription' => __('Enter a name for your custom style', 'capsman-enhanced'),
-                'styleName' => __('Custom Style Name', 'capsman-enhanced'),
+                'selectImage' => __('Select Image', 'capability-manager-enhanced'),
+                'useImage' => __('Use this Image', 'capability-manager-enhanced'),
+                'saving' => __('Saving...', 'capability-manager-enhanced'),
+                'saved' => __('Settings saved.', 'capability-manager-enhanced'),
+                'saveForRole' => __('Save for %s', 'capability-manager-enhanced'),
+                'currentLogoPreview' => __('Current logo preview', 'capability-manager-enhanced'),
+                'addCustomStyle' => __('Add New Custom Style', 'capability-manager-enhanced'),
+                'editCustomStyle' => __('Edit Custom Style', 'capability-manager-enhanced'),
+                'confirmDeleteCustomStyle' => __('Are you sure you want to delete "%s" custom style?', 'capability-manager-enhanced'),
+                'thisCustomStyle' => __('this custom style', 'capability-manager-enhanced'),
+                'primaryButton' => __('Primary Button', 'capability-manager-enhanced'),
+                'hoverState' => __('Hover State', 'capability-manager-enhanced'),
+                'notification' => __('Notification', 'capability-manager-enhanced'),
+                'livePreview' => __('Live preview of your custom color scheme', 'capability-manager-enhanced'),
+                'styleNameRequired' => __('Custom Style Name is required.', 'capability-manager-enhanced'),
+                'mainAdminColorRequired' => __('Main Admin Color is required.', 'capability-manager-enhanced'),
+                'publishpressCustom' => __('PublishPress Custom', 'capability-manager-enhanced'),
+                'displayName' => __('Display Name', 'capability-manager-enhanced'),
+                'displayNameDescription' => __('Change how this style is displayed', 'capability-manager-enhanced'),
+                'styleNameDescription' => __('Enter a name for your custom style', 'capability-manager-enhanced'),
+                'styleName' => __('Custom Style Name', 'capability-manager-enhanced'),
             ]
         ]);
     }
@@ -797,7 +1201,7 @@ class PP_Capabilities_Admin_Styles
     {
         return [
             'forest' => [
-                'name' => __('Forest', 'capsman-enhanced'),
+                'name' => __('Forest', 'capability-manager-enhanced'),
                 'palette' => [
                     'base' => '#14532d',
                     'text' => '#ecfdf3',
@@ -814,7 +1218,7 @@ class PP_Capabilities_Admin_Styles
                 ]
             ],
             'mint-breeze' => [
-                'name' => __('Mint Breeze', 'capsman-enhanced'),
+                'name' => __('Mint Breeze', 'capability-manager-enhanced'),
                 'palette' => [
                     'base' => '#0f766e',
                     'text' => '#ecfeff',
@@ -831,7 +1235,7 @@ class PP_Capabilities_Admin_Styles
                 ]
             ],
             'cherry' => [
-                'name' => __('Cherry', 'capsman-enhanced'),
+                'name' => __('Cherry', 'capability-manager-enhanced'),
                 'palette' => [
                     'base' => '#7f1d1d',
                     'text' => '#fef2f2',
@@ -848,7 +1252,7 @@ class PP_Capabilities_Admin_Styles
                 ]
             ],
             'graphite' => [
-                'name' => __('Graphite', 'capsman-enhanced'),
+                'name' => __('Graphite', 'capability-manager-enhanced'),
                 'palette' => [
                     'base' => '#111827',
                     'text' => '#f9fafb',
@@ -865,7 +1269,7 @@ class PP_Capabilities_Admin_Styles
                 ]
             ],
             'midnight-teal' => [
-                'name' => __('Midnight Teal', 'capsman-enhanced'),
+                'name' => __('Midnight Teal', 'capability-manager-enhanced'),
                 'palette' => [
                     'base' => '#0b3b3c',
                     'text' => '#ecfeff',
@@ -882,7 +1286,7 @@ class PP_Capabilities_Admin_Styles
                 ]
             ],
             'sunrise' => [
-                'name' => __('Sunrise', 'capsman-enhanced'),
+                'name' => __('Sunrise', 'capability-manager-enhanced'),
                 'palette' => [
                     'base' => '#7c2d12',
                     'text' => '#fff7ed',
@@ -899,7 +1303,7 @@ class PP_Capabilities_Admin_Styles
                 ]
             ],
             'desert-sand' => [
-                'name' => __('Desert Sand', 'capsman-enhanced'),
+                'name' => __('Desert Sand', 'capability-manager-enhanced'),
                 'palette' => [
                     'base' => '#7a4a1a',
                     'text' => '#fff7ed',
@@ -916,7 +1320,7 @@ class PP_Capabilities_Admin_Styles
                 ]
             ],
             'amber-glow' => [
-                'name' => __('Amber Glow', 'capsman-enhanced'),
+                'name' => __('Amber Glow', 'capability-manager-enhanced'),
                 'palette' => [
                     'base' => '#92400e',
                     'text' => '#fffbeb',
@@ -933,7 +1337,7 @@ class PP_Capabilities_Admin_Styles
                 ]
             ],
             'citrus' => [
-                'name' => __('Citrus', 'capsman-enhanced'),
+                'name' => __('Citrus', 'capability-manager-enhanced'),
                 'palette' => [
                     'base' => '#365314',
                     'text' => '#f7fee7',
@@ -950,7 +1354,7 @@ class PP_Capabilities_Admin_Styles
                 ]
             ],
             'ocean-deep' => [
-                'name' => __('Ocean Deep', 'capsman-enhanced'),
+                'name' => __('Ocean Deep', 'capability-manager-enhanced'),
                 'palette' => [
                     'base' => '#0f172a',
                     'text' => '#e2e8f0',
@@ -967,7 +1371,7 @@ class PP_Capabilities_Admin_Styles
                 ]
             ],
             'sage' => [
-                'name' => __('Sage', 'capsman-enhanced'),
+                'name' => __('Sage', 'capability-manager-enhanced'),
                 'palette' => [
                     'base' => '#365314',
                     'text' => '#f7fee7',
@@ -984,7 +1388,7 @@ class PP_Capabilities_Admin_Styles
                 ]
             ],
             'modern-slate' => [
-                'name' => __('Modern Slate', 'capsman-enhanced'),
+                'name' => __('Modern Slate', 'capability-manager-enhanced'),
                 'palette' => [
                     'base' => '#1f2937',
                     'text' => '#f9fafb',
@@ -1001,7 +1405,7 @@ class PP_Capabilities_Admin_Styles
                 ]
             ],
             'royal-plum' => [
-                'name' => __('Royal Plum', 'capsman-enhanced'),
+                'name' => __('Royal Plum', 'capability-manager-enhanced'),
                 'palette' => [
                     'base' => '#4c1d95',
                     'text' => '#f5f3ff',
@@ -1018,7 +1422,7 @@ class PP_Capabilities_Admin_Styles
                 ]
             ],
             'nordic' => [
-                'name' => __('Nordic', 'capsman-enhanced'),
+                'name' => __('Nordic', 'capability-manager-enhanced'),
                 'palette' => [
                     'base' => '#0f172a',
                     'text' => '#e2e8f0',
@@ -1035,7 +1439,7 @@ class PP_Capabilities_Admin_Styles
                 ]
             ],
             'lagoon' => [
-                'name' => __('Lagoon', 'capsman-enhanced'),
+                'name' => __('Lagoon', 'capability-manager-enhanced'),
                 'palette' => [
                     'base' => '#0f172a',
                     'text' => '#e0f2fe',
@@ -1052,7 +1456,7 @@ class PP_Capabilities_Admin_Styles
                 ]
             ],
             'ink' => [
-                'name' => __('Ink', 'capsman-enhanced'),
+                'name' => __('Ink', 'capability-manager-enhanced'),
                 'palette' => [
                     'base' => '#111827',
                     'text' => '#e5e7eb',
@@ -1069,7 +1473,7 @@ class PP_Capabilities_Admin_Styles
                 ]
             ],
             'orchid' => [
-                'name' => __('Orchid', 'capsman-enhanced'),
+                'name' => __('Orchid', 'capability-manager-enhanced'),
                 'palette' => [
                     'base' => '#5b21b6',
                     'text' => '#f5f3ff',
@@ -1086,7 +1490,7 @@ class PP_Capabilities_Admin_Styles
                 ]
             ],
             'cobalt' => [
-                'name' => __('Cobalt', 'capsman-enhanced'),
+                'name' => __('Cobalt', 'capability-manager-enhanced'),
                 'palette' => [
                     'base' => '#1e3a8a',
                     'text' => '#eff6ff',
@@ -1103,7 +1507,7 @@ class PP_Capabilities_Admin_Styles
                 ]
             ],
             'stone' => [
-                'name' => __('Stone', 'capsman-enhanced'),
+                'name' => __('Stone', 'capability-manager-enhanced'),
                 'palette' => [
                     'base' => '#3f3f46',
                     'text' => '#f5f5f4',
@@ -1120,7 +1524,7 @@ class PP_Capabilities_Admin_Styles
                 ]
             ],
             'facebook-classic' => [
-                'name' => __('Facebook Classic', 'capsman-enhanced'),
+                'name' => __('Facebook Classic', 'capability-manager-enhanced'),
                 'palette' => [
                     'base' => '#3b5998',
                     'text' => '#ffffff',
@@ -1137,7 +1541,7 @@ class PP_Capabilities_Admin_Styles
                 ]
             ],
             'twitter-classic' => [
-                'name' => __('Twitter Classic', 'capsman-enhanced'),
+                'name' => __('Twitter Classic', 'capability-manager-enhanced'),
                 'palette' => [
                     'base' => '#1da1f2',
                     'text' => '#ffffff',
@@ -1154,7 +1558,7 @@ class PP_Capabilities_Admin_Styles
                 ]
             ],
             'twitter-modern' => [
-                'name' => __('Twitter Modern', 'capsman-enhanced'),
+                'name' => __('Twitter Modern', 'capability-manager-enhanced'),
                 'palette' => [
                     'base' => '#000000',
                     'text' => '#ffffff',
@@ -1183,11 +1587,11 @@ class PP_Capabilities_Admin_Styles
         $schemes = [];
 
         // Add user custom styles
-        $custom_styles = $this->get_custom_styles();
+        $custom_styles = $this->ensure_custom_styles_css_files($this->get_custom_styles());
 
         foreach ($custom_styles as $slug => $style) {
             if (!empty($style['name'])) {
-                $css_url = $this->generate_custom_style_url($slug);
+                $css_url = $this->generate_custom_style_url($slug, $style);
                 $menu_icon = $style['element_colors']['admin_menu']['menu_icon'] ?? '';
                 $menu_hover_text = $style['element_colors']['admin_menu']['menu_hover_text'] ?? '';
                 $menu_current_text = $style['element_colors']['admin_menu']['menu_current_text'] ?? '';
@@ -1259,6 +1663,22 @@ class PP_Capabilities_Admin_Styles
                     $sanitized[$key] = wp_kses_post($value);
                     break;
 
+                case 'admin_font_family':
+                    $sanitized[$key] = $this->sanitize_font_family($value);
+                    break;
+
+                case 'admin_font_size':
+                    $sanitized[$key] = $this->sanitize_admin_font_size_choice($value);
+                    break;
+
+                case 'admin_font_size_unit':
+                    $sanitized[$key] = $this->sanitize_font_size_unit($value);
+                    break;
+
+                case 'admin_typography':
+                    $sanitized[$key] = $this->sanitize_typography_settings($value);
+                    break;
+
                 case 'custom_scheme_base':
                 case 'custom_scheme_text':
                 case 'custom_scheme_highlight':
@@ -1292,6 +1712,233 @@ class PP_Capabilities_Admin_Styles
         }
 
         return $sanitized;
+    }
+
+    /**
+     * Sanitize font family stack.
+     */
+    private function sanitize_font_family($font_family)
+    {
+        $font_family = trim(wp_strip_all_tags((string) $font_family));
+
+        if ($font_family === '') {
+            return '';
+        }
+
+        if (strpos($font_family, '{') !== false || strpos($font_family, '}') !== false || strpos($font_family, ';') !== false) {
+            return '';
+        }
+
+        $font_family = preg_replace('/\s+/', ' ', $font_family);
+        $font_family = preg_replace('/[^A-Za-z0-9\-_\,\"\'\s]/', '', $font_family);
+        $font_family = trim($font_family);
+
+        if (strlen($font_family) > 150) {
+            $font_family = substr($font_family, 0, 150);
+        }
+
+        return $font_family;
+    }
+
+    /**
+     * Sanitize font size value.
+     */
+    private function sanitize_font_size($font_size)
+    {
+        if (!is_scalar($font_size)) {
+            return '';
+        }
+
+        $font_size = str_replace(',', '.', trim((string) $font_size));
+
+        if ($font_size === '' || !is_numeric($font_size)) {
+            return '';
+        }
+
+        $font_size = (float) $font_size;
+
+        if ($font_size <= 0) {
+            return '';
+        }
+
+        if ($font_size > 72) {
+            $font_size = 72;
+        }
+
+        $font_size = rtrim(rtrim(number_format($font_size, 2, '.', ''), '0'), '.');
+
+        return $font_size;
+    }
+
+    /**
+     * Allowed CSS keyword values for admin font size.
+     */
+    private function get_admin_font_size_keywords()
+    {
+        return ['xx-small', 'x-small', 'small', 'medium', 'large', 'x-large', 'xx-large'];
+    }
+
+    /**
+     * Sanitize admin font size setting (CSS keyword or numeric).
+     */
+    private function sanitize_admin_font_size_choice($font_size)
+    {
+        if (!is_scalar($font_size)) {
+            return '';
+        }
+
+        $font_size = trim((string) $font_size);
+
+        if ($font_size === '') {
+            return '';
+        }
+
+        if (in_array($font_size, $this->get_admin_font_size_keywords(), true)) {
+            return $font_size;
+        }
+
+        return $this->sanitize_font_size($font_size);
+    }
+
+    /**
+     * Compile admin font size as CSS value.
+     */
+    private function format_admin_font_size_value($font_size, $unit = 'px')
+    {
+        $font_size = $this->sanitize_admin_font_size_choice($font_size);
+
+        if ($font_size === '') {
+            return '';
+        }
+
+        if (in_array($font_size, $this->get_admin_font_size_keywords(), true)) {
+            return $font_size;
+        }
+
+        $unit = $this->sanitize_font_size_unit($unit);
+
+        if (in_array($unit, ['rem', 'em'], true)) {
+            return $font_size . $unit;
+        }
+
+        return $font_size . 'px';
+    }
+
+    /**
+     * Sanitize font size unit.
+     */
+    private function sanitize_font_size_unit($unit)
+    {
+        $unit = sanitize_key((string) $unit);
+
+        if (!in_array($unit, ['px', 'rem', 'em'], true)) {
+            return 'px';
+        }
+
+        return $unit;
+    }
+
+    /**
+     * Sanitize typography target settings.
+     */
+    private function sanitize_typography_settings($typography)
+    {
+        $defaults = $this->defaults['admin_typography'];
+
+        if (!is_array($typography)) {
+            return $defaults;
+        }
+
+        $sanitized = [];
+
+        foreach ($defaults as $target => $target_defaults) {
+            $target_input = isset($typography[$target]) && is_array($typography[$target]) ? $typography[$target] : [];
+
+            $sanitized[$target] = [
+                'font_family' => $this->sanitize_font_family($target_input['font_family'] ?? ''),
+                'font_size' => $this->sanitize_admin_font_size_choice($target_input['font_size'] ?? ''),
+                'font_size_unit' => 'px',
+            ];
+        }
+
+        return $sanitized;
+    }
+
+    /**
+     * Map typography targets to admin selectors.
+     */
+    private function get_typography_target_selectors()
+    {
+        return [
+            'body_text' => [
+                'body.wp-admin p',
+                'body.wp-admin li',
+                'body.wp-admin td',
+                'body.wp-admin th',
+                'body.wp-admin label',
+                'body.wp-admin .description',
+            ],
+            'links' => [
+                'body.wp-admin a',
+            ],
+            'headings' => [
+                'body.wp-admin h1',
+                'body.wp-admin h2',
+                'body.wp-admin h3',
+                'body.wp-admin h4',
+                'body.wp-admin h5',
+                'body.wp-admin h6',
+            ],
+            'admin_menu' => [
+                'body.wp-admin #adminmenu a',
+                'body.wp-admin #adminmenu .wp-submenu a',
+            ],
+            'admin_bar' => [
+                'body.wp-admin #wpadminbar .ab-item',
+                'body.wp-admin #wpadminbar .ab-label',
+            ],
+            'form_fields' => [
+                'body.wp-admin input',
+                'body.wp-admin select',
+                'body.wp-admin textarea',
+            ],
+            'buttons' => [
+                'body.wp-admin button',
+                'body.wp-admin .button',
+                'body.wp-admin .button-primary',
+                'body.wp-admin .button-secondary',
+            ],
+        ];
+    }
+
+    /**
+     * Global typography selectors for admin-wide font family / size rules.
+     * Includes baseline admin wrappers plus all Typography Overrides selectors.
+     */
+    private function get_global_typography_selectors()
+    {
+        $base_selectors = [
+            'body.wp-admin',
+            'body.wp-admin #wpwrap',
+            'body.wp-admin .wrap',
+            'body.wp-admin .notice',
+            'body.wp-admin .wp-list-table',
+        ];
+
+        $typography_selectors = $this->get_typography_target_selectors();
+        $flattened_typography_selectors = [];
+
+        foreach ($typography_selectors as $selectors) {
+            if (!is_array($selectors)) {
+                continue;
+            }
+
+            foreach ($selectors as $selector) {
+                $flattened_typography_selectors[] = $selector;
+            }
+        }
+
+        return array_values(array_unique(array_merge($base_selectors, $flattened_typography_selectors)));
     }
 
     /**
@@ -1412,260 +2059,260 @@ class PP_Capabilities_Admin_Styles
     {
         return [
             'general' => [
-                'label' => __('General', 'capsman-enhanced'),
-                'description' => __('Main Admin Color settings', 'capsman-enhanced'),
+                'label' => __('General', 'capability-manager-enhanced'),
+                'description' => __('Main Admin Color settings', 'capability-manager-enhanced'),
                 'colors' => [
                     'custom_scheme_base' => [
-                        'label' => __('Main Admin Color', 'capsman-enhanced'),
-                        'description' => __('Primary brand color', 'capsman-enhanced')
+                        'label' => __('Main Admin Color', 'capability-manager-enhanced'),
+                        'description' => __('Primary brand color', 'capability-manager-enhanced')
                     ],
                     'custom_scheme_text' => [
-                        'label' => __('Text Color', 'capsman-enhanced'),
-                        'description' => __('Primary text color', 'capsman-enhanced')
+                        'label' => __('Text Color', 'capability-manager-enhanced'),
+                        'description' => __('Primary text color', 'capability-manager-enhanced')
                     ],
                     'custom_scheme_highlight' => [
-                        'label' => __('Highlight Color', 'capsman-enhanced'),
-                        'description' => __('Used for hovers and highlights', 'capsman-enhanced')
+                        'label' => __('Highlight Color', 'capability-manager-enhanced'),
+                        'description' => __('Used for hovers and highlights', 'capability-manager-enhanced')
                     ],
                     'custom_scheme_notification' => [
-                        'label' => __('Notification Color', 'capsman-enhanced'),
-                        'description' => __('Used for alerts and notifications', 'capsman-enhanced')
+                        'label' => __('Notification Color', 'capability-manager-enhanced'),
+                        'description' => __('Used for alerts and notifications', 'capability-manager-enhanced')
                     ],
                     'custom_scheme_background' => [
-                        'label' => __('Background Color', 'capsman-enhanced'),
-                        'description' => __('Page background color', 'capsman-enhanced')
+                        'label' => __('Background Color', 'capability-manager-enhanced'),
+                        'description' => __('Page background color', 'capability-manager-enhanced')
                     ]
                 ]
             ],
             'links' => [
-                'label' => __('Links', 'capsman-enhanced'),
-                'description' => __('Link element colors', 'capsman-enhanced'),
+                'label' => __('Links', 'capability-manager-enhanced'),
+                'description' => __('Link element colors', 'capability-manager-enhanced'),
                 'colors' => [
                     'link_default' => [
-                        'label' => __('Default Link Color', 'capsman-enhanced'),
-                        'description' => __('Standard link color', 'capsman-enhanced')
+                        'label' => __('Default Link Color', 'capability-manager-enhanced'),
+                        'description' => __('Standard link color', 'capability-manager-enhanced')
                     ],
                     'link_hover' => [
-                        'label' => __('Link Hover Color', 'capsman-enhanced'),
-                        'description' => __('Color on hover', 'capsman-enhanced')
+                        'label' => __('Link Hover Color', 'capability-manager-enhanced'),
+                        'description' => __('Color on hover', 'capability-manager-enhanced')
                     ],
                     'link_delete' => [
-                        'label' => __('Delete Link Color', 'capsman-enhanced'),
-                        'description' => __('Color for delete/trash actions', 'capsman-enhanced')
+                        'label' => __('Delete Link Color', 'capability-manager-enhanced'),
+                        'description' => __('Color for delete/trash actions', 'capability-manager-enhanced')
                     ],
                     'link_trash' => [
-                        'label' => __('Trash Link Color', 'capsman-enhanced'),
-                        'description' => __('Color for trash actions', 'capsman-enhanced')
+                        'label' => __('Trash Link Color', 'capability-manager-enhanced'),
+                        'description' => __('Color for trash actions', 'capability-manager-enhanced')
                     ],
                     'link_spam' => [
-                        'label' => __('Spam Link Color', 'capsman-enhanced'),
-                        'description' => __('Color for spam actions', 'capsman-enhanced')
+                        'label' => __('Spam Link Color', 'capability-manager-enhanced'),
+                        'description' => __('Color for spam actions', 'capability-manager-enhanced')
                     ],
                     'link_inactive' => [
-                        'label' => __('Inactive Link Color', 'capsman-enhanced'),
-                        'description' => __('Color for inactive items', 'capsman-enhanced')
+                        'label' => __('Inactive Link Color', 'capability-manager-enhanced'),
+                        'description' => __('Color for inactive items', 'capability-manager-enhanced')
                     ]
                 ]
             ],
             'tables' => [
-                'label' => __('Tables', 'capsman-enhanced'),
-                'description' => __('Table element colors', 'capsman-enhanced'),
+                'label' => __('Tables', 'capability-manager-enhanced'),
+                'description' => __('Table element colors', 'capability-manager-enhanced'),
                 'colors' => [
                     'table_header_bg' => [
-                        'label' => __('Table Header Background', 'capsman-enhanced'),
+                        'label' => __('Table Header Background', 'capability-manager-enhanced'),
                         'description' => ''
                     ],
                     'table_header_text' => [
-                        'label' => __('Table Header Text', 'capsman-enhanced'),
+                        'label' => __('Table Header Text', 'capability-manager-enhanced'),
                         'description' => ''
                     ],
                     'table_row_bg' => [
-                        'label' => __('Table Row Background', 'capsman-enhanced'),
+                        'label' => __('Table Row Background', 'capability-manager-enhanced'),
                         'description' => ''
                     ],
                     'table_row_color' => [
-                        'label' => __('Table Row Text Color', 'capsman-enhanced'),
+                        'label' => __('Table Row Text Color', 'capability-manager-enhanced'),
                         'description' => ''
                     ],
                     'table_row_hover_bg' => [
-                        'label' => __('Row Hover Background', 'capsman-enhanced'),
+                        'label' => __('Row Hover Background', 'capability-manager-enhanced'),
                         'description' => ''
                     ],
                     'table_border' => [
-                        'label' => __('Table Border Color', 'capsman-enhanced'),
+                        'label' => __('Table Border Color', 'capability-manager-enhanced'),
                         'description' => ''
                     ],
                     'table_alt_row_bg' => [
-                        'label' => __('Alternate Row Background', 'capsman-enhanced'),
+                        'label' => __('Alternate Row Background', 'capability-manager-enhanced'),
                         'description' => ''
                     ],
                     'table_alt_row_color' => [
-                        'label' => __('Alternate Row Text Color', 'capsman-enhanced'),
+                        'label' => __('Alternate Row Text Color', 'capability-manager-enhanced'),
                         'description' => ''
                     ]
                 ]
             ],
             'forms' => [
-                'label' => __('Forms', 'capsman-enhanced'),
-                'description' => __('Form input colors', 'capsman-enhanced'),
+                'label' => __('Forms', 'capability-manager-enhanced'),
+                'description' => __('Form input colors', 'capability-manager-enhanced'),
                 'colors' => [
                     'input_border' => [
-                        'label' => __('Input Border Color', 'capsman-enhanced'),
+                        'label' => __('Input Border Color', 'capability-manager-enhanced'),
                         'description' => ''
                     ],
                     'input_focus_border' => [
-                        'label' => __('Input Focus Border', 'capsman-enhanced'),
+                        'label' => __('Input Focus Border', 'capability-manager-enhanced'),
                         'description' => ''
                     ],
                     'input_background' => [
-                        'label' => __('Input Background Color', 'capsman-enhanced'),
+                        'label' => __('Input Background Color', 'capability-manager-enhanced'),
                         'description' => ''
                     ],
                     'input_text' => [
-                        'label' => __('Input Text Color', 'capsman-enhanced'),
+                        'label' => __('Input Text Color', 'capability-manager-enhanced'),
                         'description' => ''
                     ],
                     'input_placeholder' => [
-                        'label' => __('Placeholder Text Color', 'capsman-enhanced'),
+                        'label' => __('Placeholder Text Color', 'capability-manager-enhanced'),
                         'description' => ''
                     ]
                 ]
             ],
             'buttons' => [
-                'label' => __('Buttons', 'capsman-enhanced'),
-                'description' => __('Button colors', 'capsman-enhanced'),
+                'label' => __('Buttons', 'capability-manager-enhanced'),
+                'description' => __('Button colors', 'capability-manager-enhanced'),
                 'colors' => [
                     'button_primary_bg' => [
-                        'label' => __('Primary Button Background', 'capsman-enhanced'),
+                        'label' => __('Primary Button Background', 'capability-manager-enhanced'),
                         'description' => ''
                     ],
                     'button_primary_text' => [
-                        'label' => __('Primary Button Text', 'capsman-enhanced'),
+                        'label' => __('Primary Button Text', 'capability-manager-enhanced'),
                         'description' => ''
                     ],
                     'button_primary_hover_bg' => [
-                        'label' => __('Primary Button Hover', 'capsman-enhanced'),
+                        'label' => __('Primary Button Hover', 'capability-manager-enhanced'),
                         'description' => ''
                     ],
                     'button_secondary_bg' => [
-                        'label' => __('Secondary Button Background', 'capsman-enhanced'),
+                        'label' => __('Secondary Button Background', 'capability-manager-enhanced'),
                         'description' => ''
                     ],
                     'button_secondary_text' => [
-                        'label' => __('Secondary Button Text', 'capsman-enhanced'),
+                        'label' => __('Secondary Button Text', 'capability-manager-enhanced'),
                         'description' => ''
                     ],
                     'button_secondary_hover_bg' => [
-                        'label' => __('Secondary Button Hover', 'capsman-enhanced'),
+                        'label' => __('Secondary Button Hover', 'capability-manager-enhanced'),
                         'description' => ''
                     ]
                 ]
             ],
             'admin_menu' => [
-                'label' => __('Admin Menu', 'capsman-enhanced'),
-                'description' => __('Admin menu colors', 'capsman-enhanced'),
+                'label' => __('Admin Menu', 'capability-manager-enhanced'),
+                'description' => __('Admin menu colors', 'capability-manager-enhanced'),
                 'colors' => [
                     'menu_bg' => [
-                        'label' => __('Menu Background', 'capsman-enhanced'),
+                        'label' => __('Menu Background', 'capability-manager-enhanced'),
                         'description' => ''
                     ],
                     'menu_text' => [
-                        'label' => __('Menu Text Color', 'capsman-enhanced'),
+                        'label' => __('Menu Text Color', 'capability-manager-enhanced'),
                         'description' => ''
                     ],
                     'menu_icon' => [
-                        'label' => __('Menu Icon Color', 'capsman-enhanced'),
+                        'label' => __('Menu Icon Color', 'capability-manager-enhanced'),
                         'description' => ''
                     ],
                     'menu_hover_bg' => [
-                        'label' => __('Menu Hover Background', 'capsman-enhanced'),
+                        'label' => __('Menu Hover Background', 'capability-manager-enhanced'),
                         'description' => ''
                     ],
                     'menu_hover_text' => [
-                        'label' => __('Menu Hover Text', 'capsman-enhanced'),
+                        'label' => __('Menu Hover Text', 'capability-manager-enhanced'),
                         'description' => ''
                     ],
                     'menu_current_bg' => [
-                        'label' => __('Current Menu Background', 'capsman-enhanced'),
+                        'label' => __('Current Menu Background', 'capability-manager-enhanced'),
                         'description' => ''
                     ],
                     'menu_current_text' => [
-                        'label' => __('Current Menu Text', 'capsman-enhanced'),
+                        'label' => __('Current Menu Text', 'capability-manager-enhanced'),
                         'description' => ''
                     ],
                     'menu_submenu_bg' => [
-                        'label' => __('Submenu Background', 'capsman-enhanced'),
+                        'label' => __('Submenu Background', 'capability-manager-enhanced'),
                         'description' => ''
                     ],
                     'menu_submenu_text' => [
-                        'label' => __('Submenu Text Color', 'capsman-enhanced'),
+                        'label' => __('Submenu Text Color', 'capability-manager-enhanced'),
                         'description' => ''
                     ]
                 ]
             ],
             'admin_bar' => [
-                'label' => __('Admin Bar', 'capsman-enhanced'),
-                'description' => __('Admin bar colors', 'capsman-enhanced'),
+                'label' => __('Admin Bar', 'capability-manager-enhanced'),
+                'description' => __('Admin bar colors', 'capability-manager-enhanced'),
                 'colors' => [
                     'adminbar_bg' => [
-                        'label' => __('Admin Bar Background', 'capsman-enhanced'),
+                        'label' => __('Admin Bar Background', 'capability-manager-enhanced'),
                         'description' => ''
                     ],
                     'adminbar_text' => [
-                        'label' => __('Admin Bar Text', 'capsman-enhanced'),
+                        'label' => __('Admin Bar Text', 'capability-manager-enhanced'),
                         'description' => ''
                     ],
                     'adminbar_icon' => [
-                        'label' => __('Admin Bar Icon', 'capsman-enhanced'),
+                        'label' => __('Admin Bar Icon', 'capability-manager-enhanced'),
                         'description' => ''
                     ],
                     'adminbar_hover_bg' => [
-                        'label' => __('Admin Bar Hover Background', 'capsman-enhanced'),
+                        'label' => __('Admin Bar Hover Background', 'capability-manager-enhanced'),
                         'description' => ''
                     ],
                     'adminbar_hover_text' => [
-                        'label' => __('Admin Bar Hover Text', 'capsman-enhanced'),
+                        'label' => __('Admin Bar Hover Text', 'capability-manager-enhanced'),
                         'description' => ''
                     ]
                 ]
             ],
             'dashboard_widgets' => [
-                'label' => __('Dashboard Widgets', 'capsman-enhanced'),
-                'description' => __('Dashboard widget colors', 'capsman-enhanced'),
+                'label' => __('Dashboard Widgets', 'capability-manager-enhanced'),
+                'description' => __('Dashboard widget colors', 'capability-manager-enhanced'),
                 'colors' => [
                     'widget_bg' => [
-                        'label' => __('Widget Background', 'capsman-enhanced'),
+                        'label' => __('Widget Background', 'capability-manager-enhanced'),
                         'description' => ''
                     ],
                     'widget_border' => [
-                        'label' => __('Widget Border', 'capsman-enhanced'),
+                        'label' => __('Widget Border', 'capability-manager-enhanced'),
                         'description' => ''
                     ],
                     'widget_header_bg' => [
-                        'label' => __('Widget Header Background', 'capsman-enhanced'),
+                        'label' => __('Widget Header Background', 'capability-manager-enhanced'),
                         'description' => ''
                     ],
                     'widget_title_text' => [
-                        'label' => __('Widget Title Text', 'capsman-enhanced'),
+                        'label' => __('Widget Title Text', 'capability-manager-enhanced'),
                         'description' => ''
                     ],
                     'widget_body_text' => [
-                        'label' => __('Widget Body Text', 'capsman-enhanced'),
+                        'label' => __('Widget Body Text', 'capability-manager-enhanced'),
                         'description' => ''
                     ],
                     'widget_link' => [
-                        'label' => __('Widget Link', 'capsman-enhanced'),
+                        'label' => __('Widget Link', 'capability-manager-enhanced'),
                         'description' => ''
                     ],
                     'widget_link_hover' => [
-                        'label' => __('Widget Link Hover', 'capsman-enhanced'),
+                        'label' => __('Widget Link Hover', 'capability-manager-enhanced'),
                         'description' => ''
                     ]
                 ]
             ],
             'advanced' => [
-                'label' => __('Advanced', 'capsman-enhanced'),
-                'description' => __('Custom selector color rules', 'capsman-enhanced'),
+                'label' => __('Advanced', 'capability-manager-enhanced'),
+                'description' => __('Custom selector color rules', 'capability-manager-enhanced'),
                 'colors' => []
             ]
         ];
@@ -1691,7 +2338,7 @@ class PP_Capabilities_Admin_Styles
 
         // Always include the default scheme
         if (!isset($schemes['fresh'])) {
-            $schemes['fresh'] = __('Default', 'capsman-enhanced');
+            $schemes['fresh'] = __('Default', 'capability-manager-enhanced');
         }
 
         return $schemes;
@@ -1703,7 +2350,20 @@ class PP_Capabilities_Admin_Styles
      */
     public function get_custom_styles()
     {
-        return get_option('pp_capabilities_custom_admin_styles', []);
+        $custom_styles = get_option('pp_capabilities_custom_admin_styles', []);
+
+        if (is_array($custom_styles)) {
+            return $custom_styles;
+        }
+
+        if (is_string($custom_styles) && function_exists('maybe_unserialize')) {
+            $custom_styles = maybe_unserialize($custom_styles);
+            if (is_array($custom_styles)) {
+                return $custom_styles;
+            }
+        }
+
+        return [];
     }
 
     /**
@@ -1760,7 +2420,7 @@ class PP_Capabilities_Admin_Styles
                 ];
             } else {
                 // Default scheme
-                $data['name'] = __('Default', 'capsman-enhanced');
+                $data['name'] = __('Default', 'capability-manager-enhanced');
                 $data['colors'] = ['#1d2327', '#ffffff', '#0073aa', '#d63638', '#f0f0f1'];
             }
         }
@@ -1773,21 +2433,30 @@ class PP_Capabilities_Admin_Styles
      */
     public function generate_unique_slug($name, $existing_styles = [])
     {
+        if (function_exists('remove_accents')) {
+            $name = remove_accents($name);
+        }
+
         // Convert to lowercase and replace spaces with hyphens
         $slug = strtolower($name);
         $slug = preg_replace('/\s+/', '-', $slug);
 
-        // Keep all Unicode letters, numbers, and hyphens
-        $slug = preg_replace('/[^\p{L}\p{N}-]/u', '', $slug);
+        // Keep characters supported by sanitize_key and CSS file names.
+        $slug = preg_replace('/[^a-z0-9_-]/', '', $slug);
 
         // Replace multiple hyphens with single hyphen
         $slug = preg_replace('/-+/', '-', $slug);
 
         // Remove hyphens from start and end
         $slug = trim($slug, '-');
+        $slug = sanitize_key($slug);
 
         // Remove any existing prefixes
         $slug = preg_replace('/^(ppc-custom-style-|custom-style-)/', '', $slug);
+
+        if (empty($slug)) {
+            $slug = 'style';
+        }
 
         // Add our standard prefix
         $slug = 'ppc-custom-style-' . $slug;
@@ -1821,7 +2490,7 @@ class PP_Capabilities_Admin_Styles
         }
 
         // Register user custom styles first
-        $custom_styles = $this->get_custom_styles();
+        $custom_styles = $this->ensure_custom_styles_css_files($this->get_custom_styles());
 
         foreach ($custom_styles as $slug => $style) {
             if (!empty($style['name'])) {
@@ -1840,7 +2509,7 @@ class PP_Capabilities_Admin_Styles
                 $icon_current = $menu_current_text ?: $icon_base;
 
                 // Generate CSS URL for this custom style
-                $css_url = $this->generate_custom_style_url($slug);
+                $css_url = $this->generate_custom_style_url($slug, $style);
 
                 wp_admin_css_color(
                     $slug,

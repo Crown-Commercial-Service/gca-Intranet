@@ -1,4 +1,4 @@
-/* Hide media replace field on media frame of media library grid view and add media screen */
+/* Hide media replace compat field in media modals (grid replace is Pro; shown on upload.php below). */
 .compat-field-asenha-media-replace {
 	display: none !important;
 }

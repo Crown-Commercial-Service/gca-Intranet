@@ -110,7 +110,7 @@ class PostEditorWorkflowUI {
         $vars['draftDeletionURL'] = get_delete_post_link($post->ID, '', false);
 
         if ($vars['draftAjaxField']) {
-            $vars['draftActionCaption'] = ($can_publish) ? pp_revisions_status_label('pending-revision', 'submit_short') : pp_revisions_status_label('pending-revision', 'submit');
+            $vars['draftActionCaption'] = pp_revisions_status_label('pending-revision', 'submit');
             $vars['draftActionURL'] = '';
             $vars['draftInProcessCaption'] = pp_revisions_status_label('pending-revision', 'submitting');
             $vars['draftCompletedCaption'] = pp_revisions_status_label('pending-revision', 'submitted');
@@ -138,7 +138,7 @@ class PostEditorWorkflowUI {
 
         if ($block_editor) {
             if ($can_publish) {
-                $vars['scheduleCaption'] = rvy_get_option('approve_button_verbose') ? __('Approve and Schedule', 'revisionary') : pp_revisions_status_label('future-revision', 'submit_short');
+                $vars['scheduleCaption'] = rvy_get_option('approve_button_verbose') ? __('Approve and Schedule', 'revisionary') : pp_revisions_status_label('future-revision', 'submit');
             } else {
                 $vars['scheduleCaption'] = '';
             }
@@ -169,6 +169,9 @@ class PostEditorWorkflowUI {
             $vars['pendingDeletionURL'] = '';
             $vars['futureDeletionURL'] = '';
         }
+
+        $vars['declineCaption'] = esc_html__('Decline Revision', 'revisionary');
+        $vars['declineURL'] = wp_nonce_url( rvy_admin_url("admin.php?page=rvy-revisions&amp;revision={$post->ID}&amp;action=decline$redirect_arg&amp;editor=1"), "decline-revision_{$post->ID}" );
 
         if ($block_editor) {
             $vars['updateCaption'] =  esc_html__('Update Revision', 'revisionary');

@@ -171,10 +171,13 @@ class Activation {
   user_id bigint(20) NULL,
   delivery_status tinyint(1) DEFAULT 0,
   status varchar(255) NULL,
+  resume_key varchar(64) NULL,
+  updated_at datetime NULL,
   created_at datetime NOT NULL,
   PRIMARY KEY (id),
   KEY form_id (form_id),
-  KEY user_id (user_id)
+  KEY user_id (user_id),
+  UNIQUE KEY resume_key (resume_key)
 ) {$charset_collation_sql}";
 
         dbDelta( $sql );

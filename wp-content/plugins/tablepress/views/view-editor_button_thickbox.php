@@ -113,7 +113,7 @@ html {
 <?php endif; ?>
 </style>
 </head>
-<body class="wp-admin wp-core-ui js iframe<?php echo is_rtl() ? ' rtl' : ''; ?>">
+<body class="wp-admin wp-core-ui js iframe <?php echo 'admin-color-' . sanitize_html_class( get_user_option( 'admin_color' ), 'modern' ) . ( is_rtl() ? ' rtl' : '' ); ?>">
 <div id="tablepress-page" class="wrap">
 <h1><?php /* translators: %1$s: Page title, %2$s: Plugin name */ printf( __( '%1$s &lsaquo; %2$s', 'tablepress' ), __( 'List of Tables', 'tablepress' ), 'TablePress' ); ?></h1>
 <div id="poststuff">

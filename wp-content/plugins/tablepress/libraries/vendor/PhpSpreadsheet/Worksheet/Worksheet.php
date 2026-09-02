@@ -568,14 +568,14 @@ class Worksheet
 	/**
 	 * Get a chart by its index position.
 	 *
-	 * @param ?string $index Chart index position
+	 * @param null|int|string $index Chart index position
 	 *
 	 * @return Chart|false
 	 */
-	public function getChartByIndex(?string $index)
+	public function getChartByIndex($index)
 	{
 		$chartCount = count($this->chartCollection);
-		if ($chartCount == 0) {
+		if ($chartCount === 0 || (is_string($index) && $index !== (string) (int) $index)) {
 			return false;
 		}
 		if ($index === null) {
@@ -795,7 +795,8 @@ class Worksheet
 			$this->activePane = $holdActivePane;
 		}
 		if ($activeSheet !== null && $activeSheet >= 0) {
-			($nullsafeVariable3 = $this->getParent()) ? $nullsafeVariable3->setActiveSheetIndex($activeSheet) : null;
+			// Not sure what PhpStan doesn't like about next stmt
+			($nullsafeVariable3 = $this->getParent()) ? $nullsafeVariable3->setActiveSheetIndex($activeSheet) : null; // @phpstan-ignore-line
 		}
 		$this->setSelectedCells($selectedCells);
 
@@ -1871,6 +1872,7 @@ class Worksheet
 		}
 
 		if ($behaviour === self::MERGE_CELL_CONTENT_MERGE) {
+			/** @var string[] $leftCellValue */
 			$this->getCell($upperLeft)->setValueExplicit(implode(' ', $leftCellValue), DataType::TYPE_STRING);
 		}
 	}
@@ -1895,6 +1897,7 @@ class Worksheet
 		}
 
 		if ($behaviour === self::MERGE_CELL_CONTENT_MERGE) {
+			/** @var string[] $leftCellValue */
 			$this->getCell($upperLeft)->setValueExplicit(implode(' ', $leftCellValue), DataType::TYPE_STRING);
 		}
 	}

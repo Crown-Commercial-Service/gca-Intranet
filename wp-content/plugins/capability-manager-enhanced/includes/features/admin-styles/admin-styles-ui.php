@@ -51,6 +51,50 @@ if (empty($current_user_color)) {
 
 $role_caption = translate_user_role($roles[$default_role]);
 
+$font_family_choices = [
+    '' => esc_html__('Default', 'capability-manager-enhanced'),
+    'Arial, sans-serif' => 'Arial',
+    'Verdana, sans-serif' => 'Verdana',
+    'Tahoma, sans-serif' => 'Tahoma',
+    '"Trebuchet MS", sans-serif' => 'Trebuchet MS',
+    '"Segoe UI", sans-serif' => 'Segoe UI',
+    '"Helvetica Neue", Helvetica, Arial, sans-serif' => 'Helvetica Neue',
+    '"Noto Sans", sans-serif' => 'Noto Sans',
+    'Georgia, serif' => 'Georgia',
+    '"Times New Roman", serif' => 'Times New Roman',
+    '"Courier New", monospace' => 'Courier New',
+    'Monaco, "Lucida Console", monospace' => 'Monaco',
+    'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif' => 'System UI',
+];
+
+$font_size_keyword_choices = [
+    'xx-small' => 'xx-small',
+    'x-small' => 'x-small',
+    'small' => 'small',
+    'medium' => 'medium',
+    'large' => 'large',
+    'x-large' => 'x-large',
+    'xx-large' => 'xx-large',
+];
+
+$font_size_numeric_choices = [
+    '10' => '10px',
+    '11' => '11px',
+    '12' => '12px',
+    '13' => '13px',
+    '14' => '14px',
+    '15' => '15px',
+    '16' => '16px',
+    '17' => '17px',
+    '18' => '18px',
+    '19' => '19px',
+    '20' => '20px',
+    '21' => '21px',
+    '22' => '22px',
+    '23' => '23px',
+    '24' => '24px',
+];
+
 // Display custom style success/error messages from transients
 $user_id = get_current_user_id();
 
@@ -58,7 +102,7 @@ $user_id = get_current_user_id();
 $saved_style_name = get_transient('ppc_custom_style_saved_' . $user_id);
 if ($saved_style_name !== false) {
     echo '<div class="notice notice-success is-dismissible"><p>' .
-         sprintf(esc_html__('Custom style "%s" saved successfully.', 'capsman-enhanced'), esc_html($saved_style_name)) .
+         sprintf(esc_html__('Custom style "%s" saved successfully.', 'capability-manager-enhanced'), esc_html($saved_style_name)) .
          '</p></div>';
     delete_transient('ppc_custom_style_saved_' . $user_id);
 }
@@ -67,7 +111,7 @@ if ($saved_style_name !== false) {
 $deleted_style_name = get_transient('ppc_custom_style_deleted_' . $user_id);
 if ($deleted_style_name !== false) {
     echo '<div class="notice notice-success is-dismissible"><p>' .
-         sprintf(esc_html__('Custom style "%s" deleted successfully.', 'capsman-enhanced'), esc_html($deleted_style_name)) .
+         sprintf(esc_html__('Custom style "%s" deleted successfully.', 'capability-manager-enhanced'), esc_html($deleted_style_name)) .
          '</p></div>';
     delete_transient('ppc_custom_style_deleted_' . $user_id);
 }
@@ -76,7 +120,7 @@ if ($deleted_style_name !== false) {
 $error_type = get_transient('ppc_custom_style_error_' . $user_id);
 if ($error_type === 'empty_style_name') {
     echo '<div class="notice notice-error is-dismissible"><p>' .
-         esc_html__('Custom style name cannot be empty.', 'capsman-enhanced') .
+         esc_html__('Custom style name cannot be empty.', 'capability-manager-enhanced') .
          '</p></div>';
     delete_transient('ppc_custom_style_error_' . $user_id);
 }
@@ -85,10 +129,11 @@ if ($error_type === 'empty_style_name') {
 $admin_styles_saved = get_transient('ppc_admin_styles_saved_' . $user_id);
 if ($admin_styles_saved !== false) {
     echo '<div class="notice notice-success is-dismissible"><p>' .
-         esc_html__('Admin styles saved successfully.', 'capsman-enhanced') .
+         esc_html__('Admin styles saved successfully.', 'capability-manager-enhanced') .
          '</p></div>';
     delete_transient('ppc_admin_styles_saved_' . $user_id);
 }
+
 ?>
 <div class="wrap publishpress-caps-manage pressshack-admin-wrapper pp-capability-menus-wrapper admin-styles">
     <div id="icon-capsman-admin" class="icon32"></div>
@@ -139,6 +184,7 @@ if ($admin_styles_saved !== false) {
                                         value="<?php echo esc_attr(sprintf(esc_html__('Save for %s', 'capability-manager-enhanced'), esc_html($current_role_name))); ?>"
                                         class="button-primary ppc-admin-styles-submit" style="float:right" />
                                 </div>
+                                <div class="clear"></div>
 
                             </div>
 
@@ -173,11 +219,11 @@ if ($admin_styles_saved !== false) {
                                                                 </p>
                                                                 <div class="add-new-button-area">
                                                                     <label for="ppc-custom-style-template" class="custom-style-template-label">
-                                                                        <?php esc_html_e('Start from template', 'capsman-enhanced'); ?>
+                                                                        <?php esc_html_e('Start from template', 'capability-manager-enhanced'); ?>
                                                                     </label>
                                                                     <select id="ppc-custom-style-template" class="custom-style-template-select">
                                                                         <option value="blank">
-                                                                            <?php esc_html_e('Blank Template', 'capsman-enhanced'); ?>
+                                                                            <?php esc_html_e('Blank Template', 'capability-manager-enhanced'); ?>
                                                                         </option>
                                                                         <?php foreach ($admin_styles->get_style_templates() as $template_id => $template): ?>
                                                                             <option value="<?php echo esc_attr($template_id); ?>">
@@ -187,7 +233,7 @@ if ($admin_styles_saved !== false) {
                                                                     </select>
                                                                     <button type="button"
                                                                         class="button button-secondary custom-styles-button">
-                                                                        <?php esc_html_e('Add Custom Style', 'capsman-enhanced'); ?>
+                                                                        <?php esc_html_e('Add Custom Style', 'capability-manager-enhanced'); ?>
                                                                     </button>
                                                                 </div>
                                                             </td>
@@ -217,7 +263,7 @@ if ($admin_styles_saved !== false) {
                                                                                     <?php echo esc_html($name); ?>
                                                                                     <?php if (strpos($key, 'ppc-custom-style-') === 0): ?>
                                                                                         <span class="custom-style-edit-icon"
-                                                                                            title="<?php esc_attr_e('Edit custom style', 'capsman-enhanced'); ?>"
+                                                                                            title="<?php esc_attr_e('Edit custom style', 'capability-manager-enhanced'); ?>"
                                                                                             data-style="<?php echo esc_attr($key); ?>"
                                                                                             data-name="<?php echo esc_attr($name); ?>">
                                                                                             <span class="dashicons dashicons-edit"></span>
@@ -265,10 +311,10 @@ if ($admin_styles_saved !== false) {
                                                                     <div class="color-editor-card">
                                                                         <h4 class="editor-title form-promo-blur">
                                                                             <span class="dashicons dashicons-admin-customizer"></span>
-                                                                            <span class="custom-form-title"><?php esc_html_e('Edit Color Style', 'capsman-enhanced'); ?></span>
+                                                                            <span class="custom-form-title"><?php esc_html_e('Edit Color Style', 'capability-manager-enhanced'); ?></span>
                                                                         </h4>
                                                                         <p class="editor-description form-promo-blur">
-                                                                            <?php esc_html_e('Customize colors for different admin elements. Changes are previewed instantly.', 'capsman-enhanced'); ?>
+                                                                            <?php esc_html_e('Customize colors for different admin elements. Changes are previewed instantly.', 'capability-manager-enhanced'); ?>
                                                                         </p>
 
                                                                         <input type="hidden" name="custom_style_action" value="">
@@ -323,35 +369,35 @@ if ($admin_styles_saved !== false) {
                                                                                         <?php if ($tab_key === 'advanced') : ?>
                                                                                             <div class="ppc-advanced-rules-wrap">
                                                                                                 <p class="cme-subtext ppc-advanced-rules-help">
-                                                                                                    <?php esc_html_e('Add CSS selectors (class or ID), choose a style variation, and set a brand color.', 'capsman-enhanced'); ?>
+                                                                                                    <?php esc_html_e('Add CSS selectors (class or ID), choose a style variation, and set a brand color.', 'capability-manager-enhanced'); ?>
                                                                                                 </p>
 
                                                                                                 <div id="ppc-advanced-rules-list" class="ppc-advanced-rules-list"></div>
 
                                                                                                 <button type="button" class="button button-secondary" id="ppc-add-advanced-rule">
-                                                                                                    <?php esc_html_e('Add New Element', 'capsman-enhanced'); ?>
+                                                                                                    <?php esc_html_e('Add New Element', 'capability-manager-enhanced'); ?>
                                                                                                 </button>
 
                                                                                                 <script type="text/html" id="tmpl-ppc-advanced-rule-row">
                                                                                                     <div class="ppc-advanced-rule-row">
                                                                                                         <div class="ppc-advanced-rule-selector">
-                                                                                                            <label class="color-label-text"><?php esc_html_e('Selector', 'capsman-enhanced'); ?></label>
+                                                                                                            <label class="color-label-text"><?php esc_html_e('Selector', 'capability-manager-enhanced'); ?></label>
                                                                                                             <input type="text"
                                                                                                                 class="regular-text ppc-advanced-selector"
                                                                                                                 name="custom_style_advanced_rules[{{index}}][selector]"
-                                                                                                                placeholder="<?php esc_attr_e('e.g. .publishpress-wrap h1, #my-plugin-header', 'capsman-enhanced'); ?>">
+                                                                                                                placeholder="<?php esc_attr_e('e.g. .publishpress-wrap h1, #my-plugin-header', 'capability-manager-enhanced'); ?>">
                                                                                                         </div>
                                                                                                         <div class="ppc-advanced-rule-color">
-                                                                                                            <label class="color-label-text"><?php esc_html_e('Variation', 'capsman-enhanced'); ?></label>
+                                                                                                            <label class="color-label-text"><?php esc_html_e('Variation', 'capability-manager-enhanced'); ?></label>
                                                                                                             <select class="ppc-advanced-variation"
                                                                                                                 name="custom_style_advanced_rules[{{index}}][variation]">
-                                                                                                                <option value="background"><?php esc_html_e('Background', 'capsman-enhanced'); ?></option>
-                                                                                                                <option value="text"><?php esc_html_e('Text', 'capsman-enhanced'); ?></option>
-                                                                                                                <option value="border"><?php esc_html_e('Border', 'capsman-enhanced'); ?></option>
+                                                                                                                <option value="background"><?php esc_html_e('Background', 'capability-manager-enhanced'); ?></option>
+                                                                                                                <option value="text"><?php esc_html_e('Text', 'capability-manager-enhanced'); ?></option>
+                                                                                                                <option value="border"><?php esc_html_e('Border', 'capability-manager-enhanced'); ?></option>
                                                                                                             </select>
                                                                                                         </div>
                                                                                                         <div class="ppc-advanced-rule-color">
-                                                                                                            <label class="color-label-text"><?php esc_html_e('Brand Color', 'capsman-enhanced'); ?></label>
+                                                                                                            <label class="color-label-text"><?php esc_html_e('Brand Color', 'capability-manager-enhanced'); ?></label>
                                                                                                             <input type="text"
                                                                                                                 class="pp-capabilities-color-picker ppc-advanced-color"
                                                                                                                 data-category="advanced"
@@ -361,7 +407,7 @@ if ($admin_styles_saved !== false) {
                                                                                                         </div>
                                                                                                         <div class="ppc-advanced-rule-actions">
                                                                                                             <button type="button" class="button-link ppc-remove-advanced-rule">
-                                                                                                                <?php esc_html_e('Remove', 'capsman-enhanced'); ?>
+                                                                                                                <?php esc_html_e('Remove', 'capability-manager-enhanced'); ?>
                                                                                                             </button>
                                                                                                         </div>
                                                                                                     </div>
@@ -377,7 +423,7 @@ if ($admin_styles_saved !== false) {
                                                                                             <tr class="color-row" id="custom-style-name-row">
                                                                                                 <td class="color-label">
                                                                                                     <label for="custom_style_name" class="color-label-text">
-                                                                                                        <span id="style-name-label"><?php esc_html_e('Custom Style Name', 'capsman-enhanced'); ?></span> <span class="required" id="style-name-required">*</span>
+                                                                                                        <span id="style-name-label"><?php esc_html_e('Custom Style Name', 'capability-manager-enhanced'); ?></span> <span class="required" id="style-name-required">*</span>
                                                                                                     </label>
                                                                                                 </td>
                                                                                                 <td class="color-input-cell">
@@ -385,7 +431,7 @@ if ($admin_styles_saved !== false) {
                                                                                                         name="custom_style_name"
                                                                                                         id="custom_style_name" value=""
                                                                                                         class="regular-text"
-                                                                                                        placeholder="<?php esc_attr_e('e.g., Company Branding, Dark Mode', 'capsman-enhanced'); ?>">
+                                                                                                        placeholder="<?php esc_attr_e('e.g., Company Branding, Dark Mode', 'capability-manager-enhanced'); ?>">
                                                                                                 </td>
                                                                                             </tr>
                                                                                             <?php endif; ?>
@@ -421,23 +467,23 @@ if ($admin_styles_saved !== false) {
                                                                         <div style="display: flex; gap: 10px;">
                                                                             <button type="button"
                                                                                 class="button cancel-custom-style">
-                                                                                <?php esc_html_e('Cancel', 'capsman-enhanced'); ?>
+                                                                                <?php esc_html_e('Cancel', 'capability-manager-enhanced'); ?>
                                                                             </button>
                                                                             <div class="custom-link-delete ppc-tool-tip click-tooltip" id="custom-style-delete-button" style="display: none; margin-left: auto;">
                                                                                 <button type="button"
                                                                                     class="button button-secondary ppc-button-delete"
                                                                                     style="border-color: #d63638 !important;color: #d63638 !important;">
-                                                                                    <?php esc_attr_e('Delete Custom Style', 'capsman-enhanced'); ?>
+                                                                                    <?php esc_attr_e('Delete Custom Style', 'capability-manager-enhanced'); ?>
                                                                                 </button>
 
                                                                                 <div class="tool-tip-text">
-                                                                                    <p><?php printf(__( 'Are you sure you want to delete this %1s? %2s %3s', 'capsman-enhanced' ), '<strong>' . esc_html__('Custom Style', 'capsman-enhanced') . '</strong>', '<br /><input type="submit" name="delete_custom_style" value="'. esc_attr__('Delete Custom Style', 'capsman-enhanced') .'" class="button-link-delete" style="background: none !important;color: #d63638 !important;">', ' | <a class="cancel-click-tooltip" href="#">'. esc_html__('Cancel', 'capsman-enhanced') .'</a>' ); ?></p>
+                                                                                    <p><?php printf(__( 'Are you sure you want to delete this %1s? %2s %3s', 'capability-manager-enhanced' ), '<strong>' . esc_html__('Custom Style', 'capability-manager-enhanced') . '</strong>', '<br /><input type="submit" name="delete_custom_style" value="'. esc_attr__('Delete Custom Style', 'capability-manager-enhanced') .'" class="button-link-delete" style="background: none !important;color: #d63638 !important;">', ' | <a class="cancel-click-tooltip" href="#">'. esc_html__('Cancel', 'capability-manager-enhanced') .'</a>' ); ?></p>
                                                                                         <i></i>
                                                                                 </div>
                                                                             </div>
                                                                         </div>
                                                                         <input type="submit" name="save_custom_style"
-                                                                            value="<?php esc_attr_e('Save Custom Style', 'capsman-enhanced'); ?>"
+                                                                            value="<?php esc_attr_e('Save Custom Style', 'capability-manager-enhanced'); ?>"
                                                                             class="button-primary">
                                                                     </div>
 
@@ -507,14 +553,183 @@ if ($admin_styles_saved !== false) {
                                                                     <button type="button"
                                                                         class="button pp-capabilities-upload-button"
                                                                         data-target="admin_favicon">
-                                                                        <?php esc_html_e('Select Image', 'capsman-enhanced'); ?>
+                                                                        <?php esc_html_e('Select Image', 'capability-manager-enhanced'); ?>
                                                                     </button>
                                                                     <button type="button"
                                                                         class="button button-link pp-capabilities-remove-button"
                                                                         data-target="admin_favicon">
-                                                                        <?php esc_html_e('Remove', 'capsman-enhanced'); ?>
+                                                                        <?php esc_html_e('Remove', 'capability-manager-enhanced'); ?>
                                                                     </button>
                                                                 </div>
+                                                            </td>
+                                                        </tr>
+
+                                                        <tr class="ppc-menu-row parent-menu">
+                                                            <td class="menu-column ppc-menu-item">
+                                                                <label for="admin_font_family">
+                                                                    <strong><?php esc_html_e('Admin Font Family', 'capability-manager-enhanced'); ?></strong>
+                                                                </label>
+                                                                <p class="cme-subtext">
+                                                                    <?php esc_html_e('Set a font stack for the admin area, for example "Segoe UI", sans-serif.', 'capability-manager-enhanced'); ?>
+                                                                </p>
+                                                            </td>
+                                                            <td class="value-column ppc-menu-checkbox">
+                                                                <?php $current_admin_font_family = (string) ($settings['admin_font_family'] ?? ''); ?>
+                                                                <div class="ppc-font-family-picker">
+                                                                    <nav class="nav-tab-wrapper ppc-font-family-tabs">
+                                                                        <a href="#" class="nav-tab ppc-font-family-tab nav-tab-active" data-panel="select"><?php esc_html_e('Preset Fonts', 'capability-manager-enhanced'); ?></a>
+                                                                        <a href="#" class="nav-tab ppc-font-family-tab" data-panel="custom"><?php esc_html_e('Custom Value', 'capability-manager-enhanced'); ?></a>
+                                                                    </nav>
+
+                                                                    <div class="ppc-font-family-panel ppc-font-family-panel-select is-active">
+                                                                        <select class="ppc-font-family-select regular-text" style="max-width: 400px;">
+                                                                            <?php foreach ($font_family_choices as $font_value => $font_label) : ?>
+                                                                                <option value="<?php echo esc_attr($font_value); ?>" <?php selected($current_admin_font_family, $font_value); ?>><?php echo esc_html($font_label); ?></option>
+                                                                            <?php endforeach; ?>
+                                                                        </select>
+                                                                    </div>
+
+                                                                    <div class="ppc-font-family-panel ppc-font-family-panel-custom" style="display: none;">
+                                                                        <textarea
+                                                                            name="settings[admin_font_family]"
+                                                                            id="admin_font_family"
+                                                                            rows="2"
+                                                                            placeholder='"Segoe UI", sans-serif'
+                                                                            class="regular-text ppc-font-family-textarea"><?php echo esc_textarea($current_admin_font_family); ?></textarea>
+                                                                    </div>
+                                                                </div>
+                                                            </td>
+                                                        </tr>
+
+                                                        <tr class="ppc-menu-row parent-menu">
+                                                            <td class="menu-column ppc-menu-item">
+                                                                <label for="admin_font_size">
+                                                                    <strong><?php esc_html_e('Admin Font Size', 'capability-manager-enhanced'); ?></strong>
+                                                                </label>
+                                                                <p class="cme-subtext">
+                                                                    <?php esc_html_e('Set a base font size for the admin area. Leave empty to use the default WordPress size.', 'capability-manager-enhanced'); ?>
+                                                                </p>
+                                                            </td>
+                                                            <td class="value-column ppc-menu-checkbox">
+                                                                <?php
+                                                                $current_admin_font_size = (string) ($settings['admin_font_size'] ?? '');
+                                                                $current_admin_font_size_unit = (string) ($settings['admin_font_size_unit'] ?? 'px');
+                                                                $current_admin_font_size_value = '';
+
+                                                                if (isset($font_size_keyword_choices[$current_admin_font_size])) {
+                                                                    $current_admin_font_size_value = $current_admin_font_size;
+                                                                } elseif (is_numeric($current_admin_font_size) && 'px' === $current_admin_font_size_unit) {
+                                                                    $current_admin_font_size_value = $current_admin_font_size;
+                                                                }
+                                                                ?>
+                                                                <div style="max-width:320px;">
+                                                                    <select name="settings[admin_font_size]" id="admin_font_size" class="regular-text" style="max-width: 400px;">
+ <optgroup label="<?php echo esc_attr__('Default', 'capability-manager-enhanced'); ?>">
+                                                                         <option value=""><?php esc_html_e('Default', 'capability-manager-enhanced'); ?></option>
+</optgroup>
+                                                                        <optgroup label="<?php echo esc_attr__('Named Sizes', 'capability-manager-enhanced'); ?>">
+                                                                            <?php foreach ($font_size_keyword_choices as $size_value => $size_label) : ?>
+                                                                                <option value="<?php echo esc_attr($size_value); ?>" <?php selected($current_admin_font_size_value, $size_value); ?>><?php echo esc_html($size_label); ?></option>
+                                                                            <?php endforeach; ?>
+                                                                        </optgroup>
+
+                                                                        <optgroup label="<?php echo esc_attr__('Pixel Sizes', 'capability-manager-enhanced'); ?>">
+                                                                            <?php foreach ($font_size_numeric_choices as $size_value => $size_label) : ?>
+                                                                                <option value="<?php echo esc_attr($size_value); ?>" <?php selected($current_admin_font_size_value, $size_value); ?>><?php echo esc_html($size_label); ?></option>
+                                                                            <?php endforeach; ?>
+                                                                        </optgroup>
+                                                                    </select>
+                                                                    <input type="hidden" name="settings[admin_font_size_unit]" value="px" />
+                                                                </div>
+                                                            </td>
+                                                        </tr>
+
+                                                        <tr class="ppc-menu-row parent-menu">
+                                                            <td class="menu-column ppc-menu-item">
+                                                                <strong><?php esc_html_e('Typography Overrides', 'capability-manager-enhanced'); ?></strong>
+                                                                <p class="cme-subtext">
+                                                                    <?php esc_html_e('Optional target-specific typography rules for common admin elements.', 'capability-manager-enhanced'); ?>
+                                                                </p>
+                                                            </td>
+                                                            <td class="value-column ppc-menu-checkbox">
+                                                                <?php
+                                                                $typography_targets = [
+                                                                    'body_text' => esc_html__('Body Text', 'capability-manager-enhanced'),
+                                                                    'links' => esc_html__('Links', 'capability-manager-enhanced'),
+                                                                    'headings' => esc_html__('Headings', 'capability-manager-enhanced'),
+                                                                    'admin_menu' => esc_html__('Admin Menu', 'capability-manager-enhanced'),
+                                                                    'admin_bar' => esc_html__('Admin Bar', 'capability-manager-enhanced'),
+                                                                    'form_fields' => esc_html__('Form Fields', 'capability-manager-enhanced'),
+                                                                    'buttons' => esc_html__('Buttons', 'capability-manager-enhanced'),
+                                                                ];
+                                                                ?>
+                                                                <table class="widefat striped" style="max-width: 640px;">
+                                                                    <thead>
+                                                                        <tr>
+                                                                            <th><?php esc_html_e('Target', 'capability-manager-enhanced'); ?></th>
+                                                                            <th><?php esc_html_e('Font Family', 'capability-manager-enhanced'); ?></th>
+                                                                            <th><?php esc_html_e('Font Size', 'capability-manager-enhanced'); ?></th>
+                                                                        </tr>
+                                                                    </thead>
+                                                                    <tbody>
+                                                                        <?php foreach ($typography_targets as $target_key => $target_label) : ?>
+                                                                            <?php $target_font_family = (string) ($settings['admin_typography'][$target_key]['font_family'] ?? ''); ?>
+                                                                            <?php $target_font_size = (string) ($settings['admin_typography'][$target_key]['font_size'] ?? ''); ?>
+                                                                            <?php $target_font_size_value = ''; ?>
+
+                                                                            <?php if (isset($font_size_keyword_choices[$target_font_size])) : ?>
+                                                                                <?php $target_font_size_value = $target_font_size; ?>
+                                                                            <?php elseif (is_numeric($target_font_size)) : ?>
+                                                                                <?php $target_font_size_value = $target_font_size; ?>
+                                                                            <?php endif; ?>
+                                                                            <tr>
+                                                                                <td><strong><?php echo esc_html($target_label); ?></strong></td>
+                                                                                <td>
+                                                                                    <div class="ppc-font-family-picker ppc-font-family-picker-compact">
+                                                                                        <nav class="nav-tab-wrapper ppc-font-family-tabs">
+                                                                                            <a href="#" class="nav-tab ppc-font-family-tab nav-tab-active" data-panel="select"><?php esc_html_e('Preset', 'capability-manager-enhanced'); ?></a>
+                                                                                            <a href="#" class="nav-tab ppc-font-family-tab" data-panel="custom"><?php esc_html_e('Custom', 'capability-manager-enhanced'); ?></a>
+                                                                                        </nav>
+
+                                                                                        <div class="ppc-font-family-panel ppc-font-family-panel-select is-active">
+                                                                                            <select class="ppc-font-family-select regular-text" style="width: 100%; max-width: 200px;">
+                                                                                                <?php foreach ($font_family_choices as $font_value => $font_label) : ?>
+                                                                                                    <option value="<?php echo esc_attr($font_value); ?>" <?php selected($target_font_family, $font_value); ?>><?php echo esc_html($font_label); ?></option>
+                                                                                                <?php endforeach; ?>
+                                                                                            </select>
+                                                                                        </div>
+
+                                                                                        <div class="ppc-font-family-panel ppc-font-family-panel-custom" style="display: none;">
+                                                                                            <textarea
+                                                                                                name="settings[admin_typography][<?php echo esc_attr($target_key); ?>][font_family]"
+                                                                                                rows="2"
+                                                                                                placeholder='"Segoe UI", sans-serif'
+                                                                                                class="regular-text ppc-font-family-textarea"><?php echo esc_textarea($target_font_family); ?></textarea>
+                                                                                        </div>
+                                                                                    </div>
+                                                                                </td>
+                                                                                <td>
+                                                                                    <select name="settings[admin_typography][<?php echo esc_attr($target_key); ?>][font_size]" class="regular-text" style="width: 100%;max-width: 200px;">
+                 <optgroup label="<?php echo esc_attr__('Default', 'capability-manager-enhanced'); ?>">
+                    <option value=""><?php esc_html_e('Default', 'capability-manager-enhanced'); ?></option>
+                </optgroup></optgroup>
+                                                                                        <optgroup label="<?php echo esc_attr__('Named Sizes', 'capability-manager-enhanced'); ?>">
+                                                                                            <?php foreach ($font_size_keyword_choices as $size_value => $size_label) : ?>
+                                                                                                <option value="<?php echo esc_attr($size_value); ?>" <?php selected($target_font_size_value, $size_value); ?>><?php echo esc_html($size_label); ?></option>
+                                                                                            <?php endforeach; ?>
+                                                                                        </optgroup>
+
+                                                                                        <optgroup label="<?php echo esc_attr__('Pixel Sizes', 'capability-manager-enhanced'); ?>">
+                                                                                            <?php foreach ($font_size_numeric_choices as $size_value => $size_label) : ?>
+                                                                                                <option value="<?php echo esc_attr($size_value); ?>" <?php selected($target_font_size_value, $size_value); ?>><?php echo esc_html($size_label); ?></option>
+                                                                                            <?php endforeach; ?>
+                                                                                        </optgroup>
+                                                                                    </select>
+                                                                                </td>
+                                                                            </tr>
+                                                                        <?php endforeach; ?>
+                                                                    </tbody>
+                                                                </table>
                                                             </td>
                                                         </tr>
 
@@ -596,7 +811,6 @@ if ($admin_styles_saved !== false) {
 
                             <div class="editor-features-footer-meta">
                                 <div style="display: flex;gap: 10px;float:right;margin-top: 20px;">
-
                                     <input type="submit" name="admin-styles-all-submit"
                                         value="<?php esc_attr_e('Save for all Roles', 'capability-manager-enhanced') ?>"
                                         class="button-secondary ppc-admin-styles-submit" style="float:right" />
@@ -606,6 +820,7 @@ if ($admin_styles_saved !== false) {
                                         class="button-primary ppc-admin-styles-submit" style="float:right" />
 
                                 </div>
+                                <div class="clear"></div>
                             </div>
 
                         </td>

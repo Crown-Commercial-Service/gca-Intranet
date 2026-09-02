@@ -55,7 +55,14 @@ class PostEdit
             }
             
             if (!empty($post_status_obj->labels) && is_serialized($post_status_obj->labels)) {
-                $post_status_obj->labels = maybe_unserialize($post_status_obj->labels);
+                $post_status_obj->labels = maybe_unserialize($post_status_obj->labels);     // phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.serialize_unserialize
+
+                if (is_object($post_status_obj->labels)) {
+                    foreach (get_object_vars($post_status_obj->labels) as $k => $val) {
+                        $post_status_obj->labels->$k = sanitize_text_field($val);
+                    }
+                }
+
                 $wp_post_statuses[$status_name]->labels = $post_status_obj;
             }
 

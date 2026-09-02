@@ -4,7 +4,7 @@
  * Plugin Name: Admin and Site Enhancements (ASE)
  * Plugin URI:        https://www.wpase.com/plugin-uri
  * Description:       Easily enable enhancements and features that usually require multiple plugins.
- * Version:           8.5.1
+ * Version:           8.9.2
  * Author:            wpase.com
  * Author URI:        https://www.wpase.com/author-uri
  * License:           GPL-2.0+
@@ -15,7 +15,7 @@ if ( !defined( 'ABSPATH' ) ) {
     exit;
 }
 
-define( 'ASENHA_VERSION', '8.5.1' );
+define( 'ASENHA_VERSION', '8.9.2' );
 define( 'ASENHA_ID', 'asenha' );
 define( 'ASENHA_SLUG', 'admin-site-enhancements' );
 define( 'ASENHA_SLUG_U', 'admin_site_enhancements' );
@@ -77,6 +77,12 @@ spl_autoload_register( 'asenha_autoloader' );
 function asenha_on_activation() {
     $activation = new ASENHA\Classes\Activation;
     $activation->create_failed_logins_log_table();
+    $options = get_option( ASENHA_SLUG_U, array() );
+    if ( array_key_exists( 'disable_embeds', $options ) && $options['disable_embeds'] ) {
+        $options['disable_embeds_flush_rewrite_rules_needed'] = true;
+    }
+
+    update_option( ASENHA_SLUG_U, $options, true );
 }
 
 /**
@@ -86,7 +92,12 @@ function asenha_on_activation() {
  */
 function asenha_on_deactivation() {
     $deactivation = new ASENHA\Classes\Deactivation;
+    $deactivation->clear_failed_login_attempts_log_cleanup_schedule();
     $deactivation->delete_failed_logins_log_table();
+    $options = get_option( ASENHA_SLUG_U, array() );
+    if ( array_key_exists( 'disable_embeds', $options ) && $options['disable_embeds'] ) {
+        $deactivation->disable_embeds_flush_rewrite_rules();
+    }
 }
 
 // Register code that runs on plugin activation

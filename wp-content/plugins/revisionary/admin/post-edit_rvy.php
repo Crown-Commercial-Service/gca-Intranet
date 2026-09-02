@@ -100,6 +100,8 @@ class RvyPostEdit {
 
             $args['disableSubmitUntilSave'] = !defined('ET_BUILDER_PLUGIN_VERSION') && (false === stripos(get_template(), 'divi')) && !defined('REVISIONARY_EDITOR_NO_BUTTON_DISABLE');
 
+            $args['revisionCaption'] = esc_html__('Revision', 'revisionary');
+
             wp_localize_script( 'rvy_object_edit', 'rvyObjEdit', $args );
 
             if (defined('PUBLISHPRESS_VERSION')) {
@@ -183,7 +185,7 @@ class RvyPostEdit {
             return;
         }
         ?>
-        <div id="preview-action" class="rvy-misc-actions" style="float: right; padding: 5px 10px 10px 5px">
+        <div id="preview-action" class="rvy-misc-actions" style="float: left; padding: 5px 10px 10px 10px">
 
         <?php
         $compare_link = rvy_admin_url("revision.php?revision=$post->ID");
@@ -220,7 +222,7 @@ class RvyPostEdit {
         ?>
         <?php
         $preview_link = rvy_preview_url($post->ID);
-        $preview_button = esc_html__('View Saved Revision');
+        $preview_button = esc_html__('View Saved Revision', 'revisionary');
 
         if (current_user_can('approve_revision', $post->ID)) {
             $preview_title = esc_html__('View / moderate saved revision', 'revisionary');

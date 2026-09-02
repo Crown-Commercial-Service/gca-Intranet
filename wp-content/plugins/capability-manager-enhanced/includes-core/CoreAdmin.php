@@ -4,6 +4,12 @@ namespace PublishPress\Capabilities;
 class CoreAdmin {
     function __construct() {
 
+        // This class is promo/upsell logic for Free only.
+        // When Pro is loaded, short-circuit to avoid Free banners and promo screens.
+        if (defined('PUBLISHPRESS_CAPS_PRO_VERSION')) {
+            return;
+        }
+
         if (is_admin()) {
 
             require_once PUBLISHPRESS_CAPS_ABSPATH . '/lib/vendor/publishpress/wordpress-version-notices/includes.php';
@@ -21,6 +27,7 @@ class CoreAdmin {
                         ['base' => 'capabilities_page_pp-capabilities-admin-styles'],
                         ['base' => 'capabilities_page_pp-capabilities-profile-features'],
                         ['base' => 'capabilities_page_pp-capabilities-frontend-features'],
+                        ['base' => 'capabilities_page_pp-capabilities-admin-notices'],
                         ['base' => 'capabilities_page_pp-capabilities-nav-menus'],
                         ['base' => 'capabilities_page_pp-capabilities-backup'],
                         ['base' => 'capabilities_page_pp-capabilities-settings'],
@@ -32,6 +39,7 @@ class CoreAdmin {
                         ['base' => 'toplevel_page_pp-capabilities-admin-features'],
                         ['base' => 'toplevel_page_pp-capabilities-admin-styles'],
                         ['base' => 'toplevel_page_pp-capabilities-profile-features'],
+                        ['base' => 'toplevel_page_pp-capabilities-admin-notices'],
                         ['base' => 'toplevel_page_pp-capabilities-nav-menus'],
                         ['base' => 'toplevel_page_pp-capabilities-backup'],
                         ['base' => 'toplevel_page_pp-capabilities-settings'],

@@ -1,6 +1,85 @@
 The format is based on [Keep a Changelog](http://keepachangelog.com/)
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
+[4.8.2] - 27 May, 2026
+
+- Added: Support for displaying all Permissions inherited from Permission Groups for individual users. #2323
+- Added: Fallback capability support for pp_manage_teaser. #2318
+- Added: Support for alternate pseudo IDs in map_meta_cap filtering. #2305
+- Added: Group names are now displayed in the Group Permissions list for better clarity. #2328
+- Added: Separate capabilities for managing term permissions and edit permissions. #2366 #2365
+- Changed: Improved clarity of capability descriptions and related interface text. #2309
+- Changed: Prevented the plugin name from being translated for better brand consistency. #2308
+- Changed: Improved teaser interface by hiding unnecessary extra columns. #2319
+- Changed: Improved tooltip descriptions for Assign Terms, Set as Parent, Permission Groups, and Term Permissions screens. #2381 #2342 #2341 #2335 #2332
+- Changed: Improved clarity of capability descriptions and Permissions screen wording. #2367
+- Changed: Translation updates and localization improvements. #2348
+- Fixed: Assign Terms restrictions were not applied correctly in some situations. #2324
+- Fixed: Permissions metabox on Edit Term screens now properly supports “Manage Term” and “Set Parent” operations. #2321
+- Fixed: “None” checkbox was missing in Edit Permissions when no items were published. #2320
+- Fixed: Assign Terms option incorrectly appeared for Pages. #2307
+- Fixed: Null post type warning in TeaserHooks.php under certain configurations. #2306
+- Fixed: Prevented infinite ancestor count loops for taxonomy terms. #2312
+- Fixed: Spacing and layout issues in the Permissions metabox for some languages. #2317
+- Fixed: Users can now properly access the Permissions editing screen when allowed by configuration. #2368
+- Fixed: “Set as Parent” restrictions were not working correctly for taxonomy terms. #2344
+- Fixed: CSS file was incorrectly loaded inside iframe contexts in WP7. #2380
+- Fixed: Incorrect default handling for pp_manage_settings capabilities. #2363
+- Removed: Unused pp_assign_roles capability. #2377
+- Removed: Inactive pp_set_read_exceptions and pp_set_edit_exceptions capabilities from the Capabilities UI. #2375
+
+
+[4.8.1] - 21 April, 2026
+
+- Added: Expanded language support with 34 languages through new translation system integration. #2273
+- Changed: Renamed “Pending Revision Monitors” for clearer understanding. #2279
+- Changed: Plugin description on the WordPress plugin screen. #2274
+- Changed: PublishPress plugins list in readme.txt. #2278
+- Changed: French, Spanish, and Italian translations. #2276
+- Fixed: Issue with terms handling on the Permissions screen. #2275
+- Fixed: Issue uncaught error add_date_gmt in DB/Groups.php. #2294
+
+[4.8.0] - 6 April, 2026
+
+- Added: Filter and sort options in the Permissions metabox for easier navigation and management. #2253
+- Added: Tooltips for metabox tabs to provide clearer guidance for users. #2250
+- Changed: Users are now added to the top of the list instead of the bottom for better visibility. #2260
+- Changed: Improved consistency with default color styling across the interface. #2258
+- Changed: Plugin name now includes “Free” to better distinguish version type. #2251
+- Changed: French, Spanish, and Italian translations. #2249
+- Changed: Updated wording for the delete button to improve clarity. #2261
+- Fixed: Permissions metabox layout issue on mobile where content could be truncated. #2262
+- Fixed: Permissions box height issue when restrictions are applied via the main Permissions screen. #2252
+
+[4.7.0] - 18 March, 2026
+
+- Added: "Logged-in User" visibility option is now available in the Free version. #2209
+- Added: New Permissions metabox interface for improved usability and clearer controls. #2160
+- Added: New filter hook for the Permissions metabox to allow customization by developers. #2185
+- Added: Sorting option for User Groups to make group management easier. #2189
+- Added: Filters for Roles and Groups to help quickly locate specific entries. #2191
+- Added: Performance Mode for Admin Posts queries to improve performance on large sites. #2163
+- Changed: Improved wording and descriptions across several settings screens for better clarity. #2202 #2187 #2207
+- Changed: Roles and Groups display behavior to prevent automatic movement based on status. #2186
+- Changed: Visual styling improvements in the Permissions UI, including clearer distinction for Groups. #2203
+- Changed: Minor CSS improvements for the metabox interface. #2195
+- Changed: Updated French, Spanish, and Italian translations. #2182
+- Changed: Bulk Actions in the Permissions tab restored after previous removal. #2192
+- Changed: "Unblocked" option removed from Bulk Actions in the new metabox interface. #2194
+- Fixed: Category assignment permissions not applying correctly to all post types. #2193
+- Fixed: Issue where switching to legacy metaboxes from settings did not work. #2205
+- Fixed: CSS conflicts with WordPress 7.0 affecting the Permissions interface. #2190
+- Fixed: Support for the `PRESSPERMIT_NO_REVISIONS_EXCEPTION_BYPASS` constant. #2183
+- Fixed: Filter logic for “Everyone / Logged In / Not Logged In” to ensure correct results. #2230
+- Fixed: Dropdown fields could appear empty in some cases. #2232
+- Fixed: Handling of anonymous (not logged in) users to ensure consistent behavior. #2227
+- Fixed: Width overflow issue in teaser type select field. #2214
+- Fixed: Compatibility issue with Avada Builder affecting Permissions functionality. #2226
+- Fixed: Incorrect text domain in SettingsAdmin.php affecting translations. #2223
+- Improved: Disabled roles and groups are now hidden to reduce clutter in the interface. #2188
+- Improved: Permissions plugin can now be hidden from Editors for cleaner admin menus. #2184
+- Improved: Matching filters with metabox behavior for more consistent filtering results. #2204
+
 [4.6.4] - 27 January, 2026
 
 - Added: Translations for Spanish, French, and Italian languages. #2139

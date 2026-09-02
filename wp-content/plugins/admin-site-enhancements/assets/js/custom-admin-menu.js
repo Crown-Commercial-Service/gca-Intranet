@@ -15,8 +15,12 @@
       return el ? $( el ) : $();
    }
 
+   
+
    // Get localized strings with fallback to empty object
    var strings = (typeof amoPageVars !== 'undefined' && amoPageVars.strings) ? amoPageVars.strings : {};
+
+   
 
    $(document).ready( function() {
 

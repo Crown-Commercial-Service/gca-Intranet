@@ -128,7 +128,7 @@ class Image_Upload_Control {
                 // Generate image object from BMP for conversion to JPG later
                 if ( function_exists( 'imagecreatefrombmp' ) ) {
                     // PHP >= v7.2
-                    $image_object = imagecreatefrombmp( $upload['file'] );
+                    $image_object = \imagecreatefrombmp( $upload['file'] );
                 } else {
                     // PHP < v7.2
                     require_once ASENHA_PATH . 'includes/bmp-to-image-object.php';
@@ -143,22 +143,24 @@ class Image_Upload_Control {
                 if ( function_exists( 'imagecreatefrompng' ) ) {
                     // GD library is present, so 'imagecreatefrompng' function is available
                     // Generate image object from PNG for potential conversion to JPG later.
-                    $image_object = imagecreatefrompng( $upload['file'] );
+                    $image_object = \imagecreatefrompng( $upload['file'] );
                     // Get image dimension
                     list( $width, $height ) = getimagesize( $upload['file'] );
                     // Run through pixels until transparent pixel is found
-                    for ($x = 0; $x < $width; $x++) {
-                        for ($y = 0; $y < $height; $y++) {
-                            $pixel_color_index = imagecolorat( $image_object, $x, $y );
-                            $pixel_rgba = imagecolorsforindex( $image_object, $pixel_color_index );
-                            // array of red, green, blue and alpha values
-                            if ( $pixel_rgba['alpha'] > 0 ) {
-                                // a pixel with alpha/transparency has been found
-                                // alpha value range from 0 (completely opaque) to 127 (fully transparent).
-                                // Ref: https://www.php.net/manual/en/function.imagecolorallocatealpha.php
-                                $this->png_is_transparent = true;
-                                break 2;
-                                // Break both 'for' loops
+                    if ( false !== $image_object ) {
+                        for ($x = 0; $x < $width; $x++) {
+                            for ($y = 0; $y < $height; $y++) {
+                                $pixel_color_index = \imagecolorat( $image_object, $x, $y );
+                                $pixel_rgba = \imagecolorsforindex( $image_object, $pixel_color_index );
+                                // array of red, green, blue and alpha values
+                                if ( $pixel_rgba['alpha'] > 0 ) {
+                                    // a pixel with alpha/transparency has been found
+                                    // alpha value range from 0 (completely opaque) to 127 (fully transparent).
+                                    // Ref: https://www.php.net/manual/en/function.imagecolorallocatealpha.php
+                                    $this->png_is_transparent = true;
+                                    break 2;
+                                    // Break both 'for' loops
+                                }
                             }
                         }
                     }
@@ -182,6 +184,7 @@ class Image_Upload_Control {
         }
         // Let's convert BMP and non-transparent PNG into JPG
         $converted_to_jpg = false;
+        $keep_original_image = false;
         if ( is_object( $image_object ) || class_exists( 'Imagick' ) ) {
             $wp_uploads = wp_upload_dir();
             $old_filename = wp_basename( $upload['file'] );
@@ -193,27 +196,28 @@ class Image_Upload_Control {
             $keep_original_image = false;
             $converted_to_jpg = false;
         }
-        if ( is_object( $image_object ) ) {
-            // When image object creation is successful
+        // Prefer GD when JPEG encode is available. Some custom PHP builds ship GD with PNG
+        // support but without imagejpeg(); guard that case and fall back to Imagick below.
+        if ( is_object( $image_object ) && function_exists( 'imagejpeg' ) ) {
             // When conversion from BMP/PNG to JPG is successful using GD. Last parameter is JPG quality (0-100).
-            if ( imagejpeg( $image_object, $wp_uploads['path'] . '/' . $new_filename, 90 ) ) {
+            if ( \imagejpeg( $image_object, $wp_uploads['path'] . '/' . $new_filename, 90 ) ) {
                 $converted_to_jpg = true;
             }
-        } else {
-            // When image object creation with imagecreatefrombmp(), bmp_to_image_object() or imagecreatefrompng() is not successful, we use Imagick to convert from BMP and non-transparent PNG to JPG.
-            if ( class_exists( 'Imagick' ) ) {
-                $imagick = new Imagick();
-                $imagick->readImage( $upload['file'] );
-                $imagick->setImageCompressionQuality( 90 );
-                $imagick->setImageFormat( 'jpg' );
-                // $imagick->setFormat( 'jpg' );
-                if ( $imagick->writeImage( $wp_uploads['path'] . '/' . $new_filename ) ) {
-                    $converted_to_jpg = true;
-                }
-                // Clear the Imagick object
-                $imagick->clear();
-                $imagick->destroy();
+        }
+        // Fall back to Imagick when GD image object creation failed, imagejpeg() is unavailable,
+        // or GD JPEG encode returned false.
+        if ( !$converted_to_jpg && class_exists( 'Imagick' ) ) {
+            $imagick = new Imagick();
+            $imagick->readImage( $upload['file'] );
+            $imagick->setImageCompressionQuality( 90 );
+            $imagick->setImageFormat( 'jpg' );
+            // $imagick->setFormat( 'jpg' );
+            if ( $imagick->writeImage( $wp_uploads['path'] . '/' . $new_filename ) ) {
+                $converted_to_jpg = true;
             }
+            // Clear the Imagick object
+            $imagick->clear();
+            $imagick->destroy();
         }
         if ( $converted_to_jpg ) {
             // Delete original BMP / PNG
@@ -239,19 +243,20 @@ class Image_Upload_Control {
         $webp_path,
         $webp_conversion_quality
     ) {
-        if ( 'png' == $file_extension ) {
-            $image_object = imagecreatefrompng( $file );
-            if ( $this->png_is_transparent ) {
-                imagepalettetotruecolor( $image_object );
+        $image_object = null;
+        if ( 'png' == $file_extension && function_exists( 'imagecreatefrompng' ) ) {
+            $image_object = \imagecreatefrompng( $file );
+            if ( false !== $image_object && $this->png_is_transparent && function_exists( 'imagepalettetotruecolor' ) ) {
+                \imagepalettetotruecolor( $image_object );
             }
         }
-        if ( 'jpg' == $file_extension || 'jpeg' == $file_extension ) {
-            $image_object = imagecreatefromjpeg( $file );
+        if ( ('jpg' == $file_extension || 'jpeg' == $file_extension) && function_exists( 'imagecreatefromjpeg' ) ) {
+            $image_object = \imagecreatefromjpeg( $file );
         }
         // When creation of image object from PNG/JPG is successful. let's generate WebP image
         // Second parameter is file path, last parameter is WebP quality (0-100).
-        if ( !is_null( $image_object ) && is_object( $image_object ) ) {
-            imagewebp( $image_object, $webp_path, $webp_conversion_quality );
+        if ( !is_null( $image_object ) && is_object( $image_object ) && function_exists( 'imagewebp' ) ) {
+            \imagewebp( $image_object, $webp_path, $webp_conversion_quality );
         }
     }
 
