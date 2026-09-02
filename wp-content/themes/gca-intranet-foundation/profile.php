@@ -58,7 +58,7 @@ get_header();
     $show_profile_tabs = is_user_logged_in() && (
         ($is_own_profile && gca_flag_enabled('post-saves')) ||
         gca_flag_enabled('community-shoutouts') ||
-        ($is_own_profile && gca_flag_enabled('social-wall-notifications'))
+        ($is_own_profile && gca_flag_enabled('social-wall-notifications') && gca_flag_enabled('community-hub'))
     );
     ?>
     <?php if ($show_profile_tabs) : ?>

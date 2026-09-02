@@ -19,7 +19,7 @@ RUN set -eux; \
     npm run js:minifygovuk-frontend
 
 # STAGE 2: The actual WordPress container
-FROM wordpress:6.9.4-php8.2-apache
+FROM wordpress:7.0.2-php8.2-apache
 
 COPY docker/php.ini /usr/local/etc/php/conf.d/custom-php.ini
 
@@ -44,7 +44,7 @@ RUN curl -sSLo /usr/local/bin/wp "https://github.com/wp-cli/wp-cli/releases/down
 COPY wp-content/ /var/www/html/wp-content/
 
 # 3a. Download Redis Object Cache plugin and install object-cache.php drop-in
-ARG REDIS_CACHE_VERSION=2.5.4
+ARG REDIS_CACHE_VERSION=2.8.0
 RUN curl -sSLo /tmp/redis-cache.zip "https://downloads.wordpress.org/plugin/redis-cache.${REDIS_CACHE_VERSION}.zip" \
   && unzip -q /tmp/redis-cache.zip -d /var/www/html/wp-content/plugins/ \
   && cp /var/www/html/wp-content/plugins/redis-cache/includes/object-cache.php /var/www/html/wp-content/object-cache.php \

@@ -2,6 +2,7 @@
 
 namespace TablePress\PhpOffice\PhpSpreadsheet\Reader\Xls;
 
+use TablePress\PhpOffice\PhpSpreadsheet\Cell\AddressRange;
 use TablePress\PhpOffice\PhpSpreadsheet\Cell\Coordinate;
 use TablePress\PhpOffice\PhpSpreadsheet\Cell\DataType;
 use TablePress\PhpOffice\PhpSpreadsheet\NamedRange;
@@ -52,7 +53,7 @@ class LoadSpreadsheet extends Xls
 		$xls->sheets = [];
 		$xls->externalBooks = [];
 		$xls->ref = [];
-		$xls->definedname = []; //* @phpstan-ignore-line
+		$xls->definedname = [];
 		$xls->sst = [];
 		$xls->drawingGroupData = '';
 		$xls->xfIndex = 0;
@@ -692,7 +693,7 @@ class LoadSpreadsheet extends Xls
 										if ($firstColumn == 'A' && $lastColumn == 'IV') {
 											// then we have repeating rows
 											$docSheet->getPageSetup()->setRowsToRepeatAtTop([$firstRow, $lastRow]);
-										} elseif ($firstRow == 1 && $lastRow == 65536) {
+										} elseif ($firstRow === 1 && $lastRow === AddressRange::MAX_ROW_XLS) {
 											// then we have repeating columns
 											$docSheet->getPageSetup()->setColumnsToRepeatAtLeft([$firstColumn, $lastColumn]);
 										}

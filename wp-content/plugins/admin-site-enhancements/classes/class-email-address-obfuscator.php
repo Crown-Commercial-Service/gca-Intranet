@@ -27,6 +27,12 @@ class Email_Address_Obfuscator {
      */
     private function get_obfuscate_email_render_mode() {
         $render_mode = 'legacy';
+        $options = get_option( ASENHA_SLUG_U, array() );
+        $builder_safe_mode = ( isset( $options['obfuscate_email_address_builder_safe_mode'] ) ? $options['obfuscate_email_address_builder_safe_mode'] : false );
+        if ( 'on' === $builder_safe_mode || '1' === $builder_safe_mode || 1 === $builder_safe_mode || true === $builder_safe_mode ) {
+            // builder-safe / high-compatibility mode
+            $render_mode = 'builder_safe';
+        }
         return $render_mode;
     }
 

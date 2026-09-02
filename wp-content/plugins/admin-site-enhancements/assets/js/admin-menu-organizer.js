@@ -2,6 +2,7 @@
    'use strict';
 
    $(document).ready( function() {
+      var strings = ( typeof amoPageVars !== 'undefined' && amoPageVars.strings ) ? amoPageVars.strings : {};
 
       // Save changes
       $('#amo-save-changes').click(function(e) {
@@ -21,13 +22,35 @@
          $.ajax({
             type: "post",
             url: ajaxurl,
+            dataType: 'json',
             data: menu_data,
-            success:function(data) {
+            success:function(response) {
                $('.asenha-saving-changes').hide();
+
+               if ( ! response || response.success !== true ) {
+                  if ( strings.saveChangesError ) {
+                     window.alert( strings.saveChangesError );
+                  }
+                  return;
+               }
+
                
+
+               $('.asenha-changes-saved').fadeIn(400).delay(2500).fadeOut(400);
             },
-            error:function(errorThrown) {
-               console.log(errorThrown);
+            error:function(jqXHR) {
+               var message = strings.saveChangesError || '';
+
+               $('.asenha-saving-changes').hide();
+
+               if ( jqXHR && jqXHR.responseJSON && jqXHR.responseJSON.data && jqXHR.responseJSON.data.message ) {
+                  message = jqXHR.responseJSON.data.message;
+               }
+
+               if ( message ) {
+                  window.alert( message );
+               }
+               console.log(jqXHR);
             }
          });
       });

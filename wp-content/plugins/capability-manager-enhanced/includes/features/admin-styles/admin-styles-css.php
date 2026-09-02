@@ -4,32 +4,131 @@
  * Direct URL: /wp-content/plugins/capabilities-pro/includes/features/admin-styles/admin-styles-css.php
  */
 
-// Prevent direct access without the parameter
-if (!isset($_GET['ppc_custom_scheme']) || $_GET['ppc_custom_scheme'] !== '1') {
-    header('HTTP/1.0 403 Forbidden');
-    exit;
+$is_library = defined('PPC_ADMIN_STYLES_CSS_LIBRARY') && PPC_ADMIN_STYLES_CSS_LIBRARY;
+
+if (!$is_library) {
+    // Prevent direct access without the parameter
+    if (!isset($_GET['ppc_custom_scheme']) || $_GET['ppc_custom_scheme'] !== '1') {
+        header('HTTP/1.0 403 Forbidden');
+        exit;
+    }
+
+    if (!defined('ABSPATH')) {
+        $path = __DIR__;
+
+        for ($i = 0; $i < 8; $i++) {
+            $wp_load_path = $path . DIRECTORY_SEPARATOR . 'wp-load.php';
+
+            if (file_exists($wp_load_path)) {
+                require_once $wp_load_path;
+                break;
+            }
+
+            $parent_path = dirname($path);
+
+            if ($parent_path === $path) {
+                break;
+            }
+
+            $path = $parent_path;
+        }
+    }
+
+    if (!defined('ABSPATH')) {
+        header('HTTP/1.0 500 Internal Server Error');
+        exit;
+    }
+
+    if (!is_user_logged_in()) {
+        header('HTTP/1.0 403 Forbidden');
+        exit;
+    }
+
+    // Set headers
+    header('Content-Type: text/css');
+    header('Cache-Control: public, max-age=86400'); // 24 hours
+    header('Expires: ' . gmdate('D, d M Y H:i:s', time() + 86400) . ' GMT');
 }
 
-// Define WordPress context (minimal)
-define('SHORTINIT', true);
-$wp_load_path = dirname(dirname(dirname(dirname(dirname(__FILE__))))) . '/wp-load.php';
-
-if (file_exists($wp_load_path)) {
-    require_once($wp_load_path);
-} else {
-    // Fallback if path is different
-    for ($i = 0; $i < 8; $i++) {
-        if (file_exists(str_repeat('../', $i) . 'wp-load.php')) {
-            require_once(str_repeat('../', $i) . 'wp-load.php');
-            break;
+if (!function_exists('ppc_hex_to_rgb')) {
+    function ppc_hex_to_rgb($hex) {
+        if (empty($hex) || !is_string($hex)) {
+            return null;
         }
+
+        $hex = str_replace('#', '', $hex);
+
+        if (strlen($hex) == 3) {
+            $r = hexdec(substr($hex, 0, 1) . substr($hex, 0, 1));
+            $g = hexdec(substr($hex, 1, 1) . substr($hex, 1, 1));
+            $b = hexdec(substr($hex, 2, 1) . substr($hex, 2, 1));
+        } elseif (strlen($hex) == 6) {
+            $r = hexdec(substr($hex, 0, 2));
+            $g = hexdec(substr($hex, 2, 2));
+            $b = hexdec(substr($hex, 4, 2));
+        } else {
+            return null;
+        }
+
+        return "$r, $g, $b";
     }
 }
 
-// Set headers
-header('Content-Type: text/css');
-header('Cache-Control: public, max-age=86400'); // 24 hours
-header('Expires: ' . gmdate('D, d M Y H:i:s', time() + 86400) . ' GMT');
+if (!function_exists('ppc_is_light_color')) {
+    function ppc_is_light_color($hex) {
+        if (empty($hex) || !is_string($hex)) {
+            return false;
+        }
+
+        $hex = ltrim($hex, '#');
+        if (strlen($hex) == 3) {
+            $hex = $hex[0] . $hex[0] . $hex[1] . $hex[1] . $hex[2] . $hex[2];
+        }
+        if (strlen($hex) !== 6) {
+            return false;
+        }
+
+        $r = hexdec(substr($hex, 0, 2));
+        $g = hexdec(substr($hex, 2, 2));
+        $b = hexdec(substr($hex, 4, 2));
+        $luminance = (0.299 * $r + 0.587 * $g + 0.114 * $b) / 255;
+
+        return $luminance > 0.6;
+    }
+}
+
+if (!function_exists('ppc_adjust_brightness')) {
+    function ppc_adjust_brightness($hex, $steps) {
+        if (empty($hex) || !is_string($hex)) {
+            return null;
+        }
+
+        $steps = max(-255, min(255, $steps));
+        $hex = str_replace('#', '', $hex);
+
+        if (strlen($hex) == 3) {
+            $hex = str_repeat(substr($hex, 0, 1), 2) . str_repeat(substr($hex, 1, 1), 2) . str_repeat(substr($hex, 2, 1), 2);
+        }
+
+        if (strlen($hex) != 6) {
+            return null;
+        }
+
+        $r = hexdec(substr($hex, 0, 2));
+        $g = hexdec(substr($hex, 2, 2));
+        $b = hexdec(substr($hex, 4, 2));
+
+        $r = max(0, min(255, $r + $steps));
+        $g = max(0, min(255, $g + $steps));
+        $b = max(0, min(255, $b + $steps));
+
+        $r_hex = str_pad(dechex($r), 2, '0', STR_PAD_LEFT);
+        $g_hex = str_pad(dechex($g), 2, '0', STR_PAD_LEFT);
+        $b_hex = str_pad(dechex($b), 2, '0', STR_PAD_LEFT);
+
+        return '#' . $r_hex . $g_hex . $b_hex;
+    }
+}
 
 function ppc_get_custom_colors() {
 
@@ -49,10 +148,20 @@ function ppc_get_custom_colors() {
         $custom_style_slug = sanitize_key($_GET['ppc_custom_style']);
 
         $custom_styles = get_option('pp_capabilities_custom_admin_styles', []);
+        $style = null;
 
         if (isset($custom_styles[$custom_style_slug])) {
             $style = $custom_styles[$custom_style_slug];
+        } elseif (is_array($custom_styles)) {
+            foreach ($custom_styles as $stored_style_slug => $stored_style) {
+                if (sanitize_key($stored_style_slug) === $custom_style_slug) {
+                    $style = $stored_style;
+                    break;
+                }
+            }
+        }
 
+        if (is_array($style)) {
             $colors['base'] = $style['custom_scheme_base'] ?? '';
             $colors['text'] = $style['custom_scheme_text'] ?? '';
             $colors['highlight'] = $style['custom_scheme_highlight'] ?? '';
@@ -335,84 +444,7 @@ function ppc_generate_element_colors_css($element_colors) {
 
 // Function to generate CSS
 function ppc_generate_custom_scheme_css($colors) {
-
-    // Convert hex to RGB
-    function ppc_hex_to_rgb($hex) {
-        if (empty($hex) || !is_string($hex)) {
-            return null;
-        }
-
-        $hex = str_replace('#', '', $hex);
-
-        if(strlen($hex) == 3) {
-            $r = hexdec(substr($hex,0,1).substr($hex,0,1));
-            $g = hexdec(substr($hex,1,1).substr($hex,1,1));
-            $b = hexdec(substr($hex,2,1).substr($hex,2,1));
-        } else if (strlen($hex) == 6) {
-            $r = hexdec(substr($hex,0,2));
-            $g = hexdec(substr($hex,2,2));
-            $b = hexdec(substr($hex,4,2));
-        } else {
-            return null;
-        }
-
-        return "$r, $g, $b";
-    }
-
-    function ppc_is_light_color($hex) {
-        if (empty($hex) || !is_string($hex)) {
-            return false;
-        }
-
-        $hex = ltrim($hex, '#');
-        if (strlen($hex) == 3) {
-            $hex = $hex[0] . $hex[0] . $hex[1] . $hex[1] . $hex[2] . $hex[2];
-        }
-        if (strlen($hex) !== 6) {
-            return false;
-        }
-
-        $r = hexdec(substr($hex, 0, 2));
-        $g = hexdec(substr($hex, 2, 2));
-        $b = hexdec(substr($hex, 4, 2));
-        $luminance = (0.299 * $r + 0.587 * $g + 0.114 * $b) / 255;
-
-        return $luminance > 0.6;
-    }
-
     $text_rgb = !empty($colors['text']) ? ppc_hex_to_rgb($colors['text']) : null;
-
-    // Generate shade variations
-    function ppc_adjust_brightness($hex, $steps) {
-        if (empty($hex) || !is_string($hex)) {
-            return null;
-        }
-
-        $steps = max(-255, min(255, $steps));
-        $hex = str_replace('#', '', $hex);
-
-        if (strlen($hex) == 3) {
-            $hex = str_repeat(substr($hex,0,1),2).str_repeat(substr($hex,1,1),2).str_repeat(substr($hex,2,1),2);
-        }
-
-        if (strlen($hex) != 6) {
-            return null;
-        }
-
-        $r = hexdec(substr($hex,0,2));
-        $g = hexdec(substr($hex,2,2));
-        $b = hexdec(substr($hex,4,2));
-
-        $r = max(0,min(255,$r + $steps));
-        $g = max(0,min(255,$g + $steps));
-        $b = max(0,min(255,$b + $steps));
-
-        $r_hex = str_pad(dechex($r), 2, '0', STR_PAD_LEFT);
-        $g_hex = str_pad(dechex($g), 2, '0', STR_PAD_LEFT);
-        $b_hex = str_pad(dechex($b), 2, '0', STR_PAD_LEFT);
-
-        return '#'.$r_hex.$g_hex.$b_hex;
-    }
 
     $base_darker = !empty($colors['base']) ? ppc_adjust_brightness($colors['base'], -20) : null;
     $base_lighter = !empty($colors['base']) ? ppc_adjust_brightness($colors['base'], 20) : null;
@@ -1185,7 +1217,9 @@ CSS;
     return $css;
 }
 
-// Get colors and output CSS
-$colors = ppc_get_custom_colors();
-echo ppc_generate_custom_scheme_css($colors);
-exit;
+if (!$is_library) {
+    // Get colors and output CSS
+    $colors = ppc_get_custom_colors();
+    echo ppc_generate_custom_scheme_css($colors);
+    exit;
+}

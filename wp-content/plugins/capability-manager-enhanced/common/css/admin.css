@@ -112,11 +112,24 @@ h3.cme-cap-section {
 margin-top:0;
 }
 
-a.neg-cap, a.cap-on, a.type-on, a.neg-type-caps, a.cme-neg-all {
+tr.cme-cap-group-subheading td {
+  background: #f6f7f7;
+  border-top: 1px solid #dcdcde;
+  border-bottom: 1px solid #dcdcde;
+  padding: 10px 12px;
+}
+
+h4.cme-cap-group-title {
+  margin: 0;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+a.neg-cap, a.cap-on, a.type-on, a.neg-type-caps {
 text-decoration: none;
 }
 
-span.cap-x, a.cme-neg-all {
+span.cap-x {
     color: #EA3323;
     font-size: 1.5em;
     padding-left: 1px;
@@ -134,15 +147,6 @@ span.cap-x, a.cme-neg-all {
 .single-checkbox-table span.cap-x {
     line-height: 0.7;
     margin-right: 10.5px;
-}
-
-a.cme-switch-all {
-color: black;
-font-size: 1.5em;
-padding-right: 1px;
-padding-right: 1px;
-vertical-align: middle;
-text-decoration: line-through !important;
 }
 
 td.cap-yes span {
@@ -195,15 +199,15 @@ tr.cme-bulk-select span {
 vertical-align: bottom;
 }
 
-a.type-off, a.neg-cap, a.cme-neg-all, a.neg-type-caps {
+a.type-off, a.neg-cap, a.neg-type-caps {
 color: #EA3323;
 }
 
-a.type-on, a.cap-on, a.cme-switch-all {
+a.type-on, a.cap-on {
 color: black;
 }
 
-input.cme-check-all, a.cme-neg-all {
+input.cme-check-all {
 margin-right: 10px;
 padding-right: 10px;
 }
@@ -448,6 +452,11 @@ div.publishpress-caps-backup td.cme-backup-info .cme-negate {
     box-shadow: 0 0 0 1px crimson;
 }
 
+.restrict-column input[type=checkbox]:checked {
+  background: none;
+  border-color: none;
+}
+
 .restrict-column input[type=checkbox]:checked::before {
     content: url("data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHhtbG5zOnhsaW5rPSJodHRwOi8vd3d3LnczLm9yZy8xOTk5L3hsaW5rIiB3aWR0aD0iMjAiIGhlaWdodD0iMjAiIHByZXNlcnZlQXNwZWN0UmF0aW89InhNaWRZTWlkIG1lZXQiIHZpZXdCb3g9IjAgMCAyMCAyMCIgc3R5bGU9Ii1tcy10cmFuc2Zvcm06IHJvdGF0ZSgzNjBkZWcpOyAtd2Via2l0LXRyYW5zZm9ybTogcm90YXRlKDM2MGRlZyk7IHRyYW5zZm9ybTogcm90YXRlKDM2MGRlZyk7Ij48cGF0aCBkPSJNMTQuOTUgNi40NkwxMS40MSAxMGwzLjU0IDMuNTRsLTEuNDEgMS40MUwxMCAxMS40MmwtMy41MyAzLjUzbC0xLjQyLTEuNDJMOC41OCAxMEw1LjA1IDYuNDdsMS40Mi0xLjQyTDEwIDguNThsMy41NC0zLjUzeiIgZmlsbD0iI2RjMTQzYyIvPjxyZWN0IHg9IjAiIHk9IjAiIHdpZHRoPSIyMCIgaGVpZ2h0PSIyMCIgZmlsbD0icmdiYSgwLCAwLCAwLCAwKSIgLz48L3N2Zz4=");
 }
@@ -480,6 +489,14 @@ table#akmin tr td input[type=checkbox] {
   border-right: none;
   border-top: none;
   border-bottom: none;
+}
+
+#pp-capability-menu-wrapper table td,
+#pp-capability-menu-wrapper table th {
+    padding: 10px;
+    padding-bottom: 10px;
+    font-size: 13px;
+    line-height: 20px;
 }
 
 #pp-capability-menu-wrapper table td h4.ppc-menu-row-section {
@@ -644,6 +661,29 @@ margin-bottom: 10px !important;
 
 .ppc-postbox > h2 {
 	margin-top: 0;
+}
+
+.pp-capabilities-export-role-selector {
+	margin: 10px 0 15px 24px;
+	padding: 12px 14px;
+	max-width: 600px;
+	border-left: 3px solid #c3c4c7;
+	background: #f6f7f7;
+}
+
+.pp-capabilities-export-role-selector .description {
+	margin: 0 0 10px;
+}
+
+.pp-capabilities-export-role-selector > ul {
+	display: grid;
+	grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+	gap: 8px 20px;
+	margin: 0;
+}
+
+.pp-capabilities-export-role-selector > ul > li {
+	margin: 0;
 }
 
 /* ====================================================== Main Screen */
@@ -1586,6 +1626,51 @@ ul.ppc-redirects-tab li.active a {
 /* Start COPIED FROM PP BLOCKS */
 .pp-capability-menus-wrapper.capabilities-dashboard input {
     float: right;
+}
+
+.pp-capability-menus-wrapper.capabilities-dashboard .ppc-dashboard-network-sync {
+    margin-top: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 8px;
+}
+
+.pp-capability-menus-wrapper.capabilities-dashboard .ppc-dashboard-network-sync input {
+    float: none;
+    margin: 0 6px 0 0;
+}
+
+.pp-capability-menus-wrapper.capabilities-dashboard .ppc-dashboard-network-sync-help {
+    color: #646970;
+    line-height: 1;
+}
+
+.pp-capability-menus-wrapper.capabilities-dashboard .ppc-dashboard-network-sync-help:focus {
+    outline: 1px solid #2271b1;
+    outline-offset: 2px;
+}
+
+.pp-capability-menus-wrapper.capabilities-dashboard .ppc-dashboard-network-sync-help:focus .tool-tip-text {
+    display: block;
+}
+
+.pp-capability-menus-wrapper.capabilities-dashboard .ppc-dashboard-network-sync-help .dashicons {
+    width: 18px;
+    height: 18px;
+    font-size: 18px;
+}
+
+.pp-capability-menus-wrapper.capabilities-dashboard .ppc-dashboard-network-sync-help .tool-tip-text {
+    right: -8px;
+    left: auto;
+    transform: translateY(-100%);
+}
+
+.pp-capability-menus-wrapper.capabilities-dashboard .ppc-dashboard-network-sync-help .tool-tip-text i {
+    right: 5px;
+    left: auto;
+    margin-left: 0;
 }
 
 .publishpress-caps-manage .dashboard-settings-boxes {

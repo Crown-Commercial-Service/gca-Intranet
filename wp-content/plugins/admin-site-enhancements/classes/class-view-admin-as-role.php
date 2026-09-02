@@ -10,6 +10,48 @@ namespace ASENHA\Classes;
 class View_Admin_As_Role {
 
     /**
+     * User meta key for hashed recovery token.
+     *
+     * @var string
+     */
+    const RESET_TOKEN_META_KEY = '_asenha_view_admin_as_reset_token';
+
+    /**
+     * User meta key for plain recovery token (settings display only).
+     *
+     * @var string
+     */
+    const PLAIN_TOKEN_META_KEY = '_asenha_view_admin_as_reset_plain';
+
+    /**
+     * Transient key prefix for displaying recovery URL after switching roles.
+     *
+     * @var string
+     */
+    const RECOVERY_URL_TRANSIENT_PREFIX = 'asenha_view_admin_as_recovery_';
+
+    /**
+     * Query argument for lockout recovery URL.
+     *
+     * @var string
+     */
+    const RECOVERY_QUERY_ARG = 'asenha-role-reset';
+
+    /**
+     * User meta key for pending recovery URL refreshed admin notice.
+     *
+     * @var string
+     */
+    const RECOVERY_NOTICE_URL_META_KEY = '_asenha_view_admin_as_recovery_notice_url';
+
+    /**
+     * Whether the current request is performing a plugin-initiated role switch.
+     *
+     * @var bool
+     */
+    private static $is_internal_role_switch = false;
+
+    /**
      * Add menu bar item to view admin as one of the user roles
      *
      * @param $wp_admin_bar The WP_Admin_Bar instance
@@ -207,6 +249,218 @@ class View_Admin_As_Role {
     }
 
     /**
+     * Get the nonce URL for switching back to the administrator role.
+     *
+     * @since 8.8.5
+     * @return string
+     */
+    private function get_switch_back_nonce_url() {
+        return wp_nonce_url(
+            add_query_arg(
+                array(
+                    'action' => 'switch_back_to_administrator',
+                    'role'   => 'administrator',
+                )
+            ),
+            'asenha_view_admin_as_administrator',
+            'nonce'
+        );
+    }
+
+    /**
+     * Generate and store a hashed recovery token for lockout recovery.
+     *
+     * @since 8.8.5
+     * @param int $user_id User ID.
+     * @return string Plain recovery token for URL construction.
+     */
+    private function generate_recovery_token( $user_id ) {
+        $plain_token = wp_generate_password( 43, false, false );
+        update_user_meta( $user_id, self::RESET_TOKEN_META_KEY, wp_hash_password( $plain_token ) );
+        update_user_meta( $user_id, self::PLAIN_TOKEN_META_KEY, $plain_token );
+        set_transient( self::RECOVERY_URL_TRANSIENT_PREFIX . $user_id, $plain_token, DAY_IN_SECONDS );
+
+        return $plain_token;
+    }
+
+    /**
+     * Return an existing recovery token or generate one for the current admin.
+     *
+     * @since 8.8.5
+     * @param int $user_id User ID.
+     * @return string Plain recovery token, or empty string when not allowed.
+     */
+    public function ensure_recovery_token( $user_id ) {
+        $user_id = (int) $user_id;
+
+        if ( $user_id <= 0 || $user_id !== get_current_user_id() || ! current_user_can( 'manage_options' ) ) {
+            return '';
+        }
+
+        $options = get_option( ASENHA_SLUG_U, array() );
+
+        if ( empty( $options['view_admin_as_role'] ) ) {
+            return '';
+        }
+
+        $plain_token = get_user_meta( $user_id, self::PLAIN_TOKEN_META_KEY, true );
+
+        if ( ! empty( $plain_token ) && is_string( $plain_token ) && $this->verify_reset_token( $user_id, $plain_token ) ) {
+            return $plain_token;
+        }
+
+        return $this->generate_recovery_token( $user_id );
+    }
+
+    /**
+     * Verify a submitted recovery token for a user.
+     *
+     * @since 8.8.5
+     * @param int    $user_id User ID.
+     * @param string $token   Plain recovery token.
+     * @return bool
+     */
+    private function verify_reset_token( $user_id, $token ) {
+        if ( empty( $token ) || ! is_numeric( $user_id ) || $user_id <= 0 ) {
+            return false;
+        }
+
+        $stored_hash = get_user_meta( $user_id, self::RESET_TOKEN_META_KEY, true );
+
+        if ( empty( $stored_hash ) || ! is_string( $stored_hash ) ) {
+            return false;
+        }
+
+        return wp_check_password( $token, $stored_hash, $user_id );
+    }
+
+    /**
+     * Build the lockout recovery URL for a plain token.
+     *
+     * @since 8.8.5
+     * @param string $plain_token Plain recovery token.
+     * @return string
+     */
+    public function get_recovery_url_for_token( $plain_token ) {
+        return add_query_arg(
+            self::RECOVERY_QUERY_ARG,
+            rawurlencode( $plain_token ),
+            site_url( '/' )
+        );
+    }
+
+    /**
+     * Get the recovery URL to display on the settings screen for the current user.
+     *
+     * @since 8.8.5
+     * @param int $user_id User ID.
+     * @return string Recovery URL or instructional text.
+     */
+    public function get_recovery_url_for_settings( $user_id ) {
+        $plain_token = $this->ensure_recovery_token( $user_id );
+
+        if ( ! empty( $plain_token ) ) {
+            return $this->get_recovery_url_for_token( $plain_token );
+        }
+
+        return __( 'Enable this module to generate your secret recovery URL.', 'admin-site-enhancements' );
+    }
+
+    /**
+     * Find a user ID in the allowlist that matches a recovery token.
+     *
+     * @since 8.8.5
+     * @param string $token Plain recovery token.
+     * @return int User ID or 0 when not found.
+     */
+    private function get_user_id_by_reset_token( $token ) {
+        $options = get_option( ASENHA_SLUG_U, array() );
+        $usernames = isset( $options['viewing_admin_as_role_are'] ) ? $options['viewing_admin_as_role_are'] : array();
+
+        if ( empty( $usernames ) || ! is_array( $usernames ) ) {
+            return 0;
+        }
+
+        foreach ( $usernames as $username ) {
+            $user = get_user_by( 'login', $username );
+
+            if ( ! $user ) {
+                continue;
+            }
+
+            if ( $this->verify_reset_token( $user->ID, $token ) ) {
+                return (int) $user->ID;
+            }
+        }
+
+        return 0;
+    }
+
+    /**
+     * Restore a user's original roles and clear recovery state.
+     *
+     * @since 8.8.5
+     * @param \WP_User $user User object.
+     * @return bool
+     */
+    private function restore_original_roles_for_user( $user ) {
+        if ( ! $user instanceof \WP_User ) {
+            return false;
+        }
+
+        $current_user_role_slugs = $user->roles;
+        $original_role_slugs = get_user_meta( $user->ID, '_asenha_view_admin_as_original_roles', true );
+
+        if ( empty( $original_role_slugs ) || ! is_array( $original_role_slugs ) ) {
+            return false;
+        }
+
+        self::$is_internal_role_switch = true;
+
+        foreach ( $current_user_role_slugs as $current_role_slug ) {
+            $user->remove_role( $current_role_slug );
+        }
+
+        foreach ( $original_role_slugs as $original_role_slug ) {
+            $user->add_role( $original_role_slug );
+        }
+
+        self::$is_internal_role_switch = false;
+
+        update_user_meta( $user->ID, '_asenha_viewing_admin_as', 'administrator' );
+        $this->clear_view_admin_as_recovery_state( $user->ID );
+
+        return true;
+    }
+
+    /**
+     * Redirect to the login page after a token-based recovery.
+     *
+     * @since 8.8.5
+     * @return void
+     */
+    private function redirect_after_token_recovery() {
+        $options = get_option( ASENHA_SLUG_U, array() );
+
+        if ( array_key_exists( 'change_login_url', $options ) && $options['change_login_url'] ) {
+            if ( array_key_exists( 'custom_login_slug', $options ) && ! empty( $options['custom_login_slug'] ) )  {
+                $login_url = get_site_url( null, $options['custom_login_slug'] );
+            }
+        }
+
+        if ( empty( $login_url ) ) {
+            $login_url = wp_login_url();
+        }
+
+        ?>
+        <script>
+            window.location.href='<?php echo esc_url( $login_url ); ?>';
+        </script>
+        <?php
+        exit;
+    }
+
+    /**
      * Switch user role to view admin and site
      *
      * @since 1.8.0
@@ -218,13 +472,13 @@ class View_Admin_As_Role {
         $current_user_username = $current_user->user_login;
 
         $options = get_option( ASENHA_SLUG_U, array() );
-        $options['viewing_admin_as_role_are'] = array();
+        $usernames = isset( $options['viewing_admin_as_role_are'] ) ? $options['viewing_admin_as_role_are'] : array();
 
         if ( isset( $_REQUEST['action'] ) && isset( $_REQUEST['role'] ) && isset( $_REQUEST['nonce'] ) ) {
 
-            $action = sanitize_text_field( $_REQUEST['action'] );
-            $new_role = sanitize_text_field( $_REQUEST['role'] );
-            $nonce = sanitize_text_field( $_REQUEST['nonce'] );
+            $action = sanitize_text_field( wp_unslash( $_REQUEST['action'] ) );
+            $new_role = sanitize_text_field( wp_unslash( $_REQUEST['role'] ) );
+            $nonce = sanitize_text_field( wp_unslash( $_REQUEST['nonce'] ) );
             
             if ( 'switch_role_to' === $action ) {
 
@@ -232,7 +486,11 @@ class View_Admin_As_Role {
 
                 $wp_roles = array_keys( wp_roles()->roles ); // indexed array of all WP roles
 
-                if ( ! wp_verify_nonce( $nonce, 'asenha_view_admin_as_' . $new_role ) || ! in_array( $new_role, $wp_roles ) ) {
+                if ( ! is_user_logged_in() || ! current_user_can( 'manage_options' ) ) {
+                    return;
+                }
+
+                if ( ! wp_verify_nonce( $nonce, 'asenha_view_admin_as_' . $new_role ) || ! in_array( $new_role, $wp_roles, true ) ) {
                     return; // cancel role switching
                 }
 
@@ -246,11 +504,18 @@ class View_Admin_As_Role {
                     update_user_meta( get_current_user_id(), '_asenha_view_admin_as_original_roles', $current_user_role_slugs );
 
                 }
-                
+
+                $this->ensure_recovery_token( get_current_user_id() );
+
                 // Store current user's username in options
-                $options['viewing_admin_as_role_are'][] = $current_user_username;
+                if ( ! in_array( $current_user_username, $usernames, true ) ) {
+                    $usernames[] = $current_user_username;
+                }
+                $options['viewing_admin_as_role_are'] = array_values( array_unique( $usernames ) );
                 update_option( ASENHA_SLUG_U, $options, true );
                 
+                self::$is_internal_role_switch = true;
+
                 // Remove all current roles from current user.
                 foreach ( $current_user_role_slugs as $current_user_role_slug ) {
 
@@ -261,21 +526,12 @@ class View_Admin_As_Role {
                 // Add new role to current user
                 $current_user->add_role( $new_role );
 
+                self::$is_internal_role_switch = false;
+
                 // Mark that the user has switched to a non-administrator role
                 update_user_meta( get_current_user_id(), '_asenha_viewing_admin_as', $new_role );
 
-                // if ( ! in_array( $new_role, array( 'administrator', 'editor', 'author', 'contributor' ) ) ) {
-
-                    // Redirect to profile edit page
-                    // wp_safe_redirect( get_edit_profile_url() );
-                    
-                // } else {
-                    
-                    // Redirect to admin dashboard
-                    wp_safe_redirect( get_admin_url() );
-
-                // }
-
+                wp_safe_redirect( get_admin_url() );
                 exit;
 
             }
@@ -284,9 +540,19 @@ class View_Admin_As_Role {
 
                 // Check nonce validity
 
+                if ( ! is_user_logged_in() ) {
+                    return;
+                }
+
                 if ( ! wp_verify_nonce( $nonce, 'asenha_view_admin_as_administrator' ) || ( $new_role != 'administrator' ) ) {
                     return; // cancel role switching
                 }
+
+                if ( ! in_array( $current_user_username, $usernames, true ) ) {
+                    return;
+                }
+
+                self::$is_internal_role_switch = true;
 
                 // Remove all current roles from current user.
                 foreach ( $current_user_role_slugs as $current_role_slug ) {
@@ -299,92 +565,40 @@ class View_Admin_As_Role {
                 $original_role_slugs = get_user_meta( get_current_user_id(), '_asenha_view_admin_as_original_roles', true );
                 
                 // Add the original roles to the current user
-                foreach ( $original_role_slugs as $original_role_slug ) {
-
-                    $current_user->add_role( $original_role_slug );
-
-                }
-
-                // Remove current user's username from stored usernames. 
-                $usernames = $options['viewing_admin_as_role_are'];
-                foreach ( $usernames as $key => $username ) {
-                    if ( $current_user_username == $username ) {
-                        unset( $usernames[$key] );
-                    }
-                }
-                $options['viewing_admin_as_role_are'] = $usernames;
-                update_option( ASENHA_SLUG_U, $options, true );
-
-                // Mark that the user has switched back to an administrator role
-                update_user_meta( get_current_user_id(), '_asenha_viewing_admin_as', 'administrator' );
-
-            }
-
-        } elseif ( isset( $_REQUEST['reset-for'] ) ) {
-
-            $reset_for_username = sanitize_text_field( $_REQUEST['reset-for'] );
-            
-            $options = get_option( ASENHA_SLUG_U, array() );
-            $usernames = isset( $options['viewing_admin_as_role_are'] ) ? $options['viewing_admin_as_role_are'] : array();
-            
-            if ( ! empty( $reset_for_username ) ) {
-                
-                if ( in_array( $reset_for_username, $usernames ) ) {
-                    
-                    $current_user = get_user_by( 'login', $reset_for_username );
-                    $current_user_role_slugs = $current_user->roles; // indexed array of current user role slug(s)
-                    
-                    // Remove all current roles from current user.
-                    foreach ( $current_user_role_slugs as $current_role_slug ) {
-
-                        $current_user->remove_role( $current_role_slug );
-
-                    }
-
-                    // Get original roles (before role switching) of the current user
-                    $original_role_slugs = get_user_meta( $current_user->ID, '_asenha_view_admin_as_original_roles', true );
-                    
-                    // Add the original roles to the current user
+                if ( ! empty( $original_role_slugs ) && is_array( $original_role_slugs ) ) {
                     foreach ( $original_role_slugs as $original_role_slug ) {
 
                         $current_user->add_role( $original_role_slug );
 
                     }
-
-                    // Mark that the user has switched back to an administrator role
-                    update_user_meta( $current_user->ID, '_asenha_viewing_admin_as', 'administrator' );
-
-                    // Remove current user's username from stored usernames. 
-                    foreach ( $usernames as $key => $username ) {
-                        if ( $reset_for_username == $username ) {
-                            unset( $usernames[$key] );
-                        }
-                    }
-                    $options['viewing_admin_as_role_are'] = $usernames;
-                    update_option( ASENHA_SLUG_U, $options, true );
-
-                    // Redirect to login URL, including when custom login slug is set and active
-                    if ( array_key_exists( 'change_login_url', $options ) && $options['change_login_url'] ) {
-                        if ( array_key_exists( 'custom_login_slug', $options ) && ! empty( $options['custom_login_slug'] ) )  {
-                            $login_url = get_site_url( null, $options['custom_login_slug'] );
-                        }
-                    } else {
-                        $login_url = wp_login_url();                    
-                    }
-                    
-                    // Redirect to admin dashboard
-                    // wp_safe_redirect( $login_url );
-                    // exit;
-
-                    // Use JS redirect, which works more reliably on the frontend
-                    ?>
-                    <script>
-                        window.location.href='<?php echo esc_url( $login_url ); ?>';
-                    </script>
-                    <?php
-
                 }
 
+                self::$is_internal_role_switch = false;
+
+                // Mark that the user has switched back to an administrator role
+                update_user_meta( get_current_user_id(), '_asenha_viewing_admin_as', 'administrator' );
+                $switch_back_user_id = get_current_user_id();
+                $this->clear_view_admin_as_recovery_state( $switch_back_user_id );
+                $plain_token  = $this->generate_recovery_token( $switch_back_user_id );
+                $recovery_url = $this->get_recovery_url_for_token( $plain_token );
+                update_user_meta( $switch_back_user_id, self::RECOVERY_NOTICE_URL_META_KEY, $recovery_url );
+
+                wp_safe_redirect( get_admin_url() );
+                exit;
+
+            }
+
+        } elseif ( isset( $_REQUEST[ self::RECOVERY_QUERY_ARG ] ) ) {
+
+            $reset_token = sanitize_text_field( wp_unslash( $_REQUEST[ self::RECOVERY_QUERY_ARG ] ) );
+            $reset_user_id = $this->get_user_id_by_reset_token( $reset_token );
+
+            if ( $reset_user_id > 0 ) {
+                $reset_user = get_user_by( 'id', $reset_user_id );
+
+                if ( $reset_user && $this->restore_original_roles_for_user( $reset_user ) ) {
+                    $this->redirect_after_token_recovery();
+                }
             }
 
         }
@@ -392,36 +606,85 @@ class View_Admin_As_Role {
     }
     
     /**
+     * Clear View Admin as Role recovery state for a user.
+     *
+     * @since 8.8.5
+     * @param int $user_id User ID.
+     * @return void
+     */
+    public function clear_view_admin_as_recovery_state( $user_id ) {
+        $user_id = (int) $user_id;
+
+        if ( $user_id <= 0 ) {
+            return;
+        }
+
+        $user = get_user_by( 'id', $user_id );
+
+        if ( ! $user ) {
+            return;
+        }
+
+        $username = $user->user_login;
+        $options = get_option( ASENHA_SLUG_U, array() );
+        $usernames = isset( $options['viewing_admin_as_role_are'] ) ? $options['viewing_admin_as_role_are'] : array();
+
+        if ( ! empty( $usernames ) && is_array( $usernames ) ) {
+            foreach ( $usernames as $key => $stored_username ) {
+                if ( $username === $stored_username ) {
+                    unset( $usernames[ $key ] );
+                }
+            }
+
+            $options['viewing_admin_as_role_are'] = array_values( $usernames );
+            update_option( ASENHA_SLUG_U, $options, true );
+        }
+
+        delete_user_meta( $user_id, '_asenha_viewing_admin_as' );
+        delete_user_meta( $user_id, '_asenha_view_admin_as_original_roles' );
+        delete_user_meta( $user_id, self::RESET_TOKEN_META_KEY );
+        delete_user_meta( $user_id, self::PLAIN_TOKEN_META_KEY );
+        delete_user_meta( $user_id, self::RECOVERY_NOTICE_URL_META_KEY );
+        delete_transient( self::RECOVERY_URL_TRANSIENT_PREFIX . $user_id );
+    }
+
+    /**
+     * Clear recovery state when a user's role is changed outside this module.
+     *
+     * @since 8.8.5
+     * @param int      $user_id   User ID.
+     * @param string   $role      New role.
+     * @param string[] $old_roles Previous roles.
+     * @return void
+     */
+    public function maybe_clear_view_admin_as_on_external_role_change( $user_id, $role = '', $old_roles = array() ) {
+        unset( $role, $old_roles );
+
+        if ( self::$is_internal_role_switch ) {
+            return;
+        }
+
+        $viewing_admin_as = get_user_meta( $user_id, '_asenha_viewing_admin_as', true );
+
+        if ( 'administrator' !== $viewing_admin_as && ! empty( $viewing_admin_as ) ) {
+            $this->clear_view_admin_as_recovery_state( $user_id );
+        }
+    }
+
+    /**
      * When changing a user's role via their profile edit screen, maybe we sbould remove the user's username from a list of usernames that can switch back to the administrator role. This addresses a vulnerability in a rare scenario disclosed by Pathstack.
      * 
      * @since 7.6.3
      */
-    public function maybe_prevent_switchback_to_administrator( $user_id ) {        
+    public function maybe_prevent_switchback_to_administrator( $user_id ) {
+        if ( self::$is_internal_role_switch ) {
+            return;
+        }
+
         $viewing_admin_as = get_user_meta( $user_id, '_asenha_viewing_admin_as', true );
 
-        if ( 'administrator' != $viewing_admin_as ) {
-            $user = get_user_by( 'id', $user_id );
-            $current_user_username = $user->user_login;
-
-            // Remove current user's username from stored usernames. 
-            // Once removed, that user won't be able to switch back to the administrator role from the ?reset-for=username URL
-            $options = get_option( ASENHA_SLUG_U, array() );
-            $usernames = isset( $options['viewing_admin_as_role_are'] ) ? $options['viewing_admin_as_role_are'] : array();
-
-            if ( ! empty( $usernames ) ) {
-                foreach ( $usernames as $key => $username ) {
-                    if ( $current_user_username == $username ) {
-                        unset( $usernames[$key] );
-                    }
-                }                
-
-                $options['viewing_admin_as_role_are'] = $usernames;
-                update_option( ASENHA_SLUG_U, $options, true );
-            }
-
-            // Delete user meta related to View Admin As Role module
-            delete_user_meta( $user_id, '_asenha_viewing_admin_as' );
-            delete_user_meta( $user_id, '_asenha_view_admin_as_original_roles' );            
+        if ( 'administrator' != $viewing_admin_as && ! empty( $viewing_admin_as ) ) {
+            $this->clear_view_admin_as_recovery_state( $user_id );
         }
     }
     
@@ -432,18 +695,97 @@ class View_Admin_As_Role {
      */
     public function add_floating_reset_button() {
         $options = get_option( ASENHA_SLUG_U, array() );
-        $admin_usernames_viewing_as_role = isset( $options['viewing_admin_as_role_are'] ) ? $options['viewing_admin_as_role_are'] : array();;
+        $admin_usernames_viewing_as_role = isset( $options['viewing_admin_as_role_are'] ) ? $options['viewing_admin_as_role_are'] : array();
         $current_user = wp_get_current_user();
         $username = $current_user->user_login;
 
         // Show for non-admins
-        if ( ! current_user_can( 'manage_options' ) && in_array( $username, $admin_usernames_viewing_as_role ) ) {          
+        if ( ! current_user_can( 'manage_options' ) && in_array( $username, $admin_usernames_viewing_as_role, true ) ) {
             ?>
             <div id="role-view-reset">
-                <a href="<?php echo esc_url( get_site_url() ); ?>/?reset-for=<?php echo esc_attr( $username ); ?>" class="button button-primary">Switch back to Administrator</a>
+                <a href="<?php echo esc_url( $this->get_switch_back_nonce_url() ); ?>" class="button button-primary"><?php esc_html_e( 'Switch back to Administrator', 'admin-site-enhancements' ); ?></a>
             </div>
             <?php
         }           
+    }
+
+    /**
+     * Show admin notice with refreshed recovery URL after switching back while logged in.
+     *
+     * @since 8.8.5
+     * @return void
+     */
+    public function maybe_show_recovery_url_refreshed_notice() {
+        if ( ! is_admin() || ! current_user_can( 'manage_options' ) ) {
+            return;
+        }
+
+        $recovery_url = get_user_meta( get_current_user_id(), self::RECOVERY_NOTICE_URL_META_KEY, true );
+
+        if ( empty( $recovery_url ) || ! is_string( $recovery_url ) ) {
+            return;
+        }
+
+        ?>
+        <div class="notice notice-info is-dismissible asenha-view-admin-as-role-recovery-notice" id="asenha-view-admin-as-role-recovery-notice">
+            <p>
+                <?php
+                echo esc_html__(
+                    'You switched back to the administrator role. Your secret recovery URL has been refreshed. Bookmark the new URL below before testing again.',
+                    'admin-site-enhancements'
+                );
+                ?>
+                <br /><strong><?php echo esc_html( $recovery_url ); ?></strong>
+            </p>
+        </div>
+        <?php
+    }
+
+    /**
+     * Dismiss the recovery URL refreshed admin notice for the current administrator.
+     *
+     * @since 8.8.5
+     * @return void
+     */
+    public function dismiss_recovery_url_refreshed_notice() {
+        if ( ! current_user_can( 'manage_options' ) ) {
+            wp_send_json_error(
+                array(
+                    'message' => __( 'Insufficient permissions.', 'admin-site-enhancements' ),
+                ),
+                403
+            );
+        }
+
+        check_ajax_referer( 'asenha-dismiss-view-admin-as-recovery-notice', 'nonce' );
+
+        delete_user_meta( get_current_user_id(), self::RECOVERY_NOTICE_URL_META_KEY );
+
+        wp_send_json_success();
+    }
+
+    /**
+     * Enqueue the dismiss handler for the recovery URL refreshed admin notice.
+     *
+     * @since 8.8.5
+     * @return void
+     */
+    public function enqueue_recovery_url_refreshed_notice_script() {
+        if ( ! is_admin() || ! current_user_can( 'manage_options' ) ) {
+            return;
+        }
+
+        $recovery_url = get_user_meta( get_current_user_id(), self::RECOVERY_NOTICE_URL_META_KEY, true );
+
+        if ( empty( $recovery_url ) ) {
+            return;
+        }
+
+        wp_enqueue_script( 'jquery' );
+        wp_add_inline_script(
+            'jquery',
+            'jQuery(function($){$(document).on("click","#asenha-view-admin-as-role-recovery-notice .notice-dismiss",function(){$.post(ajaxurl,{action:"asenha_dismiss_view_admin_as_recovery_notice",nonce:' . wp_json_encode( wp_create_nonce( 'asenha-dismiss-view-admin-as-recovery-notice' ) ) . '});});});'
+        );
     }
 
     /**

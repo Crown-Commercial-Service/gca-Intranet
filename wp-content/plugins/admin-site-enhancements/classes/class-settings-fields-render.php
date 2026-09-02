@@ -104,13 +104,30 @@ class Settings_Fields_Render {
             // Default is false / checked
             $default_value = false;
         }
-        if ( in_array( $parent_field_id, array('redirect_after_login_for_separate', 'redirect_after_logout_for_separate') ) && !empty( $sub_field_id ) ) {
+        if ( !empty( $parent_field_id ) && !empty( $sub_field_id ) && isset( $options[$parent_field_id][$sub_field_id][$args['field_id']] ) ) {
+            $field_option_value = $options[$parent_field_id][$sub_field_id][$args['field_id']];
+        } elseif ( in_array( $parent_field_id, array('redirect_after_login_for_separate', 'redirect_after_logout_for_separate'), true ) && !empty( $sub_field_id ) ) {
             $field_option_value = ( isset( $options[$sub_field_id][$args['field_id']] ) ? $options[$sub_field_id][$args['field_id']] : $default_value );
+        } elseif ( empty( $parent_field_id ) && !empty( $args['field_id'] ) ) {
+            $field_option_value = ( isset( $options[$args['field_id']] ) ? $options[$args['field_id']] : $default_value );
         } else {
             $field_option_value = ( isset( $options[$parent_field_id][$args['field_id']] ) ? $options[$parent_field_id][$args['field_id']] : $default_value );
         }
         echo '<input type="checkbox" id="' . esc_attr( $field_name ) . '" class="asenha-subfield-checkbox" name="' . esc_attr( $field_name ) . '" ' . checked( $field_option_value, true, false ) . '>';
         echo '<label for="' . esc_attr( $field_name ) . '" class="asenha-subfield-checkbox-label">' . wp_kses_post( $field_label ) . '</label>';
+        if ( !empty( $args['field_description'] ) ) {
+            $desc_display = ( isset( $args['field_description_display'] ) ? $args['field_description_display'] : 'inline' );
+            if ( 'tooltip' === $desc_display ) {
+                echo '<span class="asenha-info-tooltip-wrap">';
+                echo '<button type="button" class="asenha-info-tooltip-toggle" aria-label="' . esc_attr__( 'More information', 'admin-site-enhancements' ) . '">';
+                echo '<span class="dashicons dashicons-info-outline" aria-hidden="true"></span>';
+                echo '</button>';
+                echo '<span class="asenha-info-tooltip" role="tooltip">' . esc_html( $args['field_description'] ) . '</span>';
+                echo '</span>';
+            } else {
+                echo '<div class="asenha-subfield-description">' . wp_kses_post( $args['field_description'] ) . '</div>';
+            }
+        }
     }
 
     /**
@@ -158,18 +175,25 @@ class Settings_Fields_Render {
         $field_options = $args['field_options'];
         $layout = ( !empty( $args['layout'] ) ? $args['layout'] : 'horizontal' );
         $default_value = ( !empty( $args['field_default'] ) ? $args['field_default'] : array() );
-        $field_option_value = ( isset( $options[$field_id] ) ? (array) $options[$field_id] : $default_value );
+        $parent_field_id = ( isset( $args['parent_field_id'] ) ? $args['parent_field_id'] : '' );
+        $sub_field_id = ( isset( $args['sub_field_id'] ) ? $args['sub_field_id'] : '' );
+        if ( !empty( $parent_field_id ) && !empty( $sub_field_id ) && isset( $options[$parent_field_id][$sub_field_id][$field_id] ) ) {
+            $field_option_value = (array) $options[$parent_field_id][$sub_field_id][$field_id];
+        } else {
+            $field_option_value = ( isset( $options[$field_id] ) ? (array) $options[$field_id] : $default_value );
+        }
         // Back-compat: legacy naming for Two-Factor Recovery Codes.
-        if ( 'two_factor_available_providers' === $field_id && is_array( $field_option_value ) ) {
+        if ( in_array( $field_id, array('two_factor_available_providers', 'available_providers'), true ) && is_array( $field_option_value ) ) {
             $field_option_value = array_map( static function ( $provider_key ) {
                 return ( 'backup_codes' === $provider_key ? 'recovery_codes' : $provider_key );
             }, $field_option_value );
         }
         echo '<div class="wrapper-for-checkboxes ' . esc_attr( $layout ) . '">';
         foreach ( $field_options as $option_label => $option_value ) {
+            $checkbox_id = ( !empty( $parent_field_id ) && !empty( $sub_field_id ) ? $parent_field_id . '_' . $sub_field_id . '_' . $field_id . '_' . $option_value : $field_id . '_' . $option_value );
             echo '<div>';
-            echo '<input type="checkbox" id="' . esc_attr( $field_id . '_' . $option_value ) . '" class="asenha-subfield-radio-button" name="' . esc_attr( $field_name ) . '" value="' . esc_attr( $option_value ) . '" ' . checked( in_array( $option_value, $field_option_value ), 1, false ) . '>';
-            echo '<label for="' . esc_attr( $field_id . '_' . $option_value ) . '" class="asenha-subfield-radio-button-label">' . wp_kses_post( $option_label ) . '</label>';
+            echo '<input type="checkbox" id="' . esc_attr( $checkbox_id ) . '" class="asenha-subfield-radio-button" name="' . esc_attr( $field_name ) . '" value="' . esc_attr( $option_value ) . '" ' . checked( in_array( $option_value, $field_option_value ), 1, false ) . '>';
+            echo '<label for="' . esc_attr( $checkbox_id ) . '" class="asenha-subfield-radio-button-label">' . wp_kses_post( $option_label ) . '</label>';
             echo '</div>';
         }
         echo '</div>';
@@ -296,6 +320,24 @@ class Settings_Fields_Render {
     }
 
     /**
+     * Render View Admin as Role recovery URL description at display time.
+     *
+     * @since 8.8.5
+     * @param array $args Settings field arguments.
+     * @return void
+     */
+    function render_view_admin_as_role_recovery_description( $args ) {
+        $view_admin_as_role = new View_Admin_As_Role();
+        $recovery_url = $view_admin_as_role->get_recovery_url_for_settings( get_current_user_id() );
+        $field_description = '<div class="asenha-warning"><strong>' . sprintf( 
+            /* translators: %s is the secret recovery URL or instructional text */
+            __( 'If something goes wrong</strong> and you need to regain access to your account as an administrator, please visit the following URL: <br /><strong>%s</strong><br /><br />If you use <strong>Ninja Firewall</strong>, please uncheck "Block attempts to gain administrative privileges" in the Firewall Policies settings before you try to view as a non-admin user role to <strong>prevent being locked out</strong> of your admin account.', 'admin-site-enhancements' ),
+            esc_html( $recovery_url )
+         ) . '<br /><br />' . __( 'In any case, please also <strong>create at least one backup admin user</strong> as a last resort should your primary admin user fails to properly login as admin. With this second admin user, you can also restore the admin role for your primary admin user.', 'admin-site-enhancements' ) . '</div>';
+        echo '<div class="asenha-subfield-description">' . wp_kses( $field_description, get_kses_with_style_src_svg_ruleset() ) . '</div>';
+    }
+
+    /**
      * Render heading for sub-fields of a toggle/switcher checkbox
      *
      * @since 5.0.0
@@ -340,6 +382,68 @@ class Settings_Fields_Render {
         $placeholder = ( isset( $args['field_placeholder'] ) ? $args['field_placeholder'] : '' );
         echo wp_kses_post( $field_prefix ) . '<input type="password" id="' . esc_attr( $field_name ) . '" class="asenha-subfield-password' . esc_attr( $field_classname ) . '" name="' . esc_attr( $field_name ) . '" placeholder="' . esc_attr( $placeholder ) . '" size="24" autocomplete="off" value="' . esc_attr( $field_option_value ) . '">' . wp_kses_post( $field_suffix );
         echo '<label for="' . esc_attr( $field_name ) . '" class="asenha-subfield-checkbox-label">' . esc_html( $field_description ) . '</label>';
+    }
+
+    /**
+     * Render SMTP password field with live storage status and inline warning.
+     *
+     * @since 8.8.7
+     *
+     * @param array $args Field registration arguments.
+     * @return void
+     */
+    function render_smtp_password_subfield( $args ) {
+        $option_name = ( isset( $args['option_name'] ) ? $args['option_name'] : ASENHA_SLUG_U );
+        $field_name = $args['field_name'];
+        $placeholder = ( isset( $args['field_placeholder'] ) ? $args['field_placeholder'] : '' );
+        if ( function_exists( '\\asenha_get_option_array' ) ) {
+            $options = \asenha_get_option_array( $option_name, true );
+        } else {
+            $options = get_option( $option_name, array() );
+        }
+        $email_delivery = new Email_Delivery();
+        $ui_state = ( method_exists( $email_delivery, 'get_smtp_password_ui_state' ) ? $email_delivery->get_smtp_password_ui_state( $options ) : array(
+            'description'     => __( 'Leave blank to keep the current password.', 'admin-site-enhancements' ),
+            'show_warning'    => false,
+            'warning_message' => '',
+        ) );
+        echo '<div class="asenha-subfield-password-wrapper">';
+        echo '<input type="password" id="' . esc_attr( $field_name ) . '" class="asenha-subfield-password" name="' . esc_attr( $field_name ) . '" placeholder="' . esc_attr( $placeholder ) . '" size="24" autocomplete="off" value="">';
+        echo '<label for="' . esc_attr( $field_name ) . '" class="asenha-subfield-description asenha-smtp-password-description">' . esc_html( $ui_state['description'] ) . '</label>';
+        echo '<div class="asenha-smtp-password-warning"' . (( empty( $ui_state['show_warning'] ) ? ' style="display:none;"' : '' )) . '>';
+        if ( !empty( $ui_state['show_warning'] ) && !empty( $ui_state['warning_message'] ) ) {
+            echo '<div class="notice notice-warning inline"><p>' . esc_html( $ui_state['warning_message'] ) . '</p></div>';
+        }
+        echo '</div>';
+        echo '</div>';
+    }
+
+    /**
+     * Render encrypted Google Maps API key subfield for Custom Content Types.
+     *
+     * @since 8.9.2
+     *
+     * @param array $args Field registration arguments.
+     * @return void
+     */
+    function render_cct_google_maps_api_key_subfield( $args ) {
+        $option_name = ( isset( $args['option_name'] ) ? $args['option_name'] : ASENHA_SLUG_U );
+        $field_name = $args['field_name'];
+        $placeholder = ( isset( $args['field_placeholder'] ) ? $args['field_placeholder'] : '' );
+        if ( function_exists( '\\asenha_get_option_array' ) ) {
+            $options = \asenha_get_option_array( $option_name, true );
+        } else {
+            $options = get_option( $option_name, array() );
+        }
+        if ( !class_exists( __NAMESPACE__ . '\\CCT_Secrets' ) ) {
+            require_once ASENHA_PATH . 'includes/premium/custom-content/class-cct-secrets.php';
+        }
+        $cct_secrets = new CCT_Secrets();
+        $ui_state = $cct_secrets->get_api_key_ui_state( $options );
+        echo '<div class="asenha-subfield-password-wrapper">';
+        echo '<input type="password" id="' . esc_attr( $field_name ) . '" class="asenha-subfield-password" name="' . esc_attr( $field_name ) . '" placeholder="' . esc_attr( $placeholder ) . '" size="40" autocomplete="off" value="">';
+        echo '<label for="' . esc_attr( $field_name ) . '" class="asenha-subfield-description">' . esc_html( $ui_state['description'] ) . '</label>';
+        echo '</div>';
     }
 
     /**
@@ -406,12 +510,18 @@ class Settings_Fields_Render {
         $field_select_default = $args['field_select_default'];
         $field_intro = $args['field_intro'];
         $field_description = $args['field_description'];
+        $parent_field_id = ( isset( $args['parent_field_id'] ) ? $args['parent_field_id'] : '' );
+        $sub_field_id = ( isset( $args['sub_field_id'] ) ? $args['sub_field_id'] : '' );
         if ( !empty( $field_select_default ) ) {
             $default_value = $field_select_default;
         } else {
             $default_value = false;
         }
-        $field_option_value = ( isset( $options[$field_id] ) ? $options[$field_id] : $default_value );
+        if ( !empty( $parent_field_id ) && !empty( $sub_field_id ) && isset( $options[$parent_field_id][$sub_field_id][$field_id] ) ) {
+            $field_option_value = $options[$parent_field_id][$sub_field_id][$field_id];
+        } else {
+            $field_option_value = ( isset( $options[$field_id] ) ? $options[$field_id] : $default_value );
+        }
         if ( !empty( $field_prefix ) && !empty( $field_suffix ) ) {
             $field_classname = ' with-prefix with-suffix';
         } elseif ( !empty( $field_prefix ) && empty( $field_suffix ) ) {
@@ -665,6 +775,24 @@ class Settings_Fields_Render {
     }
 
     /**
+     * Human-readable label fragment for an admin menu separator slug (AMO sortable UI).
+     *
+     * WordPress core and plugins use slugs like separator1, separator-last, separator-woocommerce.
+     * Internal slugs stay unchanged; this output is display-only (Spacer-* wording).
+     *
+     * @since 8.5.3
+     *
+     * @param string $menu_slug Separator menu slug from global $menu item index 2.
+     * @return string Middle segment only (without surrounding ~~); safe for esc_html when wrapped.
+     */
+    private function format_admin_menu_separator_slug_for_display( $menu_slug ) {
+        $name = str_replace( 'separator', 'Spacer-', $menu_slug );
+        $name = str_replace( '--last', '-Last', $name );
+        $name = str_replace( '--woocommerce', '--WooCommerce', $name );
+        return $name;
+    }
+
+    /**
      * Render sortable menu field
      *
      * @since 2.0.0
@@ -672,22 +800,17 @@ class Settings_Fields_Render {
     function render_sortable_menu() {
         $triangle_right_icon = '<svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 16 16"><path fill="currentColor" d="M14.222 6.687a1.5 1.5 0 0 1 0 2.629l-10 5.499A1.5 1.5 0 0 1 2 13.5V2.502a1.5 1.5 0 0 1 2.223-1.314z"/></svg>';
         ?>
-			<div class="module-description"><?php 
-        echo esc_html__( 'Drag and drop menu items to the desired position. Optionally change 3rd party plugin/theme\'s menu item titles or hide some items until toggled by clicking "Show All" at the bottom of the admin menu.', 'admin-site-enhancements' );
-        ?></div>
-			<?php 
-        ?>
 		<ul id="custom-admin-menu" class="menu ui-sortable">
 		<?php 
         global $menu, $submenu;
         $common_methods = new Common_Methods();
         $options_extra = get_option( ASENHA_SLUG_U . '_extra', array() );
         $options = ( isset( $options_extra['admin_menu'] ) ? $options_extra['admin_menu'] : array() );
-        // Get list of deleted built-in separators
+        // Parsed early so Pro merge of custom spacers and render loops can use the same list.
         $deleted_separators = ( isset( $options['custom_menu_deleted_separators'] ) ? $options['custom_menu_deleted_separators'] : '' );
         $deleted_separators_array = array();
         if ( is_string( $deleted_separators ) && !empty( $deleted_separators ) ) {
-            $deleted_separators_array = json_decode( stripslashes( $deleted_separators ), true );
+            $deleted_separators_array = json_decode( $deleted_separators, true );
             if ( !is_array( $deleted_separators_array ) ) {
                 $deleted_separators_array = array();
             }
@@ -723,8 +846,12 @@ class Settings_Fields_Render {
             // Render sortables with data in custom menu order
             foreach ( $custom_menu as $custom_menu_item ) {
                 foreach ( $menu as $menu_key => $menu_info ) {
-                    // Skip if this is a deleted built-in separator
-                    if ( in_array( $menu_info[2], $deleted_separators_array ) ) {
+                    // Skip deleted built-in separators only for real separator rows; Pro distinguishes ASE additional-separator rows.
+                    $skip_deleted_separator = false;
+                    if ( isset( $menu_info[2], $menu_info[4] ) && false !== strpos( $menu_info[4], 'wp-menu-separator' ) ) {
+                        $skip_deleted_separator = in_array( $menu_info[2], $deleted_separators_array, true );
+                    }
+                    if ( $skip_deleted_separator ) {
                         continue;
                     }
                     if ( false !== strpos( $menu_info[4], 'wp-menu-separator' ) ) {
@@ -738,6 +865,7 @@ class Settings_Fields_Render {
                     if ( $custom_menu_item == $menu_item_id ) {
                         $menu_item_id_transformed = $common_methods->transform_menu_item_id( $menu_item_id );
                         $is_custom_menu = 'no';
+                        $menu_required_capability = ( isset( $menu_info[1] ) ? $menu_info[1] : '' );
                         ?>
 					<li id="<?php 
                         echo esc_attr( $menu_item_id );
@@ -754,11 +882,7 @@ class Settings_Fields_Render {
 											<span class="menu-item-title">
 											<?php 
                         if ( false !== strpos( $menu_info[4], 'wp-menu-separator' ) ) {
-                            $separator_name_ori = $menu_info[2];
-                            $separator_name = str_replace( 'separator', 'Separator-', $separator_name_ori );
-                            $separator_name = str_replace( '--last', '-Last', $separator_name );
-                            $separator_name = str_replace( '--woocommerce', '--WooCommerce', $separator_name );
-                            echo '~~ ' . esc_html( $separator_name ) . ' ~~';
+                            echo '~~ ' . esc_html( $this->format_admin_menu_separator_slug_for_display( $menu_info[2] ) ) . ' ~~';
                         } else {
                             if ( in_array( $menu_item_id, $renaming_not_allowed ) ) {
                                 $menu_item_title = $menu_info[0];
@@ -812,6 +936,8 @@ class Settings_Fields_Render {
                             echo esc_attr( $menu_item_id );
                             ?>" data-menu-url-fragment="<?php 
                             echo esc_attr( $menu_url_fragment );
+                            ?>" data-required-capability="<?php 
+                            echo esc_attr( $menu_required_capability );
                             ?>" checked>
 												<span><?php 
                             echo esc_html( $hide_text );
@@ -831,6 +957,8 @@ class Settings_Fields_Render {
                             echo esc_attr( $menu_item_id );
                             ?>" data-menu-url-fragment="<?php 
                             echo esc_attr( $menu_url_fragment );
+                            ?>" data-required-capability="<?php 
+                            echo esc_attr( $menu_required_capability );
                             ?>">
 												<span><?php 
                             echo esc_html( $hide_text );
@@ -847,24 +975,6 @@ class Settings_Fields_Render {
 							</div><!-- end of .menu-item-bar -->
 							<?php 
                         $i = 1;
-                        // Add delete icon for separators (built-in and custom)
-                        if ( strpos( $menu_info[2], 'separator' ) !== false ) {
-                            ?>
-								<div class="remove-menu-item"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24"><path fill="#bbbbbb" d="M24 2.4L21.6 0L12 9.6L2.4 0L0 2.4L9.6 12L0 21.6L2.4 24l9.6-9.6l9.6 9.6l2.4-2.4l-9.6-9.6z"/></svg></div>
-							<?php 
-                        }
-                        // Add delete icon for saved custom menu items (not separators)
-                        if ( $is_custom_menu === 'yes' && strpos( $menu_info[2], 'separator' ) === false ) {
-                            ?>
-								<div class="remove-custom-menu-item-saved" data-menu-item-id="<?php 
-                            echo esc_attr( $menu_info[2] );
-                            ?>">
-									<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24">
-										<path fill="#bbbbbb" d="M24 2.4L21.6 0L12 9.6L2.4 0L0 2.4L9.6 12L0 21.6L2.4 24l9.6-9.6l9.6 9.6l2.4-2.4l-9.6-9.6z"/>
-									</svg>
-								</div>
-								<?php 
-                        }
                         ?>
 						</li>
 						<?php 
@@ -875,8 +985,12 @@ class Settings_Fields_Render {
             // Render the rest of the current menu towards the end of the sortables
             foreach ( $menu as $menu_key => $menu_info ) {
                 if ( !in_array( $menu_key, $menu_key_in_use ) ) {
-                    // Skip if this is a deleted built-in separator
-                    if ( in_array( $menu_info[2], $deleted_separators_array ) ) {
+                    // Skip deleted built-in separators only for real separator rows; Pro distinguishes ASE additional-separator rows.
+                    $skip_deleted_separator = false;
+                    if ( isset( $menu_info[2], $menu_info[4] ) && false !== strpos( $menu_info[4], 'wp-menu-separator' ) ) {
+                        $skip_deleted_separator = in_array( $menu_info[2], $deleted_separators_array, true );
+                    }
+                    if ( $skip_deleted_separator ) {
                         continue;
                     }
                     if ( false !== strpos( $menu_info[4], 'wp-menu-separator' ) ) {
@@ -892,6 +1006,7 @@ class Settings_Fields_Render {
                     if ( false === strpos( $menu_item_id, 'toplevel_page_asenha_' ) ) {
                         $menu_item_id_transformed = $common_methods->transform_menu_item_id( $menu_item_id );
                         $is_custom_menu = 'no';
+                        $menu_required_capability = ( isset( $menu_info[1] ) ? $menu_info[1] : '' );
                         ?>
 					<li id="<?php 
                         echo esc_attr( $menu_item_id );
@@ -906,11 +1021,7 @@ class Settings_Fields_Render {
 											<span class="menu-item-title">
 												<?php 
                         if ( false !== strpos( $menu_info[4], 'wp-menu-separator' ) ) {
-                            $separator_name_ori = $menu_info[2];
-                            $separator_name = str_replace( 'separator', 'Separator-', $separator_name_ori );
-                            $separator_name = str_replace( '--last', '-Last', $separator_name );
-                            $separator_name = str_replace( '--woocommerce', '--WooCommerce', $separator_name );
-                            echo '~~ ' . esc_html( $separator_name ) . ' ~~';
+                            echo '~~ ' . esc_html( $this->format_admin_menu_separator_slug_for_display( $menu_info[2] ) ) . ' ~~';
                         } else {
                             ?>
 													<input type="text" value="<?php 
@@ -943,6 +1054,8 @@ class Settings_Fields_Render {
                         echo esc_attr( $menu_item_id );
                         ?>" data-menu-url-fragment="<?php 
                         echo esc_attr( $menu_url_fragment );
+                        ?>" data-required-capability="<?php 
+                        echo esc_attr( $menu_required_capability );
                         ?>">
 												<span><?php 
                         echo esc_html( $hide_text );
@@ -956,12 +1069,6 @@ class Settings_Fields_Render {
 							</div><!-- end of .menu-item-bar -->
 							<?php 
                         $i = 1;
-                        // Add delete icon for separators (built-in and custom)
-                        if ( strpos( $menu_info[2], 'separator' ) !== false ) {
-                            ?>
-								<div class="remove-menu-item"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24"><path fill="#bbbbbb" d="M24 2.4L21.6 0L12 9.6L2.4 0L0 2.4L9.6 12L0 21.6L2.4 24l9.6-9.6l9.6 9.6l2.4-2.4l-9.6-9.6z"/></svg></div>
-							<?php 
-                        }
                         // Add delete icon for saved custom menu items (not separators)
                         if ( $is_custom_menu === 'yes' && strpos( $menu_info[2], 'separator' ) === false ) {
                             ?>
@@ -984,8 +1091,12 @@ class Settings_Fields_Render {
             // No custom menu order has been saved yet
             // Render sortables with existing items in the admin menu
             foreach ( $menu as $menu_key => $menu_info ) {
-                // Skip if this is a deleted built-in separator
-                if ( in_array( $menu_info[2], $deleted_separators_array ) ) {
+                // Skip deleted built-in separators only for real separator rows; Pro distinguishes ASE additional-separator rows.
+                $skip_deleted_separator = false;
+                if ( isset( $menu_info[2], $menu_info[4] ) && false !== strpos( $menu_info[4], 'wp-menu-separator' ) ) {
+                    $skip_deleted_separator = in_array( $menu_info[2], $deleted_separators_array, true );
+                }
+                if ( $skip_deleted_separator ) {
                     continue;
                 }
                 if ( false !== strpos( $menu_info[4], 'wp-menu-separator' ) ) {
@@ -999,6 +1110,9 @@ class Settings_Fields_Render {
                 // Strip tags
                 $menu_item_title = $common_methods->strip_html_tags_and_content( $menu_item_title );
                 $is_custom_menu = 'no';
+                $menu_required_capability = ( isset( $menu_info[1] ) ? $menu_info[1] : '' );
+                $custom_menu_data = null;
+                $menu_item_handle_classes = 'menu-item-handle';
                 ?>
 			<li id="<?php 
                 echo esc_attr( $menu_item_id );
@@ -1008,18 +1122,16 @@ class Settings_Fields_Render {
                 echo esc_attr( $menu_info[2] );
                 ?>">
 					<div class="menu-item-bar">
-						<div class="menu-item-handle">
+						<div class="<?php 
+                echo esc_attr( $menu_item_handle_classes );
+                ?>">
 							<span class="dashicons dashicons-menu"></span>
 							<div class="item-title">
 								<div class="title-wrapper">
 									<span class="menu-item-title">
 									<?php 
                 if ( false !== strpos( $menu_info[4], 'wp-menu-separator' ) ) {
-                    $separator_name_ori = $menu_info[2];
-                    $separator_name = str_replace( 'separator', 'Separator-', $separator_name_ori );
-                    $separator_name = str_replace( '--last', '-Last', $separator_name );
-                    $separator_name = str_replace( '--woocommerce', '--WooCommerce', $separator_name );
-                    echo '~~ ' . esc_html( $separator_name ) . ' ~~';
+                    echo '~~ ' . esc_html( $this->format_admin_menu_separator_slug_for_display( $menu_info[2] ) ) . ' ~~';
                 } else {
                     if ( in_array( $menu_item_id, $renaming_not_allowed ) ) {
                         echo wp_kses_post( $menu_item_title );
@@ -1056,6 +1168,8 @@ class Settings_Fields_Render {
                 echo esc_attr( $menu_item_id );
                 ?>" data-menu-url-fragment="<?php 
                 echo esc_attr( $menu_url_fragment );
+                ?>" data-required-capability="<?php 
+                echo esc_attr( $menu_required_capability );
                 ?>">
 										<span><?php 
                 echo esc_html( $hide_text );
@@ -1069,12 +1183,6 @@ class Settings_Fields_Render {
 					</div><!-- end of .menu-item-bar -->
 				<?php 
                 $i = 1;
-                // Add delete icon for separators (built-in and custom)
-                if ( strpos( $menu_info[2], 'separator' ) !== false ) {
-                    ?>
-						<div class="remove-menu-item"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24"><path fill="#bbbbbb" d="M24 2.4L21.6 0L12 9.6L2.4 0L0 2.4L9.6 12L0 21.6L2.4 24l9.6-9.6l9.6 9.6l2.4-2.4l-9.6-9.6z"/></svg></div>
-					<?php 
-                }
                 // Add delete icon for saved custom menu items (not separators)
                 if ( $is_custom_menu === 'yes' && strpos( $menu_info[2], 'separator' ) === false ) {
                     ?>
@@ -1106,8 +1214,34 @@ class Settings_Fields_Render {
     }
 
     /**
+     * Decode and re-encode JSON option values for AMO hidden fields so WordPress-slashed or legacy
+     * strings become valid for JavaScript JSON.parse(), without applying stripslashes() to raw strings
+     * (which would break JSON \\u Unicode escapes).
+     *
+     * @since 8.5.3
+     *
+     * @param string $value Raw option value.
+     * @return string
+     */
+    private function normalize_admin_menu_json_option_for_output( $value ) {
+        if ( !is_string( $value ) || '' === $value ) {
+            return $value;
+        }
+        // Use objects (not associative arrays) so JSON objects stay objects and arrays stay arrays.
+        $decoded = json_decode( $value, false );
+        if ( JSON_ERROR_NONE === json_last_error() ) {
+            return wp_json_encode( $decoded );
+        }
+        $decoded = json_decode( wp_unslash( $value ), false );
+        if ( JSON_ERROR_NONE === json_last_error() ) {
+            return wp_json_encode( $decoded );
+        }
+        return $value;
+    }
+
+    /**
      * Output hidden field
-     * 
+     *
      * @since 6.9.13
      */
     public function output_admin_menu_organizer_hidden_field( $field_id ) {
@@ -1115,7 +1249,18 @@ class Settings_Fields_Render {
         $options = ( isset( $options_extra['admin_menu'] ) ? $options_extra['admin_menu'] : array() );
         $field_name = $field_id;
         $field_option_value = ( isset( $options[$field_id] ) ? $options[$field_id] : '' );
-        echo '<input type="hidden" id="' . esc_attr( $field_name ) . '" class="asenha-subfield-text" name="' . esc_attr( $field_name ) . '" value="' . esc_attr( stripslashes( $field_option_value ) ) . '">';
+        $json_option_field_ids = array(
+            'custom_menu_new_separators',
+            'custom_menu_deleted_separators',
+            'custom_submenus_order',
+            'custom_menu_always_hidden',
+            'custom_submenu_always_hidden',
+            'custom_menu_new_items'
+        );
+        if ( in_array( $field_id, $json_option_field_ids, true ) ) {
+            $field_option_value = $this->normalize_admin_menu_json_option_for_output( $field_option_value );
+        }
+        echo '<input type="hidden" id="' . esc_attr( $field_name ) . '" class="asenha-subfield-text" name="' . esc_attr( $field_name ) . '" value="' . esc_attr( $field_option_value ) . '">';
     }
 
     /**

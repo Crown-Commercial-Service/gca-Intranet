@@ -29,9 +29,7 @@
  *  along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-global $wpdb;
-
-$auto_backups = $wpdb->get_results("SELECT option_name, option_value FROM $wpdb->options WHERE option_name LIKE 'cme_backup_auto_%' ORDER BY option_id DESC");
+$auto_backups = pp_capabilities_get_auto_backup_option_names();
 
 $sidebar_enabled = defined('PUBLISHPRESS_CAPS_PRO_VERSION') ? false : true;
 ?>
@@ -99,8 +97,8 @@ $sidebar_enabled = defined('PUBLISHPRESS_CAPS_PRO_VERSION') ? false : true;
                                                 <td class="cme-backup-list">
                                                     <div id="cme_select_restore_div">
                                                     <ul id="cme_select_restore">
-                                                        <?php foreach ($auto_backups as $row):
-                                                            $arr = explode('_', str_replace('cme_backup_auto_', '', $row->option_name));
+                                                        <?php foreach ($auto_backups as $option_name):
+                                                            $arr = explode('_', str_replace('cme_backup_auto_', '', $option_name));
                                                             $arr[1] = str_replace('-', ':', $arr[1]);
                                                             $date_caption = implode(' ', $arr);
 
@@ -127,8 +125,8 @@ $sidebar_enabled = defined('PUBLISHPRESS_CAPS_PRO_VERSION') ? false : true;
                                                             ?>
 
                                                             <li>
-                                                            <input type="radio" name="select_restore" value="<?php echo esc_attr($row->option_name);?>" id="<?php echo esc_attr($row->option_name);?>">
-                                                            <label for="<?php echo esc_attr($row->option_name);?>"><?php printf(esc_html__('Auto-backup of all roles (%s)', 'capability-manager-enhanced'), esc_html($date_caption)); ?></label>
+                                                            <input type="radio" name="select_restore" value="<?php echo esc_attr($option_name);?>" id="<?php echo esc_attr($option_name);?>">
+                                                            <label for="<?php echo esc_attr($option_name);?>"><?php printf(esc_html__('Auto-backup of all roles (%s)', 'capability-manager-enhanced'), esc_html($date_caption)); ?></label>
                                                             </li>
                                                         <?php endforeach; ?>
 
@@ -171,8 +169,8 @@ $sidebar_enabled = defined('PUBLISHPRESS_CAPS_PRO_VERSION') ? false : true;
                                                         $backups['capsman_backup'] = $last_caption;
                                                     }
 
-                                                    foreach ($auto_backups as $row) {
-                                                        $arr = explode('_', str_replace('cme_backup_auto_', '', $row->option_name));
+                                                    foreach ($auto_backups as $option_name) {
+                                                        $arr = explode('_', str_replace('cme_backup_auto_', '', $option_name));
                                                         $arr[1] = str_replace('-', ':', $arr[1]);
 
                                                         $date_caption = implode(' ', $arr);
@@ -180,7 +178,6 @@ $sidebar_enabled = defined('PUBLISHPRESS_CAPS_PRO_VERSION') ? false : true;
                                                         $date_caption = str_replace(', am', ' am', $date_caption);
                                                         $date_caption = str_replace(', pm', ' pm', $date_caption);
 
-                                                        $option_name = sanitize_key($row->option_name);
                                                         $backups[$option_name] = "Auto-backup from " . $date_caption;
                                                     }
 
@@ -307,6 +304,40 @@ $sidebar_enabled = defined('PUBLISHPRESS_CAPS_PRO_VERSION') ? false : true;
                                                     <label for="pp_capabilities_export_roles">
                                                         <?php esc_html_e('Roles and Capabilities', 'capability-manager-enhanced'); ?>
                                                     </label>
+                                                    <div id="pp_capabilities_export_role_selector" class="pp-capabilities-export-role-selector">
+                                                        <input type="hidden" name="pp_capabilities_export_roles_present" value="1" />
+                                                        <p class="description">
+                                                            <?php esc_html_e('Select the roles to include in this export.', 'capability-manager-enhanced'); ?>
+                                                        </p>
+                                                        <ul>
+                                                            <?php
+                                                            $export_roles = wp_roles()->roles;
+                                                            uasort($export_roles, function ($first_role, $second_role) {
+                                                                $first_name = !empty($first_role['name']) ? translate_user_role($first_role['name']) : '';
+                                                                $second_name = !empty($second_role['name']) ? translate_user_role($second_role['name']) : '';
+
+                                                                return strnatcasecmp($first_name, $second_name);
+                                                            });
+
+                                                            foreach ($export_roles as $export_role_name => $export_role) {
+                                                                $export_role_id = 'pp_capabilities_export_role_' . sanitize_html_class($export_role_name);
+                                                                $export_role_label = !empty($export_role['name']) ? translate_user_role($export_role['name']) : $export_role_name;
+                                                                ?>
+                                                                <li>
+                                                                    <input
+                                                                        id="<?php echo esc_attr($export_role_id); ?>"
+                                                                        name="pp_capabilities_export_roles[]"
+                                                                        type="checkbox"
+                                                                        value="<?php echo esc_attr($export_role_name); ?>"
+                                                                        checked
+                                                                    />
+                                                                    <label for="<?php echo esc_attr($export_role_id); ?>"><?php echo esc_html($export_role_label); ?></label>
+                                                                </li>
+                                                                <?php
+                                                            }
+                                                            ?>
+                                                        </ul>
+                                                    </div>
                                                 </li>
                                                 <?php
                                                     $backup_sections = pp_capabilities_backup_sections();
@@ -398,6 +429,10 @@ $sidebar_enabled = defined('PUBLISHPRESS_CAPS_PRO_VERSION') ? false : true;
                 $('div[id^="ppcb-"]').hide();
                 $($(this).find('a').first().attr('href')).show();
             });
+
+            $('#pp_capabilities_export_roles').on('change', function () {
+                $('#pp_capabilities_export_role_selector').toggle($(this).prop('checked'));
+            }).trigger('change');
 
         });
         /* ]]> */
