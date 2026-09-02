@@ -17,7 +17,7 @@ $is_own_profile  = (bool) ($args['is_own_profile']  ?? false);
 $profile_user_id = (int)  ($args['profile_user_id'] ?? 0);
 $show_saves_tabs     = $is_own_profile && function_exists('gca_flag_enabled') && gca_flag_enabled('post-saves');
 $show_shoutouts      = function_exists('gca_flag_enabled') && gca_flag_enabled('community-shoutouts');
-$show_notifications  = $is_own_profile && function_exists('gca_flag_enabled') && gca_flag_enabled('social-wall-notifications');
+$show_notifications  = $is_own_profile && function_exists('gca_flag_enabled') && gca_flag_enabled('social-wall-notifications') && gca_flag_enabled('community-hub');
 ?>
 
 <div class="gca-profile-tabs govuk-!-margin-top-6" id="gca-profile-tabs">
