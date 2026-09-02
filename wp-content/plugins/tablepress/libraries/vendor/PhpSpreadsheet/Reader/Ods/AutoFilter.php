@@ -17,7 +17,7 @@ class AutoFilter extends BaseLoader
 		$databases = $workbookData->getElementsByTagNameNS($this->tableNs, 'database-ranges');
 
 		foreach ($databases as $autofilters) {
-			foreach ($autofilters->childNodes as $autofilter) {
+			foreach ($autofilters->childNodes ?? [] as $autofilter) {
 				$autofilterRange = $this->getAttributeValue($autofilter, 'target-range-address');
 				if ($autofilterRange !== null) {
 					$baseAddress = FormulaTranslator::convertToExcelAddressValue($autofilterRange);

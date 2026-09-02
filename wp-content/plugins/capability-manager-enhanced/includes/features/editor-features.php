@@ -120,6 +120,7 @@ $active_tab_text = is_object($active_tab_type_obj)
                                         class="button-primary ppc-editor-features-submit" style="float:right"
                                         data-current_cpt="<?php echo esc_attr(sprintf(esc_html__('Save %s Restrictions', 'capability-manager-enhanced'), 'post_type')); ?>" />
                                 </div>
+                                <div class="clear"></div>
 
                             <?php if ($classic_editor) : ?>
                                 <ul class="nav-tab-wrapper">
@@ -226,6 +227,7 @@ $active_tab_text = is_object($active_tab_type_obj)
                                     data-current_cpt="<?php echo esc_attr(sprintf(esc_html__('Save %s Restrictions', 'capability-manager-enhanced'), 'post_type')); ?>" />
 
                                 </div>
+                                <div class="clear"></div>
                             </div>
 
                         </td>
@@ -237,8 +239,10 @@ $active_tab_text = is_object($active_tab_type_obj)
                 $banner_messages = ['<p>'];
                 $banner_messages[] = esc_html__('Editor Features allows you to remove elements from the post editing screen.', 'capability-manager-enhanced');
                 $banner_messages[] = '</p><p>';
-                $banner_messages[] = sprintf(esc_html__('%1$s = No change', 'capability-manager-enhanced'), '<input type="checkbox" title="'. esc_attr__('usage key', 'capability-manager-enhanced') .'" disabled>') . ' <br />';
-                $banner_messages[] = sprintf(esc_html__('%1$s = This feature is denied', 'capability-manager-enhanced'), '<input type="checkbox" title="'. esc_attr__('usage key', 'capability-manager-enhanced') .'" checked disabled>'). ' <br />';
+                $banner_messages[] = '<input type="checkbox" title="'. esc_attr__('usage key', 'capability-manager-enhanced') .'" disabled> = '
+                    . esc_html__('No change', 'capability-manager-enhanced') . ' <br />';
+                $banner_messages[] = '<input type="checkbox" title="'. esc_attr__('usage key', 'capability-manager-enhanced') .'" checked disabled> = '
+                    . esc_html__('This feature is denied', 'capability-manager-enhanced') . ' <br />';
                 $banner_messages[] = '<p>';
                 $banner_messages[] = '<p><a class="button ppc-checkboxes-documentation-link" href="https://publishpress.com/knowledge-base/editor-features/"target="blank">' . esc_html__('View Documentation', 'capability-manager-enhanced') . '</a></p>';
                 $banner_title  = __('How to use Editor Features', 'capability-manager-enhanced');

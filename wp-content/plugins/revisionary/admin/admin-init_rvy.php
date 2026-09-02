@@ -144,7 +144,8 @@ function rvy_admin_init() {
 		$doaction = (!empty($_REQUEST['action']) && !is_numeric($_REQUEST['action'])) ? sanitize_key($_REQUEST['action']) : sanitize_key($_REQUEST['action2']);
 
 		if (empty($_POST) && in_array($_REQUEST['action'], ['decline_revision'])) {
-			check_admin_referer('decline-revision');
+			$post_id = (!empty($_REQUEST['post'])) ? $_REQUEST['post'] : 0;
+			check_admin_referer("decline-revision_{$post_id}");
 		} else {
 			check_admin_referer('bulk-revision-queue');
 		}
@@ -274,7 +275,7 @@ function rvy_admin_init() {
 						}
 					}
 
-					if (!$is_administrator && !current_user_can('set_revision_pending-revision', $revision->ID)) {
+					if (!$is_administrator && !current_user_can('approve_revision', $revision->ID) && !current_user_can('edit_post', rvy_post_id($revision->ID))) {
 						if (count($post_ids) == 1) {
 							wp_die( esc_html__('Sorry, you are not allowed to decline this revision.', 'revisionary') );
 						} else {
@@ -398,6 +399,10 @@ function rvy_admin_init() {
 				require_once( dirname(__FILE__).'/revision-action_rvy.php');	
 				add_action( 'wp_loaded', 'rvy_revision_delete' );
 				
+			} elseif ( ! empty($_GET['action']) && ('copy' == $_GET['action']) ) {
+				require_once( dirname(__FILE__).'/revision-action_rvy.php');	
+				add_action( 'wp_loaded', 'rvy_post_copy' );
+
 			} elseif ( ! empty($_GET['action']) && ('revise' == $_GET['action']) ) {
 				if (!empty($_REQUEST['post'])) {
 					$post_id = intval($_REQUEST['post']);
@@ -422,6 +427,10 @@ function rvy_admin_init() {
 			} elseif ( ! empty($_GET['action']) && ('approve' == $_GET['action']) ) {
 				require_once( dirname(__FILE__).'/revision-action_rvy.php');	
 				add_action( 'wp_loaded', 'rvy_revision_approve' );
+
+			} elseif ( ! empty($_GET['action']) && ('decline' == $_GET['action']) ) {
+				require_once( dirname(__FILE__).'/revision-action_rvy.php');	
+				add_action( 'wp_loaded', 'rvy_revision_decline' );
 				
 			} elseif ( ! empty($_GET['action']) && ('publish' == $_GET['action']) ) {
 				require_once( dirname(__FILE__).'/revision-action_rvy.php');	
@@ -453,7 +462,7 @@ function rvy_admin_init() {
 		include_once(REVISIONARY_PRO_ABSPATH . '/includes-pro/pro-activation-ajax.php');
 	}
 
-	if (defined('PUBLISHPRESS_REVISIONS_PRO_VERSION') && !empty($_REQUEST['rvy_refresh_updates'])) {
+	if (defined('PUBLISHPRESS_REVISIONS_PRO_VERSION') && !empty($_REQUEST['rvy_refresh_updates']) && check_admin_referer('rvy_refresh_updates') && current_user_can('update_plugins')) {
 		do_action('revisionary_refresh_updates');
 	}
 

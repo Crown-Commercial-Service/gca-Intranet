@@ -18,6 +18,27 @@ class Content_Order {
      */
     private $show_featured_thumbnails = false;
 
+    /**
+     * Whether the request-scoped WPML sync_page_ordering suppression filter is active.
+     *
+     * @var bool
+     */
+    private $wpml_menu_order_sync_suppression_enabled = false;
+
+    /**
+     * Previous SitePress sync_page_ordering value to restore after suppression.
+     *
+     * @var mixed
+     */
+    private $wpml_sync_page_ordering_previous = null;
+
+    /**
+     * Post types already normalized for WPML menu_order in this request.
+     *
+     * @var array<string,bool>
+     */
+    private $normalized_wpml_menu_order_post_types = array();
+
     /** 
      * Add "Custom Order" sub-menu for post types
      * 
@@ -306,46 +327,10 @@ class Content_Order {
             $post_status_label_separator = ' — ';
             $post_status_label = $post_status_object->label;
         }
-        if ( empty( wp_trim_excerpt( $post->post_excerpt, $post ) ) ) {
-            $short_excerpt = '';
-        } else {
-            $excerpt_trimmed = implode( " ", array_slice( explode( " ", wp_trim_excerpt( $post->post_excerpt, $post ) ), 0, 30 ) );
-            $short_excerpt = '<span class="item-excerpt"> | ' . $excerpt_trimmed . '</span>';
-        }
-        $taxonomies = get_object_taxonomies( $post->post_type, 'objects' );
-        // vi( $taxonomies );
+        $short_excerpt = '';
         $taxonomies_and_terms = '';
-        foreach ( $taxonomies as $taxonomy ) {
-            $terms = array();
-            $taxonomy_terms = get_the_terms( $post->ID, $taxonomy->name );
-            if ( is_array( $taxonomy_terms ) && !empty( $taxonomy_terms ) ) {
-                foreach ( $taxonomy_terms as $term ) {
-                    $terms[] = $term->name;
-                }
-            }
-            $terms = implode( ', ', $terms );
-            $taxonomies_and_terms .= ' | <span class="taxonomy-name">' . $taxonomy->label . '</span>: ' . $terms;
-        }
-        if ( !empty( $taxonomies_and_terms ) ) {
-            $taxonomies_and_terms = '<span class="item-taxonomy-terms">' . $taxonomies_and_terms . '</span>';
-        }
-        // If WPML plugin is active, let's get the current language
-        if ( in_array( 'sitepress-multilingual-cms/sitepress.php', get_option( 'active_plugins', array() ) ) ) {
-            $current_language = apply_filters( 'wpml_current_language', null );
-            $current_post_language_info = apply_filters( 'wpml_post_language_details', null, $post->ID );
-            if ( !is_wp_error( $current_post_language_info ) ) {
-                $current_post_language = $current_post_language_info['language_code'];
-            } else {
-                // wpml has not set language information for the post
-                // e.g. post is not translated  yet, so, let's use the current site/admin language
-                $current_post_language = $current_language;
-            }
-            $same_language = $current_language === $current_post_language;
-            // true if language is the same, false otherwise
-        } else {
-            // WPML is not active, $same_language is always true, e.g. all posts are in English
-            $same_language = true;
-        }
+        // If WPML plugin is active (Pro), filter to the current admin language.
+        $same_language = true;
         // Only render sortable for posts that have the same language as the current chosen language
         if ( $same_language ) {
             ?>
@@ -366,7 +351,7 @@ class Content_Order {
                 <div class="row-content">
                     <?php 
             echo '<div class="content-main">
-                                    <span class="dashicons dashicons-menu"></span><a href="' . esc_attr( get_edit_post_link( $post->ID ) ) . '" class="item-title">' . esc_html( $post->post_title ) . '</a><span class="item-status' . esc_attr( $post_status_label_class ) . '">' . esc_html( $post_status_label_separator ) . esc_html( $post_status_label ) . '</span>' . wp_kses_post( $has_child_label ) . wp_kses_post( $taxonomies_and_terms ) . wp_kses_post( $short_excerpt ) . '<div class="fader"></div>
+                                    <span class="dashicons dashicons-menu"></span><a href="' . esc_attr( get_edit_post_link( $post->ID ) ) . '" class="item-title">' . esc_html( $post->post_title ) . '</a><span class="item-status' . esc_attr( $post_status_label_class ) . '">' . esc_html( $post_status_label_separator ) . esc_html( $post_status_label ) . '</span>' . wp_kses_post( $has_child_label ) . '<div class="fader"></div>
                                 </div>';
             if ( !in_array( $post->post_type, array('asenha_code_snippet') ) ) {
                 echo '<div class="content-additional">
@@ -377,11 +362,11 @@ class Content_Order {
                 </div>
             </div>
             <?php 
-        }
-        // if ( $same_language )
-        ?>
+            ?>
         </li>
         <?php 
+        }
+        // if ( $same_language )
     }
 
     /**
@@ -453,10 +438,8 @@ class Content_Order {
         $action = ( isset( $_POST['action'] ) ? $_POST['action'] : '' );
         // Item parent is currently 0, as we only handle sorting of non-child posts
         $item_parent = ( isset( $_POST['item_parent'] ) ? absint( $_POST['item_parent'] ) : 0 );
-        $menu_order_start = ( isset( $_POST['start'] ) ? absint( $_POST['start'] ) : 0 );
         $post_id = ( isset( $_POST['post_id'] ) ? absint( $_POST['post_id'] ) : 0 );
         $item_menu_order = ( isset( $_POST['menu_order'] ) ? absint( $_POST['menu_order'] ) : 0 );
-        $items_to_exclude = ( isset( $_POST['excluded_items'] ) && is_array( $_POST['excluded_items'] ) ? array_map( 'absint', $_POST['excluded_items'] ) : array() );
         $post_type = ( isset( $_POST['post_type'] ) ? sanitize_key( wp_unslash( $_POST['post_type'] ) ) : false );
         $is_hierarchical_post_type = ( $post_type ? is_post_type_hierarchical( $post_type ) : false );
         $allow_parent_updates = 'attachment' === $post_type || $is_hierarchical_post_type;
@@ -467,21 +450,6 @@ class Content_Order {
         remove_action( 'pre_post_update', 'wp_save_post_revision' );
         // $response array for ajax response
         $response = array();
-        // Update the item whose order/position was moved
-        if ( $post_id > 0 && !isset( $_POST['more_posts'] ) ) {
-            $wpdb->update( 
-                $wpdb->posts,
-                // The table
-                array(
-                    'menu_order' => $item_menu_order,
-                ),
-                array(
-                    'ID' => $post_id,
-                )
-             );
-            clean_post_cache( $post_id );
-            $items_to_exclude[] = $post_id;
-        }
         if ( 'attachment' == $post_type ) {
             $post_status = array('inherit', 'private');
         } else {
@@ -493,53 +461,87 @@ class Content_Order {
                 'private'
             );
         }
-        // Get all posts from the post type related to ajax request
-        $query_args = array(
-            'post_type'              => $post_type,
-            'orderby'                => 'menu_order title',
-            'order'                  => 'ASC',
-            'posts_per_page'         => -1,
-            'suppress_filters'       => true,
-            'ignore_sticky_posts'    => true,
-            'post_status'            => $post_status,
-            'post__not_in'           => $items_to_exclude,
-            'update_post_term_cache' => false,
-            'update_post_meta_cache' => false,
-        );
-        if ( 'attachment' === $post_type ) {
-            // do nothing, we do not add post_parent parameter as media items can be attached to other posts, making them the parent.
-        } else {
-            // For hierarchical post types only, update one branch at a time.
-            // Non-hierarchical post types are reindexed as a full set to avoid duplicate menu_order values.
-            if ( $is_hierarchical_post_type ) {
+        if ( $post_id > 0 && !isset( $_POST['more_posts'] ) && $post_type ) {
+            // Load siblings (including the moved post) for a full 0..N splice reindex.
+            $query_args = array(
+                'post_type'              => $post_type,
+                'orderby'                => 'menu_order title',
+                'order'                  => 'ASC',
+                'posts_per_page'         => -1,
+                'suppress_filters'       => true,
+                'ignore_sticky_posts'    => true,
+                'post_status'            => $post_status,
+                'update_post_term_cache' => false,
+                'update_post_meta_cache' => false,
+            );
+            if ( 'attachment' === $post_type ) {
+                // Media items can be attached to other posts; do not filter by post_parent.
+            } elseif ( $is_hierarchical_post_type ) {
                 $query_args['post_parent'] = $item_parent;
             }
-        }
-        $posts = new WP_Query($query_args);
-        if ( $posts->have_posts() ) {
-            // Iterate through posts and update menu order and post parent
-            foreach ( $posts->posts as $post ) {
-                // If the $post is the one being displaced (shited downward) by the moved item, increment it's menu_order by one
-                if ( $menu_order_start == $item_menu_order && $post_id > 0 ) {
-                    $menu_order_start++;
+            $posts_query = new WP_Query($query_args);
+            $siblings = ( is_array( $posts_query->posts ) ? $posts_query->posts : array() );
+            $moved_post = null;
+            $ordered = array();
+            foreach ( $siblings as $post ) {
+                if ( (int) $post->ID === (int) $post_id ) {
+                    $moved_post = $post;
+                    continue;
                 }
-                // Only process posts other than the moved item, which has been processed earlier outside this loop
-                if ( $post_id != $post->ID ) {
-                    // Update menu_order
+                $ordered[] = $post;
+            }
+            if ( !$moved_post ) {
+                $moved_post = get_post( $post_id );
+            }
+            if ( $moved_post ) {
+                $insert_at = min( max( 0, (int) $item_menu_order ), count( $ordered ) );
+                array_splice(
+                    $ordered,
+                    $insert_at,
+                    0,
+                    array($moved_post)
+                );
+                foreach ( $ordered as $menu_order => $post ) {
                     $wpdb->update( $wpdb->posts, array(
-                        'menu_order' => $menu_order_start,
+                        'menu_order' => (int) $menu_order,
                     ), array(
                         'ID' => $post->ID,
                     ) );
                     clean_post_cache( $post->ID );
                 }
-                $items_to_exclude[] = $post->ID;
-                $menu_order_start++;
             }
-            die( json_encode( $response ) );
-        } else {
-            die( json_encode( $response ) );
         }
+        $this->finish_custom_content_order_save(
+            $response,
+            $post_type,
+            $post_id,
+            $post_status,
+            $item_parent,
+            $is_hierarchical_post_type
+        );
+    }
+
+    /**
+     * Finish Content Order AJAX save: heal other WPML languages, drop sync suppression, respond.
+     *
+     * @since 8.8.5
+     *
+     * @param array        $response                   AJAX response payload.
+     * @param string|false $post_type                  Post type slug.
+     * @param int          $post_id                    Moved post ID.
+     * @param array        $post_status                Post statuses used in queries.
+     * @param int          $item_parent                Parent ID for hierarchical reindex.
+     * @param bool         $is_hierarchical_post_type  Whether the post type is hierarchical.
+     */
+    private function finish_custom_content_order_save(
+        $response,
+        $post_type,
+        $post_id,
+        $post_status,
+        $item_parent,
+        $is_hierarchical_post_type
+    ) {
+        die( wp_json_encode( $response ) );
     }
 
     /**
@@ -592,12 +594,13 @@ class Content_Order {
         }
         // Only assign menu_order if there are none assigned when creating the post, i.e. menu_order is 0
         if ( in_array( $post->post_type, $content_order_enabled_post_types ) && ('auto-draft' == $post->post_status || 'publish' == $post->post_status) && $post->menu_order == '0' && false === $update ) {
-            $post_with_highest_menu_order = get_posts( array(
+            $highest_menu_order_args = array(
                 'post_type'      => $post->post_type,
                 'posts_per_page' => 1,
                 'orderby'        => 'menu_order',
                 'order'          => 'DESC',
-            ) );
+            );
+            $post_with_highest_menu_order = get_posts( $highest_menu_order_args );
             if ( $post_with_highest_menu_order ) {
                 $new_menu_order = (int) $post_with_highest_menu_order[0]->menu_order + 1;
                 // Assign the one higher menu_order to the new post
@@ -608,6 +611,27 @@ class Content_Order {
                 wp_update_post( $args );
             }
         }
+    }
+
+    /**
+     * Get post type slugs that have Content Order enabled.
+     *
+     * @since 8.8.5
+     *
+     * @return string[]
+     */
+    private function get_content_order_enabled_post_types() {
+        $options = get_option( ASENHA_SLUG_U, array() );
+        $enabled = array();
+        $content_order_for = ( isset( $options['content_order_for'] ) ? $options['content_order_for'] : array() );
+        if ( is_array( $content_order_for ) ) {
+            foreach ( $content_order_for as $post_type_slug => $is_enabled ) {
+                if ( $is_enabled ) {
+                    $enabled[] = $post_type_slug;
+                }
+            }
+        }
+        return array_values( array_unique( $enabled ) );
     }
 
 }

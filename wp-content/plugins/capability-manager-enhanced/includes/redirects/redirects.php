@@ -109,15 +109,16 @@ $fields = [
                                             <div class="pp-capabilities-submit-top" style="float:right;">
 
                                             <input type="submit" name="redirects-features-submit"
-                                                value="<?php esc_attr_e('Save Changes');?>"
+                                                value="<?php esc_attr_e('Save Changes', 'capability-manager-enhanced');?>"
                                                 class="button-primary ppc-redirects-features-submit"
                                                 style="margin-right: 10px;" />
 
                                             <input type="submit" name="redirects-features-all-submit"
-                                                value="<?php esc_attr_e('Save for all Roles');?>"
+                                                value="<?php esc_attr_e('Save for all Roles', 'capability-manager-enhanced');?>"
                                                 class="button-secondary ppc-redirects-features-submit" />
 
                                             </div>
+                                            <div class="clear"></div>
 
                                             <select name="ppc-redirects-features-role" class="ppc-redirects-features-role">
                                                 <?php
@@ -312,12 +313,12 @@ $fields = [
                                     </div>
                                     <div class="pp-capabilities-submit-bottom" style="float:right;">
                                         <input type="submit" name="redirects-features-submit"
-                                                value="<?php esc_attr_e('Save Changes');?>"
+                                                value="<?php esc_attr_e('Save Changes', 'capability-manager-enhanced');?>"
                                                 class="button-primary ppc-redirects-features-submit"
                                                 style="margin-right: 10px;" />
 
                                             <input type="submit" name="redirects-features-all-submit"
-                                                value="<?php esc_attr_e('Save for all Roles');?>"
+                                                value="<?php esc_attr_e('Save for all Roles', 'capability-manager-enhanced');?>"
                                                 class="button-secondary ppc-redirects-features-submit" />
                                     </div>
                                     <div class="clear"></div>

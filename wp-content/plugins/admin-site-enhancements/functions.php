@@ -183,3 +183,20 @@ function get_kses_with_custom_html_ruleset() {
     return array_merge( $kses_defaults, $custom_html_args );
     // Example usage: wp_kses( $the_html, get_kses_with_custom_html_ruleset() );
 }
+
+// ===== Pluggable Functions ===== //
+$options = get_option( ASENHA_SLUG_U, array() );
+if ( array_key_exists( 'disable_admin_email_notification_after_password_change', $options ) && $options['disable_admin_email_notification_after_password_change'] ) {
+    if ( !function_exists( 'wp_password_change_notification' ) ) {
+        /**
+         * Plug into the default wp_password_change_notification() in /wp-includes/pluggable.php
+         * 
+         * @link https://developer.wordpress.org/reference/functions/wp_password_change_notification/
+         * @link https://wordpress.stackexchange.com/a/206396
+         */
+        function wp_password_change_notification(  $user  ) {
+            return;
+        }
+
+    }
+}

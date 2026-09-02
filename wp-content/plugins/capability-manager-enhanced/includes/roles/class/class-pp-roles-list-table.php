@@ -81,12 +81,13 @@ class PP_Capabilities_Roles_List_Table extends WP_List_Table
 
         $views     = array();
         $current   = ' class="current"';
- 
+
         $role_view_filters = [
             'all'       => _n_noop('All %s', 'All %s', 'capability-manager-enhanced'),
             'mine'      => _n_noop('Mine %s', 'Mine %s', 'capability-manager-enhanced'),
             'active'    => _n_noop('Has Users %s', 'Has Users %s', 'capability-manager-enhanced'),
             'inactive'  => _n_noop('No Users %s', 'No Users %s', 'capability-manager-enhanced'),
+            'disabled'  => _n_noop('Disabled %s', 'Disabled %s', 'capability-manager-enhanced'),
             'editable'  => _n_noop('Editable %s', 'Editable %s', 'capability-manager-enhanced'),
             'uneditable'=> _n_noop('Uneditable %s', 'Uneditable %s', 'capability-manager-enhanced'),
             'system'    => _n_noop('System %s', 'System %s', 'capability-manager-enhanced'),
@@ -94,7 +95,7 @@ class PP_Capabilities_Roles_List_Table extends WP_List_Table
 
         foreach($role_view_filters as $view => $noop){
             $view_roles = $this->manager->get_roles_for_list_table($view, true);
-            
+
             //add role view
             $this->role_views[$view] = ['roles' => $view_roles];
 
@@ -106,22 +107,27 @@ class PP_Capabilities_Roles_List_Table extends WP_List_Table
             }
 
             // Add the view link.
+            $translated_view_label = translate_nooped_plural($noop, $count, $noop['domain']);
+            $count_html = sprintf('<span class="count">(%s)</span>', number_format_i18n($count));
+            $view_label = preg_replace('/(?<!%)%(?:\d+\$)?s/', $count_html, (string) $translated_view_label);
+
+            if (null === $view_label) {
+                $view_label = $translated_view_label . ' ' . $count_html;
+            }
+
             $views[ $view ] = sprintf(
                 '<a%s href="%s">%s</a>',
                 $view === $this->role_view ? $current : '',
                 esc_url(
                     add_query_arg(
                         [
-                            'page' => 'pp-capabilities-roles', 
+                            'page' => 'pp-capabilities-roles',
                             'view' => esc_attr($view)
                         ],
-                        admin_url('admin.php') 
+                        admin_url('admin.php')
                     )
                 ),
-                sprintf(
-                    translate_nooped_plural($noop, $count, $noop['domain']), 
-                    sprintf('<span class="count">(%s)</span>', number_format_i18n($count)) 
-                )
+                $view_label
             );
         }
 
@@ -147,6 +153,9 @@ class PP_Capabilities_Roles_List_Table extends WP_List_Table
     public function single_row($item)
     {
         $class = ['roles-tr'];
+        if (!empty($item['disabled'])) {
+            $class[] = 'role-disabled';
+        }
 
         echo sprintf('<tr id="%s" class="%s">', 'role-' . esc_attr(md5($item['role'])), esc_attr(implode(' ', $class)));
         $this->single_row_columns($item);
@@ -162,7 +171,7 @@ class PP_Capabilities_Roles_List_Table extends WP_List_Table
     {
         /**
          * Note, the table is currently using column data from
-         * initRolesAdmin() in manager.php to display the 
+         * initRolesAdmin() in manager.php to display the
          * column.
          */
         $columns = [
@@ -208,7 +217,7 @@ class PP_Capabilities_Roles_List_Table extends WP_List_Table
 
         //Build row actions
         if (pp_capabilities_is_editable_role($item['role'])) {
-            
+
             $actions = [];
 
             $actions['edit'] = sprintf(
@@ -221,7 +230,7 @@ class PP_Capabilities_Roles_List_Table extends WP_List_Table
                 ),
                 esc_html__('Edit')
             );
-            
+
             $actions['copy'] = sprintf(
                 '<a href="%s">%s</a>',
                 esc_url(
@@ -251,7 +260,7 @@ class PP_Capabilities_Roles_List_Table extends WP_List_Table
                             'action' => 'pp-roles-unhide-role',
                             'role' => esc_attr($item['role']),
                             '_wpnonce' => wp_create_nonce('bulk-roles')
-                        ], 
+                        ],
                         admin_url('admin.php')),
                         esc_html__('Unhide', 'capability-manager-enhanced')
                     );
@@ -269,7 +278,7 @@ class PP_Capabilities_Roles_List_Table extends WP_List_Table
                         'action' => 'pp-roles-delete-role',
                         'role' => esc_attr($item['role']),
                         '_wpnonce' => wp_create_nonce('bulk-roles')
-                    ], 
+                    ],
                     admin_url('admin.php')),
                     esc_html__('Delete')
                 ),
@@ -288,7 +297,7 @@ class PP_Capabilities_Roles_List_Table extends WP_List_Table
                             'action' => 'pp-roles-hide-role',
                             'role' => esc_attr($item['role']),
                             '_wpnonce' => wp_create_nonce('bulk-roles')
-                        ], 
+                        ],
                         admin_url('admin.php')),
                         esc_html__('Hide')
                     );
@@ -323,7 +332,7 @@ class PP_Capabilities_Roles_List_Table extends WP_List_Table
     {
         $disabled = ($this->manager->is_system_role($item['role']) || ($this->default_role == $item['role']) || !pp_capabilities_is_editable_role($item['role'])) ? ' disabled=disabled' : '';
         $out = sprintf('<input type="checkbox" name="%1$s[]" value="%2$s"' . $disabled .  ' />', 'role', $item['role']);
-    
+
         return $out;
     }
 
@@ -344,27 +353,39 @@ class PP_Capabilities_Roles_List_Table extends WP_List_Table
             $states['mine'] = esc_html__('Your Role', 'capability-manager-enhanced');
         }
 
+        if (!empty($item['disabled'])) {
+            $states['disabled'] = esc_html__('Disabled', 'capability-manager-enhanced');
+        }
+
         // If we have states, string them together.
         if (!empty($states)) {
 
             foreach ($states as $state => $label)
-                $states[$state] = sprintf('<span class="role-state">%s</span>', $label);
+                $states[$state] = sprintf(
+                    '<span class="role-state role-state-%s">%s</span>',
+                    esc_attr($state),
+                    $label
+                );
 
             $role_states = '<span class="row-title-divider"> &ndash; </span>' . join(', ', $states);
         }
 
         if (pp_capabilities_is_editable_role($item['role'])) {
             $out = sprintf(
-                '<a href="%1$s"><strong><span class="row-title">%2$s</span>%3$s</strong></a>', 
+                '<a href="%1$s"><strong><span class="row-title">%2$s</span>%3$s</strong></a>',
                 add_query_arg(
-                    ['page' => 'pp-capabilities-roles', 'add' => 'new_item', 'role_action' => 'edit', 'role' => esc_attr($item['role'])], 
+                    ['page' => 'pp-capabilities-roles', 'add' => 'new_item', 'role_action' => 'edit', 'role' => esc_attr($item['role'])],
                     admin_url('admin.php')
-                ), 
-                esc_html(translate_user_role($item['name'])), 
+                ),
+                esc_html(translate_user_role($item['name'])),
                 $role_states
             );
         } else {
-            $out = esc_html(translate_user_role($item['name']));
+            $out = sprintf(
+                '<strong><span class="row-title">%s</span>%s</strong>',
+                esc_html(translate_user_role($item['name'])),
+                $role_states
+            );
         }
 
         return $out;
@@ -436,8 +457,8 @@ class PP_Capabilities_Roles_List_Table extends WP_List_Table
 
         //get PublishPress capabilities role option
         $role_option = get_option("pp_capabilities_{$item['role']}_role_option", []);
-        if (is_array($role_option) && !empty($role_option) 
-            && !empty($role_option['block_dashboard_access']) 
+        if (is_array($role_option) && !empty($role_option)
+            && !empty($role_option['block_dashboard_access'])
             && (int)$role_option['block_dashboard_access'] > 0
         ) {
             // role access blocked by capabilities
@@ -450,7 +471,7 @@ class PP_Capabilities_Roles_List_Table extends WP_List_Table
                 $admin_access = false;
             }
         }
-        
+
 
         if ($admin_access) {
             $out = '<span class="dashicons dashicons-yes-alt green-check"></span>';
@@ -476,9 +497,9 @@ class PP_Capabilities_Roles_List_Table extends WP_List_Table
             esc_url(
                 add_query_arg(
                     [
-                        'page' => 'pp-capabilities', 
+                        'page' => 'pp-capabilities',
                         'role' => esc_attr($item['role'])
-                    ], 
+                    ],
                     admin_url('admin.php')
                 )
             ),

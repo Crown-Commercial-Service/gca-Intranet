@@ -234,12 +234,27 @@ class Pp_Roles_Actions
         $copied_role       = false;
 
         //get copied role capabilites
-        if (!empty($_REQUEST['role_action']) && $_REQUEST['role_action'] === 'copy'
-            && !empty($_REQUEST['role'])
-            && $role_data = pp_roles_get_role_data(sanitize_key($_REQUEST['role']))
-        ) {
-            $role_capabilities = $role_data['capabilities'];
-            $copied_role       = sanitize_key($_REQUEST['role']);
+        if (!empty($_REQUEST['role_action']) && $_REQUEST['role_action'] === 'copy' && !empty($_REQUEST['role'])) {
+            $source_role = sanitize_key($_REQUEST['role']);
+
+            // Reject direct requests that target roles outside editable-role scope.
+            if (!function_exists('pp_capabilities_is_editable_role') || !pp_capabilities_is_editable_role($source_role)) {
+                $this->notify(esc_html__('You do not have sufficient permissions to perform this action.', 'capability-manager-enhanced'));
+            }
+
+            $role_data = pp_roles_get_role_data($source_role, 'editable');
+            if (empty($role_data) || !is_array($role_data) || empty($role_data['capabilities']) || !is_array($role_data['capabilities'])) {
+                $this->notify(esc_html__('Missing parameters, refresh the page and try again.', 'capability-manager-enhanced'));
+            }
+
+            $role_capabilities = [];
+            foreach ($role_data['capabilities'] as $cap => $grant) {
+                if (current_user_can('administrator') || current_user_can($cap)) {
+                    $role_capabilities[$cap] = $grant;
+                }
+            }
+
+            $copied_role = $source_role;
         }
 
         if (isset($_REQUEST['role_level'])) {
@@ -259,6 +274,7 @@ class Pp_Roles_Actions
         $role_option['disable_code_editor'] = !empty($_REQUEST['disable_code_editor']) ? (int) $_REQUEST['disable_code_editor'] : 0;
         $role_option['disable_role_user_login'] = !empty($_REQUEST['disable_role_user_login']) ? (int) $_REQUEST['disable_role_user_login'] : 0;
         $role_option['block_dashboard_access'] = !empty($_REQUEST['block_dashboard_access']) ? (int) $_REQUEST['block_dashboard_access'] : 0;
+        $role_option['disable_role'] = 0;
         if (defined('WC_PLUGIN_FILE')) {
             $role_option['disable_woocommerce_admin_restrictions'] = !empty($_REQUEST['disable_woocommerce_admin_restrictions']) ? (int) $_REQUEST['disable_woocommerce_admin_restrictions'] : 0;
 
@@ -378,6 +394,13 @@ class Pp_Roles_Actions
             $this->notify(esc_html__('Missing parameters, refresh the page and try again.', 'capability-manager-enhanced'));
         }
 
+        $current_role = sanitize_key($_REQUEST['current_role']);
+        if (!empty($_REQUEST['disable_role']) && $current_role === get_option('default_role')) {
+            $this->notify(
+                esc_html__('The default role cannot be disabled. Change the default role in WordPress settings first.', 'capability-manager-enhanced')
+            );
+        }
+
         /**
          * check if it's delete action and refer
          */
@@ -389,7 +412,7 @@ class Pp_Roles_Actions
         /**
          * Update role
          */
-        $current = get_role(sanitize_key($_REQUEST['current_role']));
+        $current = get_role($current_role);
 		$new_title = sanitize_text_field($_REQUEST['role_name']);
 
         $old_title = $wp_roles->roles[$current->name]['name'];
@@ -430,6 +453,7 @@ class Pp_Roles_Actions
         $role_option['disable_code_editor'] = !empty($_REQUEST['disable_code_editor']) ? (int) $_REQUEST['disable_code_editor'] : 0;
         $role_option['disable_role_user_login'] = !empty($_REQUEST['disable_role_user_login']) ? (int) $_REQUEST['disable_role_user_login'] : 0;
         $role_option['block_dashboard_access'] = !empty($_REQUEST['block_dashboard_access']) ? (int) $_REQUEST['block_dashboard_access'] : 0;
+        $role_option['disable_role'] = !empty($_REQUEST['disable_role']) ? 1 : 0;
         if (defined('WC_PLUGIN_FILE')) {
             $role_option['disable_woocommerce_admin_restrictions'] = !empty($_REQUEST['disable_woocommerce_admin_restrictions']) ? (int) $_REQUEST['disable_woocommerce_admin_restrictions'] : 0;
 
@@ -440,7 +464,7 @@ class Pp_Roles_Actions
                 $role_object->add_cap('view_admin_dashboard');
             }
         }
-        update_option('pp_capabilities_' . sanitize_key($_REQUEST['current_role']) . '_role_option', $role_option);
+        update_option('pp_capabilities_' . $current_role . '_role_option', $role_option);
 
         /**
          * Notify user and redirect
@@ -454,7 +478,7 @@ class Pp_Roles_Actions
                     'add' => 'new_item',
                     'role_action' => 'edit',
                     'active_tab' =>  !empty($_REQUEST['active_tab']) ? sanitize_key($_REQUEST['active_tab']) : 'general',
-                    'role' => esc_attr(sanitize_key($_REQUEST['current_role']))
+                    'role' => esc_attr($current_role)
                  ],
                 admin_url('admin.php')
             )

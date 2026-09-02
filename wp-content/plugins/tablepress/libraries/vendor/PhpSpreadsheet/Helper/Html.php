@@ -860,7 +860,7 @@ class Html
 
 	private function parseElements(DOMNode $element): void
 	{
-		foreach ($element->childNodes as $child) {
+		foreach ($element->childNodes ?? [] as $child) {
 			if ($child instanceof DOMText) {
 				$this->parseTextNode($child);
 			} elseif ($child instanceof DOMElement) {
