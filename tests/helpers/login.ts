@@ -1,15 +1,24 @@
-import { Browser, BrowserContext, Page } from '@playwright/test';
+import { Browser, BrowserContext, Page, TestInfo } from '@playwright/test';
 
 /**
  * Create a new browser context authenticated as the given user.
  * Uses the backdoor login form (/?gcawebadmin) that bypasses Google SSO.
+ *
+ * Pass `testInfo` to record video for this context — required since manually
+ * created contexts are invisible to the project's `video: 'on'` setting. The
+ * caller is responsible for closing the context (ideally via
+ * closeRecordedContext() from helpers/context.ts, to attach the recording).
  */
 export async function loginAs(
     browser: Browser,
     username: string,
     password: string,
+    testInfo?: TestInfo,
 ): Promise<BrowserContext> {
-    const ctx  = await browser.newContext({ storageState: undefined });
+    const ctx  = await browser.newContext({
+        storageState: undefined,
+        ...(testInfo ? { recordVideo: { dir: testInfo.outputDir } } : {}),
+    });
     const page = await ctx.newPage();
 
     await page.goto('/?gcawebadmin');

@@ -1,10 +1,15 @@
 /**
  * WF-2.x — Rejection & revision flow.
+ *
+ * One recorded context per role is kept open for the whole file (via
+ * beforeAll/afterAll) rather than a fresh one per test, so each role's video
+ * is one continuous recording of every step it performs, not a separate
+ * clip per test.
  */
-import { test, expect, Browser } from '@playwright/test';
+import { test, expect, Browser, BrowserContext, Page } from '@playwright/test';
 import * as path from 'path';
 import * as dotenv from 'dotenv';
-import { loginAs } from '../helpers/login';
+import { newRecordedContext, closeRecordedContext } from '../helpers/context';
 import { createPost, deletePost, deletePostLock, getPostStatus, setPostStatus } from '../helpers/wp-cli';
 
 const CONTRIBUTOR_AUTH = path.join(__dirname, '../.auth/contributor.json');
@@ -12,47 +17,52 @@ const PUBLISHER_AUTH   = path.join(__dirname, '../.auth/publisher.json');
 
 dotenv.config({ path: path.resolve(__dirname, '../../.env') });
 
-const CONTRIBUTOR_USER = process.env.WP_CONTRIBUTOR_USER     || '';
-const CONTRIBUTOR_PASS = process.env.WP_CONTRIBUTOR_PASSWORD || '';
-const PUBLISHER_USER   = process.env.WP_PUBLISHER_USER       || '';
-const PUBLISHER_PASS   = process.env.WP_PUBLISHER_PASSWORD   || '';
+const CONTRIBUTOR_USER = process.env.WP_CONTRIBUTOR_USER || '';
+const PUBLISHER_USER   = process.env.WP_PUBLISHER_USER   || '';
 
 let pendingPageId: number;
 
+let contributorCtx: BrowserContext;
+let contributorPage: Page;
+let publisherCtx: BrowserContext;
+let publisherPage: Page;
+
 test.describe('Rejection flow (WF-2.x)', () => {
 
-    test.beforeAll(async () => {
+    test.beforeAll(async ({ browser }, testInfo) => {
         // Page must be contributor-owned — contributors can only edit their own pages.
         pendingPageId = createPost('WF-2 Rejection Test Page', 'pending', 'page', CONTRIBUTOR_USER);
+
+        if (CONTRIBUTOR_USER) {
+            ({ ctx: contributorCtx, page: contributorPage } = await newRecordedContext(browser, testInfo, { storageState: CONTRIBUTOR_AUTH }));
+        }
+        if (PUBLISHER_USER) {
+            ({ ctx: publisherCtx, page: publisherPage } = await newRecordedContext(browser, testInfo, { storageState: PUBLISHER_AUTH }));
+        }
     });
 
-    test.afterAll(async () => {
+    test.afterAll(async ({}, testInfo) => {
+        if (contributorCtx) await closeRecordedContext(contributorCtx, contributorPage, testInfo);
+        if (publisherCtx) await closeRecordedContext(publisherCtx, publisherPage, testInfo);
         if (pendingPageId) deletePost(pendingPageId);
     });
 
-    test('WF-2.1 — Publisher sees Rejection Comments meta box on a Pending page', async ({ browser }) => {
+    test('WF-2.1 — Publisher sees Rejection Comments meta box on a Pending page', async () => {
         if (!PUBLISHER_USER) test.skip(true, 'WP_PUBLISHER_USER not set');
         if (getPostStatus(pendingPageId) !== 'pending') setPostStatus(pendingPageId, 'pending');
 
-        // Use stored publisher session — loginAs(publisher) intermittently fails
-        // because ?gcawebadmin redirects non-admin users to the front page.
-        const ctx  = await browser.newContext({ storageState: PUBLISHER_AUTH });
-        const page = await ctx.newPage();
-
+        const page = publisherPage;
         await page.goto(`/wp-admin/post.php?post=${pendingPageId}&action=edit`);
         // Use the div selector — both the wrapper div and the textarea share this ID.
         await expect(page.locator('div#gca_rejection_comments')).toBeVisible();
         await expect(page.locator('div#gca_rejection_comments textarea')).toBeVisible();
-
-        await ctx.close();
     });
 
-    test('WF-2.2 — Publisher submits rejection and page reverts to Draft', async ({ browser }) => {
+    test('WF-2.2 — Publisher submits rejection and page reverts to Draft', async () => {
         if (!PUBLISHER_USER) test.skip(true, 'WP_PUBLISHER_USER not set');
         if (getPostStatus(pendingPageId) !== 'pending') setPostStatus(pendingPageId, 'pending');
 
-        const ctx  = await browser.newContext({ storageState: PUBLISHER_AUTH });
-        const page = await ctx.newPage();
+        const page = publisherPage;
 
         // Clear lock left by WF-2.1 publisher session.
         deletePostLock(pendingPageId);
@@ -60,11 +70,9 @@ test.describe('Rejection flow (WF-2.x)', () => {
         await page.fill('div#gca_rejection_comments textarea', 'Please improve the introduction.');
         // Register dialog handler BEFORE clicking — the dialog fires synchronously on click.
         page.on('dialog', d => d.accept());
-        await page.locator('button[name="gca_submit_rejection"]').click();
+        await page.locator('button:has-text("Submit Rejection")').click();
         await page.waitForLoadState('networkidle');
         expect(getPostStatus(pendingPageId)).toBe('draft');
-
-        await ctx.close();
     });
 
     test('WF-2.3 — Rejected page has rejection comments stored', async ({ page }) => {
@@ -72,27 +80,25 @@ test.describe('Rejection flow (WF-2.x)', () => {
         await expect(page.locator('div#gca_rejection_comments textarea')).toHaveValue(/Please improve the introduction\./);
     });
 
-    test('WF-2.4 — Contributor sees Reviewer Feedback meta box on rejected Draft', async ({ browser }) => {
+    test('WF-2.4 — Contributor sees Reviewer Feedback meta box on rejected Draft', async () => {
         if (!CONTRIBUTOR_USER) test.skip(true, 'WP_CONTRIBUTOR_USER not set');
 
-        const ctx  = await browser.newContext({ storageState: CONTRIBUTOR_AUTH });
-        const page = await ctx.newPage();
+        const page = contributorPage;
 
         // Clear any lock left by WF-2.3 (admin context).
         deletePostLock(pendingPageId);
         await page.goto(`/wp-admin/post.php?post=${pendingPageId}&action=edit`);
-        await expect(page.locator('#gca_rejection_notice .notice-warning')).toBeVisible();
-        await expect(page.locator('#gca_rejection_notice')).toContainText('Please improve the introduction.');
-
-        await ctx.close();
+        // Contributors see the "Rejection Feedback" meta box (render_contributor_meta_box),
+        // which shares the same wrapper id as the reviewer's "Rejection Comments" box.
+        await expect(page.locator('div#gca_rejection_comments')).toBeVisible();
+        await expect(page.locator('div#gca_rejection_comments')).toContainText('Please improve the introduction.');
     });
 
-    test('WF-2.5 — Contributor re-submits and page returns to Pending', async ({ browser }) => {
+    test('WF-2.5 — Contributor re-submits and page returns to Pending', async () => {
         if (!CONTRIBUTOR_USER) test.skip(true, 'WP_CONTRIBUTOR_USER not set');
         if (getPostStatus(pendingPageId) !== 'draft') setPostStatus(pendingPageId, 'draft');
 
-        const ctx  = await browser.newContext({ storageState: CONTRIBUTOR_AUTH });
-        const page = await ctx.newPage();
+        const page = contributorPage;
 
         // Clear any editor lock left by previous sessions (WF-2.2 publisher, WF-2.4 contributor).
         deletePostLock(pendingPageId);
@@ -117,21 +123,22 @@ test.describe('Rejection flow (WF-2.x)', () => {
         }
 
         expect(getPostStatus(pendingPageId)).toBe('pending');
-        await ctx.close();
     });
 
-    test('WF-2.6 — Re-submitted page shows no stale Reviewer Feedback', async ({ browser }) => {
+    test('WF-2.6 — Re-submitted page shows no stale Reviewer Feedback', async () => {
         if (!CONTRIBUTOR_USER) test.skip(true, 'WP_CONTRIBUTOR_USER not set');
         if (getPostStatus(pendingPageId) !== 'pending') setPostStatus(pendingPageId, 'pending');
 
-        const ctx  = await browser.newContext({ storageState: CONTRIBUTOR_AUTH });
-        const page = await ctx.newPage();
-
+        const page = contributorPage;
+        // WF-2.5's own redirect can still be settling when this test starts — the
+        // page is reused across tests now, so a fresh goto() here can collide with
+        // it ("interrupted by another navigation"). A brief pause lets it finish;
+        // retrying the goto() itself isn't reliable since the retry can just as
+        // easily collide with the tail of the same still-resolving redirect.
+        await page.waitForTimeout(1000);
         await page.goto(`/wp-admin/post.php?post=${pendingPageId}&action=edit`);
         const noticeBox = page.locator('#gca_rejection_notice .notice-warning');
         await expect(noticeBox).toHaveCount(0);
-
-        await ctx.close();
     });
 
 });

@@ -1,18 +1,22 @@
 /**
  * WF-4.x — Deletion & retirement workflow.
+ *
+ * One recorded context per role is kept open for the whole file (via
+ * beforeAll/afterAll) rather than a fresh one per test, so each role's video
+ * is one continuous recording of every step it performs, not a separate
+ * clip per test.
  */
-import { test, expect } from '@playwright/test';
+import { test, expect, BrowserContext, Page } from '@playwright/test';
 import * as path from 'path';
 import * as dotenv from 'dotenv';
-import { loginAs, isAccessDenied } from '../helpers/login';
+import { isAccessDenied } from '../helpers/login';
+import { newRecordedContext, closeRecordedContext } from '../helpers/context';
 import { createPost, deletePost, getPostStatus, setPostStatus } from '../helpers/wp-cli';
 
 dotenv.config({ path: path.resolve(__dirname, '../../.env') });
 
-const CONTRIBUTOR_USER = process.env.WP_CONTRIBUTOR_USER     || '';
-const CONTRIBUTOR_PASS = process.env.WP_CONTRIBUTOR_PASSWORD || '';
-const PUBLISHER_USER   = process.env.WP_PUBLISHER_USER       || '';
-const PUBLISHER_PASS   = process.env.WP_PUBLISHER_PASSWORD   || '';
+const CONTRIBUTOR_USER = process.env.WP_CONTRIBUTOR_USER || '';
+const PUBLISHER_USER   = process.env.WP_PUBLISHER_USER   || '';
 
 const CONTRIBUTOR_AUTH = path.join(__dirname, '../.auth/contributor.json');
 const PUBLISHER_AUTH   = path.join(__dirname, '../.auth/publisher.json');
@@ -21,16 +25,31 @@ let draftPageId: number;
 let livePageId: number;
 let archivePageId: number;
 
+let contributorCtx: BrowserContext;
+let contributorPage: Page;
+let publisherCtx: BrowserContext;
+let publisherPage: Page;
+
 test.describe('Deletion & retirement (WF-4.x)', () => {
 
-    test.beforeAll(async () => {
+    test.beforeAll(async ({ browser }, testInfo) => {
         // Draft must be contributor-owned so contributor can see the Trash link on it.
         draftPageId   = createPost('WF-4 Draft Page',   'draft',   'page', CONTRIBUTOR_USER);
         livePageId    = createPost('WF-4 Live Page',    'publish');
         archivePageId = createPost('WF-4 Archive Page', 'publish');
+
+        if (CONTRIBUTOR_USER) {
+            ({ ctx: contributorCtx, page: contributorPage } = await newRecordedContext(browser, testInfo, { storageState: CONTRIBUTOR_AUTH }));
+        }
+        if (PUBLISHER_USER) {
+            ({ ctx: publisherCtx, page: publisherPage } = await newRecordedContext(browser, testInfo, { storageState: PUBLISHER_AUTH }));
+        }
     });
 
-    test.afterAll(async () => {
+    test.afterAll(async ({}, testInfo) => {
+        if (contributorCtx) await closeRecordedContext(contributorCtx, contributorPage, testInfo);
+        if (publisherCtx) await closeRecordedContext(publisherCtx, publisherPage, testInfo);
+
         for (const id of [draftPageId, livePageId, archivePageId]) {
             if (id) {
                 try { deletePost(id); } catch { /* already deleted */ }
@@ -38,13 +57,9 @@ test.describe('Deletion & retirement (WF-4.x)', () => {
         }
     });
 
-    test('WF-4.1 — Contributor cannot delete a Draft page; sees retirement request notice', async ({ browser }) => {
+    test('WF-4.1 — Contributor cannot delete a Draft page; sees retirement request notice', async () => {
         if (!CONTRIBUTOR_USER) test.skip(true, 'WP_CONTRIBUTOR_USER not set');
-
-        // Use stored session — loginAs(contributor) fails headless because the
-        // backdoor login redirects non-admins to the front page, not /wp-admin/.
-        const ctx  = await browser.newContext({ storageState: CONTRIBUTOR_AUTH });
-        const page = await ctx.newPage();
+        const page = contributorPage;
 
         await page.goto(`/wp-admin/post.php?post=${draftPageId}&action=edit`);
         const trashLink = page.locator(`a.submitdelete`).first();
@@ -65,28 +80,22 @@ test.describe('Deletion & retirement (WF-4.x)', () => {
         // Either way the page must not have been deleted.
         const status = getPostStatus(draftPageId);
         expect(['draft', 'pending', 'gca_retirement_requested']).toContain(status);
-
-        await ctx.close();
     });
 
-    test('WF-4.2 — Contributor cannot trash a Published page', async ({ browser }) => {
+    test('WF-4.2 — Contributor cannot trash a Published page', async () => {
         if (!CONTRIBUTOR_USER) test.skip(true, 'WP_CONTRIBUTOR_USER not set');
-        const ctx  = await browser.newContext({ storageState: CONTRIBUTOR_AUTH });
-        const page = await ctx.newPage();
+        const page = contributorPage;
 
         const response = await page.goto(`/wp-admin/post.php?post=${livePageId}&action=trash`);
         const bodyText = (await page.locator('body').textContent()) ?? '';
         const blocked  = isAccessDenied(bodyText) || response?.status() === 403;
 
         expect(blocked || page.url().includes('gca_delete_blocked')).toBe(true);
-
-        await ctx.close();
     });
 
-    test('WF-4.3 — Publisher can trash a Published page', async ({ browser }) => {
+    test('WF-4.3 — Publisher can trash a Published page', async () => {
         if (!PUBLISHER_USER) test.skip(true, 'WP_PUBLISHER_USER not set');
-        const ctx  = await browser.newContext({ storageState: PUBLISHER_AUTH });
-        const page = await ctx.newPage();
+        const page = publisherPage;
 
         // Get the nonce-bearing trash URL from the edit screen rather than
         // constructing it manually — WordPress requires a nonce for the trash action.
@@ -100,14 +109,11 @@ test.describe('Deletion & retirement (WF-4.x)', () => {
 
         await page.goto('/wp-admin/edit.php?post_type=page&post_status=trash');
         await expect(page.locator(`tr#post-${livePageId}`)).toBeVisible();
-
-        await ctx.close();
     });
 
-    test('WF-4.4 — Publisher can permanently delete a trashed page', async ({ browser }) => {
+    test('WF-4.4 — Publisher can permanently delete a trashed page', async () => {
         if (!PUBLISHER_USER) test.skip(true, 'WP_PUBLISHER_USER not set');
-        const ctx  = await browser.newContext({ storageState: PUBLISHER_AUTH });
-        const page = await ctx.newPage();
+        const page = publisherPage;
 
         await page.goto('/wp-admin/edit.php?post_type=page&post_status=trash');
         const row = page.locator(`tr#post-${livePageId}`);
@@ -119,14 +125,11 @@ test.describe('Deletion & retirement (WF-4.x)', () => {
             await page.waitForLoadState('networkidle');
             await expect(page.locator(`tr#post-${livePageId}`)).toHaveCount(0);
         }
-
-        await ctx.close();
     });
 
-    test('WF-4.5 — Publisher can archive a Published page', async ({ browser }) => {
+    test('WF-4.5 — Publisher can archive a Published page', async () => {
         if (!PUBLISHER_USER) test.skip(true, 'WP_PUBLISHER_USER not set');
-        const ctx  = await browser.newContext({ storageState: PUBLISHER_AUTH });
-        const page = await ctx.newPage();
+        const page = publisherPage;
 
         await page.goto(`/wp-admin/post.php?post=${archivePageId}&action=edit`);
         await page.waitForLoadState('networkidle');
@@ -144,7 +147,6 @@ test.describe('Deletion & retirement (WF-4.x)', () => {
         await expect(page.locator('#post-status-display')).toHaveText('Archived');
         // Cross-check with DB to confirm the value is persisted correctly.
         expect(getPostStatus(archivePageId)).toBe('gca_archived');
-        await ctx.close();
     });
 
     test('WF-4.6 — Archived page returns 404 on the frontend', async ({ page }) => {

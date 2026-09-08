@@ -22,6 +22,7 @@ require_once GCA_WORKFLOW_DIR . 'library/class-gca-workflow-statuses.php';
 require_once GCA_WORKFLOW_DIR . 'library/class-gca-workflow-notifications.php';
 require_once GCA_WORKFLOW_DIR . 'library/class-gca-workflow-rejection.php';
 require_once GCA_WORKFLOW_DIR . 'library/class-gca-workflow-revisions.php';
+require_once GCA_WORKFLOW_DIR . 'library/class-gca-workflow-review-queue.php';
 
 // Register feature flag (available regardless of flag state so it appears in the admin UI).
 add_action( 'init', function (): void {
@@ -35,24 +36,28 @@ add_action( 'init', function (): void {
     }
 }, 5 );
 
-// Settings page and roles always run — settings must be configurable before the flag is
-// enabled, and roles must exist so PublishPress Permissions can reference them.
+// Settings page always runs — the reviewer email must be configurable before the
+// flag is switched on.
 add_action( 'init', function (): void {
     GCA_Workflow_Settings::init();
-    GCA_Workflow_Roles::init();
-    GCA_Workflow_Category_Permissions::init();
-    GCA_Workflow_Admin_UI::init();
 }, 10 );
 
-// Workflow features are gated behind the feature flag.
+// Everything else — roles, directorate permissions, admin UI, statuses, notifications,
+// rejection, revisions — is gated behind the flag so the whole feature turns on/off
+// as one unit. Disabling the flag leaves contributors/publishers as WordPress roles
+// with no gca_* capability logic applied.
 add_action( 'init', function (): void {
     if ( ! function_exists( 'gca_flag_enabled' ) || ! gca_flag_enabled( 'publishing-workflow' ) ) {
         return;
     }
+    GCA_Workflow_Roles::init();
+    GCA_Workflow_Category_Permissions::init();
+    GCA_Workflow_Admin_UI::init();
     GCA_Workflow_Statuses::init();
     GCA_Workflow_Notifications::init();
     GCA_Workflow_Rejection::init();
     GCA_Workflow_Revisions::init();
+    GCA_Workflow_Review_Queue::init();
 }, 10 );
 
 // One-time migration runs on plugin activation.

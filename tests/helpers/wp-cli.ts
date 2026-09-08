@@ -85,3 +85,25 @@ export function getResponsibleTeamTermIds(count = 2): number[] {
     }
     return ids;
 }
+
+/**
+ * Read a gca_feature_flags entry directly from the DB, bypassing the UI.
+ * Returns undefined if the flag key isn't set (falls back to its registered default).
+ */
+export function getFeatureFlag(id: string): boolean | undefined {
+    const out = wpCli(`eval "\\$flags = get_option('gca_feature_flags', []); echo array_key_exists('${id}', \\$flags) ? (\\$flags['${id}'] ? '1' : '0') : 'unset';"`);
+    if (out === 'unset') return undefined;
+    return out === '1';
+}
+
+/**
+ * Set (or unset) a gca_feature_flags entry directly via the DB, bypassing the UI.
+ * Passing undefined removes the key entirely, restoring the registered default.
+ */
+export function setFeatureFlag(id: string, value: boolean | undefined): void {
+    if (value === undefined) {
+        wpCli(`eval "\\$flags = get_option('gca_feature_flags', []); unset(\\$flags['${id}']); update_option('gca_feature_flags', \\$flags);"`);
+        return;
+    }
+    wpCli(`eval "\\$flags = get_option('gca_feature_flags', []); \\$flags['${id}'] = ${value ? 'true' : 'false'}; update_option('gca_feature_flags', \\$flags);"`);
+}

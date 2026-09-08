@@ -87,6 +87,7 @@ wp plugin activate gca-custom --allow-root || true
 wp plugin activate wp-mail-smtp --allow-root || true
 wp plugin activate revisionary --allow-root || true
 wp plugin activate publishpress-statuses --allow-root || true
+wp plugin activate gca-feature-flags --allow-root || true
 wp plugin activate gca-publishing-workflow --allow-root || true
 wp rewrite structure "/%postname%/" --allow-root || true
 

@@ -19,7 +19,7 @@ class GCA_Workflow_Notifications {
     // -------------------------------------------------------------------------
 
     public static function on_status_transition( string $new_status, string $old_status, WP_Post $post ): void {
-        if ( 'page' !== $post->post_type ) {
+        if ( ! in_array( $post->post_type, GCA_Workflow_Roles::CONTRIBUTOR_ALLOWED_POST_TYPES, true ) ) {
             return;
         }
         if ( $new_status === $old_status ) {
@@ -45,7 +45,7 @@ class GCA_Workflow_Notifications {
 
     public static function on_page_rejected( int $post_id, int $reviewer_id, string $comments ): void {
         $post = get_post( $post_id );
-        if ( ! $post || 'page' !== $post->post_type ) {
+        if ( ! $post || ! in_array( $post->post_type, GCA_Workflow_Roles::CONTRIBUTOR_ALLOWED_POST_TYPES, true ) ) {
             return;
         }
 
@@ -55,14 +55,17 @@ class GCA_Workflow_Notifications {
         }
 
         $page_title    = get_the_title( $post );
+        $type_label    = self::content_type_label( $post );
         $edit_link     = admin_url( 'post.php?post=' . $post_id . '&action=edit' );
         $reviewer      = get_userdata( $reviewer_id );
         $reviewer_name = $reviewer ? $reviewer->display_name : 'A reviewer';
 
-        $subject = sprintf( 'Your page "%s" has been returned with feedback', $page_title );
+        $subject = sprintf( 'Your %s "%s" has been returned with feedback', $type_label, $page_title );
         $body    = sprintf(
-            "%s has reviewed your page and returned it for changes.\n\nPage: %s\n\nReviewer feedback:\n\n%s\n\nPlease log in to update your page and re-submit for review:\n%s",
+            "%s has reviewed your %s and returned it for changes.\n\n%s: %s\n\nReviewer feedback:\n\n%s\n\nPlease log in to update it and re-submit for review:\n%s",
             $reviewer_name,
+            $type_label,
+            ucfirst( $type_label ),
             $page_title,
             $comments,
             $edit_link
@@ -122,6 +125,15 @@ class GCA_Workflow_Notifications {
     // Internal helpers
     // -------------------------------------------------------------------------
 
+    /**
+     * Lowercase singular label for use mid-sentence in notification copy,
+     * e.g. "page", "blog", "work update".
+     */
+    private static function content_type_label( WP_Post $post ): string {
+        $object = get_post_type_object( $post->post_type );
+        return $object ? strtolower( $object->labels->singular_name ) : 'page';
+    }
+
     private static function handle_pending( WP_Post $post ): void {
         $reviewer_email = get_option( GCA_Workflow_Settings::OPTION_REVIEWER_EMAIL, '' );
         if ( ! $reviewer_email ) {
@@ -142,9 +154,12 @@ class GCA_Workflow_Notifications {
                 $admin_link
             );
         } else {
-            $subject = sprintf( 'New page submitted for review: %s', $page_title );
-            $body    = sprintf(
-                "A page has been submitted for review.\n\nPage: %s\n\nReview it here:\n%s",
+            $type_label = self::content_type_label( $post );
+            $subject    = sprintf( 'New %s submitted for review: %s', $type_label, $page_title );
+            $body       = sprintf(
+                "A %s has been submitted for review.\n\n%s: %s\n\nReview it here:\n%s",
+                $type_label,
+                ucfirst( $type_label ),
                 $page_title,
                 $admin_link
             );
@@ -164,10 +179,13 @@ class GCA_Workflow_Notifications {
 
         $page_title = get_the_title( $post );
         $page_url   = get_permalink( $post->ID );
+        $type_label = self::content_type_label( $post );
 
-        $subject = sprintf( 'Your page "%s" is now live', $page_title );
+        $subject = sprintf( 'Your %s "%s" is now live', $type_label, $page_title );
         $body    = sprintf(
-            "Your page has been reviewed and published.\n\nPage: %s\nURL: %s",
+            "Your %s has been reviewed and published.\n\n%s: %s\nURL: %s",
+            $type_label,
+            ucfirst( $type_label ),
             $page_title,
             $page_url ?: admin_url( 'post.php?post=' . $post->ID . '&action=edit' )
         );
