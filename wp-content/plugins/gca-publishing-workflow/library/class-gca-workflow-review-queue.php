@@ -71,26 +71,6 @@ class GCA_Workflow_Review_Queue {
         return $posts;
     }
 
-    /**
-     * New (never-published) content awaiting review.
-     */
-    private static function get_pending_new_content(): array {
-        return array_values( array_filter(
-            self::get_all_pending_posts(),
-            static fn( WP_Post $post ): bool => 'pending-revision' !== $post->post_mime_type
-        ) );
-    }
-
-    /**
-     * Edits to already-live content, staged by PublishPress Revisions.
-     */
-    private static function get_pending_revisions(): array {
-        return array_values( array_filter(
-            self::get_all_pending_posts(),
-            static fn( WP_Post $post ): bool => 'pending-revision' === $post->post_mime_type
-        ) );
-    }
-
     // -------------------------------------------------------------------------
     // Render
     // -------------------------------------------------------------------------
@@ -100,9 +80,8 @@ class GCA_Workflow_Review_Queue {
             wp_die( esc_html__( 'Sorry, you are not allowed to access this page.', 'gca' ) );
         }
 
-        $new_content = self::get_pending_new_content();
-        $revisions   = self::get_pending_revisions();
-        $total       = count( $new_content ) + count( $revisions );
+        $all_content = self::get_all_pending_posts();
+        $total       = count( $all_content );
         ?>
         <div class="wrap">
             <h1><?php esc_html_e( 'Review Queue', 'gca' ); ?></h1>
@@ -123,26 +102,21 @@ class GCA_Workflow_Review_Queue {
                     </tr>
                 </thead>
                 <tbody>
-                    <?php foreach ( $new_content as $post ) : ?>
-                        <?php self::render_row(
-                            self::type_label( $post->post_type ),
+                    <?php foreach ( $all_content as $post ) : ?>
+                        <?php 
+                        $type_label = self::type_label( $post->post_type );
+                        if ( 'pending-revision' === $post->post_mime_type ) {
+                            $type_label .= ' — ' . esc_html__( 'revision', 'gca' );
+                        }
+
+                        self::render_row(
+                            $type_label,
                             get_the_title( $post ),
                             (int) $post->post_author,
                             $post->post_modified,
                             admin_url( 'post.php?post=' . $post->ID . '&action=edit' )
-                        ); ?>
-                    <?php endforeach; ?>
-
-                    <?php foreach ( $revisions as $revision ) : ?>
-                        <?php // The shadow copy carries the live post's own type and title directly
-                        // (see the class docblock) — no parent lookup needed for display. ?>
-                        <?php self::render_row(
-                            self::type_label( $revision->post_type ) . ' — ' . esc_html__( 'update', 'gca' ),
-                            get_the_title( $revision ),
-                            (int) $revision->post_author,
-                            $revision->post_modified,
-                            admin_url( 'post.php?post=' . $revision->ID . '&action=edit' )
-                        ); ?>
+                        ); 
+                        ?>
                     <?php endforeach; ?>
                 </tbody>
             </table>
