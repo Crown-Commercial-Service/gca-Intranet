@@ -248,17 +248,22 @@ class GCA_Workflow_Revisions {
 
         $is_contributor = GCA_Workflow_Roles::user_has_role( get_current_user_id(), GCA_Workflow_Roles::CONTRIBUTOR );
 
+        $post = get_post();
         if ( $is_contributor ) {
-            // Contributors need the "Create Revision"/"Submit" UI on already-live
-            // pages (WF-3.x) — but any "Approve Revision" button (shown both when
-            // viewing an already-submitted pending revision, class 'revision-approve',
-            // AND on an unsubmitted draft-revision before its first save, class
-            // 'rvy-direct-approve' — two different classes for the same action) must
-            // never be available to them; only a publisher approves. The first shares
-            // .rvy-creation-ui with Create Revision, distinguished by lacking the
-            // 'revision-create' class. See block_contributor_revision_approval() for
-            // the real enforcement — this is UI-only.
-            echo '<style>.editor-last-revision{display:none!important}a.revision-approve:not(.revision-create),a.rvy-direct-approve{display:none!important}</style>';
+            // Contributors need the "Create Revision"/"Submit Revision" UI.
+            // But any "Approve Revision" button (class 'rvy-direct-approve' on draft-revisions,
+            // or class 'revision-approve' on already-submitted pending-revisions) must
+            // never be available to them; only a publisher approves.
+            $css = '.editor-last-revision{display:none!important}';
+            $css .= 'a.rvy-direct-approve{display:none!important}';
+
+            // Only hide .revision-approve if this is a pending revision. 
+            // If it's a draft-revision, .revision-approve is the "Submit Revision" button itself!
+            if ( $post && 'pending-revision' === $post->post_mime_type ) {
+                $css .= 'a.revision-approve:not(.revision-create){display:none!important}';
+            }
+
+            echo '<style>' . $css . '</style>';
         } else {
             // Publishers publish directly, so the "Create Revision" button on a
             // live post's own edit screen isn't needed — but that button and the
