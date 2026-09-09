@@ -94,7 +94,7 @@ add_action('admin_menu', function (): void {
         GCA_COMMUNITY_HUB_MENU_SLUG,
         'Community Polls',
         $label,
-        'edit_posts',
+        'publish_posts',
         'edit.php?post_type=community_poll'
     );
 }, 5);

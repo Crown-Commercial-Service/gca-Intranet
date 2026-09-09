@@ -8,6 +8,7 @@ class GCA_Workflow_Notifications {
 
     public static function init(): void {
         add_action( 'transition_post_status', [ __CLASS__, 'on_status_transition' ], 10, 3 );
+        add_action( 'revision_submitted', [ __CLASS__, 'on_revision_submitted' ], 10, 2 );
         add_action( 'gca_workflow_page_rejected', [ __CLASS__, 'on_page_rejected' ], 10, 3 );
         // Intercept trash attempts by contributors before WordPress processes the cap check.
         // This is necessary because when delete_pages is denied, wp_trash_post never fires.
@@ -26,7 +27,7 @@ class GCA_Workflow_Notifications {
             return;
         }
 
-        if ( 'pending' === $new_status ) {
+        if ( 'pending' === $new_status || 'pending-revision' === $new_status ) {
             self::handle_pending( $post );
             return;
         }
@@ -54,7 +55,7 @@ class GCA_Workflow_Notifications {
             return;
         }
 
-        $page_title    = get_the_title( $post );
+        $page_title    = html_entity_decode( get_the_title( $post ), ENT_QUOTES, 'UTF-8' );
         $type_label    = self::content_type_label( $post );
         $edit_link     = admin_url( 'post.php?post=' . $post_id . '&action=edit' );
         $reviewer      = get_userdata( $reviewer_id );
@@ -134,16 +135,46 @@ class GCA_Workflow_Notifications {
         return $object ? strtolower( $object->labels->singular_name ) : 'page';
     }
 
+    public static function on_revision_submitted( int $published_id, int $revision_id ): void {
+        $published_post = get_post( $published_id );
+        if ( ! $published_post || ! in_array( $published_post->post_type, GCA_Workflow_Roles::CONTRIBUTOR_ALLOWED_POST_TYPES, true ) ) {
+            return;
+        }
+
+        $revision = get_post( $revision_id );
+        if ( $revision ) {
+            self::handle_pending( $revision );
+        }
+    }
+
     private static function handle_pending( WP_Post $post ): void {
+        static $processed = [];
+        if ( isset( $processed[ $post->ID ] ) ) {
+            return;
+        }
+        $processed[ $post->ID ] = true;
+
         $reviewer_email = get_option( GCA_Workflow_Settings::OPTION_REVIEWER_EMAIL, '' );
         if ( ! $reviewer_email ) {
             return;
         }
 
-        $is_revision  = (bool) wp_is_post_revision( $post->ID );
-        $page_title   = $is_revision
-            ? get_the_title( wp_get_post_parent_id( $post->ID ) )
+        // PublishPress Revisions uses '-revision' mime types instead of 'revision' post_type.
+        $is_pp_revision = strpos( (string) $post->post_mime_type, '-revision' ) !== false;
+        $is_revision    = $is_pp_revision || wp_is_post_revision( $post->ID );
+
+        $parent_id = 0;
+        if ( $is_pp_revision ) {
+            // PublishPress stores the parent post ID in comment_count for revisions.
+            $parent_id = (int) $post->comment_count;
+        } elseif ( $is_revision ) {
+            $parent_id = wp_get_post_parent_id( $post->ID );
+        }
+
+        $page_title   = $parent_id
+            ? get_the_title( $parent_id )
             : get_the_title( $post );
+        $page_title   = html_entity_decode( $page_title, ENT_QUOTES, 'UTF-8' );
         $admin_link   = admin_url( 'post.php?post=' . $post->ID . '&action=edit' );
 
         if ( $is_revision ) {
@@ -177,7 +208,7 @@ class GCA_Workflow_Notifications {
             return;
         }
 
-        $page_title = get_the_title( $post );
+        $page_title = html_entity_decode( get_the_title( $post ), ENT_QUOTES, 'UTF-8' );
         $page_url   = get_permalink( $post->ID );
         $type_label = self::content_type_label( $post );
 
@@ -200,7 +231,7 @@ class GCA_Workflow_Notifications {
         }
 
         $current_user = wp_get_current_user();
-        $page_title   = get_the_title( $post );
+        $page_title   = html_entity_decode( get_the_title( $post ), ENT_QUOTES, 'UTF-8' );
         $page_url     = get_permalink( $post->ID );
         $admin_link   = admin_url( 'post.php?post=' . $post->ID . '&action=edit' );
 

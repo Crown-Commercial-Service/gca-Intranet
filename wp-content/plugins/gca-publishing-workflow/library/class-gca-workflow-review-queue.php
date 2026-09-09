@@ -50,44 +50,43 @@ class GCA_Workflow_Review_Queue {
     // Data
     // -------------------------------------------------------------------------
 
+    private static function get_all_pending_posts(): array {
+        $posts = [];
+        // Query post types individually to bypass a WP core bug where passing an array
+        // of post types causes get_post_type_object() to fail, which in turn causes WP to
+        // assume the user lacks edit_others_posts and restrict the query to the current user's posts.
+        foreach ( GCA_Workflow_Roles::CONTRIBUTOR_ALLOWED_POST_TYPES as $post_type ) {
+            $query = new WP_Query( [
+                'post_type'        => $post_type,
+                'post_status'      => 'pending',
+                'posts_per_page'   => -1,
+                // Suppress filters to bypass third-party query modifications
+                // (like PublishPress Permissions).
+                'suppress_filters' => true,
+            ] );
+            $posts = array_merge( $posts, $query->posts );
+        }
+
+        usort( $posts, static fn( WP_Post $a, WP_Post $b ): int => strtotime( $b->post_modified ) <=> strtotime( $a->post_modified ) );
+        return $posts;
+    }
+
     /**
      * New (never-published) content awaiting review.
      */
     private static function get_pending_new_content(): array {
-        $query = new WP_Query( [
-            'post_type'      => GCA_Workflow_Roles::CONTRIBUTOR_ALLOWED_POST_TYPES,
-            'post_status'    => 'pending',
-            'posts_per_page' => -1,
-            'orderby'        => 'modified',
-            'order'          => 'DESC',
-        ] );
-
-        return $query->posts;
+        return array_values( array_filter(
+            self::get_all_pending_posts(),
+            static fn( WP_Post $post ): bool => 'pending-revision' !== $post->post_mime_type
+        ) );
     }
 
     /**
      * Edits to already-live content, staged by PublishPress Revisions.
      */
     private static function get_pending_revisions(): array {
-        // Note: WP_Query's 'post_mime_type' param is built for attachment MIME
-        // matching (pattern-based, e.g. 'image/%') and silently excludes exact
-        // string values like ours — filter in PHP instead.
-        $query = new WP_Query( [
-            'post_type'          => GCA_Workflow_Roles::CONTRIBUTOR_ALLOWED_POST_TYPES,
-            'post_status'        => 'pending',
-            'posts_per_page'     => -1,
-            'orderby'            => 'modified',
-            'order'              => 'DESC',
-            // PublishPress Revisions filters revision-status posts out of any query
-            // by default (a safety measure so its internal "shadow" objects don't
-            // leak into unrelated queries) unless explicitly marked as its own —
-            // see revisionary_main.php's posts_where filter. We want the opposite
-            // of that default here — only the revision-marked rows.
-            'is_revisions_query' => true,
-        ] );
-
         return array_values( array_filter(
-            $query->posts,
+            self::get_all_pending_posts(),
             static fn( WP_Post $post ): bool => 'pending-revision' === $post->post_mime_type
         ) );
     }

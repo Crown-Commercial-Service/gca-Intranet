@@ -62,3 +62,15 @@ add_action( 'init', function (): void {
 
 // One-time migration runs on plugin activation.
 register_activation_hook( __FILE__, [ 'GCA_Workflow_Roles', 'activate' ] );
+
+// Disable PublishPress Revisions default email notifications to avoid duplicates
+add_filter('option_rvy_options', function($options) {
+    if (is_array($options)) {
+        $options['pending_rev_notify_admin'] = 0;
+        $options['pending_rev_notify_author'] = 0;
+        $options['rev_approval_notify_admin'] = 0;
+        $options['rev_approval_notify_author'] = 0;
+        $options['rev_approval_notify_revisor'] = 0;
+    }
+    return $options;
+});
