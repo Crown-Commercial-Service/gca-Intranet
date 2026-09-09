@@ -268,6 +268,13 @@ class GCA_Workflow_Revisions {
             // Create-Revision button itself (class 'revision-create', absent
             // from the Approve button) instead.
             echo '<style>.editor-last-revision{display:none!important}.rvy-creation-ui .revision-create{display:none!important}</style>';
+            
+            $post = get_post();
+            if ( $post && 'draft-revision' === $post->post_mime_type ) {
+                // For publishers editing an unsubmitted revision, the "Submit Revision"
+                // button (.revision-approve) is redundant because they can just "Approve".
+                echo '<style>a.revision-approve{display:none!important}</style>';
+            }
         }
     }
 
