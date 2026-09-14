@@ -449,6 +449,24 @@
             });
         }
 
+        var linkBtn = document.getElementById('gca-cw-link-btn');
+        if (linkBtn) {
+            linkBtn.addEventListener('click', function() {
+                if (textarea && typeof wpLink !== 'undefined') {
+                    // Set focus to the textarea so wpLink knows where to insert
+                    textarea.focus();
+                    wpLink.open(textarea.id);
+                }
+            });
+            if (typeof jQuery !== 'undefined') {
+                jQuery(document).on('wplink-update', function() {
+                    setTimeout(function() {
+                        if (textarea) { textarea.dispatchEvent(new Event('input')); }
+                    }, 50);
+                });
+            }
+        }
+
         var activeUploads = 0;
 
         function setPostBtnState() {
