@@ -203,6 +203,7 @@ function gca_cw_render_content(string $raw): string
 {
     global $wp_embed;
     $html = $wp_embed->autoembed($raw);
+    $html = make_clickable($html);
 
     $allowed_html = array_merge(wp_kses_allowed_html('post'), [
         'iframe' => [
