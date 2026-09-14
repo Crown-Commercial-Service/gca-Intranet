@@ -261,7 +261,7 @@ add_action('gca_qa_answered', function (int $question_id, int $asker_id, int $an
         'Your question has been answered',
         'Your question has been answered',
         $body,
-        gca_notify_community_hub_url('qa'),
+        gca_notify_community_hub_url('qa') . '#gca-qa-q-' . $post_id,
         'View the answer'
     );
 }, 10, 3);
@@ -284,7 +284,25 @@ add_action('gca_comment_mention_created', function (int $comment_id, int $mentio
     $plain_content = (string) preg_replace('/@\[([^\]]+)\]\(\d+\)/', '@$1', $comment->comment_content);
     $content_html  = nl2br(esc_html($plain_content));
 
-    $post_url = get_permalink((int) $comment->comment_post_ID);
+    $post_id   = (int) $comment->comment_post_ID;
+    $post_type = get_post_type($post_id);
+    
+    $tab = 'updates';
+    $args = [];
+    $hash = '#gca-lc-comment-' . $comment_id;
+
+    if ($post_type === 'community_shoutout') {
+        $tab = 'shoutouts';
+        $args['shoutout_id'] = $post_id;
+    } elseif ($post_type === 'qa_question') {
+        $tab = 'qa';
+        // Q&A comments are within the card, wait, is there an extra step? 
+        // We'll just link to the comment hash
+    } elseif ($post_type === 'community_poll') {
+        $tab = 'polls';
+    }
+
+    $post_url = gca_notify_community_hub_url($tab, $args) . $hash;
 
     $body = '<p style="margin:0 0 8px;"><strong>' . $commenter_name . '</strong> mentioned you in a comment</p>'
         . '<p style="margin:0;color:#0b0c0c;">' . $content_html . '</p>';
