@@ -151,8 +151,7 @@ function gca_notify_community_hub_url(string $tab, array $extra_args = []): stri
 
 function gca_notify_email_html(string $heading, string $body_html, string $cta_url, string $cta_label, int $recipient_id): string
 {
-    $logo_id   = (int) get_theme_mod('custom_logo');
-    $logo_url  = $logo_id ? wp_get_attachment_image_url($logo_id, 'full') : false;
+    $logo_url  = get_theme_file_uri('assets/img/Government-Commercial-Agency-black-linear.png');
     $site_name = esc_html(get_bloginfo('name'));
 
     $recipient = get_userdata($recipient_id);
@@ -217,20 +216,40 @@ add_action('gca_shoutout_created', function (int $post_id, int $recipient_id, in
 
     $post  = get_post($post_id);
     $giver = get_userdata($giver_id);
-    if (!$post instanceof WP_Post || !$giver instanceof WP_User) {
+    $recipient = get_userdata($recipient_id);
+    if (!$post instanceof WP_Post || !$giver instanceof WP_User || !$recipient instanceof WP_User) {
         return;
     }
 
     $giver_name = esc_html(html_entity_decode($giver->display_name, ENT_QUOTES | ENT_HTML5, 'UTF-8'));
-    $message    = nl2br(esc_html($post->post_content));
+    $recipient_name = esc_html(html_entity_decode($recipient->display_name, ENT_QUOTES | ENT_HTML5, 'UTF-8'));
+    $giver_role = esc_html((string) get_user_meta($giver_id, 'business_title', true));
+    
+    $date = get_the_date('j F Y', $post);
+    $message = nl2br(esc_html($post->post_content));
+    
+    $liked_by = (array) get_post_meta($post_id, '_gca_lc_post_likes', true);
+    $like_count = count(array_filter(array_map('intval', $liked_by)));
+    $comment_count = count(get_comments(['post_id' => $post_id, 'type' => 'gca_comment', 'status' => 'approve']));
 
-    $body = '<p style="margin:0 0 8px;"><strong>' . $giver_name . '</strong> shouted you out</p>'
-        . '<p style="margin:0;color:#0b0c0c;">' . $message . '</p>';
+    $role_html = $giver_role ? ' <span style="color:#505a5f;font-size:14px;">(' . $giver_role . ')</span>' : '';
+    
+    $body = '<div style="margin-bottom:12px;">'
+        . '<strong style="font-size:16px;">' . $giver_name . '</strong>' . $role_html 
+        . ' <span style="color:#505a5f;font-size:14px;">shouted out</span> '
+        . '<strong style="font-size:16px;">' . $recipient_name . '</strong>'
+        . ' <span style="color:#505a5f;font-size:14px;">on ' . $date . '</span>'
+        . '</div>'
+        . '<div style="margin:0 0 16px;color:#0b0c0c;font-size:16px;line-height:1.5;">' . $message . '</div>'
+        . '<div style="font-size:14px;color:#505a5f;border-top:1px solid #e5e5e5;padding-top:12px;">'
+        . '<span style="margin-right:16px;">👍 ' . $like_count . ' ' . _n('Like', 'Likes', $like_count, 'gca-intranet') . '</span>'
+        . '<span>💬 ' . $comment_count . ' ' . _n('Comment', 'Comments', $comment_count, 'gca-intranet') . '</span>'
+        . '</div>';
 
     gca_notify_send_email(
         $recipient_id,
-        "You've received a shout-out",
-        "You've received a shout-out on the intranet",
+        "You've received a shout out on the intranet",
+        "You've received a shout out on the intranet",
         $body,
         gca_notify_community_hub_url('shoutouts', ['shoutout_id' => $post_id]),
         'View your shout-out'
@@ -246,20 +265,42 @@ add_action('gca_qa_answered', function (int $question_id, int $asker_id, int $an
     }
 
     $post = get_post($question_id);
-    if (!$post instanceof WP_Post) {
+    $answerer = get_userdata($answerer_id);
+    if (!$post instanceof WP_Post || !$answerer instanceof WP_User) {
         return;
     }
 
     $answer_meta = defined('GCA_QA_ANSWER_META') ? GCA_QA_ANSWER_META : '_gca_qa_answer';
     $answer      = (string) get_post_meta($question_id, $answer_meta, true);
 
-    $body = '<p style="margin:0 0 8px;"><em style="color:#505a5f;">' . nl2br(esc_html($post->post_content)) . '</em></p>'
-        . '<p style="margin:0;color:#0b0c0c;">' . nl2br(esc_html($answer)) . '</p>';
+    $answerer_name = esc_html(html_entity_decode($answerer->display_name, ENT_QUOTES | ENT_HTML5, 'UTF-8'));
+    $answerer_role = esc_html((string) get_user_meta($answerer_id, 'business_title', true));
+    
+    $date = gmdate('j F Y');
+
+    $liked_by = (array) get_post_meta($question_id, '_gca_lc_post_likes', true);
+    $like_count = count(array_filter(array_map('intval', $liked_by)));
+    $comment_count = count(get_comments(['post_id' => $question_id, 'type' => 'gca_comment', 'status' => 'approve']));
+
+    $role_html = $answerer_role ? ' <span style="color:#505a5f;font-size:14px;">(' . $answerer_role . ')</span>' : '';
+    
+    $body = '<div style="margin-bottom:12px;">'
+        . '<strong style="font-size:16px;">' . $answerer_name . '</strong>' . $role_html 
+        . ' <span style="color:#505a5f;font-size:14px;">answered on ' . $date . '</span>'
+        . '</div>'
+        . '<div style="margin:0 0 12px;padding:12px;background:#f3f2f1;border-left:4px solid #b1b4b6;color:#505a5f;font-style:italic;">'
+        . nl2br(esc_html($post->post_content))
+        . '</div>'
+        . '<div style="margin:0 0 16px;color:#0b0c0c;font-size:16px;line-height:1.5;">' . nl2br(esc_html($answer)) . '</div>'
+        . '<div style="font-size:14px;color:#505a5f;border-top:1px solid #e5e5e5;padding-top:12px;">'
+        . '<span style="margin-right:16px;">👍 ' . $like_count . ' ' . _n('Like', 'Likes', $like_count, 'gca-intranet') . '</span>'
+        . '<span>💬 ' . $comment_count . ' ' . _n('Comment', 'Comments', $comment_count, 'gca-intranet') . '</span>'
+        . '</div>';
 
     gca_notify_send_email(
         $asker_id,
-        'Your question has been answered',
-        'Your question has been answered',
+        "Your question has been answered on the intranet",
+        "Your question has been answered on the intranet",
         $body,
         gca_notify_community_hub_url('qa'),
         'View the answer'
@@ -281,20 +322,25 @@ add_action('gca_comment_mention_created', function (int $comment_id, int $mentio
         ? esc_html(html_entity_decode($commenter->display_name, ENT_QUOTES | ENT_HTML5, 'UTF-8'))
         : 'Someone';
 
+    $date = get_comment_date('j F Y', $comment);
+
     $plain_content = (string) preg_replace('/@\[([^\]]+)\]\(\d+\)/', '@$1', $comment->comment_content);
     $content_html  = nl2br(esc_html($plain_content));
 
     $post_url = get_permalink((int) $comment->comment_post_ID);
 
-    $body = '<p style="margin:0 0 8px;"><strong>' . $commenter_name . '</strong> mentioned you in a comment</p>'
-        . '<p style="margin:0;color:#0b0c0c;">' . $content_html . '</p>';
+    $body = '<div style="margin-bottom:12px;">'
+        . '<strong style="font-size:16px;">' . $commenter_name . '</strong>'
+        . ' <span style="color:#505a5f;font-size:14px;">mentioned you on ' . $date . '</span>'
+        . '</div>'
+        . '<div style="margin:0 0 16px;color:#0b0c0c;font-size:16px;line-height:1.5;">' . $content_html . '</div>';
 
     gca_notify_send_email(
         $mentioned_user_id,
-        'You were mentioned in a comment',
-        'You were mentioned in a comment',
+        "You've been mentioned on the intranet",
+        "You've been mentioned on the intranet",
         $body,
         $post_url ?: home_url('/'),
-        'View the comment'
+        'View the post'
     );
 }, 10, 3);
