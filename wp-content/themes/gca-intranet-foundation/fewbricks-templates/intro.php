@@ -15,11 +15,22 @@ ob_start();
 if (!empty($media)) :
     foreach ($media as $item) :
         $img = $item['image_image_image'] ?? null;
-        if ($img) : ?>
+        if ($img) :
+            if (is_array($img)) {
+                $url = $img['url'] ?? '';
+                $alt = $img['alt'] ?? '';
+            } else {
+                $url = wp_get_attachment_image_url($img, 'large') ?: wp_get_attachment_image_url($img, 'full');
+                $alt = get_post_meta($img, '_wp_attachment_image_alt', true);
+            }
+            if ($url) :
+        ?>
             <figure class="image-wrapper">
-                <img src="<?php echo esc_url($img['url']); ?>" alt="<?php echo esc_attr($img['alt']); ?>">
+                <img src="<?php echo esc_url($url); ?>" alt="<?php echo esc_attr($alt); ?>">
             </figure>
-        <?php endif;
+        <?php 
+            endif;
+        endif;
     endforeach;
 endif;
 $media_html = ob_get_clean();
