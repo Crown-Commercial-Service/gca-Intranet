@@ -1108,6 +1108,7 @@ add_action('wp_enqueue_scripts', function (): void {
     // Enqueue wpLink scripts and dialog for the custom "Add Link" button
     wp_enqueue_editor();
     add_action('wp_footer', function() {
+        echo '<script>var ajaxurl = "' . admin_url('admin-ajax.php') . '";</script>';
         if (!class_exists('_WP_Editors', false)) {
             require ABSPATH . WPINC . '/class-wp-editor.php';
         }
