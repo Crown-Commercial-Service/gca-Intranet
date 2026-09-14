@@ -178,10 +178,10 @@ endif;
                                             <input
                                                 type="file"
                                                 id="gca-cw-file-input"
-                                                accept="image/*,video/*"
+                                                accept="image/*"
                                                 multiple
                                                 class="govuk-visually-hidden"
-                                                aria-label="Attach photo or video"
+                                                aria-label="Attach photo"
                                             >
                                             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false">
                                                 <rect x="3" y="3" width="18" height="18" rx="2" stroke="currentColor" stroke-width="2"/>
