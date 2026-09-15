@@ -60,3 +60,28 @@ function gca_community_hub_menu_redirect(): void {
     }
     exit;
 }
+
+add_action('admin_head', function (): void {
+    echo '<style>
+        /* Force standard WP Blue for active menu item */
+        #adminmenu li.wp-has-current-submenu#toplevel_page_gca-community-hub > a.wp-has-current-submenu {
+            background-color: #2271b1 !important;
+            color: #fff !important;
+        }
+        /* Force red notification bubbles in the submenus */
+        #adminmenu #toplevel_page_gca-community-hub .wp-submenu .awaiting-mod {
+            background-color: #d63638 !important;
+            color: #fff !important;
+            border-radius: 10px;
+            padding: 0 6px;
+            font-size: 11px;
+            line-height: 1.5;
+            display: inline-block;
+            vertical-align: text-bottom;
+            margin: 1px 0 0 2px;
+        }
+        #adminmenu #toplevel_page_gca-community-hub .wp-submenu .awaiting-mod .pending-count {
+            color: #fff !important;
+        }
+    </style>';
+});
