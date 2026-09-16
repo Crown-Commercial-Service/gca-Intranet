@@ -83,8 +83,10 @@ endif;
                     </button>
                     
                     <?php if (function_exists('get_field') && get_field('social_wall_guidance_box', 'option')) : ?>
-                        <div class="govuk-!-margin-top-6 gca-archive-guidance">
-                            <?php echo get_field('social_wall_guidance_box', 'option'); ?>
+                        <div class="archive-filters govuk-!-margin-top-6">
+                            <div class="archive-filters__section gca-archive-guidance">
+                                <?php echo get_field('social_wall_guidance_box', 'option'); ?>
+                            </div>
                         </div>
                     <?php endif; ?>
 
