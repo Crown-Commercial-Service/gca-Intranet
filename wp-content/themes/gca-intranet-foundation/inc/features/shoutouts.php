@@ -108,7 +108,7 @@ add_action('admin_menu', function (): void {
         GCA_COMMUNITY_HUB_MENU_SLUG,
         'Shout-outs',
         $label,
-        'edit_posts',
+        'publish_posts',
         'edit.php?post_type=community_shoutout'
     );
 }, 5);

@@ -32,7 +32,7 @@ add_action('admin_menu', function (): void {
     add_menu_page(
         'Community Hub',
         'Community Hub',
-        'edit_posts',
+        'publish_posts',
         GCA_COMMUNITY_HUB_MENU_SLUG,
         'gca_community_hub_menu_redirect',
         'dashicons-groups',

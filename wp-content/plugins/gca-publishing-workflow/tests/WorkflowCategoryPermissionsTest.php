@@ -64,6 +64,7 @@ class WorkflowCategoryPermissionsTest extends TestCase {
         $query = Mockery::mock( 'WP_Query' );
         $query->shouldReceive( 'is_main_query' )->andReturn( true );
         $query->shouldReceive( 'get' )->with( 'post_type' )->andReturn( 'page' );
+        $query->shouldReceive( 'get' )->with( 'author' )->andReturn( '' );
         $query->shouldReceive( 'set' )->with( 'author', '' )->once();
         $query->shouldNotReceive( 'set' )->with( 'tax_query', Mockery::any() );
 
@@ -73,7 +74,8 @@ class WorkflowCategoryPermissionsTest extends TestCase {
     }
 
     // -------------------------------------------------------------------------
-    // UNIT-CP.3 — contributor with no assignment: author restriction lifted, no tax_query
+    // UNIT-CP.3 — contributor with no assignment: unrestricted (safe default) —
+    // author restriction lifted, no tax_query
     // -------------------------------------------------------------------------
 
     public function test_page_list_filter_lifts_author_for_contributor_with_no_teams(): void {
@@ -91,6 +93,7 @@ class WorkflowCategoryPermissionsTest extends TestCase {
         $query = Mockery::mock( 'WP_Query' );
         $query->shouldReceive( 'is_main_query' )->andReturn( true );
         $query->shouldReceive( 'get' )->with( 'post_type' )->andReturn( 'page' );
+        $query->shouldReceive( 'get' )->with( 'author' )->andReturn( '' );
         $query->shouldReceive( 'set' )->with( 'author', '' )->once();
         $query->shouldNotReceive( 'set' )->with( 'tax_query', Mockery::any() );
 
@@ -118,6 +121,7 @@ class WorkflowCategoryPermissionsTest extends TestCase {
         $query = Mockery::mock( 'WP_Query' );
         $query->shouldReceive( 'is_main_query' )->andReturn( true );
         $query->shouldReceive( 'get' )->with( 'post_type' )->andReturn( 'page' );
+        $query->shouldReceive( 'get' )->with( 'author' )->andReturn( '' );
         $query->shouldReceive( 'get' )->with( 'tax_query' )->andReturn( [] );
         $query->shouldReceive( 'set' )->with( 'author', '' )->once();
         $query->shouldReceive( 'set' )->with(
@@ -157,7 +161,7 @@ class WorkflowCategoryPermissionsTest extends TestCase {
     }
 
     // -------------------------------------------------------------------------
-    // UNIT-CP.6 — contributor with "all" teams: caps returned unchanged
+    // UNIT-CP.6 — contributor with "all" teams: edit_others_pages granted
     // -------------------------------------------------------------------------
 
     public function test_edit_block_skips_all_teams_contributor(): void {
@@ -179,7 +183,36 @@ class WorkflowCategoryPermissionsTest extends TestCase {
             $user
         );
 
-        $this->assertSame( $caps, $result );
+        $this->assertTrue( $result['edit_post'] );
+        $this->assertTrue( $result['edit_others_pages'] );
+    }
+
+    // -------------------------------------------------------------------------
+    // UNIT-CP.6b — contributor with no directorate assigned: unrestricted
+    // (safe default) — edit_others_pages granted, same as "all"
+    // -------------------------------------------------------------------------
+
+    public function test_edit_block_grants_access_for_contributor_with_no_teams(): void {
+        $user = $this->mock_user( 1, [ 'gca_contributor' ] );
+        WP_Mock::userFunction( 'get_userdata', [
+            'args'   => [ 1 ],
+            'return' => $user,
+        ] );
+        WP_Mock::userFunction( 'get_user_meta', [
+            'args'   => [ 1, '_gca_contributor_teams', true ],
+            'return' => [],
+        ] );
+
+        $caps   = [ 'edit_post' => true ];
+        $result = GCA_Workflow_Category_Permissions::block_contributor_out_of_scope_edit(
+            $caps,
+            [ 'edit_post' ],
+            [ 'edit_post', 1, 42 ],
+            $user
+        );
+
+        $this->assertTrue( $result['edit_post'] );
+        $this->assertTrue( $result['edit_others_pages'] );
     }
 
     // -------------------------------------------------------------------------
@@ -338,7 +371,7 @@ class WorkflowCategoryPermissionsTest extends TestCase {
     // -------------------------------------------------------------------------
 
     public function test_publisher_grant_skips_non_publishers(): void {
-        $user   = $this->mock_user( 2, [ 'gca_publisher_admin' ] );
+        $user   = $this->mock_user( 2, [ 'gca_contributor' ] );
         $caps   = [ 'edit_users' => false ];
         $result = GCA_Workflow_Category_Permissions::grant_publisher_contributor_edit(
             $caps,
