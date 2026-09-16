@@ -261,7 +261,7 @@ add_action('gca_qa_answered', function (int $question_id, int $asker_id, int $an
         'Your question has been answered',
         'Your question has been answered',
         $body,
-        gca_notify_community_hub_url('qa') . '#gca-qa-q-' . $post_id,
+        gca_notify_community_hub_url('qa') . '#gca-qa-q-' . $question_id,
         'View the answer'
     );
 }, 10, 3);
@@ -289,18 +289,22 @@ add_action('gca_comment_mention_created', function (int $comment_id, int $mentio
     
     $tab = 'updates';
     $args = [];
-    $hash = '#gca-lc-comment-' . $comment_id;
-
+    
     if ($post_type === 'community_shoutout') {
         $tab = 'shoutouts';
         $args['shoutout_id'] = $post_id;
+        $hash = '#gca-shoutout-' . $post_id;
     } elseif ($post_type === 'qa_question') {
         $tab = 'qa';
-        // Q&A comments are within the card, wait, is there an extra step? 
-        // We'll just link to the comment hash
+        $hash = '#gca-qa-q-' . $post_id;
     } elseif ($post_type === 'community_poll') {
         $tab = 'polls';
+        $hash = '#gca-poll-' . $post_id;
+    } else {
+        $hash = '#gca-cw-post-' . $post_id;
     }
+    
+    $hash .= '-comment-' . $comment_id;
 
     $post_url = gca_notify_community_hub_url($tab, $args) . $hash;
 
