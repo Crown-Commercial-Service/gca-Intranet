@@ -17,6 +17,8 @@ require_once get_template_directory() . '/inc/features/community-wall.php';
 require_once get_template_directory() . '/inc/features/qa.php';
 require_once get_template_directory() . '/inc/features/polls.php';
 require_once get_template_directory() . '/inc/features/shoutouts.php';
+require_once get_template_directory() . '/inc/features/community-settings.php';
+
 
 require_once get_template_directory() . '/inc/rest-api-auth.php';
 

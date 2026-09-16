@@ -29,6 +29,11 @@ get_template_part('template-parts/breadcrumbs');
             'post_type'   => 'blog',
           ]);
           ?>
+          <?php if (function_exists('get_field') && get_field('blog_guidance_box', 'option')) : ?>
+            <div class="govuk-!-margin-top-6 gca-archive-guidance">
+              <?php echo get_field('blog_guidance_box', 'option'); ?>
+            </div>
+          <?php endif; ?>
         </div>
         <div class="govuk-grid-column-three-quarters archive-layout__results">
       <?php else : ?>

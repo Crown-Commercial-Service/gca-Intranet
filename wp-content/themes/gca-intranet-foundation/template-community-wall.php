@@ -81,6 +81,12 @@ endif;
                     >
                         Shout-out a colleague
                     </button>
+                    
+                    <?php if (function_exists('get_field') && get_field('social_wall_guidance_box', 'option')) : ?>
+                        <div class="govuk-!-margin-top-6 gca-archive-guidance">
+                            <?php echo get_field('social_wall_guidance_box', 'option'); ?>
+                        </div>
+                    <?php endif; ?>
 
                     <?php /* Pending Q&A submissions – shown by JS when user has questions under review */ ?>
                     <div id="gca-qa-sidebar-pending" hidden>
