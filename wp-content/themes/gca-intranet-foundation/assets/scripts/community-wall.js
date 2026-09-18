@@ -397,9 +397,18 @@
                         try {
                             var target = document.querySelector(targetSelector);
                             if (target) {
-                                target.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                                target.style.outline = '2px solid #1d70b8';
-                                setTimeout(function() { target.style.outline = ''; }, 3000);
+                                var headerOffset = 140;
+                                var elementPosition = target.getBoundingClientRect().top;
+                                var offsetPosition = elementPosition + window.pageYOffset - headerOffset;
+                                window.scrollTo({ top: offsetPosition, behavior: 'smooth' });
+                                
+                                var oldBg = target.style.backgroundColor;
+                                target.style.backgroundColor = '#fff8cc';
+                                target.style.transition = 'background-color 0.5s ease';
+                                setTimeout(function() { 
+                                    target.style.backgroundColor = oldBg; 
+                                    setTimeout(function() { target.style.transition = ''; }, 500);
+                                }, 3000);
                                 
                                 if (match && match[0].indexOf('-comment-') !== -1) {
                                     var commentId = match[0].split('-comment-')[1];
