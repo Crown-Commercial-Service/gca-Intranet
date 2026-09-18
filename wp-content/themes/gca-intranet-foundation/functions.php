@@ -1155,23 +1155,6 @@ add_action('wp_enqueue_scripts', function (): void {
         // qa.js reads window.gcaQaData — point it at the shared object
         wp_add_inline_script('gca-qa', 'window.gcaQaData = window.gcaCommunityData;', 'before');
     }
-
-    // ── GOV.UK Frontend (needed for accordion etc. on this page) ─────────
-    $govuk_js_rel = '/assets/scripts/all.js';
-    $govuk_js_abs = get_template_directory() . $govuk_js_rel;
-    $govuk_js_ver = file_exists($govuk_js_abs) ? (string) filemtime($govuk_js_abs) : '1.0.0';
-
-    wp_enqueue_script('gca-govuk-frontend-cw', get_template_directory_uri() . $govuk_js_rel, [], $govuk_js_ver, true);
-    wp_add_inline_script(
-        'gca-govuk-frontend-cw',
-        'document.addEventListener("DOMContentLoaded", function() {
-            if (window.GOVUKFrontend && typeof window.GOVUKFrontend.initAll === "function") {
-                window.GOVUKFrontend.initAll();
-                document.documentElement.classList.add("js-enabled");
-            }
-        });',
-        'after'
-    );
 });
 
 /**
