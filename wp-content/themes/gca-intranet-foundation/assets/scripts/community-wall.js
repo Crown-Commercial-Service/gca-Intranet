@@ -395,7 +395,8 @@
                         if (!match) return;
                         var targetSelector = '#' + match[1];
                         try {
-                            var target = document.querySelector(targetSelector);
+                            var panel = document.getElementById('gca-panel-feed');
+                            var target = panel ? panel.querySelector(targetSelector) : document.querySelector(targetSelector);
                             if (target) {
                                 target.setAttribute('tabindex', '-1');
                                 target.focus({ preventScroll: true }); // We will handle the scroll manually

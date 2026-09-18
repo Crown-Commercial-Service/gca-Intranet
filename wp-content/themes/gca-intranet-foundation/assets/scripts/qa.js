@@ -333,7 +333,8 @@
                         if (!match) return;
                         var targetSelector = '#' + match[1];
                         try {
-                            var target = document.querySelector(targetSelector);
+                            var panel = document.getElementById('gca-panel-qa');
+                            var target = panel ? panel.querySelector(targetSelector) : document.querySelector(targetSelector);
                             console.log("QA JS: target found?", !!target);
                             if (target) {
                                 target.setAttribute('tabindex', '-1');
