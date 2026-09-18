@@ -391,7 +391,7 @@
                 if (page === 1 && window.location.hash) {
                     setTimeout(function() {
                         var hash = window.location.hash;
-                        var match = hash.match(/^#(gca-cw-post-\d+|gca-shoutout-\d+|gca-poll-\d+|gca-qa-q-\d+)(?:-comment-\d+)?$/);
+                        var match = hash.match(/^#(gca-poll-\d+)(?:-comment-\d+)?$/);
                         var targetSelector = match ? '#' + match[1] : hash;
                         try {
                             var target = document.querySelector(targetSelector);
