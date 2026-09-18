@@ -328,7 +328,8 @@
                     setTimeout(function() {
                         var hash = window.location.hash;
                         var match = hash.match(/^#(gca-qa-q-\d+)(?:-comment-\d+)?$/);
-                        var targetSelector = match ? '#' + match[1] : hash;
+                        if (!match) return;
+                        var targetSelector = '#' + match[1];
                         try {
                             var target = document.querySelector(targetSelector);
                             if (target) {
