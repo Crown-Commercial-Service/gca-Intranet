@@ -336,8 +336,13 @@
                             var target = document.querySelector(targetSelector);
                             console.log("QA JS: target found?", !!target);
                             if (target) {
-                                target.scrollIntoView(true);
-                                window.scrollBy(0, -140);
+                                target.setAttribute('tabindex', '-1');
+                                target.focus({ preventScroll: false });
+                                
+                                // Adjust for sticky header
+                                setTimeout(function() {
+                                    window.scrollBy(0, -140);
+                                }, 10);
                                 
                                 var oldBg = target.style.backgroundColor;
                                 target.style.backgroundColor = '#fff8cc';
