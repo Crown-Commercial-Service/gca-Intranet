@@ -21,7 +21,7 @@
     "sass": "^1.97.3"
   },
   "dependencies": {
-    "bootstrap": "^5.3.3",
+    "bootstrap": "^5.3.8",
     "ccs-frontend": "^2.5.0",
     "govuk-frontend": "^5.4.0",
     "npm-run-all": "^4.1.3",
