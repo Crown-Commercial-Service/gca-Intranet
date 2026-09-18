@@ -337,11 +337,20 @@
                             console.log("QA JS: target found?", !!target);
                             if (target) {
                                 target.setAttribute('tabindex', '-1');
-                                target.focus({ preventScroll: false });
+                                target.focus({ preventScroll: true }); // We will handle the scroll manually
                                 
-                                // Adjust for sticky header
                                 setTimeout(function() {
-                                    window.scrollBy(0, -140);
+                                    // Calculate absolute Y position
+                                    var rect = target.getBoundingClientRect();
+                                    var absoluteY = rect.top + window.pageYOffset;
+                                    var targetY = absoluteY - 140; // 140px for sticky header
+                                    
+                                    // Apply scroll to all possible containers instantly
+                                    window.scrollTo(0, targetY);
+                                    document.documentElement.scrollTop = targetY;
+                                    document.body.scrollTop = targetY;
+                                    
+                                    console.log("QA JS: scrolled to Y:", targetY);
                                 }, 10);
                                 
                                 var oldBg = target.style.backgroundColor;
