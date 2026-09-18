@@ -327,11 +327,14 @@
                 if (page === 1 && window.location.hash) {
                     setTimeout(function() {
                         var hash = window.location.hash;
+                        console.log("QA JS: setTimeout fired. Hash:", hash);
                         var match = hash.match(/^#(gca-qa-q-\d+)(?:-comment-\d+)?$/);
+                        console.log("QA JS: match:", match);
                         if (!match) return;
                         var targetSelector = '#' + match[1];
                         try {
                             var target = document.querySelector(targetSelector);
+                            console.log("QA JS: target found?", !!target);
                             if (target) {
                                 target.scrollIntoView(true);
                                 window.scrollBy(0, -140);
@@ -369,7 +372,9 @@
                                     }
                                 }
                             }
-                        } catch(e) {}
+                        } catch(e) {
+                            console.error("QA JS Scroll Error:", e);
+                        }
                     }, 500);
                 }
             });
