@@ -1105,6 +1105,16 @@ add_action('wp_enqueue_scripts', function (): void {
         'isAdmin'           => $is_admin,
     ]);
 
+    // Enqueue wpLink scripts and dialog for the custom "Add Link" button
+    wp_enqueue_editor();
+    add_action('wp_footer', function() {
+        echo '<script>var ajaxurl = "' . admin_url('admin-ajax.php') . '";</script>';
+        if (!class_exists('_WP_Editors', false)) {
+            require ABSPATH . WPINC . '/class-wp-editor.php';
+        }
+        _WP_Editors::wp_link_dialog();
+    });
+
     // ── 1. community-wall.js ─────────────────────────────────────────────
     $cw_js_rel = '/assets/scripts/community-wall.js';
     $cw_js_abs = get_template_directory() . $cw_js_rel;
