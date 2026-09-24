@@ -108,7 +108,7 @@ add_action('admin_menu', function (): void {
         GCA_COMMUNITY_HUB_MENU_SLUG,
         'Shout-outs',
         $label,
-        'edit_posts',
+        'publish_posts',
         'edit.php?post_type=community_shoutout'
     );
 }, 5);
@@ -616,7 +616,7 @@ if (class_exists('GFForms')) {
             return;
         }
         add_submenu_page(
-            'edit.php?post_type=community_shoutout',
+            GCA_COMMUNITY_HUB_MENU_SLUG,
             'Shout-out Categories',
             'Categories',
             'manage_categories',

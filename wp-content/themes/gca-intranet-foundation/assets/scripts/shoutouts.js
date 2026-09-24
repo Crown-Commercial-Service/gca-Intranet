@@ -287,6 +287,46 @@
             .finally(function () {
                 shoutoutLoading = false;
                 if (shoutoutLoadMoreBtn) { shoutoutLoadMoreBtn.disabled = false; }
+                if (page === 1 && window.location.hash) {
+                    setTimeout(function() {
+                        var hash = window.location.hash;
+                        var match = hash.match(/^#(gca-cw-post-\d+|gca-shoutout-\d+|gca-poll-\d+|gca-qa-q-\d+)(?:-comment-\d+)?$/);
+                        var targetSelector = match ? '#' + match[1] : hash;
+                        try {
+                            var target = document.querySelector(targetSelector);
+                            if (target) {
+                                target.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                                target.style.outline = '2px solid #1d70b8';
+                                setTimeout(function() { target.style.outline = ''; }, 3000);
+                                
+                                if (match && match[0].indexOf('-comment-') !== -1) {
+                                    var commentId = match[0].split('-comment-')[1];
+                                    var btn = target.querySelector('[data-action="toggle-comments"]');
+                                    
+                                    function scrollToComment() {
+                                        var interval = setInterval(function() {
+                                            var commentEl = document.getElementById('gca-lc-comment-' + commentId);
+                                            if (commentEl) {
+                                                clearInterval(interval);
+                                                commentEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                                                commentEl.style.outline = '2px solid #1d70b8';
+                                                setTimeout(function() { commentEl.style.outline = ''; }, 3000);
+                                            }
+                                        }, 200);
+                                        setTimeout(function() { clearInterval(interval); }, 10000);
+                                    }
+
+                                    if (btn && btn.getAttribute('aria-expanded') === 'false') {
+                                        btn.click();
+                                        scrollToComment();
+                                    } else if (btn) {
+                                        scrollToComment();
+                                    }
+                                }
+                            }
+                        } catch(e) {}
+                    }, 500);
+                }
 
                 if (pendingScrollShoutoutId) {
                     // Scoped to the dedicated Shout-outs panel: the same card can also be

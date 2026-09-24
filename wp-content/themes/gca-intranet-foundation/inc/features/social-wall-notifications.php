@@ -302,7 +302,7 @@ add_action('gca_qa_answered', function (int $question_id, int $asker_id, int $an
         "Your question has been answered on the intranet",
         "Your question has been answered on the intranet",
         $body,
-        gca_notify_community_hub_url('qa'),
+        gca_notify_community_hub_url('qa') . '#gca-qa-q-' . $question_id,
         'View the answer'
     );
 }, 10, 3);
@@ -327,7 +327,29 @@ add_action('gca_comment_mention_created', function (int $comment_id, int $mentio
     $plain_content = (string) preg_replace('/@\[([^\]]+)\]\(\d+\)/', '@$1', $comment->comment_content);
     $content_html  = nl2br(esc_html($plain_content));
 
-    $post_url = get_permalink((int) $comment->comment_post_ID);
+    $post_id   = (int) $comment->comment_post_ID;
+    $post_type = get_post_type($post_id);
+    
+    $tab = 'updates';
+    $args = [];
+    
+    if ($post_type === 'community_shoutout') {
+        $tab = 'shoutouts';
+        $args['shoutout_id'] = $post_id;
+        $hash = '#gca-shoutout-' . $post_id;
+    } elseif ($post_type === 'qa_question') {
+        $tab = 'qa';
+        $hash = '#gca-qa-q-' . $post_id;
+    } elseif ($post_type === 'community_poll') {
+        $tab = 'polls';
+        $hash = '#gca-poll-' . $post_id;
+    } else {
+        $hash = '#gca-cw-post-' . $post_id;
+    }
+    
+    $hash .= '-comment-' . $comment_id;
+
+    $post_url = gca_notify_community_hub_url($tab, $args) . $hash;
 
     $body = '<div style="margin-bottom:12px;">'
         . '<strong style="font-size:16px;">' . $commenter_name . '</strong>'
