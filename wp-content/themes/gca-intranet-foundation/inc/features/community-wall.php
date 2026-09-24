@@ -201,19 +201,36 @@ function gca_cw_get_lc_data(int $post_id, int $current_user_id): array
  */
 function gca_cw_render_content(string $raw): string
 {
-    $html = nl2br(htmlspecialchars($raw, ENT_NOQUOTES, 'UTF-8', false));
+    global $wp_embed;
+    $html = $wp_embed->autoembed($raw);
+    $html = make_clickable($html);
+
+    $allowed_html = array_merge(wp_kses_allowed_html('post'), [
+        'iframe' => [
+            'src'             => true,
+            'width'           => true,
+            'height'          => true,
+            'frameborder'     => true,
+            'allow'           => true,
+            'allowfullscreen' => true,
+            'title'           => true,
+        ],
+    ]);
+    
+    $html = wp_kses($html, $allowed_html);
+    $html = nl2br($html);
 
     $html = (string) preg_replace_callback(
         '/@\[([^\]]+)\]\((\d+)\)/',
         function (array $m): string {
-            $display = $m[1]; // already HTML-escaped by esc_html above
+            $display = $m[1];
             $user_id = (int) $m[2];
             $user    = get_userdata($user_id);
             if (!$user) {
-                return '@' . $display;
+                return '@' . esc_html($display);
             }
             $url = esc_url(home_url('/profile/' . $user->user_nicename));
-            return '<a href="' . $url . '" class="gca-lc__mention">@' . $display . '</a>';
+            return '<a href="' . $url . '" class="gca-lc__mention">@' . esc_html($display) . '</a>';
         },
         $html
     );
@@ -364,7 +381,7 @@ add_action('rest_api_init', function (): void {
         'args'                => [
             'content' => [
                 'required'          => true,
-                'sanitize_callback' => 'sanitize_textarea_field',
+                'sanitize_callback' => 'wp_kses_post',
                 'validate_callback' => fn ($v) => is_string($v) && mb_strlen(trim($v)) > 0 && mb_strlen($v) <= 500,
             ],
             'media_ids' => [

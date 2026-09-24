@@ -23,6 +23,13 @@ class WorkflowNotificationsTest extends TestCase {
         ]);
     }
 
+    private function mockPageTypeObject(): void {
+        WP_Mock::userFunction('get_post_type_object', [
+            'args'   => [ 'page' ],
+            'return' => (object) [ 'labels' => (object) [ 'singular_name' => 'Page' ] ],
+        ]);
+    }
+
     public function tearDown(): void {
         parent::tearDown();
     }
@@ -33,6 +40,7 @@ class WorkflowNotificationsTest extends TestCase {
 
     public function test_pending_new_page_emails_reviewer(): void {
         $this->mockReviewerEmail();
+        $this->mockPageTypeObject();
         $post = $this->make_page( 1, 'My Page', 'pending', 10 );
 
         WP_Mock::userFunction('wp_is_post_revision', [ 'args' => [ 1 ], 'return' => false ]);
@@ -92,6 +100,7 @@ class WorkflowNotificationsTest extends TestCase {
     // -------------------------------------------------------------------------
 
     public function test_published_page_emails_contributor(): void {
+        $this->mockPageTypeObject();
         $post   = $this->make_page( 2, 'Published Page', 'publish', 10 );
         $author = $this->make_user( 10, self::AUTHOR_EMAIL );
 
@@ -121,6 +130,7 @@ class WorkflowNotificationsTest extends TestCase {
     // -------------------------------------------------------------------------
 
     public function test_rejection_email_contains_reviewer_comments(): void {
+        $this->mockPageTypeObject();
         $post   = $this->make_page( 3, 'Rejected Page', 'draft', 10 );
         $author = $this->make_user( 10, self::AUTHOR_EMAIL );
 
@@ -238,6 +248,7 @@ class WorkflowNotificationsTest extends TestCase {
 
     public function test_rejection_comments_cleared_on_resubmit(): void {
         $this->mockReviewerEmail();
+        $this->mockPageTypeObject();
         $post = $this->make_page( 1, 'My Page', 'pending', 10 );
 
         WP_Mock::userFunction('wp_is_post_revision', [ 'return' => false ]);
