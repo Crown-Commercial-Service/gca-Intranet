@@ -32,15 +32,35 @@ class WorkflowRolesTest extends TestCase {
             'return' => null,
         ]);
         WP_Mock::userFunction('get_role', [
+            'args'   => [ 'gca_community_host' ],
+            'return' => null,
+        ]);
+        // Cleanup steps that run on every init(): publisher-admin retirement,
+        // legacy role removal, revisor role deprecation — all no-ops when absent.
+        WP_Mock::userFunction('get_role', [
             'args'   => [ 'gca_publisher_admin' ],
             'return' => null,
         ]);
         WP_Mock::userFunction('get_role', [
-            'args'   => [ 'gca_community_host' ],
+            'args'   => [ 'editor' ],
             'return' => null,
         ]);
+        WP_Mock::userFunction('get_role', [
+            'args'   => [ 'author' ],
+            'return' => null,
+        ]);
+        WP_Mock::userFunction('get_role', [
+            'args'   => [ 'contributor' ],
+            'return' => null,
+        ]);
+        WP_Mock::userFunction('get_option', [
+            'args'   => [ 'wp_user_roles', [] ],
+            'return' => [],
+        ]);
+
         WP_Mock::userFunction('add_role')->andReturn( $this->mock_role() );
         WP_Mock::userFunction('add_filter');
+        WP_Mock::userFunction('add_action');
 
         GCA_Workflow_Roles::init();
 
@@ -56,8 +76,18 @@ class WorkflowRolesTest extends TestCase {
         $role = $this->mock_role();
         $role->shouldReceive('add_cap')->andReturn( null );
 
+        // Catch-all get_role() makes every cleanup branch (publisher-admin retirement,
+        // legacy role removal) think its target role "exists", so their downstream
+        // calls need mocking too.
         WP_Mock::userFunction('get_role')->andReturn( $role );
+        WP_Mock::userFunction('get_users')->andReturn( [] );
+        WP_Mock::userFunction('remove_role')->andReturn( true );
+        WP_Mock::userFunction('get_option', [
+            'args'   => [ 'wp_user_roles', [] ],
+            'return' => [],
+        ]);
         WP_Mock::userFunction('add_filter');
+        WP_Mock::userFunction('add_action');
 
         // Should not throw.
         GCA_Workflow_Roles::init();
@@ -80,33 +110,36 @@ class WorkflowRolesTest extends TestCase {
     // -------------------------------------------------------------------------
 
     public function test_block_contributor_page_creation_returns_do_not_allow(): void {
+        $user = $this->mock_user( 1, [ 'gca_contributor' ] );
         WP_Mock::userFunction('get_userdata', [
             'args'   => [ 1 ],
-            'return' => $this->mock_user( 1, [ 'gca_contributor' ] ),
+            'return' => $user,
         ]);
 
         $result = GCA_Workflow_Roles::block_contributor_page_creation(
-            [ 'edit_pages' ],
-            'create_pages',
-            1,
-            []
+            [ 'edit_pages' => true ],
+            [ 'create_pages' ],
+            [],
+            $user
         );
 
-        $this->assertSame( [ 'do_not_allow' ], $result );
+        $this->assertTrue( $result['edit_pages'] );
+        $this->assertFalse( $result['create_pages'] );
     }
 
     public function test_block_contributor_page_creation_passes_through_for_publisher(): void {
+        $user = $this->mock_user( 2, [ 'gca_publisher' ] );
         WP_Mock::userFunction('get_userdata', [
             'args'   => [ 2 ],
-            'return' => $this->mock_user( 2, [ 'gca_publisher' ] ),
+            'return' => $user,
         ]);
 
-        $original = [ 'publish_pages' ];
+        $original = [ 'publish_pages' => true ];
         $result = GCA_Workflow_Roles::block_contributor_page_creation(
             $original,
-            'create_pages',
-            2,
-            []
+            [ 'create_pages' ],
+            [],
+            $user
         );
 
         $this->assertSame( $original, $result );
@@ -123,22 +156,53 @@ class WorkflowRolesTest extends TestCase {
     }
 
     // -------------------------------------------------------------------------
-    // UNIT-R.6 — gca_publisher_admin has manage_options
+    // UNIT-R.6 — retire_publisher_admin_role migrates existing users to
+    // administrator and removes the role. The role was scrapped in favour of a
+    // 2-role model (Contributor, Publisher); administrator already covers the
+    // same capabilities.
     // -------------------------------------------------------------------------
 
-    public function test_publisher_admin_caps_include_manage_options(): void {
-        $caps = $this->get_publisher_admin_caps();
-        $this->assertArrayHasKey( 'manage_options', $caps );
-        $this->assertTrue( $caps['manage_options'] );
+    public function test_retire_publisher_admin_role_migrates_users_and_removes_role(): void {
+        $user = Mockery::mock( 'WP_User' );
+        $user->shouldReceive('set_role')->with( 'administrator' )->once();
+
+        WP_Mock::userFunction('get_role', [
+            'args'   => [ 'gca_publisher_admin' ],
+            'return' => $this->mock_role(),
+        ]);
+        WP_Mock::userFunction('get_users', [
+            'args'   => [ [ 'role' => 'gca_publisher_admin' ] ],
+            'return' => [ $user ],
+        ]);
+        WP_Mock::userFunction('remove_role', [
+            'args'  => [ 'gca_publisher_admin' ],
+            'times' => 1,
+        ]);
+
+        $method = new ReflectionMethod( GCA_Workflow_Roles::class, 'retire_publisher_admin_role' );
+        $method->setAccessible( true );
+        $method->invoke( null );
+
+        $this->assertTrue( true );
     }
 
     // -------------------------------------------------------------------------
-    // UNIT-R.7 — gca_publisher_admin does NOT have delete_users
+    // UNIT-R.7 — retire_publisher_admin_role is a no-op once the role is gone
     // -------------------------------------------------------------------------
 
-    public function test_publisher_admin_caps_do_not_include_delete_users(): void {
-        $caps = $this->get_publisher_admin_caps();
-        $this->assertArrayNotHasKey( 'delete_users', $caps );
+    public function test_retire_publisher_admin_role_is_noop_when_already_removed(): void {
+        WP_Mock::userFunction('get_role', [
+            'args'   => [ 'gca_publisher_admin' ],
+            'return' => null,
+        ]);
+        // get_users/remove_role are intentionally left unmocked — WP_Mock will
+        // error if either is called, proving the early return.
+
+        $method = new ReflectionMethod( GCA_Workflow_Roles::class, 'retire_publisher_admin_role' );
+        $method->setAccessible( true );
+        $method->invoke( null );
+
+        $this->assertTrue( true );
     }
 
     // -------------------------------------------------------------------------
@@ -167,6 +231,7 @@ class WorkflowRolesTest extends TestCase {
         WP_Mock::userFunction('get_option')->andReturn( [] );
         WP_Mock::userFunction('update_option')->andReturn( true );
         WP_Mock::userFunction('add_role')->andReturn( null );
+        WP_Mock::userFunction('remove_role')->andReturn( true );
 
         // Access the private method via reflection.
         $method = new ReflectionMethod( GCA_Workflow_Roles::class, 'migrate_and_deprecate_legacy_roles' );
@@ -178,23 +243,20 @@ class WorkflowRolesTest extends TestCase {
     }
 
     // -------------------------------------------------------------------------
-    // UNIT-R.9 — migration strips caps from legacy editor role
+    // UNIT-R.9 — migration removes the legacy role shells entirely (remove_role)
+    // rather than manually stripping caps first
     // -------------------------------------------------------------------------
 
     public function test_migration_strips_caps_from_legacy_editor_role(): void {
         WP_Mock::userFunction('get_users')->andReturn( [] );
 
-        // Fresh mock without a generic remove_cap catch-all so specific expectations are unambiguous.
-        $role = Mockery::mock( 'WP_Role' );
-        $role->capabilities = [ 'edit_posts' => true, 'publish_posts' => true ];
-        // Migration iterates all 3 legacy slugs (editor/author/contributor), each with the same
-        // mock returned, so remove_cap is called once per cap per slug = 3× per cap.
-        $role->shouldReceive('remove_cap')->with( 'edit_posts' )->times(3);
-        $role->shouldReceive('remove_cap')->with( 'publish_posts' )->times(3);
+        $role = $this->mock_role_with_caps( [ 'edit_posts' => true, 'publish_posts' => true ] );
 
         WP_Mock::userFunction('get_role')->andReturn( $role );
         WP_Mock::userFunction('get_option')->andReturn( [] );
         WP_Mock::userFunction('update_option')->andReturn( true );
+        // Migration iterates all 3 legacy slugs (editor/author/contributor).
+        WP_Mock::userFunction('remove_role', [ 'times' => 3 ])->andReturn( true );
 
         $method = new ReflectionMethod( GCA_Workflow_Roles::class, 'migrate_and_deprecate_legacy_roles' );
         $method->setAccessible( true );
@@ -239,8 +301,4 @@ class WorkflowRolesTest extends TestCase {
         return array_merge( $base, $publisher );
     }
 
-    private function get_publisher_admin_caps(): array {
-        $admin = (new ReflectionClassConstant( GCA_Workflow_Roles::class, 'PUBLISHER_ADMIN_CAPS' ))->getValue();
-        return array_merge( $this->get_publisher_caps(), $admin );
-    }
 }

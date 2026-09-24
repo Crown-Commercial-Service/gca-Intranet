@@ -287,6 +287,69 @@
             .finally(function () {
                 shoutoutLoading = false;
                 if (shoutoutLoadMoreBtn) { shoutoutLoadMoreBtn.disabled = false; }
+                if (page === 1 && window.location.hash) {
+                    setTimeout(function() {
+                        var hash = window.location.hash;
+                        var match = hash.match(/^#(gca-shoutout-\d+)(?:-comment-\d+)?$/);
+                        if (!match) return;
+                        var targetSelector = '#' + match[1];
+                        try {
+                            var panel = document.getElementById('gca-panel-shoutouts');
+                            var target = panel ? panel.querySelector(targetSelector) : document.querySelector(targetSelector);
+                            if (target) {
+                                target.setAttribute('tabindex', '-1');
+                                target.focus({ preventScroll: true }); // We will handle the scroll manually
+                                
+                                setTimeout(function() {
+                                    // Calculate absolute Y position
+                                    var rect = target.getBoundingClientRect();
+                                    var absoluteY = rect.top + window.pageYOffset;
+                                    var targetY = absoluteY - 140; // 140px for sticky header
+                                    
+                                    // Apply scroll to all possible containers instantly
+                                    window.scrollTo(0, targetY);
+                                    document.documentElement.scrollTop = targetY;
+                                    document.body.scrollTop = targetY;
+                                    
+                                    console.log("Shoutouts JS: scrolled to Y:", targetY);
+                                }, 10);
+                                
+                                var oldBg = target.style.backgroundColor;
+                                target.style.backgroundColor = '#fff8cc';
+                                target.style.transition = 'background-color 0.5s ease';
+                                setTimeout(function() { 
+                                    target.style.backgroundColor = oldBg; 
+                                    setTimeout(function() { target.style.transition = ''; }, 500);
+                                }, 3000);
+                                
+                                if (match && match[0].indexOf('-comment-') !== -1) {
+                                    var commentId = match[0].split('-comment-')[1];
+                                    var btn = target.querySelector('[data-action="toggle-comments"]');
+                                    
+                                    function scrollToComment() {
+                                        var interval = setInterval(function() {
+                                            var commentEl = document.getElementById('gca-lc-comment-' + commentId);
+                                            if (commentEl) {
+                                                clearInterval(interval);
+                                                commentEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                                                commentEl.style.outline = '2px solid #1d70b8';
+                                                setTimeout(function() { commentEl.style.outline = ''; }, 3000);
+                                            }
+                                        }, 200);
+                                        setTimeout(function() { clearInterval(interval); }, 10000);
+                                    }
+
+                                    if (btn && btn.getAttribute('aria-expanded') === 'false') {
+                                        btn.click();
+                                        scrollToComment();
+                                    } else if (btn) {
+                                        scrollToComment();
+                                    }
+                                }
+                            }
+                        } catch(e) {}
+                    }, 500);
+                }
 
                 if (pendingScrollShoutoutId) {
                     // Scoped to the dedicated Shout-outs panel: the same card can also be
