@@ -1120,7 +1120,7 @@ add_action('wp_enqueue_scripts', function (): void {
     // ── 1. community-wall.js ─────────────────────────────────────────────
     $cw_js_rel = '/assets/scripts/community-wall.js';
     $cw_js_abs = get_template_directory() . $cw_js_rel;
-    $cw_js_ver = file_exists($cw_js_abs) ? (string) filemtime($cw_js_abs) : '1.0.0';
+    $cw_js_ver = file_exists($cw_js_abs) ? (string) filemtime($cw_js_abs) . "-" . time() : '1.0.0';
 
     wp_register_script('gca-community-wall', get_template_directory_uri() . $cw_js_rel, ['gca-interactions'], $cw_js_ver, true);
     wp_enqueue_script('gca-community-wall');
@@ -1130,7 +1130,7 @@ add_action('wp_enqueue_scripts', function (): void {
     $so_js_rel = '/assets/scripts/shoutouts.js';
     $so_js_abs = get_template_directory() . $so_js_rel;
     if (file_exists($so_js_abs)) {
-        $so_js_ver = (string) filemtime($so_js_abs);
+        $so_js_ver = (string) filemtime($so_js_abs) . "-" . time();
         wp_register_script('gca-shoutouts', get_template_directory_uri() . $so_js_rel, ['gca-community-wall'], $so_js_ver, true);
         wp_enqueue_script('gca-shoutouts');
     }
@@ -1139,7 +1139,7 @@ add_action('wp_enqueue_scripts', function (): void {
     $poll_js_rel = '/assets/scripts/polls.js';
     $poll_js_abs = get_template_directory() . $poll_js_rel;
     if (file_exists($poll_js_abs)) {
-        $poll_js_ver = (string) filemtime($poll_js_abs);
+        $poll_js_ver = (string) filemtime($poll_js_abs) . "-" . time();
         wp_register_script('gca-polls', get_template_directory_uri() . $poll_js_rel, ['gca-community-wall'], $poll_js_ver, true);
         wp_enqueue_script('gca-polls');
     }
@@ -1149,29 +1149,12 @@ add_action('wp_enqueue_scripts', function (): void {
     $qa_js_abs = get_template_directory() . $qa_js_rel;
     if (file_exists($qa_js_abs)) {
         $qa_deps     = array_filter(['gca-community-wall', 'gca-shoutouts', 'gca-polls'], fn ($h) => wp_script_is($h, 'registered'));
-        $qa_js_ver   = (string) filemtime($qa_js_abs);
+        $qa_js_ver   = (string) filemtime($qa_js_abs) . "-" . time();
         wp_register_script('gca-qa', get_template_directory_uri() . $qa_js_rel, array_values($qa_deps), $qa_js_ver, true);
         wp_enqueue_script('gca-qa');
         // qa.js reads window.gcaQaData — point it at the shared object
         wp_add_inline_script('gca-qa', 'window.gcaQaData = window.gcaCommunityData;', 'before');
     }
-
-    // ── GOV.UK Frontend (needed for accordion etc. on this page) ─────────
-    $govuk_js_rel = '/assets/scripts/all.js';
-    $govuk_js_abs = get_template_directory() . $govuk_js_rel;
-    $govuk_js_ver = file_exists($govuk_js_abs) ? (string) filemtime($govuk_js_abs) : '1.0.0';
-
-    wp_enqueue_script('gca-govuk-frontend-cw', get_template_directory_uri() . $govuk_js_rel, [], $govuk_js_ver, true);
-    wp_add_inline_script(
-        'gca-govuk-frontend-cw',
-        'document.addEventListener("DOMContentLoaded", function() {
-            if (window.GOVUKFrontend && typeof window.GOVUKFrontend.initAll === "function") {
-                window.GOVUKFrontend.initAll();
-                document.documentElement.classList.add("js-enabled");
-            }
-        });',
-        'after'
-    );
 });
 
 /**

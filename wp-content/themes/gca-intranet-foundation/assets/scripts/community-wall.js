@@ -391,14 +391,37 @@
                 if (page === 1 && window.location.hash) {
                     setTimeout(function() {
                         var hash = window.location.hash;
-                        var match = hash.match(/^#(gca-cw-post-\d+|gca-shoutout-\d+|gca-poll-\d+|gca-qa-q-\d+)(?:-comment-\d+)?$/);
-                        var targetSelector = match ? '#' + match[1] : hash;
+                        var match = hash.match(/^#(gca-cw-post-\d+)(?:-comment-\d+)?$/);
+                        if (!match) return;
+                        var targetSelector = '#' + match[1];
                         try {
-                            var target = document.querySelector(targetSelector);
+                            var panel = document.getElementById('gca-panel-feed');
+                            var target = panel ? panel.querySelector(targetSelector) : document.querySelector(targetSelector);
                             if (target) {
-                                target.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                                target.style.outline = '2px solid #1d70b8';
-                                setTimeout(function() { target.style.outline = ''; }, 3000);
+                                target.setAttribute('tabindex', '-1');
+                                target.focus({ preventScroll: true }); // We will handle the scroll manually
+                                
+                                setTimeout(function() {
+                                    // Calculate absolute Y position
+                                    var rect = target.getBoundingClientRect();
+                                    var absoluteY = rect.top + window.pageYOffset;
+                                    var targetY = absoluteY - 140; // 140px for sticky header
+                                    
+                                    // Apply scroll to all possible containers instantly
+                                    window.scrollTo(0, targetY);
+                                    document.documentElement.scrollTop = targetY;
+                                    document.body.scrollTop = targetY;
+                                    
+                                    console.log("CW JS: scrolled to Y:", targetY);
+                                }, 10);
+                                
+                                var oldBg = target.style.backgroundColor;
+                                target.style.backgroundColor = '#fff8cc';
+                                target.style.transition = 'background-color 0.5s ease';
+                                setTimeout(function() { 
+                                    target.style.backgroundColor = oldBg; 
+                                    setTimeout(function() { target.style.transition = ''; }, 500);
+                                }, 3000);
                                 
                                 if (match && match[0].indexOf('-comment-') !== -1) {
                                     var commentId = match[0].split('-comment-')[1];
