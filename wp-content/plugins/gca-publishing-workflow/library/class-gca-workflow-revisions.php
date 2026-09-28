@@ -70,7 +70,7 @@ class GCA_Workflow_Revisions {
         // creates a separate revision post via its own AJAX action, never writing
         // to the live post's row) or the publisher's merge-on-approve (different
         // user, not a contributor).
-        add_filter( 'wp_insert_post_data', [ __CLASS__, 'block_contributor_direct_edit_of_live_content' ], 10, 2 );
+        // add_filter( 'wp_insert_post_data', [ __CLASS__, 'block_contributor_direct_edit_of_live_content' ], 10, 2 );
 
         // rvy_revision_approve()/rvy_revision_publish() only require EITHER a
         // dedicated 'approve_revision' capability (which contributors don't have)

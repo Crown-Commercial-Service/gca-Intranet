@@ -21,7 +21,7 @@ class GCA_Workflow_Roles {
     private const CONTRIBUTOR_CAPS = [
         'read'                 => true,
         'edit_pages'           => true,
-        'edit_published_pages' => true,
+        'edit_published_pages' => false,
         'upload_files'         => true,
         // Needed to avoid a WordPress core quirk (a role lacking 'edit_posts' collides
         // the hidden "Posts" menu with the "Pages" menu, both using pagenow 'edit.php',
@@ -32,7 +32,7 @@ class GCA_Workflow_Roles {
         'edit_posts'           => true,
         // Generic-namespace equivalent of edit_published_pages below — needed to
         // revise already-published Blog/News/Event/Work Update content (WF-3.x).
-        'edit_published_posts' => true,
+        'edit_published_posts' => false,
         // Base grant needed so WP core's admin list table doesn't force the Pages
         // list to "my posts only" (it does this automatically for any role lacking
         // edit_others_pages, regardless of directorate scoping). Per-post access to
