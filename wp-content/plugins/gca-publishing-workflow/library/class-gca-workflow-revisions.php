@@ -167,6 +167,15 @@ class GCA_Workflow_Revisions {
         if ( get_option( 'rvy_pending_revision_unpublished' ) ) {
             update_option( 'rvy_pending_revision_unpublished', 0 );
         }
+
+        // By removing edit_published_pages from Contributors, they are no longer
+        // considered "full editors" by PublishPress. By default, PublishPress requires
+        // non-full-editors to explicitly hold custom 'revise_pages'/'revise_others_pages'
+        // capabilities to submit revisions. By disabling this option, we fall back to
+        // native edit_pages/edit_others_pages, which Contributors already possess.
+        if ( get_option( 'rvy_revise_posts_capability' ) ) {
+            update_option( 'rvy_revise_posts_capability', 0 );
+        }
     }
 
     public static function grant_contributor_copy( bool $can_copy, int $post_id ): bool {
