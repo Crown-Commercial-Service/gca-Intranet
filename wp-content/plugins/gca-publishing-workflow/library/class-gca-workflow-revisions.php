@@ -176,6 +176,13 @@ class GCA_Workflow_Revisions {
         if ( get_option( 'rvy_revise_posts_capability' ) ) {
             update_option( 'rvy_revise_posts_capability', 0 );
         }
+
+        // To simplify the contributor workflow, auto-submit revisions as soon as they
+        // are saved. This removes the need for them to find and click a separate "Submit Revision"
+        // button, avoiding "Not Submitted" limbo.
+        if ( ! get_option( 'rvy_auto_submit_revisions_any_user' ) ) {
+            update_option( 'rvy_auto_submit_revisions_any_user', 1 );
+        }
     }
 
     public static function grant_contributor_copy( bool $can_copy, int $post_id ): bool {
