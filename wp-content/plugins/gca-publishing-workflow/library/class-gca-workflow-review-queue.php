@@ -56,16 +56,32 @@ class GCA_Workflow_Review_Queue {
         // of post types causes get_post_type_object() to fail, which in turn causes WP to
         // assume the user lacks edit_others_posts and restrict the query to the current user's posts.
         foreach ( GCA_Workflow_Roles::CONTRIBUTOR_ALLOWED_POST_TYPES as $post_type ) {
-            $query = new WP_Query( [
+            // First get new drafts (post_status = pending, NOT a revision)
+            $query_new = new WP_Query( [
                 'post_type'        => $post_type,
                 'post_status'      => 'pending',
                 'posts_per_page'   => -1,
-                // Suppress filters to bypass third-party query modifications
-                // (like PublishPress Permissions).
-                'suppress_filters' => true,
             ] );
-            $posts = array_merge( $posts, $query->posts );
+            
+            // Then get revisions for this post type
+            $query_rev = new WP_Query( [
+                'post_type'          => $post_type,
+                'post_status'        => 'pending',
+                'posts_per_page'     => -1,
+                'is_revisions_query' => true,
+            ] );
+            
+            $posts = array_merge( $posts, $query_new->posts, $query_rev->posts );
         }
+
+        // Filter to ensure we only get pending posts and pending revisions, and deduplicate by ID
+        $unique_posts = [];
+        foreach ( $posts as $p ) {
+            if ( $p->post_status === 'pending' ) {
+                $unique_posts[ $p->ID ] = $p;
+            }
+        }
+        $posts = array_values( $unique_posts );
 
         usort( $posts, static fn( WP_Post $a, WP_Post $b ): int => strtotime( $b->post_modified ) <=> strtotime( $a->post_modified ) );
         return $posts;
