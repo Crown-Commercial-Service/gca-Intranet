@@ -100,7 +100,7 @@ add_action('admin_menu', function (): void {
         GCA_COMMUNITY_HUB_MENU_SLUG,
         'Q&A Questions',
         $label,
-        'edit_posts',
+        'edit_others_posts',
         'edit.php?post_type=qa_question'
     );
 }, 5);

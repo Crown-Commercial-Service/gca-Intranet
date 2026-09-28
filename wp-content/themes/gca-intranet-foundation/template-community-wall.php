@@ -81,6 +81,14 @@ endif;
                     >
                         Shout-out a colleague
                     </button>
+                    
+                    <?php if (function_exists('get_field') && get_field('social_wall_guidance_box', 'option')) : ?>
+                        <div class="archive-filters govuk-!-margin-top-6">
+                            <div class="archive-filters__section gca-archive-guidance">
+                                <?php echo get_field('social_wall_guidance_box', 'option'); ?>
+                            </div>
+                        </div>
+                    <?php endif; ?>
 
                     <?php /* Pending Q&A submissions – shown by JS when user has questions under review */ ?>
                     <div id="gca-qa-sidebar-pending" hidden>
@@ -112,7 +120,7 @@ endif;
                         </li>
                         <li>
                             <button type="button" class="gca-cw-tabs__btn" data-tab="qa" aria-pressed="false">
-                                Your questions answered
+                                Questions and answers
                             </button>
                         </li>
                         <li>
@@ -178,10 +186,10 @@ endif;
                                             <input
                                                 type="file"
                                                 id="gca-cw-file-input"
-                                                accept="image/*,video/*"
+                                                accept="image/*"
                                                 multiple
                                                 class="govuk-visually-hidden"
-                                                aria-label="Attach photo or video"
+                                                aria-label="Attach photo"
                                             >
                                             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false">
                                                 <rect x="3" y="3" width="18" height="18" rx="2" stroke="currentColor" stroke-width="2"/>
@@ -190,6 +198,14 @@ endif;
                                             </svg>
                                             <span>Photo / Video</span>
                                         </label>
+
+                                        <button type="button" id="gca-cw-link-btn" class="gca-cw-compose__attach-btn" title="Add link" aria-label="Add link">
+                                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false">
+                                                <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path>
+                                                <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path>
+                                            </svg>
+                                            <span>Add link</span>
+                                        </button>
 
                                         <button type="button" id="gca-cw-poll-btn" class="gca-cw-compose__attach-btn" title="Create a poll" aria-label="Switch to create poll">
                                             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false">

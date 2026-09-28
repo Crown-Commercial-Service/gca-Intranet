@@ -53,8 +53,11 @@ test.describe('Role migration (PERM-4.x)', () => {
         await page.goto('/wp-admin/users.php');
         await expect(page.locator('a[href="users.php?role=gca_contributor"]')).toBeVisible();
         await expect(page.locator('a[href="users.php?role=gca_publisher"]')).toBeVisible();
-        await expect(page.locator('a[href="users.php?role=gca_publisher_admin"]')).toBeVisible();
         await expect(page.locator('a[href="users.php?role=gca_community_host"]')).toBeVisible();
+        // gca_publisher_admin was retired in favour of the 2-role model (Contributor,
+        // Publisher) — the role is auto-migrated to administrator and removed, so its
+        // filter tab must NOT appear.
+        await expect(page.locator('a[href="users.php?role=gca_publisher_admin"]')).toHaveCount(0);
     });
 
 });

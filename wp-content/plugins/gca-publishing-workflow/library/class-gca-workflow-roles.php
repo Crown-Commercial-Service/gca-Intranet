@@ -11,11 +11,42 @@ class GCA_Workflow_Roles {
     const PUBLISHER_ADMIN = 'gca_publisher_admin';
     const COMMUNITY_HOST = 'gca_community_host';
 
+    // Post types contributors may create/edit content in, per the brief. 'blog',
+    // 'news', 'event' and 'work_update' share WordPress's generic 'post' capability
+    // namespace with core Posts — see block_contributor_posts_screen() and
+    // remove_contributor_posts_menu(), which use this list to allow these four while
+    // still blocking core Posts (and anything else sharing that namespace).
+    const CONTRIBUTOR_ALLOWED_POST_TYPES = [ 'page', 'blog', 'news', 'event', 'work_update' ];
+
     private const CONTRIBUTOR_CAPS = [
         'read'                 => true,
         'edit_pages'           => true,
         'edit_published_pages' => true,
         'upload_files'         => true,
+        // Needed to avoid a WordPress core quirk (a role lacking 'edit_posts' collides
+        // the hidden "Posts" menu with the "Pages" menu, both using pagenow 'edit.php',
+        // locking contributors out of Pages too) — and doubles as the base capability
+        // for editing their own Blog/News/Event/Work Update posts, which share this
+        // same generic capability namespace. Core Posts is explicitly re-blocked —
+        // see block_contributor_posts_screen() and remove_contributor_posts_menu().
+        'edit_posts'           => true,
+        // Generic-namespace equivalent of edit_published_pages below — needed to
+        // revise already-published Blog/News/Event/Work Update content (WF-3.x).
+        'edit_published_posts' => true,
+        // Base grant needed so WP core's admin list table doesn't force the Pages
+        // list to "my posts only" (it does this automatically for any role lacking
+        // edit_others_pages, regardless of directorate scoping). Per-post access to
+        // out-of-scope pages is still denied — see block_contributor_out_of_scope_edit()
+        // in GCA_Workflow_Category_Permissions.
+        'edit_others_pages'    => true,
+        // Generic-namespace equivalent of the above, for cross-author parity with
+        // Pages on Blog/News/Event/Work Update. Unlike Pages, these types have no
+        // directorate-scoped out-of-scope check — there's no responsible_team
+        // taxonomy on them — so this is unrestricted: any contributor can edit any
+        // other contributor's content of these types, matching how Pages already
+        // behaves for a contributor with no directorate assigned (the documented
+        // "no team = unrestricted" default).
+        'edit_others_posts'    => true,
     ];
 
     private const PUBLISHER_CAPS = [
@@ -72,6 +103,11 @@ class GCA_Workflow_Roles {
 
         // Block contributors from trashing live (published) pages.
         add_filter( 'user_has_cap', [ __CLASS__, 'block_contributor_live_page_delete' ], 10, 4 );
+
+        // Contributors are granted base 'edit_posts' (see CONTRIBUTOR_CAPS comment) purely
+        // to avoid a core menu bug — re-block the standard Posts screen explicitly here.
+        add_action( 'admin_menu', [ __CLASS__, 'remove_contributor_posts_menu' ], 999 );
+        add_action( 'admin_init', [ __CLASS__, 'block_contributor_posts_screen' ] );
     }
 
     // -------------------------------------------------------------------------
@@ -120,6 +156,55 @@ class GCA_Workflow_Roles {
         // Deny the capability so the trash action is blocked.
         $all_caps['delete_published_pages'] = false;
         return $all_caps;
+    }
+
+    public static function remove_contributor_posts_menu(): void {
+        if ( ! self::user_has_role( get_current_user_id(), self::CONTRIBUTOR ) ) {
+            return;
+        }
+
+        remove_menu_page( 'edit.php' ); // Core "Posts".
+
+        foreach ( get_post_types( [ 'show_ui' => true ], 'objects' ) as $post_type => $object ) {
+            if ( in_array( $post_type, self::CONTRIBUTOR_ALLOWED_POST_TYPES, true ) ) {
+                continue;
+            }
+            if ( ! empty( $object->cap->edit_posts ) && 'edit_posts' === $object->cap->edit_posts ) {
+                remove_menu_page( 'edit.php?post_type=' . $post_type );
+            }
+        }
+    }
+
+    public static function block_contributor_posts_screen(): void {
+        global $pagenow;
+
+        if ( ! self::user_has_role( get_current_user_id(), self::CONTRIBUTOR ) ) {
+            return;
+        }
+
+        $post_type = null;
+        if ( in_array( $pagenow, [ 'edit.php', 'post-new.php' ], true ) ) {
+            $post_type = empty( $_GET['post_type'] ) ? 'post' : sanitize_key( wp_unslash( $_GET['post_type'] ) );
+        } elseif ( 'post.php' === $pagenow && isset( $_GET['post'] ) ) {
+            $post_type = get_post_type( (int) $_GET['post'] ) ?: null;
+        }
+
+        if ( null === $post_type || in_array( $post_type, self::CONTRIBUTOR_ALLOWED_POST_TYPES, true ) ) {
+            return;
+        }
+
+        $post_type_object = get_post_type_object( $post_type );
+
+        // Only block post types sharing WordPress's generic 'post' capability
+        // namespace (Posts, News, Events) — types with their own capability_type
+        // (like 'page') are governed entirely by their own caps already.
+        $shares_generic_post_caps = $post_type_object
+            && ! empty( $post_type_object->cap->edit_posts )
+            && 'edit_posts' === $post_type_object->cap->edit_posts;
+
+        if ( $shares_generic_post_caps ) {
+            wp_die( __( 'Sorry, you are not allowed to access this page.' ), 403 );
+        }
     }
 
     // -------------------------------------------------------------------------

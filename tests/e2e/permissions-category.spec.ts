@@ -221,10 +221,15 @@ test.describe('CAT-1 Content Permissions — Scoped access', () => {
 
         setContributorTeams(CONTRIBUTOR_USER, 'all');
 
-        await page.goto('/wp-admin/edit.php?post_type=page');
-        const titles = await page.locator('table.wp-list-table tbody tr td.column-title').allTextContents();
-
+        // Unrestricted view competes with 300+ real pages on the environment, and the
+        // Pages list defaults to alphabetical-by-title (not newest-first), so the test
+        // pages aren't guaranteed to land on page 1 — search for each by title instead.
+        await page.goto('/wp-admin/edit.php?post_type=page&s=' + encodeURIComponent('CAT-1 In-Scope Page'));
+        let titles = await page.locator('table.wp-list-table tbody tr td.column-title').allTextContents();
         expect(titles.some(t => t.includes('CAT-1 In-Scope Page'))).toBe(true);
+
+        await page.goto('/wp-admin/edit.php?post_type=page&s=' + encodeURIComponent('CAT-1 Out-of-Scope Page'));
+        titles = await page.locator('table.wp-list-table tbody tr td.column-title').allTextContents();
         expect(titles.some(t => t.includes('CAT-1 Out-of-Scope Page'))).toBe(true);
 
         // Restore scoped state for any remaining tests.

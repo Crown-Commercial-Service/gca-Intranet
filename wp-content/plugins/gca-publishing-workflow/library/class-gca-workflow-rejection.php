@@ -4,6 +4,14 @@ if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
 
+// revisionary's decline action (rvy_revision_decline()) is a bare nonce-checked GET
+// link fired from several UI surfaces (queue list, front-end preview toolbar, edit
+// screen) with no field or hook for a decline reason. So feedback reaches it two ways:
+// (1) the reviewer meta box below, which saves a comment on the revision post itself
+// and redirects into the native decline URL after save, and (2) a global click
+// intercept (decline_redirect_script) that catches any native "Decline" link — from
+// any surface — and routes through an interstitial form first. Both are needed;
+// neither can be dropped without forking revisionary itself.
 class GCA_Workflow_Rejection {
 
     const META_KEY         = '_gca_workflow_rejection_comments';
@@ -13,7 +21,9 @@ class GCA_Workflow_Rejection {
 
     public static function init(): void {
         add_action( 'add_meta_boxes', [ __CLASS__, 'register_meta_boxes' ] );
-        add_action( 'save_post_page', [ __CLASS__, 'save_rejection_meta' ], 10, 2 );
+        foreach ( GCA_Workflow_Roles::CONTRIBUTOR_ALLOWED_POST_TYPES as $post_type ) {
+            add_action( "save_post_{$post_type}", [ __CLASS__, 'save_rejection_meta' ], 10, 2 );
+        }
         // After saving a revision with our rejection form, redirect to PublishPress's
         // decline URL so the full decline pipeline fires (including revisionary_declined).
         add_filter( 'redirect_post_location', [ __CLASS__, 'redirect_revision_decline' ] );
@@ -44,7 +54,7 @@ class GCA_Workflow_Rejection {
                 'gca_rejection_comments',
                 'Rejection Comments',
                 [ __CLASS__, 'render_reviewer_meta_box' ],
-                'page',
+                GCA_Workflow_Roles::CONTRIBUTOR_ALLOWED_POST_TYPES,
                 'normal',
                 'high'
             );
@@ -54,7 +64,7 @@ class GCA_Workflow_Rejection {
                 'gca_rejection_comments',
                 'Rejection Feedback',
                 [ __CLASS__, 'render_contributor_meta_box' ],
-                'page',
+                GCA_Workflow_Roles::CONTRIBUTOR_ALLOWED_POST_TYPES,
                 'normal',
                 'high'
             );
@@ -63,7 +73,7 @@ class GCA_Workflow_Rejection {
 
     public static function show_reviewer_feedback_notice(): void {
         $screen = get_current_screen();
-        if ( ! $screen || 'page' !== $screen->id ) {
+        if ( ! $screen || ! in_array( $screen->id, GCA_Workflow_Roles::CONTRIBUTOR_ALLOWED_POST_TYPES, true ) ) {
             return;
         }
 
@@ -232,7 +242,9 @@ class GCA_Workflow_Rejection {
         ) {
             return;
         }
-        if ( ! current_user_can( 'publish_pages', $post_id ) ) {
+        $user_id = get_current_user_id();
+        if ( ! GCA_Workflow_Roles::user_has_role( $user_id, GCA_Workflow_Roles::PUBLISHER )
+             && ! current_user_can( 'manage_options' ) ) {
             return;
         }
 
@@ -262,14 +274,15 @@ class GCA_Workflow_Rejection {
         // Handle rejection submission.
         if ( ! empty( $_POST['gca_submit_rejection'] ) && '' !== $comments ) {
             // Remove our save hook temporarily to avoid infinite loops.
-            remove_action( 'save_post_page', [ __CLASS__, 'save_rejection_meta' ], 10 );
+            $hook = "save_post_{$post->post_type}";
+            remove_action( $hook, [ __CLASS__, 'save_rejection_meta' ], 10 );
 
             wp_update_post( [
                 'ID'          => $post_id,
                 'post_status' => 'draft',
             ] );
 
-            add_action( 'save_post_page', [ __CLASS__, 'save_rejection_meta' ], 10, 2 );
+            add_action( $hook, [ __CLASS__, 'save_rejection_meta' ], 10, 2 );
 
             do_action( 'gca_workflow_page_rejected', $post_id, get_current_user_id(), $comments );
         }
@@ -342,7 +355,7 @@ class GCA_Workflow_Rejection {
         }
 
         $revision = get_post( $revision_id );
-        if ( ! $revision || 'page' !== $revision->post_type ) {
+        if ( ! $revision || ! in_array( $revision->post_type, GCA_Workflow_Roles::CONTRIBUTOR_ALLOWED_POST_TYPES, true ) ) {
             wp_die( esc_html__( 'Revision not found.', 'gca' ) );
         }
 

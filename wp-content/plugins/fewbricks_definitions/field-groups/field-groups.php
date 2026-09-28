@@ -42,6 +42,12 @@ include('templates/sectors.php');
 //include('taxonomies/pillars.php');
 include('taxonomies/responsible-team.php');
 
+/**
+ * Import field groups for options pages
+ */
+include('options-pages.php');
+
+
 
 
 // --- Setting components on default page template ---

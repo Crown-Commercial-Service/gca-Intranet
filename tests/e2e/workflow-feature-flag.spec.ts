@@ -2,9 +2,16 @@
  * WF-0.x — Publishing Workflow feature flag gating
  *
  * Runs as admin (storageState: admin.json).
- * Flag is restored after each test.
+ *
+ * This suite mutates a flag other spec files depend on for their own gated
+ * behaviour, and tests are NOT parallel/isolated (see playwright.config.ts —
+ * fullyParallel: false, shared WP DB). So the flag's state going into this
+ * file is captured up front and restored exactly afterwards — never hard-coded
+ * to a fixed value, since that would leave whatever ran after this file
+ * (or a developer's own manual testing) with the wrong flag state.
  */
 import { test, expect } from '@playwright/test';
+import { getFeatureFlag, setFeatureFlag } from '../helpers/wp-cli';
 
 const FLAGS_PAGE    = '/wp-admin/options-general.php?page=gca-feature-flags';
 const WORKFLOW_PAGE = '/wp-admin/options-general.php?page=gca-publishing-workflow';
@@ -25,8 +32,14 @@ async function setFlag(page: import('@playwright/test').Page, enable: boolean) {
 
 test.describe('Publishing Workflow feature flag (WF-0.x)', () => {
 
-    test.afterEach(async ({ page }) => {
-        await setFlag(page, false);
+    let originalFlagValue: boolean | undefined;
+
+    test.beforeAll(() => {
+        originalFlagValue = getFeatureFlag(FLAG_ID);
+    });
+
+    test.afterAll(() => {
+        setFeatureFlag(FLAG_ID, originalFlagValue);
     });
 
     test('WF-0.1 — feature flag appears on flags page', async ({ page }) => {

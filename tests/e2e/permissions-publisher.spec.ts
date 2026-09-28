@@ -43,7 +43,9 @@ test.describe('Publisher permissions (PERM-2.x)', () => {
         if (!PUBLISHER_USER) test.skip(true, 'WP_PUBLISHER_USER not set');
         const pageId = createPost('PERM-2.4 Delete Test', 'draft', 'page');
 
-        await page.goto('/wp-admin/edit.php?post_type=page');
+        // Search rather than relying on default sort/pagination — this environment
+        // has 300+ real pages, so the new page isn't guaranteed to land on page 1.
+        await page.goto(`/wp-admin/edit.php?post_type=page&s=${encodeURIComponent('PERM-2.4 Delete Test')}`);
         const row = page.locator(`tr#post-${pageId}`);
         await expect(row).toBeVisible();
         // Row actions are CSS hover-only; hover first to make Trash link visible.

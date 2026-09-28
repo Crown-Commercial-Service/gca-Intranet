@@ -210,19 +210,15 @@ class GCA_Workflow_Category_Permissions {
 
         $teams = self::get_contributor_teams( $user_id );
 
-        // No teams assigned — keep the default author=me restriction.
-        if ( empty( $teams ) ) {
-            return;
-        }
-
-        // Lift the "author = me" restriction so contributors can see all team pages —
-        // but preserve it when the user explicitly clicked the "Mine" tab.
+        // Lift the "author = me" restriction so contributors can see all pages they're
+        // scoped to — but preserve it when the user explicitly clicked the "Mine" tab.
         $is_mine_view = (int) $query->get( 'author' ) === $user_id;
         if ( ! $is_mine_view ) {
             $query->set( 'author', '' );
         }
 
-        if ( in_array( 'all', $teams, true ) ) {
+        // No teams assigned, or explicitly scoped to all teams: unrestricted (safe default).
+        if ( empty( $teams ) || in_array( 'all', $teams, true ) ) {
             return;
         }
 
@@ -338,13 +334,9 @@ class GCA_Workflow_Category_Permissions {
 
         $teams = self::get_contributor_teams( $user->ID );
 
-        // No teams assigned: keep own-pages-only default — don't grant edit_others_pages.
-        if ( empty( $teams ) ) {
-            return $all_caps;
-        }
-
-        // All teams: grant edit_others_pages so they can open any page.
-        if ( in_array( 'all', $teams, true ) ) {
+        // No teams assigned, or explicitly scoped to all teams: unrestricted — grant
+        // edit_others_pages so they can open any page (safe default).
+        if ( empty( $teams ) || in_array( 'all', $teams, true ) ) {
             $all_caps['edit_others_pages'] = true;
             return $all_caps;
         }

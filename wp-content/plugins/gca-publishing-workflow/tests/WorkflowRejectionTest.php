@@ -33,9 +33,10 @@ class WorkflowRejectionTest extends TestCase {
             'args'   => [ 'Please fix the headings.' ],
             'return' => 'Please fix the headings.',
         ]);
-        WP_Mock::userFunction('current_user_can', [
-            'args'   => [ 'publish_pages', 1 ],
-            'return' => true,
+        WP_Mock::userFunction('get_current_user_id', [ 'return' => 5 ]);
+        WP_Mock::userFunction('get_userdata', [
+            'args'   => [ 5 ],
+            'return' => (object) [ 'roles' => [ GCA_Workflow_Roles::PUBLISHER ] ],
         ]);
         WP_Mock::userFunction('wp_is_post_revision', [ 'return' => false ]);
         WP_Mock::userFunction('update_post_meta', [
@@ -86,8 +87,13 @@ class WorkflowRejectionTest extends TestCase {
         WP_Mock::userFunction('wp_unslash', [ 'return_arg' => 0 ]);
         WP_Mock::userFunction('sanitize_text_field', [ 'return_arg' => 0 ]);
         WP_Mock::userFunction('wp_is_post_revision', [ 'return' => false ]);
+        WP_Mock::userFunction('get_current_user_id', [ 'return' => 7 ]);
+        WP_Mock::userFunction('get_userdata', [
+            'args'   => [ 7 ],
+            'return' => (object) [ 'roles' => [ GCA_Workflow_Roles::CONTRIBUTOR ] ],
+        ]);
         WP_Mock::userFunction('current_user_can', [
-            'args'   => [ 'publish_pages', 1 ],
+            'args'   => [ 'manage_options' ],
             'return' => false,
         ]);
         WP_Mock::userFunction('update_post_meta', [ 'times' => 0 ]);
@@ -167,22 +173,22 @@ class WorkflowRejectionTest extends TestCase {
     }
 
     // -------------------------------------------------------------------------
-    // UNIT-J.6 — render_contributor_notice outputs nothing when meta is absent
+    // UNIT-J.6 — render_contributor_meta_box shows a placeholder when there's no
+    // rejection history yet (method was renamed from render_contributor_notice)
     // -------------------------------------------------------------------------
 
     public function test_contributor_notice_empty_when_no_comments(): void {
         WP_Mock::userFunction('get_post_meta', [
-            'args'   => [ 1, GCA_Workflow_Rejection::META_KEY, true ],
+            'args'   => [ 1, GCA_Workflow_Rejection::HISTORY_META_KEY, true ],
             'return' => '',
         ]);
 
-        $post     = $this->make_page( 1 );
+        $post = $this->make_page( 1 );
         ob_start();
-        GCA_Workflow_Rejection::render_contributor_notice( $post );
+        GCA_Workflow_Rejection::render_contributor_meta_box( $post );
         $output = ob_get_clean();
 
-        // Should only contain the CSS hide rule, no actual feedback content.
-        $this->assertStringNotContainsString( 'notice-warning', $output );
+        $this->assertStringContainsString( 'No rejection feedback yet.', $output );
     }
 
     // -------------------------------------------------------------------------
@@ -225,8 +231,9 @@ class WorkflowRejectionTest extends TestCase {
     // -------------------------------------------------------------------------
 
     private function make_page( int $id ): WP_Post {
-        $post     = Mockery::mock( 'WP_Post' );
-        $post->ID = $id;
+        $post            = Mockery::mock( 'WP_Post' );
+        $post->ID        = $id;
+        $post->post_type = 'page';
         return $post;
     }
 

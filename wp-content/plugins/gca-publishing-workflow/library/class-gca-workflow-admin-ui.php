@@ -12,7 +12,9 @@ class GCA_Workflow_Admin_UI {
     }
 
     /**
-     * Removes all admin menu items except Pages for contributors.
+     * Removes admin menu items contributors shouldn't see, leaving the post types
+     * in GCA_Workflow_Roles::CONTRIBUTOR_ALLOWED_POST_TYPES (Pages, Blog, News,
+     * Events, Work Update) visible.
      * Runs at priority 999 so all plugins/themes have registered their menus first.
      * remove_menu_page() is visual only — capabilities enforce actual access control.
      */
@@ -30,19 +32,13 @@ class GCA_Workflow_Admin_UI {
             'edit-comments.php',                       // Comments
             'options-general.php',                     // Settings
             'edit.php?post_type=community_poll',       // Community Polls
-            'edit.php?post_type=news',                 // News
             'edit.php?post_type=qa_question',          // Q&A Questions
-            'edit.php?post_type=blog',                 // Blogs
-            'edit.php?post_type=event',                // Events
-            'edit.php?post_type=work_update',          // Work Updates
             'edit.php?post_type=community_post',       // Community Posts
             'edit.php',                                // Posts
             'themes.php',                              // Appearance
             'plugins.php',                             // Plugins
             'users.php',                               // Users
             'tools.php',                               // Tools
-            'pp-capabilities',                         // Capabilities (Capability Manager Enhanced)
-            'pp-capabilities-dashboard',               // Capabilities (multisite variant)
         ];
 
         foreach ( $slugs as $slug ) {
