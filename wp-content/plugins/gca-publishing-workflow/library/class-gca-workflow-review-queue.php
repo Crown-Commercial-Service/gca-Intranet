@@ -124,7 +124,7 @@ class GCA_Workflow_Review_Queue {
                     <?php foreach ( $all_content as $post ) : ?>
                         <?php 
                         $type_label = self::type_label( $post->post_type );
-                        if ( 'pending-revision' === $post->post_mime_type ) {
+                        if ( in_array( $post->post_mime_type, ['draft-revision', 'pending-revision'], true ) ) {
                             $type_label .= ' — ' . esc_html__( 'revision', 'gca' );
                         }
 
