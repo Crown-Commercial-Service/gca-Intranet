@@ -165,6 +165,9 @@ class GCA_Workflow_Roles {
 
         remove_menu_page( 'edit.php' ); // Core "Posts".
         remove_menu_page( 'revisionary-q' ); // PublishPress Revisions.
+        remove_menu_page( 'revisionary-archive' ); // PublishPress Revisions Archive.
+        remove_menu_page( 'gca-community-hub' ); // Community Hub.
+        remove_menu_page( 'gca-community-settings' ); // Community Settings.
 
         foreach ( get_post_types( [ 'show_ui' => true ], 'objects' ) as $post_type => $object ) {
             if ( in_array( $post_type, self::CONTRIBUTOR_ALLOWED_POST_TYPES, true ) ) {
