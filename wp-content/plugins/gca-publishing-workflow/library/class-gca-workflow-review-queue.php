@@ -27,7 +27,7 @@ class GCA_Workflow_Review_Queue {
     }
 
     public static function register_menu(): void {
-        if ( ! self::current_user_is_reviewer() ) {
+        if ( ! self::current_user_can_access() ) {
             return;
         }
         add_menu_page(
@@ -41,8 +41,9 @@ class GCA_Workflow_Review_Queue {
         );
     }
 
-    private static function current_user_is_reviewer(): bool {
+    private static function current_user_can_access(): bool {
         return GCA_Workflow_Roles::user_has_role( get_current_user_id(), GCA_Workflow_Roles::PUBLISHER )
+            || GCA_Workflow_Roles::user_has_role( get_current_user_id(), GCA_Workflow_Roles::CONTRIBUTOR )
             || current_user_can( 'manage_options' );
     }
 
@@ -103,7 +104,7 @@ class GCA_Workflow_Review_Queue {
     // -------------------------------------------------------------------------
 
     public static function render(): void {
-        if ( ! self::current_user_is_reviewer() ) {
+        if ( ! self::current_user_can_access() ) {
             wp_die( esc_html__( 'Sorry, you are not allowed to access this page.', 'gca' ) );
         }
 
