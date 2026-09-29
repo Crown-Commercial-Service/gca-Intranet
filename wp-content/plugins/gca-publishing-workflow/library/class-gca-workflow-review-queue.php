@@ -37,7 +37,7 @@ class GCA_Workflow_Review_Queue {
             self::SLUG,
             [ __CLASS__, 'render' ],
             'dashicons-yes-alt',
-            3
+            2.1 // Unique position below Dashboard
         );
     }
 
