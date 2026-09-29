@@ -64,16 +64,24 @@ class GCA_Workflow_Review_Queue {
             ] );
             
             // Then get revisions for this post type. 
-            // Query for both 'pending' (Submitted) and 'draft' (Not Submitted) revisions.
             // PublishPress Revisions intercepts this via 'is_revisions_query'.
-            $query_rev = new WP_Query( [
+            // Query for 'pending' (Submitted) revisions
+            $query_rev_pending = new WP_Query( [
                 'post_type'          => $post_type,
-                'post_status'        => ['pending', 'draft'],
+                'post_status'        => 'pending',
+                'posts_per_page'     => -1,
+                'is_revisions_query' => true,
+            ] );
+
+            // Query for 'draft' (Not Submitted) revisions
+            $query_rev_draft = new WP_Query( [
+                'post_type'          => $post_type,
+                'post_status'        => 'draft',
                 'posts_per_page'     => -1,
                 'is_revisions_query' => true,
             ] );
             
-            $posts = array_merge( $posts, $query_new->posts, $query_rev->posts );
+            $posts = array_merge( $posts, $query_new->posts, $query_rev_pending->posts, $query_rev_draft->posts );
         }
 
         // Filter to ensure we only get pending posts and ANY revisions, and deduplicate by ID
