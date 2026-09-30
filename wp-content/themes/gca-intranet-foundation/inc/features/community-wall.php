@@ -515,7 +515,7 @@ function gca_cw_delete_post(WP_REST_Request $req): WP_REST_Response
  * instead of returning their native (404) single post URLs.
  */
 add_filter('post_type_link', function (string $post_link, WP_Post $post): string {
-    if (in_array($post->post_type, ['community_shoutout', 'qa_question', 'community_poll'], true)) {
+    if (in_array($post->post_type, ['community_shoutout', 'qa_question', 'community_poll', 'community_post'], true)) {
         if (function_exists('gca_notify_community_hub_url')) {
             $tab  = 'feed';
             $args = [];
@@ -527,6 +527,7 @@ add_filter('post_type_link', function (string $post_link, WP_Post $post): string
             } elseif ($post->post_type === 'community_shoutout') {
                 $tab  = 'shoutouts';
                 $args = ['shoutout_id' => $post->ID];
+                $hash = '#gca-shoutout-' . $post->ID;
             } elseif ($post->post_type === 'community_poll') {
                 $tab  = 'polls';
                 $hash = '#gca-poll-' . $post->ID;
