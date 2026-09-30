@@ -508,3 +508,34 @@ function gca_cw_delete_post(WP_REST_Request $req): WP_REST_Response
 
     return new WP_REST_Response(['deleted' => true]);
 }
+
+
+/**
+ * Fix permalinks for Community Hub post types so they route to the Hub page
+ * instead of returning their native (404) single post URLs.
+ */
+add_filter('post_type_link', function (string $post_link, WP_Post $post): string {
+    if (in_array($post->post_type, ['community_shoutout', 'qa_question', 'community_poll'], true)) {
+        if (function_exists('gca_notify_community_hub_url')) {
+            $tab  = 'feed';
+            $args = [];
+            $hash = '';
+
+            if ($post->post_type === 'qa_question') {
+                $tab  = 'qa';
+                $hash = '#gca-qa-q-' . $post->ID;
+            } elseif ($post->post_type === 'community_shoutout') {
+                $tab  = 'shoutouts';
+                $args = ['shoutout_id' => $post->ID];
+            } elseif ($post->post_type === 'community_poll') {
+                $tab  = 'polls';
+                $hash = '#gca-poll-' . $post->ID;
+            } else {
+                $hash = '#gca-cw-post-' . $post->ID;
+            }
+
+            return gca_notify_community_hub_url($tab, $args) . $hash;
+        }
+    }
+    return $post_link;
+}, 10, 2);
