@@ -995,6 +995,23 @@ add_action('wp_enqueue_scripts', function (): void {
                     renderList(data.comments, commentList);
                     panelLoaded = true;
                     bindListEvents();
+                    
+                    if (window.location.hash) {
+                        setTimeout(function() {
+                            var hash = window.location.hash;
+                            var match = hash.match(/^#(?:gca-lc-)?comment-(\d+)$/);
+                            if (match) {
+                                var targetId = 'gca-lc-comment-' + match[1];
+                                var target = document.getElementById(targetId);
+                                if (target) {
+                                    target.setAttribute('tabindex', '-1');
+                                    target.focus({ preventScroll: true });
+                                    var targetY = target.getBoundingClientRect().top + window.pageYOffset - 140;
+                                    window.scrollTo(0, targetY);
+                                }
+                            }
+                        }, 100);
+                    }
                 })
                 .catch(function () {
                     if (commentList) {
