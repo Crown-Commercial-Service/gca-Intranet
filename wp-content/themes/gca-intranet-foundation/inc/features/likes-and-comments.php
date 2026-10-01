@@ -639,7 +639,11 @@ function gca_profile_get_mentions(): WP_REST_Response
             'comment_id'     => (int) $comment->comment_ID,
             'post_id'        => (int) $comment->comment_post_ID,
             'post_title'     => $post ? html_entity_decode(get_the_title($post), ENT_QUOTES | ENT_HTML5, 'UTF-8') : '',
-            'post_url'       => $post ? get_permalink($post) : '',
+            'post_url'       => $post ? (
+                in_array($post->post_type, ['qa_question', 'community_shoutout', 'community_poll', 'community_post'], true)
+                    ? get_permalink($post) . '-comment-' . $comment->comment_ID
+                    : get_permalink($post) . '#comment-' . $comment->comment_ID
+            ) : '',
             'author_name'    => $comment->comment_author,
             'author_avatar'  => get_avatar_url((int) $comment->user_id, ['size' => 40]),
             'author_profile' => $commenter ? esc_url(home_url('/profile/' . $commenter->user_nicename)) : '',

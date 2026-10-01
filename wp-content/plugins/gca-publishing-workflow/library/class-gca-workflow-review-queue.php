@@ -27,7 +27,7 @@ class GCA_Workflow_Review_Queue {
     }
 
     public static function register_menu(): void {
-        if ( ! self::current_user_is_reviewer() ) {
+        if ( ! self::current_user_can_access() ) {
             return;
         }
         add_menu_page(
@@ -37,12 +37,13 @@ class GCA_Workflow_Review_Queue {
             self::SLUG,
             [ __CLASS__, 'render' ],
             'dashicons-yes-alt',
-            3
+            2.1 // Unique position below Dashboard
         );
     }
 
-    private static function current_user_is_reviewer(): bool {
+    private static function current_user_can_access(): bool {
         return GCA_Workflow_Roles::user_has_role( get_current_user_id(), GCA_Workflow_Roles::PUBLISHER )
+            || GCA_Workflow_Roles::user_has_role( get_current_user_id(), GCA_Workflow_Roles::CONTRIBUTOR )
             || current_user_can( 'manage_options' );
     }
 
@@ -56,16 +57,43 @@ class GCA_Workflow_Review_Queue {
         // of post types causes get_post_type_object() to fail, which in turn causes WP to
         // assume the user lacks edit_others_posts and restrict the query to the current user's posts.
         foreach ( GCA_Workflow_Roles::CONTRIBUTOR_ALLOWED_POST_TYPES as $post_type ) {
-            $query = new WP_Query( [
+            // First get new drafts (post_status = pending, NOT a revision)
+            $query_new = new WP_Query( [
                 'post_type'        => $post_type,
                 'post_status'      => 'pending',
                 'posts_per_page'   => -1,
-                // Suppress filters to bypass third-party query modifications
-                // (like PublishPress Permissions).
-                'suppress_filters' => true,
             ] );
-            $posts = array_merge( $posts, $query->posts );
+            
+            // Then get revisions for this post type. 
+            // PublishPress Revisions intercepts this via 'is_revisions_query'.
+            // Query for 'pending' (Submitted) revisions
+            $query_rev_pending = new WP_Query( [
+                'post_type'          => $post_type,
+                'post_status'        => 'pending',
+                'posts_per_page'     => -1,
+                'is_revisions_query' => true,
+            ] );
+
+            // Query for 'draft' (Not Submitted) revisions
+            $query_rev_draft = new WP_Query( [
+                'post_type'          => $post_type,
+                'post_status'        => 'draft',
+                'posts_per_page'     => -1,
+                'is_revisions_query' => true,
+            ] );
+            
+            $posts = array_merge( $posts, $query_new->posts, $query_rev_pending->posts, $query_rev_draft->posts );
         }
+
+        // Filter to ensure we only get pending posts and ANY revisions, and deduplicate by ID
+        $unique_posts = [];
+        foreach ( $posts as $p ) {
+            // Include it if it's a pending new post OR if it's a revision (draft-revision or pending-revision)
+            if ( $p->post_status === 'pending' || in_array( $p->post_mime_type, ['draft-revision', 'pending-revision'], true ) ) {
+                $unique_posts[ $p->ID ] = $p;
+            }
+        }
+        $posts = array_values( $unique_posts );
 
         usort( $posts, static fn( WP_Post $a, WP_Post $b ): int => strtotime( $b->post_modified ) <=> strtotime( $a->post_modified ) );
         return $posts;
@@ -76,7 +104,7 @@ class GCA_Workflow_Review_Queue {
     // -------------------------------------------------------------------------
 
     public static function render(): void {
-        if ( ! self::current_user_is_reviewer() ) {
+        if ( ! self::current_user_can_access() ) {
             wp_die( esc_html__( 'Sorry, you are not allowed to access this page.', 'gca' ) );
         }
 
@@ -105,7 +133,7 @@ class GCA_Workflow_Review_Queue {
                     <?php foreach ( $all_content as $post ) : ?>
                         <?php 
                         $type_label = self::type_label( $post->post_type );
-                        if ( 'pending-revision' === $post->post_mime_type ) {
+                        if ( in_array( $post->post_mime_type, ['draft-revision', 'pending-revision'], true ) ) {
                             $type_label .= ' — ' . esc_html__( 'revision', 'gca' );
                         }
 
